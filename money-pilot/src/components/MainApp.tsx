@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomTabParamList } from "../types/finance";
 import { useAuth } from "../hooks/useAuth";
@@ -13,9 +14,12 @@ import {
   IntroSliderScreen,
   LoginScreen,
   SignUpScreen,
+  AddTransactionScreen,
+  AddAssetDebtScreen,
 } from "../screens";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
+const Stack = createStackNavigator();
 
 type AppState = "intro" | "login" | "signup" | "main";
 
@@ -114,40 +118,52 @@ export const MainApp: React.FC = () => {
     );
   }
 
+  const MainStack = () => (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen name="AddTransaction" component={AddTransactionScreen} />
+      <Stack.Screen name="AddAssetDebt" component={AddAssetDebtScreen} />
+    </Stack.Navigator>
+  );
+
+  const MainTabs = () => (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarShowLabel: true,
+        tabBarActiveTintColor: "#0ea5e9",
+        tabBarIcon: ({ color, size }) => {
+          const map: Record<
+            keyof BottomTabParamList,
+            keyof typeof Ionicons.glyphMap
+          > = {
+            Dashboard: "trending-up",
+            Transactions: "swap-vertical",
+            "Assets/Debts": "pie-chart",
+            Settings: "settings",
+          };
+          return (
+            <Ionicons
+              name={map[route.name as keyof BottomTabParamList]}
+              color={color}
+              size={size}
+            />
+          );
+        },
+      })}
+    >
+      <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="Transactions" component={TransactionsScreen} />
+      <Tab.Screen name="Assets/Debts" component={AssetsDebtsScreen} />
+      <Tab.Screen name="Settings">
+        {() => <SettingsScreen onLogout={handleLogout} />}
+      </Tab.Screen>
+    </Tab.Navigator>
+  );
+
   return (
     <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarShowLabel: true,
-          tabBarActiveTintColor: "#0ea5e9",
-          tabBarIcon: ({ color, size }) => {
-            const map: Record<
-              keyof BottomTabParamList,
-              keyof typeof Ionicons.glyphMap
-            > = {
-              Dashboard: "trending-up",
-              Transactions: "swap-vertical",
-              "Assets/Debts": "pie-chart",
-              Settings: "settings",
-            };
-            return (
-              <Ionicons
-                name={map[route.name as keyof BottomTabParamList]}
-                color={color}
-                size={size}
-              />
-            );
-          },
-        })}
-      >
-        <Tab.Screen name="Dashboard" component={DashboardScreen} />
-        <Tab.Screen name="Transactions" component={TransactionsScreen} />
-        <Tab.Screen name="Assets/Debts" component={AssetsDebtsScreen} />
-        <Tab.Screen name="Settings">
-          {() => <SettingsScreen onLogout={handleLogout} />}
-        </Tab.Screen>
-      </Tab.Navigator>
+      <MainStack />
     </NavigationContainer>
   );
 };

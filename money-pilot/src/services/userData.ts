@@ -204,3 +204,51 @@ export const getUserDebts = async (userId: string): Promise<Debt[]> => {
     throw error;
   }
 };
+
+// Remove transaction
+export const removeTransaction = async (
+  userId: string,
+  transactionId: string
+): Promise<void> => {
+  try {
+    const transactionRef = ref(
+      db,
+      `users/${userId}/transactions/${transactionId}`
+    );
+    await remove(transactionRef);
+    console.log("Transaction removed successfully");
+  } catch (error) {
+    console.error("Error removing transaction:", error);
+    throw error;
+  }
+};
+
+// Remove asset
+export const removeAsset = async (
+  userId: string,
+  assetId: string
+): Promise<void> => {
+  try {
+    const assetRef = ref(db, `users/${userId}/assets/${assetId}`);
+    await remove(assetRef);
+    console.log("Asset removed successfully");
+  } catch (error) {
+    console.error("Error removing asset:", error);
+    throw error;
+  }
+};
+
+// Remove debt
+export const removeDebt = async (
+  userId: string,
+  debtId: string
+): Promise<void> => {
+  try {
+    const debtRef = ref(db, `users/${userId}/debts/${debtId}`);
+    await remove(debtRef);
+    console.log("Debt removed successfully");
+  } catch (error) {
+    console.error("Error removing debt:", error);
+    throw error;
+  }
+};

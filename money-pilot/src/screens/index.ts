@@ -5,3 +5,5 @@ export { SettingsScreen } from "./SettingsScreen";
 export { IntroSliderScreen } from "./IntroSliderScreen";
 export { LoginScreen } from "./LoginScreen";
 export { SignUpScreen } from "./SignUpScreen";
+export { AddTransactionScreen } from "./AddTransactionScreen";
+export { AddAssetDebtScreen } from "./AddAssetDebtScreen";

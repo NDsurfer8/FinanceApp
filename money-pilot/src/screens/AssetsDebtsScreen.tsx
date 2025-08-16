@@ -1,68 +1,177 @@
-import React from "react";
-import { SafeAreaView, ScrollView, View, Text, Dimensions } from "react-native";
-// import { CustomPieChart } from "../components/Charts";
+import React, { useState, useEffect } from "react";
 import {
-  assets,
-  debts,
-  spendCategories,
-  totalDebt,
-  chartConfig,
-} from "../data/mockData";
+  SafeAreaView,
+  ScrollView,
+  View,
+  Text,
+  Dimensions,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { CustomPieChart } from "../components/BeautifulCharts";
+import { useAuth } from "../hooks/useAuth";
+import {
+  getUserAssets,
+  getUserDebts,
+  removeAsset,
+  removeDebt,
+} from "../services/userData";
+
+interface AssetsDebtsScreenProps {
+  navigation: any;
+}
 
 const screenWidth = Dimensions.get("window").width;
 
-export const AssetsDebtsScreen: React.FC = () => {
-  const assetTotal = assets.reduce((a, b) => a + b.balance, 0);
-  const pieChartData = spendCategories.map((c) => ({
-    x: c.name,
-    y: c.value,
-    color: c.color,
-  }));
+export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
+  navigation,
+}) => {
+  const { user } = useAuth();
+  const [assets, setAssets] = useState<any[]>([]);
+  const [debts, setDebts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user]);
+
+  const loadData = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      const [userAssets, userDebts] = await Promise.all([
+        getUserAssets(user.uid),
+        getUserDebts(user.uid),
+      ]);
+      setAssets(userAssets);
+      setDebts(userDebts);
+    } catch (error) {
+      console.error("Error loading data:", error);
+      Alert.alert("Error", "Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAsset = async (assetId: string) => {
+    if (!user) return;
+
+    Alert.alert("Delete Asset", "Are you sure you want to delete this asset?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await removeAsset(user.uid, assetId);
+            await loadData();
+            Alert.alert("Success", "Asset deleted successfully");
+          } catch (error) {
+            console.error("Error deleting asset:", error);
+            Alert.alert("Error", "Failed to delete asset");
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleDeleteDebt = async (debtId: string) => {
+    if (!user) return;
+
+    Alert.alert("Delete Debt", "Are you sure you want to delete this debt?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await removeDebt(user.uid, debtId);
+            await loadData();
+            Alert.alert("Success", "Debt deleted successfully");
+          } catch (error) {
+            console.error("Error deleting debt:", error);
+            Alert.alert("Error", "Failed to delete debt");
+          }
+        },
+      },
+    ]);
+  };
+
+  const assetTotal = assets.reduce((sum, asset) => sum + asset.balance, 0);
+  const totalDebt = debts.reduce((sum, debt) => sum + debt.balance, 0);
+
+  // Create pie chart data from assets and debts
+  const pieChartData = [
+    {
+      name: "Assets",
+      population: assetTotal,
+      color: "#10b981",
+      legendFontColor: "#374151",
+      legendFontSize: 12,
+    },
+    {
+      name: "Debts",
+      population: totalDebt,
+      color: "#ef4444",
+      legendFontColor: "#374151",
+      legendFontSize: 12,
+    },
+  ];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+        {/* Header */}
         <View
           style={{
-            backgroundColor: "#fff",
-            borderRadius: 16,
-            padding: 16,
-            shadowColor: "#000",
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 16,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "600" }}>Assets</Text>
-          {assets.map((a, i) => (
-            <View
-              key={i}
+          <Text style={{ fontSize: 24, fontWeight: "700", color: "#374151" }}>
+            Assets & Debts
+          </Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("AddAssetDebt", { type: "asset" })
+              }
               style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                paddingVertical: 10,
+                backgroundColor: "#10b981",
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 6,
               }}
             >
-              <Text>{a.name}</Text>
-              <Text style={{ fontWeight: "600" }}>
-                ${a.balance.toLocaleString()}
+              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 12 }}>
+                + Asset
               </Text>
-            </View>
-          ))}
-          <View
-            style={{ height: 1, backgroundColor: "#e5e7eb", marginVertical: 8 }}
-          />
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <Text style={{ fontWeight: "600" }}>Total</Text>
-            <Text style={{ fontWeight: "700" }}>
-              ${assetTotal.toLocaleString()}
-            </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("AddAssetDebt", { type: "debt" })
+              }
+              style={{
+                backgroundColor: "#ef4444",
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 6,
+              }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 12 }}>
+                + Debt
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
+        {/* Assets Section */}
         <View
           style={{
             backgroundColor: "#fff",
@@ -73,41 +182,81 @@ export const AssetsDebtsScreen: React.FC = () => {
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
             elevation: 2,
-            marginTop: 12,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "600" }}>Debts</Text>
-          {debts.map((d, i) => (
-            <View key={i} style={{ paddingVertical: 10 }}>
+          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}>
+            Assets
+          </Text>
+
+          {loading ? (
+            <Text
+              style={{ color: "#6b7280", textAlign: "center", padding: 20 }}
+            >
+              Loading assets...
+            </Text>
+          ) : assets.length === 0 ? (
+            <View style={{ alignItems: "center", padding: 20 }}>
+              <Ionicons name="wallet-outline" size={32} color="#d1d5db" />
+              <Text
+                style={{ color: "#6b7280", marginTop: 8, textAlign: "center" }}
+              >
+                No assets yet
+              </Text>
+            </View>
+          ) : (
+            <>
+              {assets.map((asset, i) => (
+                <View
+                  key={asset.id}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingVertical: 10,
+                    borderBottomWidth: i < assets.length - 1 ? 1 : 0,
+                    borderBottomColor: "#f3f4f6",
+                  }}
+                >
+                  <Text style={{ flex: 1 }}>{asset.name}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text style={{ fontWeight: "600", marginRight: 8 }}>
+                      ${asset.balance.toLocaleString()}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => handleDeleteAsset(asset.id)}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={16}
+                        color="#ef4444"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: "#e5e7eb",
+                  marginVertical: 8,
+                }}
+              />
               <View
                 style={{
                   flexDirection: "row",
                   justifyContent: "space-between",
                 }}
               >
-                <Text>{d.name}</Text>
-                <Text style={{ fontWeight: "600" }}>
-                  ${d.balance.toLocaleString()}
+                <Text style={{ fontWeight: "600" }}>Total</Text>
+                <Text style={{ fontWeight: "700" }}>
+                  ${assetTotal.toLocaleString()}
                 </Text>
               </View>
-              <Text style={{ color: "#6b7280", fontSize: 12 }}>
-                {d.rate}% APR · ${d.payment}/mo
-              </Text>
-            </View>
-          ))}
-          <View
-            style={{ height: 1, backgroundColor: "#e5e7eb", marginVertical: 8 }}
-          />
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <Text style={{ fontWeight: "600" }}>Total Debt</Text>
-            <Text style={{ fontWeight: "700" }}>
-              ${totalDebt.toLocaleString()}
-            </Text>
-          </View>
+            </>
+          )}
         </View>
 
+        {/* Debts Section */}
         <View
           style={{
             backgroundColor: "#fff",
@@ -118,28 +267,109 @@ export const AssetsDebtsScreen: React.FC = () => {
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
             elevation: 2,
-            marginTop: 12,
+            marginTop: 16,
+          }}
+        >
+          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}>
+            Debts
+          </Text>
+
+          {loading ? (
+            <Text
+              style={{ color: "#6b7280", textAlign: "center", padding: 20 }}
+            >
+              Loading debts...
+            </Text>
+          ) : debts.length === 0 ? (
+            <View style={{ alignItems: "center", padding: 20 }}>
+              <Ionicons name="card-outline" size={32} color="#d1d5db" />
+              <Text
+                style={{ color: "#6b7280", marginTop: 8, textAlign: "center" }}
+              >
+                No debts yet
+              </Text>
+            </View>
+          ) : (
+            <>
+              {debts.map((debt, i) => (
+                <View
+                  key={debt.id}
+                  style={{
+                    paddingVertical: 10,
+                    borderBottomWidth: i < debts.length - 1 ? 1 : 0,
+                    borderBottomColor: "#f3f4f6",
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text style={{ flex: 1 }}>{debt.name}</Text>
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Text style={{ fontWeight: "600", marginRight: 8 }}>
+                        ${debt.balance.toLocaleString()}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => handleDeleteDebt(debt.id)}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={16}
+                          color="#ef4444"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  <Text style={{ color: "#6b7280", fontSize: 12 }}>
+                    {debt.rate}% APR • ${debt.payment}/mo
+                  </Text>
+                </View>
+              ))}
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: "#e5e7eb",
+                  marginVertical: 8,
+                }}
+              />
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={{ fontWeight: "600" }}>Total Debt</Text>
+                <Text style={{ fontWeight: "700" }}>
+                  ${totalDebt.toLocaleString()}
+                </Text>
+              </View>
+            </>
+          )}
+        </View>
+
+        {/* Net Worth Chart */}
+        <View
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 16,
+            padding: 16,
+            shadowColor: "#000",
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 2,
+            marginTop: 16,
           }}
         >
           <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
-            Spending Breakdown
+            Net Worth Breakdown
           </Text>
-          {/* Temporarily disabled chart due to render error */}
-          <View
-            style={{
-              height: 220,
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "#f3f4f6",
-            }}
-          >
-            <Text style={{ color: "#6b7280", fontSize: 16 }}>
-              Chart temporarily disabled
-            </Text>
-            <Text style={{ color: "#9ca3af", fontSize: 12, marginTop: 4 }}>
-              Victory Native issue
-            </Text>
-          </View>
+          <CustomPieChart data={pieChartData} title="" height={220} />
         </View>
       </ScrollView>
     </SafeAreaView>
