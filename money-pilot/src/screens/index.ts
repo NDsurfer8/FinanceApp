@@ -13,3 +13,4 @@ export { BalanceSheetScreen } from "./BalanceSheetScreen";
 export { default as SharedFinanceScreen } from "./SharedFinanceScreen";
 export { EditProfileScreen } from "./EditProfileScreen";
 export { NotificationSettingsScreen } from "./NotificationSettingsScreen";
+export { PrivacySecurityScreen } from "./PrivacySecurityScreen";

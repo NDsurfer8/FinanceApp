@@ -1049,3 +1049,160 @@ export const getGroupAggregatedData = async (
     throw error;
   }
 };
+
+// ===== ACCOUNT MANAGEMENT =====
+
+export const deleteUserAccount = async (userId: string): Promise<void> => {
+  try {
+    console.log(`Starting account deletion for user: ${userId}`);
+
+    // 1. Delete user's transactions
+    const transactionsRef = ref(db, `users/${userId}/transactions`);
+    await remove(transactionsRef);
+    console.log("Deleted user transactions");
+
+    // 2. Delete user's assets
+    const assetsRef = ref(db, `users/${userId}/assets`);
+    await remove(assetsRef);
+    console.log("Deleted user assets");
+
+    // 3. Delete user's debts
+    const debtsRef = ref(db, `users/${userId}/debts`);
+    await remove(debtsRef);
+    console.log("Deleted user debts");
+
+    // 4. Delete user's goals
+    const goalsRef = ref(db, `users/${userId}/goals`);
+    await remove(goalsRef);
+    console.log("Deleted user goals");
+
+    // 5. Delete user's emergency fund
+    const emergencyFundRef = ref(db, `users/${userId}/emergencyFund`);
+    await remove(emergencyFundRef);
+    console.log("Deleted user emergency fund");
+
+    // 6. Delete user's budget settings
+    const budgetSettingsRef = ref(db, `users/${userId}/budgetSettings`);
+    await remove(budgetSettingsRef);
+    console.log("Deleted user budget settings");
+
+    // 7. Delete user's profile
+    const profileRef = ref(db, `users/${userId}/profile`);
+    await remove(profileRef);
+    console.log("Deleted user profile");
+
+    // 8. Delete the entire user node
+    const userRef = ref(db, `users/${userId}`);
+    await remove(userRef);
+    console.log("Deleted entire user node");
+
+    // 9. Handle shared groups - remove user from all groups they're a member of
+    try {
+      const sharedGroupsRef = ref(db, "sharedGroups");
+      const sharedGroupsSnapshot = await get(sharedGroupsRef);
+
+      if (sharedGroupsSnapshot.exists()) {
+        const groups = sharedGroupsSnapshot.val();
+        const groupIds = Object.keys(groups);
+
+        for (const groupId of groupIds) {
+          try {
+            const group = groups[groupId];
+            const updatedMembers = group.members.filter(
+              (member: any) => member.userId !== userId
+            );
+
+            if (updatedMembers.length === 0) {
+              // If no members left, delete the entire group
+              await remove(ref(db, `sharedGroups/${groupId}`));
+              console.log(`Deleted empty shared group: ${groupId}`);
+            } else {
+              // Update group with remaining members
+              await update(ref(db, `sharedGroups/${groupId}`), {
+                members: updatedMembers,
+              });
+              console.log(`Removed user from shared group: ${groupId}`);
+            }
+          } catch (groupError) {
+            console.log(
+              `Could not update shared group ${groupId}:`,
+              groupError
+            );
+            // Continue with other groups even if one fails
+          }
+        }
+      }
+    } catch (sharedGroupsError) {
+      console.log("Could not access shared groups:", sharedGroupsError);
+      // Continue with account deletion even if shared groups fail
+    }
+
+    // 10. Delete shared data contributions
+    try {
+      const sharedDataRef = ref(db, "sharedData");
+      const sharedDataSnapshot = await get(sharedDataRef);
+
+      if (sharedDataSnapshot.exists()) {
+        const sharedData = sharedDataSnapshot.val();
+        const groupIds = Object.keys(sharedData);
+
+        for (const groupId of groupIds) {
+          try {
+            const groupData = sharedData[groupId];
+            if (groupData[userId]) {
+              await remove(ref(db, `sharedData/${groupId}/${userId}`));
+              console.log(`Deleted shared data for user in group: ${groupId}`);
+            }
+          } catch (sharedDataError) {
+            console.log(
+              `Could not delete shared data for group ${groupId}:`,
+              sharedDataError
+            );
+            // Continue with other groups
+          }
+        }
+      }
+    } catch (sharedDataError) {
+      console.log("Could not access shared data:", sharedDataError);
+      // Continue with account deletion
+    }
+
+    // 11. Delete user's invitations
+    try {
+      const invitationsRef = ref(db, "invitations");
+      const invitationsSnapshot = await get(invitationsRef);
+
+      if (invitationsSnapshot.exists()) {
+        const invitations = invitationsSnapshot.val();
+        const invitationIds = Object.keys(invitations);
+
+        for (const invitationId of invitationIds) {
+          try {
+            const invitation = invitations[invitationId];
+            if (
+              invitation.userId === userId ||
+              invitation.invitedUserId === userId
+            ) {
+              await remove(ref(db, `invitations/${invitationId}`));
+              console.log(`Deleted invitation: ${invitationId}`);
+            }
+          } catch (invitationError) {
+            console.log(
+              `Could not delete invitation ${invitationId}:`,
+              invitationError
+            );
+            // Continue with other invitations
+          }
+        }
+      }
+    } catch (invitationsError) {
+      console.log("Could not access invitations:", invitationsError);
+      // Continue with account deletion
+    }
+
+    console.log(`Account deletion completed for user: ${userId}`);
+  } catch (error) {
+    console.error("Error deleting user account:", error);
+    throw new Error("Failed to delete user account and associated data");
+  }
+};

@@ -356,7 +356,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <Ionicons name="chevron-forward" size={16} color="#6b7280" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => navigation?.navigate("PrivacySecurity")}
+          >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons
                 name="shield-checkmark"

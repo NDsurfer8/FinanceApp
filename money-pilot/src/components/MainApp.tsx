@@ -22,6 +22,7 @@ import {
   SharedFinanceScreen,
   EditProfileScreen,
   NotificationSettingsScreen,
+  PrivacySecurityScreen,
 } from "../screens";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -154,6 +155,7 @@ export const MainApp: React.FC = () => {
         name="NotificationSettings"
         component={NotificationSettingsScreen}
       />
+      <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
     </Stack.Navigator>
   );
 
