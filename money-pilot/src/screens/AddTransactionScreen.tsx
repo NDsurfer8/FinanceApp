@@ -16,17 +16,21 @@ import { saveTransaction } from "../services/userData";
 
 interface AddTransactionScreenProps {
   navigation: any;
+  route: any;
 }
 
 export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   navigation,
+  route,
 }) => {
   const { user } = useAuth();
+  const { type: initialType } = route.params || {};
+
   const [formData, setFormData] = useState({
     description: "",
     amount: "",
     category: "",
-    type: "expense", // "income" or "expense"
+    type: initialType || "expense", // Use the passed type or default to expense
     date: new Date().toISOString().split("T")[0], // Today's date
   });
 

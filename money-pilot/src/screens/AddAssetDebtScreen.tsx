@@ -55,6 +55,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           id: Date.now().toString(),
           name: formData.name,
           balance: parseFloat(formData.balance),
+          type: "asset",
           userId: user.uid,
           createdAt: new Date().toISOString(),
         };

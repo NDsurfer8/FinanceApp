@@ -9,11 +9,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
-import {
-  CustomPieChart,
-  CustomLineChart,
-  CustomBarChart,
-} from "../components/BeautifulCharts";
 import { useAuth } from "../hooks/useAuth";
 import {
   getUserTransactions,
@@ -236,75 +231,376 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <View
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 16,
+            marginBottom: 24,
           }}
         >
-          <Text style={{ fontSize: 24, fontWeight: "700", color: "#374151" }}>
-            Financial Dashboard
-          </Text>
+          <View>
+            <Text style={{ fontSize: 28, fontWeight: "800", color: "#1f2937" }}>
+              Dashboard
+            </Text>
+            <Text style={{ fontSize: 16, color: "#6b7280", marginTop: 4 }}>
+              Your financial overview
+            </Text>
+          </View>
           <TouchableOpacity
             onPress={() =>
               Alert.alert("Premium Feature", "Export your financial report!")
             }
+            style={{
+              backgroundColor: "#6366f1",
+              padding: 12,
+              borderRadius: 12,
+            }}
           >
-            <Ionicons name="share-outline" size={24} color="#6366f1" />
+            <Ionicons name="share-outline" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        {/* Premium Feature: Smart Insights */}
+        {/* Monthly Overview - Large Card */}
+        <View
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
+            shadowColor: "#000",
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "700",
+              marginBottom: 20,
+              color: "#1f2937",
+            }}
+          >
+            This Month
+          </Text>
+
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <View
+                style={{
+                  backgroundColor: "#dcfce7",
+                  padding: 16,
+                  borderRadius: 16,
+                  marginBottom: 12,
+                  width: 60,
+                  height: 60,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Ionicons name="trending-up" size={24} color="#16a34a" />
+              </View>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: "#6b7280",
+                  marginBottom: 4,
+                  fontWeight: "500",
+                }}
+              >
+                Income
+              </Text>
+              <Text
+                style={{ fontSize: 20, fontWeight: "700", color: "#16a34a" }}
+              >
+                {formatCurrency(monthlyIncome)}
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <View
+                style={{
+                  backgroundColor: "#fee2e2",
+                  padding: 16,
+                  borderRadius: 16,
+                  marginBottom: 12,
+                  width: 60,
+                  height: 60,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Ionicons name="trending-down" size={24} color="#dc2626" />
+              </View>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: "#6b7280",
+                  marginBottom: 4,
+                  fontWeight: "500",
+                }}
+              >
+                Expenses
+              </Text>
+              <Text
+                style={{ fontSize: 20, fontWeight: "700", color: "#dc2626" }}
+              >
+                {formatCurrency(monthlyExpenses)}
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <View
+                style={{
+                  backgroundColor: netIncome >= 0 ? "#dbeafe" : "#fef3c7",
+                  padding: 16,
+                  borderRadius: 16,
+                  marginBottom: 12,
+                  width: 60,
+                  height: 60,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Ionicons
+                  name={netIncome >= 0 ? "wallet" : "alert-circle"}
+                  size={24}
+                  color={netIncome >= 0 ? "#2563eb" : "#d97706"}
+                />
+              </View>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: "#6b7280",
+                  marginBottom: 4,
+                  fontWeight: "500",
+                }}
+              >
+                Net
+              </Text>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: netIncome >= 0 ? "#2563eb" : "#d97706",
+                }}
+              >
+                {formatCurrency(netIncome)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Net Worth Card */}
+        <View
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
+            shadowColor: "#000",
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "700",
+              marginBottom: 20,
+              color: "#1f2937",
+            }}
+          >
+            Net Worth
+          </Text>
+
+          <View style={{ alignItems: "center", marginBottom: 24 }}>
+            <Text
+              style={{
+                fontSize: 36,
+                fontWeight: "800",
+                color: netWorth >= 0 ? "#16a34a" : "#dc2626",
+                marginBottom: 8,
+              }}
+            >
+              {formatCurrency(netWorth)}
+            </Text>
+            <Text style={{ fontSize: 14, color: "#6b7280" }}>
+              {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
+            </Text>
+          </View>
+
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#6b7280",
+                  marginBottom: 4,
+                  fontWeight: "500",
+                }}
+              >
+                Assets
+              </Text>
+              <Text
+                style={{ fontSize: 18, fontWeight: "700", color: "#16a34a" }}
+              >
+                {formatCurrency(totalAssets)}
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#6b7280",
+                  marginBottom: 4,
+                  fontWeight: "500",
+                }}
+              >
+                Debts
+              </Text>
+              <Text
+                style={{ fontSize: 18, fontWeight: "700", color: "#dc2626" }}
+              >
+                {formatCurrency(totalDebts)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Quick Actions */}
+        <View
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
+            shadowColor: "#000",
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "700",
+              marginBottom: 20,
+              color: "#1f2937",
+            }}
+          >
+            Quick Actions
+          </Text>
+
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+            {quickActions.map((action, index) => (
+              <TouchableOpacity
+                key={index}
+                style={{
+                  flex: 1,
+                  minWidth: "45%",
+                  backgroundColor: "#f8fafc",
+                  padding: 20,
+                  borderRadius: 16,
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: "#e5e7eb",
+                }}
+                onPress={action.onPress}
+              >
+                <View
+                  style={{
+                    backgroundColor: action.color + "20",
+                    padding: 12,
+                    borderRadius: 12,
+                    marginBottom: 12,
+                  }}
+                >
+                  <Ionicons
+                    name={action.icon as any}
+                    size={24}
+                    color={action.color}
+                  />
+                </View>
+                <Text
+                  style={{ fontSize: 14, fontWeight: "600", color: "#374151" }}
+                >
+                  {action.title}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Smart Insights - Only show if there are insights */}
         {insights.length > 0 && (
           <View
             style={{
               backgroundColor: "#fff",
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 16,
+              borderRadius: 20,
+              padding: 24,
+              marginBottom: 20,
               shadowColor: "#000",
-              shadowOpacity: 0.06,
-              shadowRadius: 8,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
               shadowOffset: { width: 0, height: 4 },
-              elevation: 2,
+              elevation: 4,
             }}
           >
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 12,
+                marginBottom: 16,
               }}
             >
-              <Ionicons
-                name="bulb"
-                size={20}
-                color="#f59e0b"
-                style={{ marginRight: 8 }}
-              />
+              <View
+                style={{
+                  backgroundColor: "#fef3c7",
+                  padding: 8,
+                  borderRadius: 10,
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="bulb" size={20} color="#d97706" />
+              </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "600", color: "#374151" }}
+                style={{ fontSize: 18, fontWeight: "700", color: "#1f2937" }}
               >
                 Smart Insights
               </Text>
             </View>
 
             {insights.map((insight, index) => (
-              <View key={index} style={{ marginBottom: 8 }}>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View key={index} style={{ marginBottom: 12 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 4,
+                  }}
+                >
                   <Ionicons
                     name={insight.icon as any}
                     size={16}
                     color={
                       insight.type === "success"
-                        ? "#10b981"
+                        ? "#16a34a"
                         : insight.type === "warning"
-                        ? "#ef4444"
-                        : "#3b82f6"
+                        ? "#dc2626"
+                        : "#2563eb"
                     }
                     style={{ marginRight: 8 }}
                   />
@@ -319,7 +615,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   </Text>
                 </View>
                 <Text
-                  style={{ fontSize: 12, color: "#6b7280", marginLeft: 24 }}
+                  style={{ fontSize: 13, color: "#6b7280", marginLeft: 24 }}
                 >
                   {insight.message}
                 </Text>
@@ -328,213 +624,26 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </View>
         )}
 
-        {/* Premium Feature: Quick Actions */}
+        {/* 6-Month Trend - Simplified */}
         <View
           style={{
             backgroundColor: "#fff",
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 16,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
             shadowColor: "#000",
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
+            elevation: 4,
           }}
         >
           <Text
             style={{
-              fontSize: 18,
-              fontWeight: "600",
-              marginBottom: 16,
-              color: "#374151",
-            }}
-          >
-            Quick Actions
-          </Text>
-
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-            {quickActions.map((action, index) => (
-              <TouchableOpacity
-                key={index}
-                style={{
-                  flex: 1,
-                  minWidth: "45%",
-                  backgroundColor: "#f3f4f6",
-                  padding: 16,
-                  borderRadius: 12,
-                  alignItems: "center",
-                }}
-                onPress={action.onPress}
-              >
-                <Ionicons
-                  name={action.icon as any}
-                  size={24}
-                  color={action.color}
-                  style={{ marginBottom: 8 }}
-                />
-                <Text
-                  style={{ fontSize: 14, fontWeight: "600", color: "#374151" }}
-                >
-                  {action.title}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Monthly Overview */}
-        <View
-          style={{
-            backgroundColor: "#fff",
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 16,
-            shadowColor: "#000",
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "600",
-              marginBottom: 16,
-              color: "#374151",
-            }}
-          >
-            This Month
-          </Text>
-
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginBottom: 12,
-            }}
-          >
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>
-                Income
-              </Text>
-              <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#10b981" }}
-              >
-                {formatCurrency(monthlyIncome)}
-              </Text>
-            </View>
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>
-                Expenses
-              </Text>
-              <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#ef4444" }}
-              >
-                {formatCurrency(monthlyExpenses)}
-              </Text>
-            </View>
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>
-                Net
-              </Text>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: netIncome >= 0 ? "#10b981" : "#ef4444",
-                }}
-              >
-                {formatCurrency(netIncome)}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Net Worth */}
-        <View
-          style={{
-            backgroundColor: "#fff",
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 16,
-            shadowColor: "#000",
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "600",
-              marginBottom: 16,
-              color: "#374151",
-            }}
-          >
-            Net Worth
-          </Text>
-
-          <View style={{ alignItems: "center", marginBottom: 16 }}>
-            <Text
-              style={{
-                fontSize: 32,
-                fontWeight: "700",
-                color: netWorth >= 0 ? "#10b981" : "#ef4444",
-              }}
-            >
-              {formatCurrency(netWorth)}
-            </Text>
-          </View>
-
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>
-                Assets
-              </Text>
-              <Text
-                style={{ fontSize: 16, fontWeight: "600", color: "#10b981" }}
-              >
-                {formatCurrency(totalAssets)}
-              </Text>
-            </View>
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>
-                Debts
-              </Text>
-              <Text
-                style={{ fontSize: 16, fontWeight: "600", color: "#ef4444" }}
-              >
-                {formatCurrency(totalDebts)}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Premium Feature: 6-Month Trend */}
-        <View
-          style={{
-            backgroundColor: "#fff",
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 16,
-            shadowColor: "#000",
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "600",
-              marginBottom: 16,
-              color: "#374151",
+              fontSize: 20,
+              fontWeight: "700",
+              marginBottom: 20,
+              color: "#1f2937",
             }}
           >
             6-Month Trend
@@ -546,23 +655,47 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
-                marginBottom: 8,
+                marginBottom: 12,
+                paddingVertical: 8,
+                borderBottomWidth: index < trendData.length - 1 ? 1 : 0,
+                borderBottomColor: "#f3f4f6",
               }}
             >
-              <Text style={{ fontSize: 14, color: "#6b7280", width: 40 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#6b7280",
+                  width: 40,
+                  fontWeight: "500",
+                }}
+              >
                 {month.month}
               </Text>
-              <Text style={{ fontSize: 14, color: "#10b981", width: 80 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#16a34a",
+                  width: 80,
+                  fontWeight: "600",
+                }}
+              >
                 {formatCurrency(month.income)}
               </Text>
-              <Text style={{ fontSize: 14, color: "#ef4444", width: 80 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#dc2626",
+                  width: 80,
+                  fontWeight: "600",
+                }}
+              >
                 {formatCurrency(month.expenses)}
               </Text>
               <Text
                 style={{
                   fontSize: 14,
-                  fontWeight: "600",
-                  color: month.net >= 0 ? "#10b981" : "#ef4444",
+                  fontWeight: "700",
+                  color: month.net >= 0 ? "#16a34a" : "#dc2626",
                 }}
               >
                 {formatCurrency(month.net)}
@@ -570,33 +703,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
           ))}
         </View>
-
-        {/* Premium Feature: Export & Share */}
-        <TouchableOpacity
-          style={{
-            backgroundColor: "#6366f1",
-            borderRadius: 12,
-            padding: 16,
-            alignItems: "center",
-            marginBottom: 16,
-          }}
-          onPress={() =>
-            Alert.alert(
-              "Premium Feature",
-              "Export your financial report as PDF!"
-            )
-          }
-        >
-          <Ionicons
-            name="document-text"
-            size={20}
-            color="#fff"
-            style={{ marginRight: 8 }}
-          />
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
-            Export Financial Report
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
