@@ -33,6 +33,14 @@
           "photosPermission": "The app accesses your photos to let you share them with your friends.",
           "cameraPermission": "The app accesses your camera to let you take profile photos."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#6366f1",
+          "sounds": ["./assets/notification-sound.wav"]
+        }
       ]
     ],
     "extra": {

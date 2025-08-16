@@ -4,3 +4,4 @@ export {
   CustomBarChart,
   CustomPieChart,
 } from "./BeautifulCharts";
+export { NotificationTest } from "./NotificationTest";

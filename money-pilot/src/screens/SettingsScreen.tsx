@@ -340,7 +340,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             App Settings
           </Text>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => navigation?.navigate("NotificationSettings")}
+          >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons
                 name="notifications"

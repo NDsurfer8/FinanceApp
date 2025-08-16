@@ -6,6 +6,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomTabParamList } from "../types/finance";
 import { useAuth } from "../hooks/useAuth";
+import { notificationService } from "../services/notifications";
 import {
   DashboardScreen,
   BudgetScreen,
@@ -20,6 +21,7 @@ import {
   BalanceSheetScreen,
   SharedFinanceScreen,
   EditProfileScreen,
+  NotificationSettingsScreen,
 } from "../screens";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -34,7 +36,25 @@ export const MainApp: React.FC = () => {
 
   useEffect(() => {
     checkFirstLaunch();
+    setupNotifications();
   }, []);
+
+  const setupNotifications = () => {
+    // Setup notification listeners
+    const cleanup = notificationService.setupNotificationListeners(
+      (notification) => {
+        console.log("Notification received:", notification);
+      },
+      (response) => {
+        console.log("Notification response:", response);
+        // Handle navigation based on notification type
+        const data = response.notification.request.content.data;
+        // You can add navigation logic here based on notification type
+      }
+    );
+
+    return cleanup;
+  };
 
   useEffect(() => {
     if (!authLoading) {
@@ -130,6 +150,10 @@ export const MainApp: React.FC = () => {
       <Stack.Screen name="BalanceSheet" component={BalanceSheetScreen} />
       <Stack.Screen name="SharedFinance" component={SharedFinanceScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen
+        name="NotificationSettings"
+        component={NotificationSettingsScreen}
+      />
     </Stack.Navigator>
   );
 
