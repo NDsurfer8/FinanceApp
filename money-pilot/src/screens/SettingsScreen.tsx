@@ -9,6 +9,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
 
 interface SettingsScreenProps {
@@ -400,6 +401,33 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 style={{ marginRight: 12 }}
               />
               <Text style={styles.settingText}>About</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={async () => {
+              try {
+                await AsyncStorage.removeItem("hasSeenIntro");
+                Alert.alert(
+                  "Onboarding Reset",
+                  "The onboarding slider will show on the next app launch. Please restart the app to see it.",
+                  [{ text: "OK" }]
+                );
+              } catch (error) {
+                Alert.alert("Error", "Failed to reset onboarding");
+              }
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="refresh"
+                size={20}
+                color="#6b7280"
+                style={{ marginRight: 12 }}
+              />
+              <Text style={styles.settingText}>Reset Onboarding</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color="#6b7280" />
           </TouchableOpacity>

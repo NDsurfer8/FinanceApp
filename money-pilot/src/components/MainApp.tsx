@@ -25,12 +25,13 @@ import {
   PrivacySecurityScreen,
   AboutScreen,
   HelpSupportScreen,
+  ForgotPasswordScreen,
 } from "../screens";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const Stack = createStackNavigator();
 
-type AppState = "intro" | "login" | "signup" | "main";
+type AppState = "intro" | "login" | "signup" | "forgot-password" | "main";
 
 export const MainApp: React.FC = () => {
   const [appState, setAppState] = useState<AppState>("intro");
@@ -132,6 +133,7 @@ export const MainApp: React.FC = () => {
       <LoginScreen
         onLogin={handleLogin}
         onSignUp={() => setAppState("signup")}
+        onForgotPassword={() => setAppState("forgot-password")}
       />
     );
   }
@@ -143,6 +145,10 @@ export const MainApp: React.FC = () => {
         onBackToLogin={() => setAppState("login")}
       />
     );
+  }
+
+  if (appState === "forgot-password") {
+    return <ForgotPasswordScreen onBack={() => setAppState("login")} />;
   }
 
   const MainStack = () => (

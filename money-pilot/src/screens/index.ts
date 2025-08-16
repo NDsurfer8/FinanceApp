@@ -16,3 +16,4 @@ export { NotificationSettingsScreen } from "./NotificationSettingsScreen";
 export { PrivacySecurityScreen } from "./PrivacySecurityScreen";
 export { AboutScreen } from "./AboutScreen";
 export { HelpSupportScreen } from "./HelpSupportScreen";
+export { ForgotPasswordScreen } from "./ForgotPasswordScreen";

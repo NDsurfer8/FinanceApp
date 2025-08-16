@@ -17,11 +17,13 @@ import { signIn, validateEmail } from "../services/auth";
 interface LoginScreenProps {
   onLogin: () => void;
   onSignUp: () => void;
+  onForgotPassword: () => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({
   onLogin,
   onSignUp,
+  onForgotPassword,
 }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -69,6 +71,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       "Apple Login",
       "Apple login functionality would be implemented here"
     );
+  };
+
+  const handleForgotPassword = () => {
+    onForgotPassword();
   };
 
   return (
@@ -141,7 +147,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               {/* Temporarily removed eye icon for testing */}
             </View>
 
-            <TouchableOpacity style={styles.forgotPassword}>
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={handleForgotPassword}
+              disabled={isLoading}
+            >
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
 

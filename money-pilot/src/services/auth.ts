@@ -6,6 +6,7 @@ import {
   User,
   AuthError,
   updateProfile,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth } from "./firebase";
 import { saveUserProfile, UserProfile } from "./userData";
@@ -107,6 +108,23 @@ export const signIn = async (
         getAuthErrorMessage(authError.code) ||
         authError.message ||
         "An error occurred during sign in",
+    } as AuthErrorType;
+  }
+};
+
+// Send password reset email
+export const forgotPassword = async (email: string): Promise<void> => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    console.error("Firebase password reset error:", error);
+    const authError = error as AuthError;
+    throw {
+      code: authError.code || "unknown",
+      message:
+        getAuthErrorMessage(authError.code) ||
+        authError.message ||
+        "An error occurred while sending password reset email",
     } as AuthErrorType;
   }
 };
