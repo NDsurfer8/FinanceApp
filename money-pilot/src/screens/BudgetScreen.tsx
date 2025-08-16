@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -21,6 +22,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [savingsPercentage, setSavingsPercentage] = useState("20");
+  const [debtPayoffPercentage, setDebtPayoffPercentage] = useState("75");
 
   const loadTransactions = async () => {
     if (!user) return;
@@ -112,9 +115,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const netIncome = totalIncome - totalExpenses;
 
   // Calculate budget metrics
-  const savingsAmount = totalIncome * 0.2; // 20% savings
+  const savingsPercent = parseFloat(savingsPercentage) || 0;
+  const debtPayoffPercent = parseFloat(debtPayoffPercentage) || 0;
+  const savingsAmount = totalIncome * (savingsPercent / 100);
   const discretionaryIncome = netIncome - savingsAmount;
-  const debtPayoffAmount = discretionaryIncome * 0.75; // 75% of discretionary for debt
+  const debtPayoffAmount = discretionaryIncome * (debtPayoffPercent / 100);
   const remainingBalance = discretionaryIncome - debtPayoffAmount;
 
   // Premium Features: Forecasting
@@ -803,14 +808,39 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
+                alignItems: "center",
                 marginBottom: 8,
               }}
             >
-              <Text
-                style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
-              >
-                Savings (20% of NI)
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text
+                  style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
+                >
+                  Savings (
+                </Text>
+                <TextInput
+                  style={{
+                    fontSize: 16,
+                    color: "#16a34a",
+                    fontWeight: "600",
+                    width: 35,
+                    textAlign: "center",
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#16a34a",
+                    paddingHorizontal: 4,
+                  }}
+                  value={savingsPercentage}
+                  onChangeText={setSavingsPercentage}
+                  keyboardType="numeric"
+                  maxLength={3}
+                  placeholder="20"
+                />
+                <Text
+                  style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
+                >
+                  % of NI)
+                </Text>
+              </View>
               <Text
                 style={{ fontSize: 16, fontWeight: "700", color: "#16a34a" }}
               >
@@ -824,14 +854,39 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
+                alignItems: "center",
                 marginBottom: 8,
               }}
             >
-              <Text
-                style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
-              >
-                Debt Payoff (75% of DI)
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text
+                  style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
+                >
+                  Debt Payoff (
+                </Text>
+                <TextInput
+                  style={{
+                    fontSize: 16,
+                    color: "#8b5cf6",
+                    fontWeight: "600",
+                    width: 35,
+                    textAlign: "center",
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#8b5cf6",
+                    paddingHorizontal: 4,
+                  }}
+                  value={debtPayoffPercentage}
+                  onChangeText={setDebtPayoffPercentage}
+                  keyboardType="numeric"
+                  maxLength={3}
+                  placeholder="75"
+                />
+                <Text
+                  style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
+                >
+                  % of DI)
+                </Text>
+              </View>
               <Text
                 style={{ fontSize: 16, fontWeight: "700", color: "#8b5cf6" }}
               >
