@@ -214,7 +214,18 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const trendData = getTrendData();
 
   const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString()}`;
+    if (amount >= 1000000000) {
+      const value = (amount / 1000000000).toFixed(2);
+      return `$${value.replace(/\.00$/, "")}B`;
+    } else if (amount >= 1000000) {
+      const value = (amount / 1000000).toFixed(2);
+      return `$${value.replace(/\.00$/, "")}M`;
+    } else if (amount >= 1000) {
+      const value = (amount / 1000).toFixed(2);
+      return `$${value.replace(/\.00$/, "")}K`;
+    } else {
+      return `$${amount.toLocaleString()}`;
+    }
   };
 
   if (loading) {
@@ -241,38 +252,54 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 24,
+            marginBottom: 32,
+            paddingTop: 8,
           }}
         >
           <View>
-            <Text style={{ fontSize: 28, fontWeight: "800", color: "#1f2937" }}>
+            <Text
+              style={{
+                fontSize: 32,
+                fontWeight: "800",
+                color: "#1f2937",
+                letterSpacing: -0.5,
+              }}
+            >
               Dashboard
             </Text>
-            <Text style={{ fontSize: 16, color: "#6b7280", marginTop: 4 }}>
-              Your financial overview
+            <Text
+              style={{
+                fontSize: 16,
+                color: "#6b7280",
+                marginTop: 6,
+                fontWeight: "500",
+              }}
+            >
+              Welcome back, {user?.displayName || "User"} 👋
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("BalanceSheet")}
-            style={{
-              backgroundColor: "#6366f1",
-              padding: 12,
-              borderRadius: 12,
-              marginRight: 8,
-            }}
-          >
-            <Ionicons name="analytics-outline" size={20} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("SharedFinance")}
-            style={{
-              backgroundColor: "#ec4899",
-              padding: 12,
-              borderRadius: 12,
-            }}
-          >
-            <Ionicons name="people" size={20} color="#fff" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("BalanceSheet")}
+              style={{
+                backgroundColor: "#6366f1",
+                padding: 14,
+                borderRadius: 14,
+              }}
+            >
+              <Ionicons name="analytics-outline" size={22} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("SharedFinance")}
+              style={{
+                backgroundColor: "#ec4899",
+                padding: 14,
+                borderRadius: 14,
+              }}
+            >
+              <Ionicons name="people" size={22} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Monthly Overview - Large Card */}
@@ -280,56 +307,100 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           style={{
             backgroundColor: "#fff",
             borderRadius: 20,
-            padding: 24,
-            marginBottom: 20,
+            padding: 28,
+            marginBottom: 24,
             shadowColor: "#000",
             shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
+            shadowRadius: 16,
+            shadowOffset: { width: 0, height: 6 },
+            elevation: 6,
           }}
         >
-          <Text
+          <View
             style={{
-              fontSize: 20,
-              fontWeight: "700",
-              marginBottom: 20,
-              color: "#1f2937",
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 24,
             }}
           >
-            This Month
-          </Text>
+            <View
+              style={{
+                backgroundColor: "#f3f4f6",
+                padding: 12,
+                borderRadius: 14,
+                marginRight: 16,
+              }}
+            >
+              <Ionicons name="calendar" size={22} color="#6366f1" />
+            </View>
+            <View>
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontWeight: "700",
+                  color: "#1f2937",
+                  letterSpacing: -0.3,
+                }}
+              >
+                This Month
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#6b7280",
+                  marginTop: 2,
+                  fontWeight: "500",
+                }}
+              >
+                {new Date().toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </Text>
+            </View>
+          </View>
 
           <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              gap: 16,
+            }}
           >
             <View style={{ alignItems: "center", flex: 1 }}>
               <View
                 style={{
                   backgroundColor: "#dcfce7",
-                  padding: 16,
-                  borderRadius: 16,
-                  marginBottom: 12,
-                  width: 60,
-                  height: 60,
+                  padding: 18,
+                  borderRadius: 18,
+                  marginBottom: 16,
+                  width: 70,
+                  height: 70,
                   justifyContent: "center",
                   alignItems: "center",
                 }}
               >
-                <Ionicons name="trending-up" size={24} color="#16a34a" />
+                <Ionicons name="trending-up" size={26} color="#16a34a" />
               </View>
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 13,
                   color: "#6b7280",
-                  marginBottom: 4,
-                  fontWeight: "500",
+                  marginBottom: 6,
+                  fontWeight: "600",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
                 }}
               >
                 Income
               </Text>
               <Text
-                style={{ fontSize: 20, fontWeight: "700", color: "#16a34a" }}
+                style={{
+                  fontSize: 22,
+                  fontWeight: "700",
+                  color: "#16a34a",
+                  letterSpacing: -0.3,
+                }}
               >
                 {formatCurrency(monthlyIncome)}
               </Text>
@@ -338,29 +409,36 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <View
                 style={{
                   backgroundColor: "#fee2e2",
-                  padding: 16,
-                  borderRadius: 16,
-                  marginBottom: 12,
-                  width: 60,
-                  height: 60,
+                  padding: 18,
+                  borderRadius: 18,
+                  marginBottom: 16,
+                  width: 70,
+                  height: 70,
                   justifyContent: "center",
                   alignItems: "center",
                 }}
               >
-                <Ionicons name="trending-down" size={24} color="#dc2626" />
+                <Ionicons name="trending-down" size={26} color="#dc2626" />
               </View>
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 13,
                   color: "#6b7280",
-                  marginBottom: 4,
-                  fontWeight: "500",
+                  marginBottom: 6,
+                  fontWeight: "600",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
                 }}
               >
                 Expenses
               </Text>
               <Text
-                style={{ fontSize: 20, fontWeight: "700", color: "#dc2626" }}
+                style={{
+                  fontSize: 22,
+                  fontWeight: "700",
+                  color: "#dc2626",
+                  letterSpacing: -0.3,
+                }}
               >
                 {formatCurrency(monthlyExpenses)}
               </Text>
@@ -369,36 +447,39 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <View
                 style={{
                   backgroundColor: netIncome >= 0 ? "#dbeafe" : "#fef3c7",
-                  padding: 16,
-                  borderRadius: 16,
-                  marginBottom: 12,
-                  width: 60,
-                  height: 60,
+                  padding: 18,
+                  borderRadius: 18,
+                  marginBottom: 16,
+                  width: 70,
+                  height: 70,
                   justifyContent: "center",
                   alignItems: "center",
                 }}
               >
                 <Ionicons
                   name={netIncome >= 0 ? "wallet" : "alert-circle"}
-                  size={24}
+                  size={26}
                   color={netIncome >= 0 ? "#2563eb" : "#d97706"}
                 />
               </View>
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 13,
                   color: "#6b7280",
-                  marginBottom: 4,
-                  fontWeight: "500",
+                  marginBottom: 6,
+                  fontWeight: "600",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
                 }}
               >
                 Net
               </Text>
               <Text
                 style={{
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: "700",
                   color: netIncome >= 0 ? "#2563eb" : "#d97706",
+                  letterSpacing: -0.3,
                 }}
               >
                 {formatCurrency(netIncome)}
