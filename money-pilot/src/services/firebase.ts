@@ -2,6 +2,7 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { getAuth } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 import { firebaseConfig } from "../config/firebase";
 
 // Initialize Firebase
@@ -15,3 +16,4 @@ console.log("Firebase initialized with config:", {
 
 export const db = getDatabase(app);
 export const auth = getAuth(app);
+export const storage = getStorage(app);

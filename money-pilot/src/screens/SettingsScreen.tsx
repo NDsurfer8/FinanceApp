@@ -6,15 +6,20 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
+  navigation?: any;
 }
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onLogout }) => {
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({
+  onLogout,
+  navigation,
+}) => {
   const { user } = useAuth();
 
   const handleLogout = () => {
@@ -34,53 +39,216 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onLogout }) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {/* User Profile */}
+        {/* Enhanced User Profile */}
         <View
           style={{
             backgroundColor: "#fff",
-            borderRadius: 16,
-            padding: 16,
+            borderRadius: 20,
+            padding: 24,
             shadowColor: "#000",
             shadowOpacity: 0.06,
-            shadowRadius: 8,
+            shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
             elevation: 2,
-            marginBottom: 12,
+            marginBottom: 20,
           }}
         >
           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
-              marginBottom: 16,
+              marginBottom: 20,
             }}
           >
             <View
               style={{
-                width: 60,
-                height: 60,
-                borderRadius: 30,
+                width: 80,
+                height: 80,
+                borderRadius: 40,
                 backgroundColor: "#6366f1",
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 16,
+                marginRight: 20,
+                shadowColor: "#6366f1",
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 4,
+                overflow: "hidden",
               }}
             >
-              <Ionicons name="person" size={30} color="white" />
+              {user?.photoURL ? (
+                <Image
+                  source={{ uri: user.photoURL }}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                  }}
+                />
+              ) : (
+                <Ionicons name="person" size={36} color="white" />
+              )}
             </View>
             <View style={{ flex: 1 }}>
               <Text
-                style={{ fontSize: 18, fontWeight: "600", color: "#1f2937" }}
+                style={{
+                  fontSize: 24,
+                  fontWeight: "700",
+                  color: "#1f2937",
+                  marginBottom: 4,
+                  letterSpacing: -0.3,
+                }}
               >
                 {user?.displayName || "User"}
               </Text>
-              <Text style={{ fontSize: 14, color: "#6b7280" }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#6b7280",
+                  marginBottom: 8,
+                  fontWeight: "500",
+                }}
+              >
                 {user?.email || "No email"}
               </Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    backgroundColor: "#dcfce7",
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 12,
+                    marginRight: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: "#16a34a",
+                      fontWeight: "600",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    Active
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                  Member since{" "}
+                  {user?.metadata?.creationTime
+                    ? new Date(user.metadata.creationTime).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          year: "numeric",
+                        }
+                      )
+                    : "Recently"}
+                </Text>
+              </View>
             </View>
-            <TouchableOpacity>
-              <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#f8fafc",
+                padding: 12,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: "#e2e8f0",
+              }}
+              onPress={() => navigation.navigate("EditProfile")}
+            >
+              <Ionicons name="create" size={20} color="#6366f1" />
             </TouchableOpacity>
+          </View>
+
+          {/* Profile Stats */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              paddingTop: 20,
+              borderTopWidth: 1,
+              borderTopColor: "#f1f5f9",
+            }}
+          >
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: "#1f2937",
+                  marginBottom: 4,
+                }}
+              >
+                {user?.metadata?.lastSignInTime
+                  ? new Date(user.metadata.lastSignInTime).toLocaleDateString(
+                      "en-US",
+                      {
+                        month: "short",
+                        day: "numeric",
+                      }
+                    )
+                  : "Today"}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: "#6b7280",
+                  fontWeight: "500",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                }}
+              >
+                Last Login
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: "#1f2937",
+                  marginBottom: 4,
+                }}
+              >
+                Free
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: "#6b7280",
+                  fontWeight: "500",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                }}
+              >
+                Plan
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: "#1f2937",
+                  marginBottom: 4,
+                }}
+              >
+                {user?.emailVerified ? "✓" : "✗"}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: "#6b7280",
+                  fontWeight: "500",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                }}
+              >
+                Verified
+              </Text>
+            </View>
           </View>
         </View>
 

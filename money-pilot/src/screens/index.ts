@@ -11,3 +11,4 @@ export { AddAssetDebtScreen } from "./AddAssetDebtScreen";
 export { GoalTrackingScreen } from "./GoalTrackingScreen";
 export { BalanceSheetScreen } from "./BalanceSheetScreen";
 export { default as SharedFinanceScreen } from "./SharedFinanceScreen";
+export { EditProfileScreen } from "./EditProfileScreen";

@@ -19,6 +19,7 @@ import {
   GoalTrackingScreen,
   BalanceSheetScreen,
   SharedFinanceScreen,
+  EditProfileScreen,
 } from "../screens";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -128,6 +129,7 @@ export const MainApp: React.FC = () => {
       <Stack.Screen name="AddAssetDebt" component={AddAssetDebtScreen} />
       <Stack.Screen name="BalanceSheet" component={BalanceSheetScreen} />
       <Stack.Screen name="SharedFinance" component={SharedFinanceScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
     </Stack.Navigator>
   );
 
@@ -163,7 +165,9 @@ export const MainApp: React.FC = () => {
       <Tab.Screen name="Goals" component={GoalTrackingScreen} />
       <Tab.Screen name="Assets/Debts" component={AssetsDebtsScreen} />
       <Tab.Screen name="Settings">
-        {() => <SettingsScreen onLogout={handleLogout} />}
+        {({ navigation }) => (
+          <SettingsScreen onLogout={handleLogout} navigation={navigation} />
+        )}
       </Tab.Screen>
     </Tab.Navigator>
   );
