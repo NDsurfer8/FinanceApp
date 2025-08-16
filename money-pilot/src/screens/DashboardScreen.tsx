@@ -29,6 +29,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [debts, setDebts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Function to determine if name should be on a new line
+  const shouldNameBeOnNewLine = (name: string) => {
+    return name.length > 15; // Adjust this threshold as needed
+  };
+
   const loadData = async () => {
     if (!user) return;
 
@@ -267,16 +272,40 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             >
               Dashboard
             </Text>
-            <Text
-              style={{
-                fontSize: 16,
-                color: "#6b7280",
-                marginTop: 6,
-                fontWeight: "500",
-              }}
-            >
-              Welcome back, {user?.displayName || "User"} 👋
-            </Text>
+            {shouldNameBeOnNewLine(user?.displayName || "User") ? (
+              <View style={{ marginTop: 6 }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: "#6b7280",
+                    fontWeight: "500",
+                  }}
+                >
+                  Welcome back,
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: "#6b7280",
+                    fontWeight: "500",
+                    marginTop: 2,
+                  }}
+                >
+                  {user?.displayName || "User"} 👋
+                </Text>
+              </View>
+            ) : (
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#6b7280",
+                  marginTop: 6,
+                  fontWeight: "500",
+                }}
+              >
+                Welcome back, {user?.displayName || "User"} 👋
+              </Text>
+            )}
           </View>
           <View style={{ flexDirection: "row", gap: 12 }}>
             <TouchableOpacity
