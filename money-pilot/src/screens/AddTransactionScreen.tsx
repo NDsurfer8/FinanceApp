@@ -42,6 +42,17 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     "Other",
   ];
 
+  const handleImportCSV = () => {
+    Alert.alert(
+      "Import CSV",
+      "This feature will allow you to import transactions from a CSV file. The CSV should have columns: date, description, amount, category, type (income/expense).",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Coming Soon", style: "default" },
+      ]
+    );
+  };
+
   const handleSave = async () => {
     if (!formData.description || !formData.amount || !formData.category) {
       Alert.alert("Error", "Please fill in all required fields");
@@ -103,6 +114,30 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               Add Transaction
             </Text>
           </View>
+
+          {/* Import CSV Button */}
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#f3f4f6",
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onPress={handleImportCSV}
+          >
+            <Ionicons
+              name="document-text-outline"
+              size={20}
+              color="#6b7280"
+              style={{ marginRight: 8 }}
+            />
+            <Text style={{ color: "#6b7280", fontSize: 16, fontWeight: "500" }}>
+              Import from CSV
+            </Text>
+          </TouchableOpacity>
 
           {/* Type Selector */}
           <View
@@ -178,37 +213,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               elevation: 2,
             }}
           >
-            {/* Description */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
-              >
-                Description *
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#d1d5db",
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                }}
-                placeholder="Enter description"
-                value={formData.description}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, description: text })
-                }
-                autoCorrect={false}
-                returnKeyType="next"
-              />
-            </View>
-
             {/* Amount */}
             <View style={{ marginBottom: 16 }}>
               <Text
                 style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
               >
-                Amount *
+                Amount
               </Text>
               <TextInput
                 style={{
@@ -234,37 +244,25 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               <Text
                 style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
               >
-                Category *
+                Category
               </Text>
-              <View
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#d1d5db",
-                  borderRadius: 8,
-                  padding: 12,
-                }}
-              >
-                <Text style={{ fontSize: 16, color: "#6b7280" }}>
-                  {formData.category || "Select category"}
-                </Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  flexWrap: "wrap",
-                  gap: 8,
-                  marginTop: 8,
-                }}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingRight: 16 }}
               >
                 {categories.map((category) => (
                   <TouchableOpacity
                     key={category}
                     style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 16,
+                      paddingHorizontal: 16,
+                      paddingVertical: 8,
+                      borderRadius: 20,
                       backgroundColor:
                         formData.category === category ? "#6366f1" : "#f3f4f6",
+                      marginRight: 8,
+                      minWidth: 80,
+                      alignItems: "center",
                     }}
                     onPress={() => setFormData({ ...formData, category })}
                   >
@@ -273,13 +271,42 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                         color:
                           formData.category === category ? "#fff" : "#374151",
                         fontSize: 14,
+                        fontWeight: "500",
                       }}
                     >
                       {category}
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </ScrollView>
+            </View>
+
+            {/* Description */}
+            <View style={{ marginBottom: 16 }}>
+              <Text
+                style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+              >
+                Description
+              </Text>
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#d1d5db",
+                  borderRadius: 8,
+                  padding: 12,
+                  fontSize: 16,
+                  minHeight: 80,
+                  textAlignVertical: "top",
+                }}
+                placeholder="Enter description..."
+                value={formData.description}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, description: text })
+                }
+                autoCorrect={false}
+                multiline
+                returnKeyType="done"
+              />
             </View>
 
             {/* Date */}
