@@ -35,14 +35,20 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   });
 
   const categories = [
-    "Housing",
+    "Rent",
+    "Car Payment",
+    "Insurance",
+    "Utilities",
+    "Internet",
+    "Phone",
+    "Subscriptions",
+    "Credit Card",
+    "Loan Payment",
     "Food",
     "Transport",
     "Health",
     "Entertainment",
     "Shopping",
-    "Utilities",
-    "Insurance",
     "Other",
   ];
 

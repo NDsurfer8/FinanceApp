@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
-import { getUserTransactions } from "../services/userData";
+import { getUserTransactions, removeTransaction } from "../services/userData";
 
 interface BudgetScreenProps {
   navigation: any;
@@ -69,76 +69,49 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
   const monthlyTransactions = getMonthlyTransactions(selectedMonth);
 
-  // Calculate income streams
-  const incomeStreams = monthlyTransactions
-    .filter((t) => t.type === "income")
-    .reduce((acc, transaction) => {
-      const category = transaction.category || "Other Income";
-      if (!acc[category]) {
-        acc[category] = 0;
-      }
-      acc[category] += transaction.amount;
-      return acc;
-    }, {} as Record<string, number>);
+  // Handle delete transaction
+  const handleDeleteTransaction = async (transaction: any) => {
+    if (!user) return;
 
-  const totalIncome = (Object.values(incomeStreams) as number[]).reduce(
-    (sum: number, amount: number) => sum + amount,
-    0
+    Alert.alert(
+      "Delete Transaction",
+      `Are you sure you want to delete "${transaction.description}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await removeTransaction(user.uid, transaction.id);
+              await loadTransactions(); // Reload data
+              Alert.alert("Success", "Transaction deleted successfully");
+            } catch (error) {
+              console.error("Error deleting transaction:", error);
+              Alert.alert("Error", "Failed to delete transaction");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Calculate totals
+  const incomeTransactions = monthlyTransactions.filter(
+    (t) => t.type === "income"
+  );
+  const expenseTransactions = monthlyTransactions.filter(
+    (t) => t.type === "expense"
   );
 
-  // Calculate fixed expenses
-  const fixedExpenseCategories = [
-    "Rent",
-    "Car Payment",
-    "Insurance",
-    "Utilities",
-    "Internet",
-    "Phone",
-    "Subscriptions",
-    "Credit Card",
-    "Loan Payment",
-  ];
-
-  const fixedExpenses = monthlyTransactions
-    .filter(
-      (t) => t.type === "expense" && fixedExpenseCategories.includes(t.category)
-    )
-    .reduce((acc, transaction) => {
-      const category = transaction.category;
-      if (!acc[category]) {
-        acc[category] = 0;
-      }
-      acc[category] += transaction.amount;
-      return acc;
-    }, {} as Record<string, number>);
-
-  const totalFixedExpenses = (Object.values(fixedExpenses) as number[]).reduce(
-    (sum: number, amount: number) => sum + amount,
+  const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = expenseTransactions.reduce(
+    (sum, t) => sum + t.amount,
     0
   );
-
-  // Calculate variable expenses
-  const variableExpenses = monthlyTransactions
-    .filter(
-      (t) =>
-        t.type === "expense" && !fixedExpenseCategories.includes(t.category)
-    )
-    .reduce((acc, transaction) => {
-      const category = transaction.category || "Other";
-      if (!acc[category]) {
-        acc[category] = 0;
-      }
-      acc[category] += transaction.amount;
-      return acc;
-    }, {} as Record<string, number>);
-
-  const totalVariableExpenses = (
-    Object.values(variableExpenses) as number[]
-  ).reduce((sum: number, amount: number) => sum + amount, 0);
+  const netIncome = totalIncome - totalExpenses;
 
   // Calculate budget metrics
-  const totalExpenses = totalFixedExpenses + totalVariableExpenses;
-  const netIncome = totalIncome - totalExpenses;
   const savingsAmount = totalIncome * 0.2; // 20% savings
   const discretionaryIncome = netIncome - savingsAmount;
   const debtPayoffAmount = discretionaryIncome * 0.75; // 75% of discretionary for debt
@@ -176,21 +149,21 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       });
     }
 
-    if (totalFixedExpenses > totalIncome * 0.5) {
+    if (expenseTransactions.length >= 10) {
       insights.push({
-        type: "warning",
-        icon: "alert-circle",
-        title: "High Fixed Expenses",
-        message: "Your fixed expenses are over 50% of income",
+        type: "info",
+        icon: "analytics",
+        title: "Active Month",
+        message: `${expenseTransactions.length} expenses tracked`,
       });
     }
 
-    if (Object.keys(incomeStreams).length >= 3) {
+    if (incomeTransactions.length >= 2) {
       insights.push({
         type: "success",
         icon: "diamond",
         title: "Diversified Income",
-        message: `You have ${Object.keys(incomeStreams).length} income streams`,
+        message: `You have ${incomeTransactions.length} income sources`,
       });
     }
 
@@ -205,6 +178,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
   const formatMonth = (date: Date) => {
     return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  };
+
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString();
   };
 
   const handleAddIncome = () => {
@@ -235,6 +213,18 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     }
     setSelectedMonth(newDate);
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Text style={{ fontSize: 16, color: "#6b7280" }}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
@@ -541,30 +531,67 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {Object.entries(incomeStreams).map(([category, amount]) => (
-            <View
-              key={category}
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 12,
-                paddingVertical: 8,
-                borderBottomWidth: 1,
-                borderBottomColor: "#f3f4f6",
-              }}
+          {incomeTransactions.length === 0 ? (
+            <Text
+              style={{ color: "#6b7280", textAlign: "center", padding: 20 }}
             >
-              <Text
-                style={{ fontSize: 16, color: "#374151", fontWeight: "500" }}
+              No income transactions for this month
+            </Text>
+          ) : (
+            incomeTransactions.map((transaction) => (
+              <View
+                key={transaction.id}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
+                  paddingVertical: 8,
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#f3f4f6",
+                }}
               >
-                {category}
-              </Text>
-              <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#16a34a" }}
-              >
-                {formatCurrency(amount as number)}
-              </Text>
-            </View>
-          ))}
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: "#374151",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {transaction.description}
+                  </Text>
+                  <Text
+                    style={{ fontSize: 14, color: "#6b7280", marginTop: 2 }}
+                  >
+                    {transaction.category} • {formatDate(transaction.date)}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: "#16a34a",
+                      marginRight: 12,
+                    }}
+                  >
+                    {formatCurrency(transaction.amount)}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => handleDeleteTransaction(transaction)}
+                    style={{
+                      padding: 8,
+                      borderRadius: 8,
+                      backgroundColor: "#fee2e2",
+                    }}
+                  >
+                    <Ionicons name="trash-outline" size={16} color="#dc2626" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          )}
 
           <View
             style={{
@@ -580,7 +607,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               <Text
                 style={{ fontSize: 18, fontWeight: "800", color: "#16a34a" }}
               >
-                Total Net Income
+                Total Income
               </Text>
               <Text
                 style={{ fontSize: 18, fontWeight: "800", color: "#16a34a" }}
@@ -591,7 +618,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Fixed Expenses Section */}
+        {/* Expenses Section */}
         <View
           style={{
             backgroundColor: "#fff",
@@ -622,12 +649,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="home" size={20} color="#dc2626" />
+                <Ionicons name="trending-down" size={20} color="#dc2626" />
               </View>
               <Text
                 style={{ fontSize: 18, fontWeight: "700", color: "#dc2626" }}
               >
-                Fixed Expenses
+                Expenses
               </Text>
             </View>
             <TouchableOpacity onPress={handleAddExpense}>
@@ -635,30 +662,67 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {Object.entries(fixedExpenses).map(([category, amount]) => (
-            <View
-              key={category}
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 12,
-                paddingVertical: 8,
-                borderBottomWidth: 1,
-                borderBottomColor: "#f3f4f6",
-              }}
+          {expenseTransactions.length === 0 ? (
+            <Text
+              style={{ color: "#6b7280", textAlign: "center", padding: 20 }}
             >
-              <Text
-                style={{ fontSize: 16, color: "#374151", fontWeight: "500" }}
+              No expenses for this month
+            </Text>
+          ) : (
+            expenseTransactions.map((transaction) => (
+              <View
+                key={transaction.id}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
+                  paddingVertical: 8,
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#f3f4f6",
+                }}
               >
-                {category}
-              </Text>
-              <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#dc2626" }}
-              >
-                {formatCurrency(amount as number)}
-              </Text>
-            </View>
-          ))}
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: "#374151",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {transaction.description}
+                  </Text>
+                  <Text
+                    style={{ fontSize: 14, color: "#6b7280", marginTop: 2 }}
+                  >
+                    {transaction.category} • {formatDate(transaction.date)}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: "#dc2626",
+                      marginRight: 12,
+                    }}
+                  >
+                    {formatCurrency(transaction.amount)}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => handleDeleteTransaction(transaction)}
+                    style={{
+                      padding: 8,
+                      borderRadius: 8,
+                      backgroundColor: "#fee2e2",
+                    }}
+                  >
+                    <Ionicons name="trash-outline" size={16} color="#dc2626" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          )}
 
           <View
             style={{
@@ -672,106 +736,14 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               style={{ flexDirection: "row", justifyContent: "space-between" }}
             >
               <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#dc2626" }}
+                style={{ fontSize: 18, fontWeight: "800", color: "#dc2626" }}
               >
-                Total Fixed Expenses
+                Total Expenses
               </Text>
               <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#dc2626" }}
+                style={{ fontSize: 18, fontWeight: "800", color: "#dc2626" }}
               >
-                {formatCurrency(totalFixedExpenses)}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Variable Expenses Section */}
-        <View
-          style={{
-            backgroundColor: "#fff",
-            borderRadius: 20,
-            padding: 24,
-            marginBottom: 20,
-            shadowColor: "#000",
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 20,
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: "#fef3c7",
-                padding: 8,
-                borderRadius: 10,
-                marginRight: 12,
-              }}
-            >
-              <Ionicons name="cart" size={20} color="#d97706" />
-            </View>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "700",
-                color: "#d97706",
-              }}
-            >
-              Variable Expenses
-            </Text>
-          </View>
-
-          {Object.entries(variableExpenses).map(([category, amount]) => (
-            <View
-              key={category}
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 12,
-                paddingVertical: 8,
-                borderBottomWidth: 1,
-                borderBottomColor: "#f3f4f6",
-              }}
-            >
-              <Text
-                style={{ fontSize: 16, color: "#374151", fontWeight: "500" }}
-              >
-                {category}
-              </Text>
-              <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#d97706" }}
-              >
-                {formatCurrency(amount as number)}
-              </Text>
-            </View>
-          ))}
-
-          <View
-            style={{
-              borderTopWidth: 2,
-              borderTopColor: "#d97706",
-              paddingTop: 16,
-              marginTop: 8,
-            }}
-          >
-            <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
-            >
-              <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#d97706" }}
-              >
-                Total Variable Expenses
-              </Text>
-              <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#d97706" }}
-              >
-                {formatCurrency(totalVariableExpenses)}
+                {formatCurrency(totalExpenses)}
               </Text>
             </View>
           </View>
@@ -812,12 +784,16 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               <Text
                 style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
               >
-                Total Expenses (Fixed + Variable)
+                Net Income
               </Text>
               <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#dc2626" }}
+                style={{
+                  fontSize: 16,
+                  fontWeight: "700",
+                  color: netIncome >= 0 ? "#16a34a" : "#dc2626",
+                }}
               >
-                {formatCurrency(totalExpenses)}
+                {formatCurrency(netIncome)}
               </Text>
             </View>
           </View>
@@ -833,7 +809,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               <Text
                 style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
               >
-                Savings (20%)
+                Savings (20% of NI)
               </Text>
               <Text
                 style={{ fontSize: 16, fontWeight: "700", color: "#16a34a" }}
@@ -854,7 +830,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               <Text
                 style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
               >
-                Debt Payoff (75% of Discretionary)
+                Debt Payoff (75% of DI)
               </Text>
               <Text
                 style={{ fontSize: 16, fontWeight: "700", color: "#8b5cf6" }}
