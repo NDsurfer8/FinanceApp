@@ -9,3 +9,4 @@ export { SignUpScreen } from "./SignUpScreen";
 export { AddTransactionScreen } from "./AddTransactionScreen";
 export { AddAssetDebtScreen } from "./AddAssetDebtScreen";
 export { GoalTrackingScreen } from "./GoalTrackingScreen";
+export { BalanceSheetScreen } from "./BalanceSheetScreen";

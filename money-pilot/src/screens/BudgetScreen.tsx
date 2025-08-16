@@ -11,7 +11,14 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
-import { getUserTransactions, removeTransaction } from "../services/userData";
+import {
+  getUserTransactions,
+  removeTransaction,
+  getUserBudgetSettings,
+  saveBudgetSettings,
+  updateBudgetSettings,
+  BudgetSettings,
+} from "../services/userData";
 
 interface BudgetScreenProps {
   navigation: any;
@@ -24,17 +31,32 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [savingsPercentage, setSavingsPercentage] = useState("20");
   const [debtPayoffPercentage, setDebtPayoffPercentage] = useState("75");
+  const [budgetSettings, setBudgetSettings] = useState<BudgetSettings | null>(
+    null
+  );
 
   const loadTransactions = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
-      const userTransactions = await getUserTransactions(user.uid);
+      const [userTransactions, userBudgetSettings] = await Promise.all([
+        getUserTransactions(user.uid),
+        getUserBudgetSettings(user.uid),
+      ]);
       setTransactions(userTransactions);
+      setBudgetSettings(userBudgetSettings);
+
+      // Set the percentages from saved settings or defaults
+      if (userBudgetSettings) {
+        setSavingsPercentage(userBudgetSettings.savingsPercentage.toString());
+        setDebtPayoffPercentage(
+          userBudgetSettings.debtPayoffPercentage.toString()
+        );
+      }
     } catch (error) {
-      console.error("Error loading transactions:", error);
-      Alert.alert("Error", "Failed to load transactions");
+      console.error("Error loading data:", error);
+      Alert.alert("Error", "Failed to load data");
     } finally {
       setLoading(false);
     }
@@ -217,6 +239,36 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       newDate.setMonth(newDate.getMonth() + 1);
     }
     setSelectedMonth(newDate);
+  };
+
+  const handleSaveBudgetSettings = async () => {
+    if (!user) return;
+
+    try {
+      const newSettings: BudgetSettings = {
+        savingsPercentage: parseFloat(savingsPercentage) || 20,
+        debtPayoffPercentage: parseFloat(debtPayoffPercentage) || 75,
+        userId: user.uid,
+        updatedAt: Date.now(),
+      };
+
+      if (budgetSettings?.id) {
+        // Update existing settings
+        await updateBudgetSettings({
+          ...newSettings,
+          id: budgetSettings.id,
+        });
+      } else {
+        // Create new settings
+        await saveBudgetSettings(newSettings);
+      }
+
+      await loadTransactions(); // Reload to get updated settings
+      Alert.alert("Success", "Budget settings saved successfully!");
+    } catch (error) {
+      console.error("Error saving budget settings:", error);
+      Alert.alert("Error", "Failed to save budget settings");
+    }
   };
 
   if (loading) {
@@ -938,6 +990,22 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               </Text>
             </View>
           </View>
+
+          {/* Save Settings Button */}
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#6366f1",
+              borderRadius: 12,
+              padding: 16,
+              alignItems: "center",
+              marginTop: 20,
+            }}
+            onPress={handleSaveBudgetSettings}
+          >
+            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
+              Save Budget Settings
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>

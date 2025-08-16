@@ -17,6 +17,7 @@ import {
   AddTransactionScreen,
   AddAssetDebtScreen,
   GoalTrackingScreen,
+  BalanceSheetScreen,
 } from "../screens";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -124,6 +125,7 @@ export const MainApp: React.FC = () => {
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen name="AddTransaction" component={AddTransactionScreen} />
       <Stack.Screen name="AddAssetDebt" component={AddAssetDebtScreen} />
+      <Stack.Screen name="BalanceSheet" component={BalanceSheetScreen} />
     </Stack.Navigator>
   );
 

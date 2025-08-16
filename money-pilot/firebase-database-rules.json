@@ -2,71 +2,195 @@
   "rules": {
     "users": {
       "$uid": {
-        // Users can only access their own data
-        ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null && auth.uid == $uid",
+        // User can only access their own data
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
 
+        // Profile data
         "profile": {
-          ".read": "auth != null && auth.uid == $uid",
-          ".write": "auth != null && auth.uid == $uid",
-          ".validate": "newData.hasChildren(['uid', 'email', 'displayName', 'createdAt', 'updatedAt'])"
+          ".validate": "newData.hasChildren(['uid', 'email', 'displayName', 'createdAt', 'updatedAt'])",
+          "uid": {
+            ".validate": "newData.val() === auth.uid"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$/)"
+          },
+          "displayName": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          }
         },
 
+        // Transactions
         "transactions": {
-          ".read": "auth != null && auth.uid == $uid",
-          ".write": "auth != null && auth.uid == $uid",
           "$transactionId": {
-            ".validate": "newData.hasChildren(['amount', 'type', 'category', 'description', 'date', 'userId']) && newData.child('userId').val() == auth.uid && (newData.child('type').val() == 'income' || newData.child('type').val() == 'expense') && newData.child('amount').val() > 0"
+            ".validate": "newData.hasChildren(['id', 'description', 'amount', 'type', 'category', 'date', 'userId'])",
+            "id": {
+              ".validate": "newData.val() === $transactionId"
+            },
+            "description": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+            },
+            "amount": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "type": {
+              ".validate": "newData.val() === 'income' || newData.val() === 'expense'"
+            },
+            "category": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            "date": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "createdAt": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            }
           }
         },
 
+        // Assets
         "assets": {
-          ".read": "auth != null && auth.uid == $uid",
-          ".write": "auth != null && auth.uid == $uid",
           "$assetId": {
-            ".validate": "newData.hasChildren(['name', 'balance', 'userId']) && newData.child('userId').val() == auth.uid && newData.child('balance').val() >= 0"
+            ".validate": "newData.hasChildren(['id', 'name', 'balance', 'type', 'userId'])",
+            "id": {
+              ".validate": "newData.val() === $assetId"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+            },
+            "balance": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "type": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            }
           }
         },
 
+        // Debts
         "debts": {
-          ".read": "auth != null && auth.uid == $uid",
-          ".write": "auth != null && auth.uid == $uid",
           "$debtId": {
-            ".validate": "newData.hasChildren(['name', 'balance', 'rate', 'payment', 'userId']) && newData.child('userId').val() == auth.uid && newData.child('balance').val() >= 0 && newData.child('rate').val() >= 0 && newData.child('payment').val() >= 0"
+            ".validate": "newData.hasChildren(['id', 'name', 'balance', 'rate', 'payment', 'userId'])",
+            "id": {
+              ".validate": "newData.val() === $debtId"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+            },
+            "balance": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "rate": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "payment": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            }
+          }
+        },
+
+        // Financial Goals
+        "goals": {
+          "$goalId": {
+            ".validate": "newData.hasChildren(['id', 'name', 'targetAmount', 'currentAmount', 'monthlyContribution', 'targetDate', 'category', 'priority', 'userId', 'createdAt', 'updatedAt'])",
+            "id": {
+              ".validate": "newData.val() === $goalId"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+            },
+            "targetAmount": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "currentAmount": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "monthlyContribution": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "targetDate": {
+              ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)"
+            },
+            "category": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            "priority": {
+              ".validate": "newData.val() === 'high' || newData.val() === 'medium' || newData.val() === 'low'"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "updatedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            }
+          }
+        },
+
+        // Emergency Fund
+        "emergencyFund": {
+          "$emergencyFundId": {
+            ".validate": "newData.hasChildren(['id', 'currentBalance', 'targetMonths', 'monthlyContribution', 'userId', 'updatedAt'])",
+            "id": {
+              ".validate": "newData.val() === $emergencyFundId"
+            },
+            "currentBalance": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "targetMonths": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 24"
+            },
+            "monthlyContribution": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "updatedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            }
+          }
+        },
+
+        // Budget Settings
+        "budgetSettings": {
+          "$budgetSettingsId": {
+            ".validate": "newData.hasChildren(['id', 'savingsPercentage', 'debtPayoffPercentage', 'userId', 'updatedAt'])",
+            "id": {
+              ".validate": "newData.val() === $budgetSettingsId"
+            },
+            "savingsPercentage": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "debtPayoffPercentage": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "updatedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            }
           }
         }
       }
-    },
-
-    // Legacy structure support (if data was stored at root level)
-    "transactions": {
-      "$transactionId": {
-        ".read": "auth != null && data.child('userId').val() == auth.uid",
-        ".write": "auth != null && newData.child('userId').val() == auth.uid",
-        ".validate": "newData.hasChildren(['amount', 'type', 'category', 'description', 'date', 'userId']) && newData.child('userId').val() == auth.uid && (newData.child('type').val() == 'income' || newData.child('type').val() == 'expense') && newData.child('amount').val() > 0"
-      }
-    },
-
-    "assets": {
-      "$assetId": {
-        ".read": "auth != null && data.child('userId').val() == auth.uid",
-        ".write": "auth != null && newData.child('userId').val() == auth.uid",
-        ".validate": "newData.hasChildren(['name', 'balance', 'userId']) && newData.child('userId').val() == auth.uid && newData.child('balance').val() >= 0"
-      }
-    },
-
-    "debts": {
-      "$debtId": {
-        ".read": "auth != null && data.child('userId').val() == auth.uid",
-        ".write": "auth != null && newData.child('userId').val() == auth.uid",
-        ".validate": "newData.hasChildren(['name', 'balance', 'rate', 'payment', 'userId']) && newData.child('userId').val() == auth.uid && newData.child('balance').val() >= 0 && newData.child('rate').val() >= 0 && newData.child('payment').val() >= 0"
-      }
-    },
-
-    // Deny all other access
-    "$other": {
-      ".read": false,
-      ".write": false
     }
   }
 }

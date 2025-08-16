@@ -253,16 +253,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </Text>
           </View>
           <TouchableOpacity
-            onPress={() =>
-              Alert.alert("Premium Feature", "Export your financial report!")
-            }
+            onPress={() => navigation.navigate("BalanceSheet")}
             style={{
               backgroundColor: "#6366f1",
               padding: 12,
               borderRadius: 12,
             }}
           >
-            <Ionicons name="share-outline" size={20} color="#fff" />
+            <Ionicons name="analytics-outline" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 
