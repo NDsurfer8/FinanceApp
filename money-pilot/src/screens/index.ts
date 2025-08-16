@@ -1,4 +1,5 @@
 export { DashboardScreen } from "./DashboardScreen";
+export { BudgetScreen } from "./BudgetScreen";
 export { TransactionsScreen } from "./TransactionsScreen";
 export { AssetsDebtsScreen } from "./AssetsDebtsScreen";
 export { SettingsScreen } from "./SettingsScreen";
@@ -7,3 +8,4 @@ export { LoginScreen } from "./LoginScreen";
 export { SignUpScreen } from "./SignUpScreen";
 export { AddTransactionScreen } from "./AddTransactionScreen";
 export { AddAssetDebtScreen } from "./AddAssetDebtScreen";
+export { GoalTrackingScreen } from "./GoalTrackingScreen";

@@ -8,7 +8,7 @@ import { BottomTabParamList } from "../types/finance";
 import { useAuth } from "../hooks/useAuth";
 import {
   DashboardScreen,
-  TransactionsScreen,
+  BudgetScreen,
   AssetsDebtsScreen,
   SettingsScreen,
   IntroSliderScreen,
@@ -16,6 +16,7 @@ import {
   SignUpScreen,
   AddTransactionScreen,
   AddAssetDebtScreen,
+  GoalTrackingScreen,
 } from "../screens";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -138,7 +139,8 @@ export const MainApp: React.FC = () => {
             keyof typeof Ionicons.glyphMap
           > = {
             Dashboard: "trending-up",
-            Transactions: "swap-vertical",
+            Budget: "wallet",
+            Goals: "flag",
             "Assets/Debts": "pie-chart",
             Settings: "settings",
           };
@@ -153,7 +155,8 @@ export const MainApp: React.FC = () => {
       })}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Transactions" component={TransactionsScreen} />
+      <Tab.Screen name="Budget" component={BudgetScreen} />
+      <Tab.Screen name="Goals" component={GoalTrackingScreen} />
       <Tab.Screen name="Assets/Debts" component={AssetsDebtsScreen} />
       <Tab.Screen name="Settings">
         {() => <SettingsScreen onLogout={handleLogout} />}

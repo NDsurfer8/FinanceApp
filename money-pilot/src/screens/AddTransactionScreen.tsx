@@ -111,7 +111,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               <Ionicons name="arrow-back" size={24} color="#374151" />
             </TouchableOpacity>
             <Text style={{ fontSize: 20, fontWeight: "600", color: "#374151" }}>
-              Add Transaction
+              {formData.type === "income" ? "Add Income" : "Add Expense"}
             </Text>
           </View>
 
@@ -347,7 +347,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             onPress={handleSave}
           >
             <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
-              Save Transaction
+              Save {formData.type === "income" ? "Income" : "Expense"}
             </Text>
           </TouchableOpacity>
         </ScrollView>
