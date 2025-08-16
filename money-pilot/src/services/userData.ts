@@ -178,6 +178,10 @@ export const saveTransaction = async (
     });
 
     console.log("Transaction saved successfully");
+
+    // Auto-update shared groups
+    await updateSharedGroupsForUser(transaction.userId);
+
     return transactionId;
   } catch (error) {
     console.error("Error saving transaction:", error);
@@ -224,6 +228,10 @@ export const saveAsset = async (asset: Asset): Promise<string> => {
     });
 
     console.log("Asset saved successfully");
+
+    // Auto-update shared groups
+    await updateSharedGroupsForUser(asset.userId);
+
     return assetId;
   } catch (error) {
     console.error("Error saving asset:", error);
@@ -268,6 +276,10 @@ export const saveDebt = async (debt: Debt): Promise<string> => {
     });
 
     console.log("Debt saved successfully");
+
+    // Auto-update shared groups
+    await updateSharedGroupsForUser(debt.userId);
+
     return debtId;
   } catch (error) {
     console.error("Error saving debt:", error);
@@ -307,6 +319,9 @@ export const removeTransaction = async (
     );
     await remove(transactionRef);
     console.log("Transaction removed successfully");
+
+    // Auto-update shared groups
+    await updateSharedGroupsForUser(userId);
   } catch (error) {
     console.error("Error removing transaction:", error);
     throw error;
@@ -322,6 +337,9 @@ export const removeAsset = async (
     const assetRef = ref(db, `users/${userId}/assets/${assetId}`);
     await remove(assetRef);
     console.log("Asset removed successfully");
+
+    // Auto-update shared groups
+    await updateSharedGroupsForUser(userId);
   } catch (error) {
     console.error("Error removing asset:", error);
     throw error;
@@ -337,6 +355,9 @@ export const removeDebt = async (
     const debtRef = ref(db, `users/${userId}/debts/${debtId}`);
     await remove(debtRef);
     console.log("Debt removed successfully");
+
+    // Auto-update shared groups
+    await updateSharedGroupsForUser(userId);
   } catch (error) {
     console.error("Error removing debt:", error);
     throw error;
@@ -364,6 +385,10 @@ export const saveGoal = async (goal: FinancialGoal): Promise<string> => {
     });
 
     console.log("Goal saved successfully");
+
+    // Auto-update shared groups
+    await updateSharedGroupsForUser(goal.userId);
+
     return goalId;
   } catch (error) {
     console.error("Error saving goal:", error);
@@ -402,6 +427,9 @@ export const updateGoal = async (goal: FinancialGoal): Promise<void> => {
       updatedAt: Date.now(),
     });
     console.log("Goal updated successfully");
+
+    // Auto-update shared groups
+    await updateSharedGroupsForUser(goal.userId);
   } catch (error) {
     console.error("Error updating goal:", error);
     throw error;
@@ -417,6 +445,9 @@ export const removeGoal = async (
     const goalRef = ref(db, `users/${userId}/goals/${goalId}`);
     await remove(goalRef);
     console.log("Goal removed successfully");
+
+    // Auto-update shared groups
+    await updateSharedGroupsForUser(userId);
   } catch (error) {
     console.error("Error removing goal:", error);
     throw error;
@@ -816,6 +847,128 @@ export const updateInvitationStatus = async (
   }
 };
 
+// Add user's data to shared group
+export const addUserDataToGroup = async (
+  groupId: string,
+  userId: string
+): Promise<void> => {
+  try {
+    const groupRef = ref(db, `sharedGroups/${groupId}/sharedData/${userId}`);
+
+    // Get user's data
+    const [assets, debts, transactions, goals] = await Promise.all([
+      getUserAssets(userId),
+      getUserDebts(userId),
+      getUserTransactions(userId),
+      getUserGoals(userId),
+    ]);
+
+    // Store in group's shared data
+    await set(groupRef, {
+      assets,
+      debts,
+      transactions,
+      goals,
+      lastUpdated: Date.now(),
+    });
+
+    console.log("User data added to shared group successfully");
+  } catch (error) {
+    console.error("Error adding user data to group:", error);
+    throw error;
+  }
+};
+
+// Get user's group memberships
+export const getUserGroupMemberships = async (
+  userId: string
+): Promise<string[]> => {
+  try {
+    const groupsRef = ref(db, `sharedGroups`);
+    const snapshot = await get(groupsRef);
+
+    if (snapshot.exists()) {
+      const groupIds: string[] = [];
+      snapshot.forEach((childSnapshot) => {
+        const group = childSnapshot.val();
+        const isMember = group.members.some(
+          (member: SharedGroupMember) => member.userId === userId
+        );
+        if (isMember) {
+          groupIds.push(group.id);
+        }
+      });
+      return groupIds;
+    }
+    return [];
+  } catch (error) {
+    console.error("Error getting user group memberships:", error);
+    throw error;
+  }
+};
+
+// Auto-update shared groups for a user
+export const updateSharedGroupsForUser = async (
+  userId: string
+): Promise<void> => {
+  try {
+    const groupIds = await getUserGroupMemberships(userId);
+
+    // Update each group the user is a member of
+    for (const groupId of groupIds) {
+      await addUserDataToGroup(groupId, userId);
+    }
+
+    console.log(
+      `Updated shared data for user ${userId} in ${groupIds.length} groups`
+    );
+  } catch (error) {
+    console.error("Error updating shared groups for user:", error);
+    // Don't throw error to avoid breaking the main save operation
+  }
+};
+
+// Get shared data for a group
+export const getGroupSharedData = async (
+  groupId: string
+): Promise<{
+  assets: Asset[];
+  debts: Debt[];
+  transactions: Transaction[];
+  goals: FinancialGoal[];
+}> => {
+  try {
+    const sharedDataRef = ref(db, `sharedGroups/${groupId}/sharedData`);
+    const snapshot = await get(sharedDataRef);
+
+    let allAssets: Asset[] = [];
+    let allDebts: Debt[] = [];
+    let allTransactions: Transaction[] = [];
+    let allGoals: FinancialGoal[] = [];
+
+    if (snapshot.exists()) {
+      snapshot.forEach((userSnapshot) => {
+        const userData = userSnapshot.val();
+        if (userData.assets) allAssets.push(...userData.assets);
+        if (userData.debts) allDebts.push(...userData.debts);
+        if (userData.transactions)
+          allTransactions.push(...userData.transactions);
+        if (userData.goals) allGoals.push(...userData.goals);
+      });
+    }
+
+    return {
+      assets: allAssets,
+      debts: allDebts,
+      transactions: allTransactions,
+      goals: allGoals,
+    };
+  } catch (error) {
+    console.error("Error getting group shared data:", error);
+    throw error;
+  }
+};
+
 // Get aggregated group data
 export const getGroupAggregatedData = async (
   groupId: string
@@ -841,54 +994,46 @@ export const getGroupAggregatedData = async (
     let totalGoals = 0;
     let totalGoalProgress = 0;
 
-    // For now, only aggregate current user's data
-    // TODO: Implement proper shared data aggregation
-    const currentUser = group.members.find(
-      (member) => member.userId === auth.currentUser?.uid
+    // Get shared data from the group
+    const sharedData = await getGroupSharedData(groupId);
+
+    // Calculate from shared assets
+    totalAssets = sharedData.assets.reduce(
+      (sum, asset) => sum + asset.balance,
+      0
     );
-    if (currentUser) {
-      // Get current user's assets
-      const memberAssets = await getUserAssets(currentUser.userId);
-      totalAssets += memberAssets.reduce(
-        (sum, asset) => sum + asset.balance,
-        0
-      );
 
-      // Get current user's debts
-      const memberDebts = await getUserDebts(currentUser.userId);
-      totalDebts += memberDebts.reduce((sum, debt) => sum + debt.balance, 0);
+    // Calculate from shared debts
+    totalDebts = sharedData.debts.reduce((sum, debt) => sum + debt.balance, 0);
 
-      // Get current user's transactions (current month)
-      const memberTransactions = await getUserTransactions(currentUser.userId);
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
+    // Calculate from shared transactions (current month)
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
 
-      const currentMonthTransactions = memberTransactions.filter(
-        (transaction) => {
-          const transactionDate = new Date(transaction.date);
-          return (
-            transactionDate.getMonth() === currentMonth &&
-            transactionDate.getFullYear() === currentYear
-          );
-        }
-      );
+    const currentMonthTransactions = sharedData.transactions.filter(
+      (transaction) => {
+        const transactionDate = new Date(transaction.date);
+        return (
+          transactionDate.getMonth() === currentMonth &&
+          transactionDate.getFullYear() === currentYear
+        );
+      }
+    );
 
-      totalIncome += currentMonthTransactions
-        .filter((t) => t.type === "income")
-        .reduce((sum, t) => sum + t.amount, 0);
+    totalIncome = currentMonthTransactions
+      .filter((t) => t.type === "income")
+      .reduce((sum, t) => sum + t.amount, 0);
 
-      totalExpenses += currentMonthTransactions
-        .filter((t) => t.type === "expense")
-        .reduce((sum, t) => sum + t.amount, 0);
+    totalExpenses = currentMonthTransactions
+      .filter((t) => t.type === "expense")
+      .reduce((sum, t) => sum + t.amount, 0);
 
-      // Get current user's goals
-      const memberGoals = await getUserGoals(currentUser.userId);
-      totalGoals += memberGoals.length;
-      totalGoalProgress += memberGoals.reduce(
-        (sum, goal) => sum + goal.currentAmount,
-        0
-      );
-    }
+    // Calculate from shared goals
+    totalGoals = sharedData.goals.length;
+    totalGoalProgress = sharedData.goals.reduce(
+      (sum, goal) => sum + goal.currentAmount,
+      0
+    );
 
     return {
       totalAssets,
