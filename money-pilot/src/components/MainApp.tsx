@@ -23,6 +23,8 @@ import {
   EditProfileScreen,
   NotificationSettingsScreen,
   PrivacySecurityScreen,
+  AboutScreen,
+  HelpSupportScreen,
 } from "../screens";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -156,6 +158,8 @@ export const MainApp: React.FC = () => {
         component={NotificationSettingsScreen}
       />
       <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
+      <Stack.Screen name="About" component={AboutScreen} />
+      <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
     </Stack.Navigator>
   );
 
