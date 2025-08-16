@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { signIn, validateEmail } from "../services/auth";
+import { checkAppleAuthAvailability } from "../utils/deviceUtils";
+import Constants from "expo-constants";
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -29,9 +31,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
+  const isExpoGo = Constants.appOwnership === "expo";
 
   // Refs for input focus management
   const passwordRef = useRef<TextInput>(null);
+
+  // Check Apple Authentication availability
+  useEffect(() => {
+    const checkAvailability = async () => {
+      const isAvailable = await checkAppleAuthAvailability();
+      setIsAppleAuthAvailable(isAvailable);
+    };
+
+    checkAvailability();
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -187,14 +201,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <Text style={styles.socialButtonText}>Google</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={handleAppleLogin}
-              >
-                <Ionicons name="logo-apple" size={24} color="#000" />
-                <Text style={styles.socialButtonText}>Apple</Text>
-              </TouchableOpacity>
+              {isAppleAuthAvailable && (
+                <TouchableOpacity
+                  style={styles.socialButton}
+                  onPress={handleAppleLogin}
+                >
+                  <Ionicons name="logo-apple" size={24} color="#000" />
+                  <Text style={styles.socialButtonText}>Apple</Text>
+                </TouchableOpacity>
+              )}
             </View>
+
+            {/* Expo Go Notice */}
+            {isExpoGo && Platform.OS === "ios" && (
+              <View style={styles.expoGoNotice}>
+                <Text style={styles.expoGoText}>
+                  💡 Apple Sign-In requires a development build. Use "npx eas
+                  build --profile development --platform ios" to create one.
+                </Text>
+              </View>
+            )}
 
             {/* Sign Up Link */}
             <View style={styles.signUpContainer}>
@@ -350,5 +376,19 @@ const styles = StyleSheet.create({
     color: "#6366f1",
     fontSize: 14,
     fontWeight: "600",
+  },
+  expoGoNotice: {
+    backgroundColor: "#fef3c7",
+    borderWidth: 1,
+    borderColor: "#f59e0b",
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 16,
+  },
+  expoGoText: {
+    fontSize: 12,
+    color: "#92400e",
+    textAlign: "center",
+    lineHeight: 16,
   },
 });

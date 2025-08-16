@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { CustomPieChart } from "../components/BeautifulCharts";
+import { AssetsDebtsChart } from "../components/AssetsDebtsChart";
 import { useAuth } from "../hooks/useAuth";
 import {
   getUserAssets,
@@ -115,23 +115,18 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   const assetTotal = assets.reduce((sum, asset) => sum + asset.balance, 0);
   const totalDebt = debts.reduce((sum, debt) => sum + debt.balance, 0);
 
-  // Create pie chart data from assets and debts
-  const pieChartData = [
-    {
-      name: "Assets",
-      population: assetTotal,
-      color: "#10b981",
-      legendFontColor: "#374151",
-      legendFontSize: 12,
-    },
-    {
-      name: "Debts",
-      population: totalDebt,
-      color: "#ef4444",
-      legendFontColor: "#374151",
-      legendFontSize: 12,
-    },
-  ];
+  // Prepare data for the new chart
+  const chartAssets = assets.map((asset) => ({
+    name: asset.name,
+    balance: asset.balance,
+    type: "asset" as const,
+  }));
+
+  const chartDebts = debts.map((debt) => ({
+    name: debt.name,
+    balance: debt.balance,
+    type: "debt" as const,
+  }));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
@@ -378,9 +373,9 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           }}
         >
           <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
-            Net Worth Breakdown
+            Financial Overview
           </Text>
-          <CustomPieChart data={pieChartData} title="" height={220} />
+          <AssetsDebtsChart assets={chartAssets} debts={chartDebts} />
         </View>
       </ScrollView>
     </SafeAreaView>

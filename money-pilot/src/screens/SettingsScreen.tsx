@@ -501,23 +501,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </Text>
           </View>
         </TouchableOpacity>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={() => {
-              console.log("Manual refresh button pressed");
-              forceRefresh();
-            }}
-          >
-            <View style={styles.settingLeft}>
-              <Ionicons name="refresh" size={20} color="#374151" />
-              <Text style={styles.settingText}>Manual Refresh (Debug)</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

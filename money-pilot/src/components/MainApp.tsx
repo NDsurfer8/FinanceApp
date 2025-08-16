@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomTabParamList } from "../types/finance";
 import { useAuth } from "../hooks/useAuth";
 import { notificationService } from "../services/notifications";
+import { UserProvider } from "../context/UserContext";
 import {
   DashboardScreen,
   BudgetScreen,
@@ -209,8 +210,10 @@ export const MainApp: React.FC = () => {
   );
 
   return (
-    <NavigationContainer>
-      <MainStack />
-    </NavigationContainer>
+    <UserProvider>
+      <NavigationContainer>
+        <MainStack />
+      </NavigationContainer>
+    </UserProvider>
   );
 };

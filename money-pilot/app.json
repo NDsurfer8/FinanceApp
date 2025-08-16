@@ -13,14 +13,20 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ndsurf888.moneypilot",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": ["android.permission.RECORD_AUDIO"],
+      "package": "com.ndsurf888.moneypilot"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,11 +43,10 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
-          "color": "#6366f1",
-          "sounds": ["./assets/notification-sound.wav"]
+          "color": "#6366f1"
         }
-      ]
+      ],
+      "expo-dev-client"
     ],
     "extra": {
       "firebase": {
@@ -52,6 +57,9 @@
         "messagingSenderId": "123456789012",
         "appId": "1:123456789012:web:abcdefghijklmnop",
         "databaseURL": "https://your-project-id-default-rtdb.firebaseio.com"
+      },
+      "eas": {
+        "projectId": "ad418174-c1b3-4cd0-a54e-d1198eecb1f7"
       }
     }
   }

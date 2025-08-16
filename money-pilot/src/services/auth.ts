@@ -151,6 +151,21 @@ export const getCurrentUser = (): User | null => {
   return auth.currentUser;
 };
 
+// Force refresh current user (reloads user data from Firebase)
+export const reloadCurrentUser = async (): Promise<User | null> => {
+  try {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      await currentUser.reload();
+      return auth.currentUser;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error reloading user:", error);
+    return auth.currentUser;
+  }
+};
+
 // Listen to auth state changes
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
   return onAuthStateChanged(auth, callback);
