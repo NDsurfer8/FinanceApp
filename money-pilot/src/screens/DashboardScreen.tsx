@@ -258,9 +258,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               backgroundColor: "#6366f1",
               padding: 12,
               borderRadius: 12,
+              marginRight: 8,
             }}
           >
             <Ionicons name="analytics-outline" size={20} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("SharedFinance")}
+            style={{
+              backgroundColor: "#ec4899",
+              padding: 12,
+              borderRadius: 12,
+            }}
+          >
+            <Ionicons name="people" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 

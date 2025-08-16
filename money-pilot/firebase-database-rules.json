@@ -2,11 +2,9 @@
   "rules": {
     "users": {
       "$uid": {
-        // User can only access their own data
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid",
 
-        // Profile data
         "profile": {
           ".validate": "newData.hasChildren(['uid', 'email', 'displayName', 'createdAt', 'updatedAt'])",
           "uid": {
@@ -26,7 +24,6 @@
           }
         },
 
-        // Transactions
         "transactions": {
           "$transactionId": {
             ".validate": "newData.hasChildren(['id', 'description', 'amount', 'type', 'category', 'date', 'userId'])",
@@ -57,7 +54,6 @@
           }
         },
 
-        // Assets
         "assets": {
           "$assetId": {
             ".validate": "newData.hasChildren(['id', 'name', 'balance', 'type', 'userId'])",
@@ -79,7 +75,6 @@
           }
         },
 
-        // Debts
         "debts": {
           "$debtId": {
             ".validate": "newData.hasChildren(['id', 'name', 'balance', 'rate', 'payment', 'userId'])",
@@ -104,7 +99,6 @@
           }
         },
 
-        // Financial Goals
         "goals": {
           "$goalId": {
             ".validate": "newData.hasChildren(['id', 'name', 'targetAmount', 'currentAmount', 'monthlyContribution', 'targetDate', 'category', 'priority', 'userId', 'createdAt', 'updatedAt'])",
@@ -144,7 +138,6 @@
           }
         },
 
-        // Emergency Fund
         "emergencyFund": {
           "$emergencyFundId": {
             ".validate": "newData.hasChildren(['id', 'currentBalance', 'targetMonths', 'monthlyContribution', 'userId', 'updatedAt'])",
@@ -169,7 +162,6 @@
           }
         },
 
-        // Budget Settings
         "budgetSettings": {
           "$budgetSettingsId": {
             ".validate": "newData.hasChildren(['id', 'savingsPercentage', 'debtPayoffPercentage', 'userId', 'updatedAt'])",
@@ -189,6 +181,102 @@
               ".validate": "newData.isNumber() && newData.val() > 0"
             }
           }
+        }
+      }
+    },
+
+    "sharedGroups": {
+      "$groupId": {
+        ".read": "auth != null && (data.child('ownerId').val() === auth.uid || data.child('members').child(auth.uid).exists())",
+        ".write": "auth != null && (data.child('ownerId').val() === auth.uid || data.child('members').child(auth.uid).child('permissions').child('canInviteMembers').val() === true)",
+        ".validate": "newData.hasChildren(['id', 'name', 'type', 'ownerId', 'members', 'settings', 'createdAt', 'updatedAt'])",
+        "id": {
+          ".validate": "newData.val() === $groupId"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "description": {
+          ".validate": "newData.isString() && newData.val().length <= 500"
+        },
+        "type": {
+          ".validate": "newData.val() === 'couple' || newData.val() === 'family' || newData.val() === 'business' || newData.val() === 'investment'"
+        },
+        "ownerId": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        "members": {
+          "$memberId": {
+            ".validate": "newData.hasChildren(['id', 'userId', 'displayName', 'email', 'role', 'joinedAt', 'permissions'])",
+            "id": {
+              ".validate": "newData.val() === $memberId"
+            },
+            "userId": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "displayName": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+            },
+            "email": {
+              ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$/)"
+            },
+            "role": {
+              ".validate": "newData.val() === 'owner' || newData.val() === 'member' || newData.val() === 'viewer'"
+            },
+            "joinedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "permissions": {
+              ".validate": "newData.hasChildren(['canAddTransactions', 'canEditTransactions', 'canAddAssets', 'canEditAssets', 'canAddDebts', 'canEditDebts', 'canAddGoals', 'canEditGoals', 'canInviteMembers', 'canRemoveMembers', 'canViewAllData'])"
+            }
+          }
+        },
+        "settings": {
+          ".validate": "newData.hasChildren(['shareTransactions', 'shareAssets', 'shareDebts', 'shareGoals', 'shareBudgetSettings', 'allowMemberInvites', 'requireApprovalForJoining'])"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        }
+      }
+    },
+
+    "invitations": {
+      "$invitationId": {
+        ".read": "auth != null && (data.child('inviterId').val() === auth.uid || data.child('inviteeEmail').val() === auth.token.email)",
+        ".write": "auth != null && (data.child('inviterId').val() === auth.uid || data.child('inviteeEmail').val() === auth.token.email)",
+        ".validate": "newData.hasChildren(['id', 'groupId', 'groupName', 'inviterId', 'inviterName', 'inviteeEmail', 'role', 'status', 'expiresAt', 'createdAt'])",
+        "id": {
+          ".validate": "newData.val() === $invitationId"
+        },
+        "groupId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "groupName": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "inviterId": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        "inviterName": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "inviteeEmail": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$/)"
+        },
+        "role": {
+          ".validate": "newData.val() === 'member' || newData.val() === 'viewer'"
+        },
+        "status": {
+          ".validate": "newData.val() === 'pending' || newData.val() === 'accepted' || newData.val() === 'declined' || newData.val() === 'expired'"
+        },
+        "expiresAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
         }
       }
     }

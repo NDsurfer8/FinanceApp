@@ -117,6 +117,8 @@ users/
 2. Replace the existing rules with the content from `firebase-database-rules.json`
 3. Click **Publish** to apply the rules
 
+**Note**: The rules file has been corrected to remove JSON comments and fix structural issues. The rules are now properly formatted for Firebase.
+
 ### Step 3: Test the Rules
 
 1. Try creating a new user account
