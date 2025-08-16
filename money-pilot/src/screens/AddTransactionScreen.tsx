@@ -34,23 +34,44 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     date: new Date().toISOString().split("T")[0], // Today's date
   });
 
-  const categories = [
-    "Rent",
-    "Car Payment",
-    "Insurance",
-    "Utilities",
-    "Internet",
-    "Phone",
-    "Subscriptions",
-    "Credit Card",
-    "Loan Payment",
-    "Food",
-    "Transport",
-    "Health",
-    "Entertainment",
-    "Shopping",
-    "Other",
-  ];
+  const getCategories = (type: string) => {
+    if (type === "income") {
+      return [
+        "Salary",
+        "Freelance",
+        "Business",
+        "Investment",
+        "Rental Income",
+        "Side Hustle",
+        "Bonus",
+        "Commission",
+        "Tips",
+        "Gift",
+        "Refund",
+        "Other Income",
+      ];
+    } else {
+      return [
+        "Rent",
+        "Car Payment",
+        "Insurance",
+        "Utilities",
+        "Internet",
+        "Phone",
+        "Subscriptions",
+        "Credit Card",
+        "Loan Payment",
+        "Food",
+        "Transport",
+        "Health",
+        "Entertainment",
+        "Shopping",
+        "Other",
+      ];
+    }
+  };
+
+  const categories = getCategories(formData.type);
 
   const handleImportCSV = () => {
     Alert.alert(
@@ -176,7 +197,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     formData.type === "expense" ? "#ef4444" : "#f3f4f6",
                   alignItems: "center",
                 }}
-                onPress={() => setFormData({ ...formData, type: "expense" })}
+                onPress={() =>
+                  setFormData({ ...formData, type: "expense", category: "" })
+                }
               >
                 <Text
                   style={{
@@ -196,7 +219,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     formData.type === "income" ? "#10b981" : "#f3f4f6",
                   alignItems: "center",
                 }}
-                onPress={() => setFormData({ ...formData, type: "income" })}
+                onPress={() =>
+                  setFormData({ ...formData, type: "income", category: "" })
+                }
               >
                 <Text
                   style={{

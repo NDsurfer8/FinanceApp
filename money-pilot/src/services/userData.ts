@@ -1,5 +1,5 @@
 import { ref, set, get, push, update, remove } from "firebase/database";
-import { db } from "./firebase";
+import { db, auth } from "./firebase";
 
 export interface UserProfile {
   uid: string;
@@ -750,14 +750,17 @@ export const createInvitation = async (
       throw new Error("Failed to generate invitation ID");
     }
 
-    await set(newInvitationRef, {
+    const invitationData = {
       ...invitation,
       id: invitationId,
       createdAt: Date.now(),
       expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    };
 
-    console.log("Invitation created successfully");
+    console.log("Creating invitation with data:", invitationData);
+    await set(newInvitationRef, invitationData);
+
+    console.log("Invitation created successfully with ID:", invitationId);
     return invitationId;
   } catch (error) {
     console.error("Error creating invitation:", error);
@@ -775,15 +778,20 @@ export const getUserInvitations = async (
 
     if (snapshot.exists()) {
       const invitations: SharedInvitation[] = [];
+      console.log("Searching for invitations for email:", email);
       snapshot.forEach((childSnapshot) => {
         const invitation = childSnapshot.val();
+        console.log("Found invitation:", invitation);
+        console.log("Comparing:", invitation.inviteeEmail, "===", email);
         if (
           invitation.inviteeEmail === email &&
           invitation.status === "pending"
         ) {
+          console.log("Match found! Adding invitation");
           invitations.push(invitation);
         }
       });
+      console.log("Total invitations found:", invitations.length);
       return invitations.sort((a, b) => b.createdAt - a.createdAt);
     }
     return [];
@@ -833,21 +841,25 @@ export const getGroupAggregatedData = async (
     let totalGoals = 0;
     let totalGoalProgress = 0;
 
-    // Aggregate data from all members
-    for (const member of group.members) {
-      // Get member's assets
-      const memberAssets = await getUserAssets(member.userId);
+    // For now, only aggregate current user's data
+    // TODO: Implement proper shared data aggregation
+    const currentUser = group.members.find(
+      (member) => member.userId === auth.currentUser?.uid
+    );
+    if (currentUser) {
+      // Get current user's assets
+      const memberAssets = await getUserAssets(currentUser.userId);
       totalAssets += memberAssets.reduce(
         (sum, asset) => sum + asset.balance,
         0
       );
 
-      // Get member's debts
-      const memberDebts = await getUserDebts(member.userId);
+      // Get current user's debts
+      const memberDebts = await getUserDebts(currentUser.userId);
       totalDebts += memberDebts.reduce((sum, debt) => sum + debt.balance, 0);
 
-      // Get member's transactions (current month)
-      const memberTransactions = await getUserTransactions(member.userId);
+      // Get current user's transactions (current month)
+      const memberTransactions = await getUserTransactions(currentUser.userId);
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
 
@@ -869,8 +881,8 @@ export const getGroupAggregatedData = async (
         .filter((t) => t.type === "expense")
         .reduce((sum, t) => sum + t.amount, 0);
 
-      // Get member's goals
-      const memberGoals = await getUserGoals(member.userId);
+      // Get current user's goals
+      const memberGoals = await getUserGoals(currentUser.userId);
       totalGoals += memberGoals.length;
       totalGoalProgress += memberGoals.reduce(
         (sum, goal) => sum + goal.currentAmount,

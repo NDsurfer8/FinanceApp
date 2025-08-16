@@ -118,7 +118,7 @@
               ".validate": "newData.isNumber() && newData.val() >= 0"
             },
             "targetDate": {
-              ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)"
+              ".validate": "newData.isString() && newData.val().length > 0"
             },
             "category": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
@@ -186,13 +186,12 @@
     },
 
     "sharedGroups": {
+      ".read": "auth != null",
+      ".write": "auth != null",
       "$groupId": {
-        ".read": "auth != null && (data.child('ownerId').val() === auth.uid || data.child('members').child(auth.uid).exists())",
-        ".write": "auth != null && (data.child('ownerId').val() === auth.uid || data.child('members').child(auth.uid).child('permissions').child('canInviteMembers').val() === true)",
-        ".validate": "newData.hasChildren(['id', 'name', 'type', 'ownerId', 'members', 'settings', 'createdAt', 'updatedAt'])",
-        "id": {
-          ".validate": "newData.val() === $groupId"
-        },
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['name', 'type', 'ownerId', 'members', 'settings', 'createdAt', 'updatedAt'])",
         "name": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
         },
@@ -207,10 +206,7 @@
         },
         "members": {
           "$memberId": {
-            ".validate": "newData.hasChildren(['id', 'userId', 'displayName', 'email', 'role', 'joinedAt', 'permissions'])",
-            "id": {
-              ".validate": "newData.val() === $memberId"
-            },
+            ".validate": "newData.hasChildren(['userId', 'displayName', 'email', 'role', 'joinedAt', 'permissions'])",
             "userId": {
               ".validate": "newData.isString() && newData.val().length > 0"
             },
@@ -218,7 +214,7 @@
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
             },
             "email": {
-              ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$/)"
+              ".validate": "newData.isString() && newData.val().length > 0"
             },
             "role": {
               ".validate": "newData.val() === 'owner' || newData.val() === 'member' || newData.val() === 'viewer'"
@@ -244,13 +240,12 @@
     },
 
     "invitations": {
+      ".read": "auth != null",
+      ".write": "auth != null",
       "$invitationId": {
-        ".read": "auth != null && (data.child('inviterId').val() === auth.uid || data.child('inviteeEmail').val() === auth.token.email)",
-        ".write": "auth != null && (data.child('inviterId').val() === auth.uid || data.child('inviteeEmail').val() === auth.token.email)",
-        ".validate": "newData.hasChildren(['id', 'groupId', 'groupName', 'inviterId', 'inviterName', 'inviteeEmail', 'role', 'status', 'expiresAt', 'createdAt'])",
-        "id": {
-          ".validate": "newData.val() === $invitationId"
-        },
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['groupId', 'groupName', 'inviterId', 'inviterName', 'inviteeEmail', 'role', 'status', 'expiresAt', 'createdAt'])",
         "groupId": {
           ".validate": "newData.isString() && newData.val().length > 0"
         },
@@ -264,7 +259,7 @@
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
         },
         "inviteeEmail": {
-          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$/)"
+          ".validate": "newData.isString() && newData.val().length > 0"
         },
         "role": {
           ".validate": "newData.val() === 'member' || newData.val() === 'viewer'"

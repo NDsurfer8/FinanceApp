@@ -154,6 +154,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
       };
 
       await createInvitation(invitation);
+      await loadData(); // Refresh the data to show the new invitation
       setShowInviteModal(false);
       setInviteEmail("");
       setInviteRole("member");
