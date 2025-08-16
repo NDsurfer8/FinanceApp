@@ -1,6 +1,6 @@
 import React from "react";
 import { SafeAreaView, ScrollView, View, Text, Dimensions } from "react-native";
-// import { CustomPieChart } from "../components/Charts";
+import { CustomPieChart } from "../components/BeautifulCharts";
 import {
   assets,
   debts,
@@ -14,14 +14,16 @@ const screenWidth = Dimensions.get("window").width;
 export const AssetsDebtsScreen: React.FC = () => {
   const assetTotal = assets.reduce((a, b) => a + b.balance, 0);
   const pieChartData = spendCategories.map((c) => ({
-    x: c.name,
-    y: c.value,
+    name: c.name,
+    population: c.value,
     color: c.color,
+    legendFontColor: "#374151",
+    legendFontSize: 12,
   }));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
         <View
           style={{
             backgroundColor: "#fff",
@@ -73,7 +75,7 @@ export const AssetsDebtsScreen: React.FC = () => {
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
             elevation: 2,
-            marginTop: 12,
+            marginTop: 16,
           }}
         >
           <Text style={{ fontSize: 16, fontWeight: "600" }}>Debts</Text>
@@ -118,28 +120,13 @@ export const AssetsDebtsScreen: React.FC = () => {
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
             elevation: 2,
-            marginTop: 12,
+            marginTop: 16,
           }}
         >
           <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
             Spending Breakdown
           </Text>
-          {/* Temporarily disabled chart due to render error */}
-          <View
-            style={{
-              height: 220,
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "#f3f4f6",
-            }}
-          >
-            <Text style={{ color: "#6b7280", fontSize: 16 }}>
-              Chart temporarily disabled
-            </Text>
-            <Text style={{ color: "#9ca3af", fontSize: 12, marginTop: 4 }}>
-              Victory Native issue
-            </Text>
-          </View>
+          <CustomPieChart data={pieChartData} title="" height={220} />
         </View>
       </ScrollView>
     </SafeAreaView>

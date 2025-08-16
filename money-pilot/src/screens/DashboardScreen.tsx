@@ -1,7 +1,8 @@
 import React from "react";
 import { SafeAreaView, ScrollView, View, Text, Dimensions } from "react-native";
 import { Stat, RatioBar } from "../components";
-import { BasicLineChart, BasicBarChart } from "../components/BasicCharts";
+
+import { CustomLineChart, CustomBarChart } from "../components/BeautifulCharts";
 import {
   months,
   spendCategories,
@@ -25,7 +26,7 @@ export const DashboardScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
         {/* KPIs */}
         <View style={{ flexDirection: "row", gap: 12 }}>
           <View style={{ flex: 1 }}>
@@ -74,16 +75,16 @@ export const DashboardScreen: React.FC = () => {
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
             elevation: 2,
-            marginTop: 12,
+            marginTop: 16,
           }}
         >
           <Text style={{ fontWeight: "600", marginBottom: 8 }}>
             Cashflow Trend
           </Text>
-          <BasicLineChart
+          <CustomLineChart
             data={lineChartData}
             data2={lineChartData2}
-            title="Cashflow Trend"
+            title=""
             height={200}
           />
         </View>
@@ -98,17 +99,13 @@ export const DashboardScreen: React.FC = () => {
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
             elevation: 2,
-            marginTop: 12,
+            marginTop: 16,
           }}
         >
           <Text style={{ fontWeight: "600", marginBottom: 8 }}>
             Spending by Category
           </Text>
-          <BasicBarChart
-            data={barChartData}
-            title="Spending by Category"
-            height={220}
-          />
+          <CustomBarChart data={barChartData} title="" height={220} />
         </View>
 
         <View
@@ -121,7 +118,7 @@ export const DashboardScreen: React.FC = () => {
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
             elevation: 2,
-            marginTop: 12,
+            marginTop: 16,
           }}
         >
           <Text style={{ fontWeight: "600", marginBottom: 8 }}>
