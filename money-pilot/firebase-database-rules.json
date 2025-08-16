@@ -1,0 +1,72 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        // Users can only access their own data
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid",
+
+        "profile": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": "auth != null && auth.uid == $uid",
+          ".validate": "newData.hasChildren(['uid', 'email', 'displayName', 'createdAt', 'updatedAt'])"
+        },
+
+        "transactions": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": "auth != null && auth.uid == $uid",
+          "$transactionId": {
+            ".validate": "newData.hasChildren(['amount', 'type', 'category', 'description', 'date', 'userId']) && newData.child('userId').val() == auth.uid && (newData.child('type').val() == 'income' || newData.child('type').val() == 'expense') && newData.child('amount').val() > 0"
+          }
+        },
+
+        "assets": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": "auth != null && auth.uid == $uid",
+          "$assetId": {
+            ".validate": "newData.hasChildren(['name', 'balance', 'userId']) && newData.child('userId').val() == auth.uid && newData.child('balance').val() >= 0"
+          }
+        },
+
+        "debts": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": "auth != null && auth.uid == $uid",
+          "$debtId": {
+            ".validate": "newData.hasChildren(['name', 'balance', 'rate', 'payment', 'userId']) && newData.child('userId').val() == auth.uid && newData.child('balance').val() >= 0 && newData.child('rate').val() >= 0 && newData.child('payment').val() >= 0"
+          }
+        }
+      }
+    },
+
+    // Legacy structure support (if data was stored at root level)
+    "transactions": {
+      "$transactionId": {
+        ".read": "auth != null && data.child('userId').val() == auth.uid",
+        ".write": "auth != null && newData.child('userId').val() == auth.uid",
+        ".validate": "newData.hasChildren(['amount', 'type', 'category', 'description', 'date', 'userId']) && newData.child('userId').val() == auth.uid && (newData.child('type').val() == 'income' || newData.child('type').val() == 'expense') && newData.child('amount').val() > 0"
+      }
+    },
+
+    "assets": {
+      "$assetId": {
+        ".read": "auth != null && data.child('userId').val() == auth.uid",
+        ".write": "auth != null && newData.child('userId').val() == auth.uid",
+        ".validate": "newData.hasChildren(['name', 'balance', 'userId']) && newData.child('userId').val() == auth.uid && newData.child('balance').val() >= 0"
+      }
+    },
+
+    "debts": {
+      "$debtId": {
+        ".read": "auth != null && data.child('userId').val() == auth.uid",
+        ".write": "auth != null && newData.child('userId').val() == auth.uid",
+        ".validate": "newData.hasChildren(['name', 'balance', 'rate', 'payment', 'userId']) && newData.child('userId').val() == auth.uid && newData.child('balance').val() >= 0 && newData.child('rate').val() >= 0 && newData.child('payment').val() >= 0"
+      }
+    },
+
+    // Deny all other access
+    "$other": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

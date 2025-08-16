@@ -28,6 +28,17 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
     }
   }, [user]);
 
+  // Add focus listener to refresh data when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      if (user) {
+        loadTransactions();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, user]);
+
   const loadTransactions = async () => {
     if (!user) return;
 
@@ -68,8 +79,8 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
     );
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
     return date.toLocaleDateString();
   };
 
@@ -193,10 +204,7 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
             </View>
           ) : (
             transactions
-              .sort(
-                (a, b) =>
-                  new Date(b.date).getTime() - new Date(a.date).getTime()
-              )
+              .sort((a, b) => b.date - a.date)
               .map((transaction) => (
                 <View
                   key={transaction.id}

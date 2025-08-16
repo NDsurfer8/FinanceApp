@@ -30,6 +30,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     }
   }, [user]);
 
+  // Add focus listener to refresh data when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      if (user) {
+        loadData();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, user]);
+
   const loadData = async () => {
     if (!user) return;
 
@@ -83,7 +94,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
     const monthlyData = last6Months.map((month) => {
       const monthTransactions = transactions.filter(
-        (t) => t.date && t.date.toString().startsWith(month)
+        (t) => t.date && new Date(t.date).toISOString().slice(0, 7) === month
       );
 
       const income = monthTransactions

@@ -59,8 +59,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         description: formData.description,
         amount: parseFloat(formData.amount),
         category: formData.category,
-        type: formData.type,
-        date: formData.date,
+        type: formData.type as "income" | "expense",
+        date: new Date(formData.date).getTime(), // Convert to timestamp
         userId: user.uid,
         createdAt: new Date().toISOString(),
       };

@@ -38,6 +38,17 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
     }
   }, [user]);
 
+  // Add focus listener to refresh data when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      if (user) {
+        loadData();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, user]);
+
   const loadData = async () => {
     if (!user) return;
 
