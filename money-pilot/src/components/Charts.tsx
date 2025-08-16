@@ -6,7 +6,6 @@ import {
   VictoryBar,
   VictoryPie,
   VictoryAxis,
-  VictoryTheme,
   VictoryLabel,
 } from "victory-native";
 
@@ -58,7 +57,6 @@ export const CustomLineChart: React.FC<CustomLineChartProps> = ({
       <VictoryChart
         width={width - 32}
         height={height}
-        theme={VictoryTheme.material}
         domainPadding={{ x: 20 }}
       >
         <VictoryAxis
@@ -80,20 +78,12 @@ export const CustomLineChart: React.FC<CustomLineChartProps> = ({
           style={{
             data: { stroke: "#10b981", strokeWidth: 2 },
           }}
-          animate={{
-            duration: 1000,
-            onLoad: { duration: 500 },
-          }}
         />
         {data2 && (
           <VictoryLine
             data={data2}
             style={{
               data: { stroke: "#ef4444", strokeWidth: 2 },
-            }}
-            animate={{
-              duration: 1000,
-              onLoad: { duration: 500 },
             }}
           />
         )}
@@ -112,7 +102,6 @@ export const CustomBarChart: React.FC<CustomBarChartProps> = ({
       <VictoryChart
         width={width - 32}
         height={height}
-        theme={VictoryTheme.material}
         domainPadding={{ x: 20 }}
       >
         <VictoryAxis
@@ -134,10 +123,6 @@ export const CustomBarChart: React.FC<CustomBarChartProps> = ({
           style={{
             data: { fill: "#6366f1" },
           }}
-          animate={{
-            duration: 1000,
-            onLoad: { duration: 500 },
-          }}
         />
       </VictoryChart>
     </View>
@@ -156,10 +141,6 @@ export const CustomPieChart: React.FC<CustomPieChartProps> = ({
         width={width - 32}
         height={height}
         colorScale={data.map((d) => d.color || "#6366f1")}
-        animate={{
-          duration: 1000,
-          onLoad: { duration: 500 },
-        }}
         labelComponent={
           <VictoryLabel
             style={{ fontSize: 10, fill: "#374151" }}

@@ -1,6 +1,6 @@
 import React from "react";
 import { SafeAreaView, ScrollView, View, Text, Dimensions } from "react-native";
-import { CustomPieChart } from "../components/Charts";
+// import { CustomPieChart } from "../components/Charts";
 import {
   assets,
   debts,
@@ -124,11 +124,22 @@ export const AssetsDebtsScreen: React.FC = () => {
           <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
             Spending Breakdown
           </Text>
-          <CustomPieChart
-            data={pieChartData}
-            title="Spending Breakdown"
-            height={220}
-          />
+          {/* Temporarily disabled chart due to render error */}
+          <View
+            style={{
+              height: 220,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "#f3f4f6",
+            }}
+          >
+            <Text style={{ color: "#6b7280", fontSize: 16 }}>
+              Chart temporarily disabled
+            </Text>
+            <Text style={{ color: "#9ca3af", fontSize: 12, marginTop: 4 }}>
+              Victory Native issue
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

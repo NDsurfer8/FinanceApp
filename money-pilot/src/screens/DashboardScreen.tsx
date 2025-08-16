@@ -1,7 +1,7 @@
 import React from "react";
 import { SafeAreaView, ScrollView, View, Text, Dimensions } from "react-native";
 import { Stat, RatioBar } from "../components";
-import { CustomLineChart, CustomBarChart } from "../components/Charts";
+import { BasicLineChart, BasicBarChart } from "../components/BasicCharts";
 import {
   months,
   spendCategories,
@@ -80,7 +80,7 @@ export const DashboardScreen: React.FC = () => {
           <Text style={{ fontWeight: "600", marginBottom: 8 }}>
             Cashflow Trend
           </Text>
-          <CustomLineChart
+          <BasicLineChart
             data={lineChartData}
             data2={lineChartData2}
             title="Cashflow Trend"
@@ -104,7 +104,7 @@ export const DashboardScreen: React.FC = () => {
           <Text style={{ fontWeight: "600", marginBottom: 8 }}>
             Spending by Category
           </Text>
-          <CustomBarChart
+          <BasicBarChart
             data={barChartData}
             title="Spending by Category"
             height={220}

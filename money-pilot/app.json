@@ -25,8 +25,17 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-font"
-    ]
+    "plugins": ["expo-font"],
+    "extra": {
+      "firebase": {
+        "apiKey": "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        "authDomain": "your-project-id.firebaseapp.com",
+        "projectId": "your-project-id",
+        "storageBucket": "your-project-id.appspot.com",
+        "messagingSenderId": "123456789012",
+        "appId": "1:123456789012:web:abcdefghijklmnop",
+        "databaseURL": "https://your-project-id-default-rtdb.firebaseio.com"
+      }
+    }
   }
 }

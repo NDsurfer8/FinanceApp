@@ -4,6 +4,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomTabParamList } from "../types/finance";
+import { useAuth } from "../hooks/useAuth";
 import {
   DashboardScreen,
   TransactionsScreen,
@@ -21,19 +22,29 @@ type AppState = "intro" | "login" | "signup" | "main";
 export const MainApp: React.FC = () => {
   const [appState, setAppState] = useState<AppState>("intro");
   const [isLoading, setIsLoading] = useState(true);
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
 
   useEffect(() => {
     checkFirstLaunch();
   }, []);
 
+  useEffect(() => {
+    if (!authLoading) {
+      if (isAuthenticated) {
+        setAppState("main");
+      } else if (appState === "main") {
+        setAppState("login");
+      }
+    }
+  }, [authLoading, isAuthenticated, appState]);
+
   const checkFirstLaunch = async () => {
     try {
       const hasSeenIntro = await AsyncStorage.getItem("hasSeenIntro");
-      const isLoggedIn = await AsyncStorage.getItem("isLoggedIn");
 
       if (!hasSeenIntro) {
         setAppState("intro");
-      } else if (!isLoggedIn) {
+      } else if (!isAuthenticated) {
         setAppState("login");
       } else {
         setAppState("main");
@@ -56,29 +67,20 @@ export const MainApp: React.FC = () => {
     }
   };
 
-  const handleLogin = async () => {
-    try {
-      await AsyncStorage.setItem("isLoggedIn", "true");
-      setAppState("main");
-    } catch (error) {
-      console.error("Error saving login state:", error);
-      setAppState("main");
-    }
+  const handleLogin = () => {
+    // Firebase auth will handle the state change automatically
+    setAppState("main");
   };
 
-  const handleSignUp = async () => {
-    try {
-      await AsyncStorage.setItem("isLoggedIn", "true");
-      setAppState("main");
-    } catch (error) {
-      console.error("Error saving signup state:", error);
-      setAppState("main");
-    }
+  const handleSignUp = () => {
+    // Firebase auth will handle the state change automatically
+    setAppState("main");
   };
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem("isLoggedIn");
+      const { signOutUser } = await import("../services/auth");
+      await signOutUser();
       setAppState("login");
     } catch (error) {
       console.error("Error logging out:", error);
@@ -142,10 +144,9 @@ export const MainApp: React.FC = () => {
         <Tab.Screen name="Dashboard" component={DashboardScreen} />
         <Tab.Screen name="Transactions" component={TransactionsScreen} />
         <Tab.Screen name="Assets/Debts" component={AssetsDebtsScreen} />
-        <Tab.Screen
-          name="Settings"
-          component={() => <SettingsScreen onLogout={handleLogout} />}
-        />
+        <Tab.Screen name="Settings">
+          {() => <SettingsScreen onLogout={handleLogout} />}
+        </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
   );

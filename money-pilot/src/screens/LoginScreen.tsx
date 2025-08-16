@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -9,8 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { signIn, validateEmail } from "../services/auth";
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -26,19 +28,33 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Refs for input focus management
+  const passwordRef = useRef<TextInput>(null);
+
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
+    if (!validateEmail(email)) {
+      Alert.alert("Error", "Please enter a valid email address");
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await signIn(email, password);
       onLogin();
-    }, 1500);
+    } catch (error: any) {
+      console.error("Login error:", error);
+      const errorMessage =
+        error.message || "An error occurred. Please try again.";
+      Alert.alert("Login Failed", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -60,8 +76,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <View style={styles.content}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.logoContainer}>
@@ -88,6 +109,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                autoComplete="off"
+                textContentType="none"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => passwordRef.current?.focus()}
               />
             </View>
 
@@ -99,23 +125,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 style={styles.inputIcon}
               />
               <TextInput
+                ref={passwordRef}
                 style={styles.input}
                 placeholder="Password"
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry={!showPassword}
                 autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="off"
+                returnKeyType="done"
+                blurOnSubmit={true}
+                onSubmitEditing={handleLogin}
+                spellCheck={false}
               />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons
-                  name={showPassword ? "eye-off" : "eye"}
-                  size={20}
-                  color="#6b7280"
-                />
-              </TouchableOpacity>
+              {/* Temporarily removed eye icon for testing */}
             </View>
 
             <TouchableOpacity style={styles.forgotPassword}>
@@ -171,7 +194,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -186,8 +209,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 24,
+    paddingVertical: 40,
     justifyContent: "center",
   },
   header: {
@@ -235,6 +259,8 @@ const styles = StyleSheet.create({
     height: 56,
     fontSize: 16,
     color: "#1f2937",
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   eyeIcon: {
     padding: 8,

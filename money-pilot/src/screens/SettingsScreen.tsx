@@ -8,12 +8,15 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../hooks/useAuth";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onLogout }) => {
+  const { user } = useAuth();
+
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       {
@@ -69,10 +72,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onLogout }) => {
               <Text
                 style={{ fontSize: 18, fontWeight: "600", color: "#1f2937" }}
               >
-                John Doe
+                {user?.displayName || "User"}
               </Text>
               <Text style={{ fontSize: 14, color: "#6b7280" }}>
-                john.doe@example.com
+                {user?.email || "No email"}
               </Text>
             </View>
             <TouchableOpacity>

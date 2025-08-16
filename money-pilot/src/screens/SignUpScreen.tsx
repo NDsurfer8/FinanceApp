@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { signUp, validateEmail, validatePassword } from "../services/auth";
 
 interface SignUpScreenProps {
   onSignUp: () => void;
@@ -32,14 +33,26 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+  // Refs for input focus management
+  const lastNameRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
+
   const validateForm = () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
       Alert.alert("Error", "Please fill in all required fields");
       return false;
     }
 
-    if (password.length < 8) {
-      Alert.alert("Error", "Password must be at least 8 characters long");
+    if (!validateEmail(email)) {
+      Alert.alert("Error", "Please enter a valid email address");
+      return false;
+    }
+
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      Alert.alert("Error", passwordValidation.message);
       return false;
     }
 
@@ -64,11 +77,18 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
 
     setIsLoading(true);
 
-    // Simulate sign up process
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const displayName = `${firstName} ${lastName}`.trim();
+      await signUp(email, password, displayName);
       onSignUp();
-    }, 1500);
+    } catch (error: any) {
+      console.error("Sign up error:", error);
+      const errorMessage =
+        error.message || "An error occurred. Please try again.";
+      Alert.alert("Sign Up Failed", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -76,8 +96,13 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={onBackToLogin} style={styles.backButton}>
@@ -103,15 +128,28 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                   value={firstName}
                   onChangeText={setFirstName}
                   autoCapitalize="words"
+                  autoCorrect={false}
+                  autoComplete="off"
+                  textContentType="none"
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => lastNameRef.current?.focus()}
                 />
               </View>
               <View style={[styles.inputContainer, styles.halfWidth]}>
                 <TextInput
+                  ref={lastNameRef}
                   style={styles.input}
                   placeholder="Last Name"
                   value={lastName}
                   onChangeText={setLastName}
                   autoCapitalize="words"
+                  autoCorrect={false}
+                  autoComplete="off"
+                  textContentType="none"
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => emailRef.current?.focus()}
                 />
               </View>
             </View>
@@ -125,6 +163,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 style={styles.inputIcon}
               />
               <TextInput
+                ref={emailRef}
                 style={styles.input}
                 placeholder="Email"
                 value={email}
@@ -132,6 +171,11 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                autoComplete="off"
+                textContentType="none"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => passwordRef.current?.focus()}
               />
             </View>
 
@@ -144,23 +188,20 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 style={styles.inputIcon}
               />
               <TextInput
+                ref={passwordRef}
                 style={styles.input}
                 placeholder="Password"
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry={!showPassword}
                 autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="off"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                spellCheck={false}
               />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons
-                  name={showPassword ? "eye-off" : "eye"}
-                  size={20}
-                  color="#6b7280"
-                />
-              </TouchableOpacity>
+              {/* Temporarily removed eye icon for testing */}
             </View>
 
             {/* Confirm Password Field */}
@@ -172,23 +213,20 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 style={styles.inputIcon}
               />
               <TextInput
+                ref={confirmPasswordRef}
                 style={styles.input}
                 placeholder="Confirm Password"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="off"
+                returnKeyType="done"
+                blurOnSubmit={true}
+                onSubmitEditing={handleSignUp}
+                spellCheck={false}
               />
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons
-                  name={showConfirmPassword ? "eye-off" : "eye"}
-                  size={20}
-                  color="#6b7280"
-                />
-              </TouchableOpacity>
+              {/* Temporarily removed eye icon for testing */}
             </View>
 
             {/* Terms Agreement */}
@@ -255,6 +293,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 20,
+    paddingBottom: 100,
   },
   header: {
     alignItems: "center",
@@ -313,6 +352,8 @@ const styles = StyleSheet.create({
     height: 56,
     fontSize: 16,
     color: "#1f2937",
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   eyeIcon: {
     padding: 8,
