@@ -16,6 +16,7 @@ import { useAuth } from "../hooks/useAuth";
 import { updateProfile } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../services/firebase";
+import { useUser } from "../context/UserContext";
 
 interface EditProfileScreenProps {
   navigation: any;
@@ -25,6 +26,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
+  const { forceRefresh, updateUserImmediately } = useUser();
   const [loading, setLoading] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [photoURL, setPhotoURL] = useState(user?.photoURL || "");
@@ -90,14 +92,55 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
   };
 
   const uploadImageToStorage = async (uri: string): Promise<string> => {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const filename = `profile-photos/${user?.uid}-${Date.now()}.jpg`;
-    const storageRef = ref(storage, filename);
+    try {
+      console.log("Starting image upload...");
 
-    await uploadBytes(storageRef, blob);
-    const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL;
+      // Fetch the image and convert to blob
+      const response = await fetch(uri);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      console.log("Image blob created, size:", blob.size);
+
+      // Create unique filename
+      const filename = `profile-photos/${user?.uid}-${Date.now()}.jpg`;
+      const storageRef = ref(storage, filename);
+
+      console.log("Uploading to Firebase Storage:", filename);
+
+      // Upload the blob
+      const uploadResult = await uploadBytes(storageRef, blob, {
+        contentType: "image/jpeg",
+        cacheControl: "public, max-age=31536000",
+      });
+
+      console.log("Upload successful, getting download URL...");
+
+      // Get the download URL
+      const downloadURL = await getDownloadURL(storageRef);
+      console.log("Download URL obtained:", downloadURL);
+
+      return downloadURL;
+    } catch (error: any) {
+      console.error("Firebase Storage upload error:", error);
+
+      // Provide more specific error messages
+      if (error.code === "storage/unauthorized") {
+        throw new Error(
+          "Upload failed: Unauthorized. Please check your Firebase Storage rules."
+        );
+      } else if (error.code === "storage/quota-exceeded") {
+        throw new Error("Upload failed: Storage quota exceeded.");
+      } else if (error.code === "storage/unknown") {
+        throw new Error(
+          "Upload failed: Unknown error. Please check your Firebase configuration."
+        );
+      } else {
+        throw new Error(`Upload failed: ${error.message || "Unknown error"}`);
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -109,14 +152,72 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
 
       // Upload new photo if selected
       if (tempPhotoURL) {
-        newPhotoURL = await uploadImageToStorage(tempPhotoURL);
+        console.log("Uploading new profile photo...");
+        try {
+          newPhotoURL = await uploadImageToStorage(tempPhotoURL);
+          console.log("Photo upload completed");
+        } catch (uploadError) {
+          console.error("Photo upload failed:", uploadError);
+
+          // Ask user if they want to continue without the photo
+          Alert.alert(
+            "Photo Upload Failed",
+            "The photo couldn't be uploaded. Would you like to save your profile without the photo?",
+            [
+              {
+                text: "Save Without Photo",
+                onPress: async () => {
+                  try {
+                    await updateProfile(user, {
+                      displayName: displayName.trim(),
+                      photoURL: photoURL, // Keep existing photo
+                    });
+                    Alert.alert("Success", "Profile updated successfully!", [
+                      { text: "OK", onPress: () => navigation.goBack() },
+                    ]);
+                  } catch (profileError) {
+                    console.error("Profile update failed:", profileError);
+                    Alert.alert("Error", "Failed to update profile name.");
+                  } finally {
+                    setLoading(false);
+                  }
+                },
+              },
+              {
+                text: "Cancel",
+                style: "cancel",
+                onPress: () => setLoading(false),
+              },
+            ]
+          );
+          return;
+        }
       }
 
       // Update profile
+      console.log("Updating Firebase Auth profile...");
       await updateProfile(user, {
         displayName: displayName.trim(),
         photoURL: newPhotoURL,
       });
+
+      console.log("Profile update successful");
+
+      // Immediately update the user context with the new data
+      if (user) {
+        const userWithUpdates = {
+          ...user,
+          displayName: displayName.trim(),
+          photoURL: newPhotoURL,
+        };
+        console.log("EditProfileScreen: Immediately updating user context");
+        updateUserImmediately(userWithUpdates);
+      }
+
+      // Also force refresh to ensure everything is in sync
+      console.log("EditProfileScreen: Refreshing user data...");
+      await forceRefresh();
+      console.log("EditProfileScreen: User data refresh completed");
 
       Alert.alert("Success", "Profile updated successfully!", [
         {
@@ -124,9 +225,23 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
           onPress: () => navigation.goBack(),
         },
       ]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating profile:", error);
-      Alert.alert("Error", "Failed to update profile. Please try again.");
+
+      // Show more specific error messages
+      let errorMessage = "Failed to update profile. Please try again.";
+
+      if (error.message) {
+        if (error.message.includes("Upload failed:")) {
+          errorMessage = error.message;
+        } else if (error.message.includes("storage/")) {
+          errorMessage = "Storage error: " + error.message;
+        } else if (error.message.includes("auth/")) {
+          errorMessage = "Authentication error: " + error.message;
+        }
+      }
+
+      Alert.alert("Error", errorMessage);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -11,6 +11,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
+import { useFocusEffect } from "@react-navigation/native";
+import { useUser } from "../context/UserContext";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -22,6 +24,40 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
+  const { currentUser, forceRefresh } = useUser();
+  const [photoKey, setPhotoKey] = useState(Date.now());
+
+  // Debug logging
+  useEffect(() => {
+    console.log("SettingsScreen: User data updated", {
+      authUserPhotoURL: user?.photoURL,
+      contextUserPhotoURL: currentUser?.photoURL,
+      authUserDisplayName: user?.displayName,
+      contextUserDisplayName: currentUser?.displayName,
+    });
+  }, [user, currentUser]);
+
+  // Force re-render when photo URL changes
+  useEffect(() => {
+    if (currentUser?.photoURL) {
+      console.log("SettingsScreen: Photo URL changed, updating key");
+      setPhotoKey(Date.now()); // Use timestamp for unique key
+    }
+  }, [currentUser?.photoURL]);
+
+  // Refresh user data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log("SettingsScreen: Screen focused, refreshing user data...");
+      // Force refresh user data immediately when screen comes into focus
+      forceRefresh();
+
+      // Also refresh after a short delay to catch any pending updates
+      setTimeout(() => {
+        forceRefresh();
+      }, 100);
+    }, [forceRefresh])
+  );
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -78,9 +114,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 overflow: "hidden",
               }}
             >
-              {user?.photoURL ? (
+              {currentUser?.photoURL ? (
                 <Image
-                  source={{ uri: user.photoURL }}
+                  key={photoKey} // Force re-render when photoURL changes
+                  source={{ uri: currentUser?.photoURL }}
                   style={{
                     width: 80,
                     height: 80,
@@ -101,7 +138,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   letterSpacing: -0.3,
                 }}
               >
-                {user?.displayName || "User"}
+                {currentUser?.displayName || "User"}
               </Text>
               <Text
                 style={{
@@ -111,7 +148,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   fontWeight: "500",
                 }}
               >
-                {user?.email || "No email"}
+                {currentUser?.email || "No email"}
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View
@@ -137,14 +174,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </View>
                 <Text style={{ fontSize: 12, color: "#6b7280" }}>
                   Member since{" "}
-                  {user?.metadata?.creationTime
-                    ? new Date(user.metadata.creationTime).toLocaleDateString(
-                        "en-US",
-                        {
-                          month: "short",
-                          year: "numeric",
-                        }
-                      )
+                  {currentUser?.metadata?.creationTime
+                    ? new Date(
+                        currentUser.metadata.creationTime
+                      ).toLocaleDateString("en-US", {
+                        month: "short",
+                        year: "numeric",
+                      })
                     : "Recently"}
                 </Text>
               </View>
@@ -182,14 +218,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   marginBottom: 4,
                 }}
               >
-                {user?.metadata?.lastSignInTime
-                  ? new Date(user.metadata.lastSignInTime).toLocaleDateString(
-                      "en-US",
-                      {
-                        month: "short",
-                        day: "numeric",
-                      }
-                    )
+                {currentUser?.metadata?.lastSignInTime
+                  ? new Date(
+                      currentUser.metadata.lastSignInTime
+                    ).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
                   : "Today"}
               </Text>
               <Text
@@ -236,7 +271,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   marginBottom: 4,
                 }}
               >
-                {user?.emailVerified ? "✓" : "✗"}
+                {currentUser?.emailVerified ? "✓" : "✗"}
               </Text>
               <Text
                 style={{
@@ -466,6 +501,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </Text>
           </View>
         </TouchableOpacity>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account</Text>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => {
+              console.log("Manual refresh button pressed");
+              forceRefresh();
+            }}
+          >
+            <View style={styles.settingLeft}>
+              <Ionicons name="refresh" size={20} color="#374151" />
+              <Text style={styles.settingText}>Manual Refresh (Debug)</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -483,5 +535,27 @@ const styles = {
   settingText: {
     fontSize: 16,
     color: "#374151",
+  },
+  section: {
+    marginBottom: 12,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600" as const,
+    color: "#1f2937",
+    marginBottom: 12,
+  },
+  settingLeft: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    marginRight: 12,
   },
 };
