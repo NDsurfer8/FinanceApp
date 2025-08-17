@@ -239,25 +239,75 @@ export const RecurringTransactionsScreen: React.FC<
     }
   };
 
+  const getCategories = (type: string) => {
+    if (type === "income") {
+      return [
+        "Salary",
+        "VA Disability",
+        "Social Security",
+        "Freelance",
+        "Business",
+        "Investment",
+        "Rental Income",
+        "Side Hustle",
+        "Bonus",
+        "Commission",
+        "Tips",
+        "Gift",
+        "Refund",
+        "Other Income",
+      ];
+    } else {
+      return [
+        "Rent",
+        "Car Payment",
+        "Insurance",
+        "Utilities",
+        "Internet",
+        "Phone",
+        "Subscriptions",
+        "Credit Card",
+        "Loan Payment",
+        "Food",
+        "Transport",
+        "Health",
+        "Entertainment",
+        "Shopping",
+        "Other",
+      ];
+    }
+  };
+
   const getCategoryIcon = (category: string) => {
     const categoryIcons: { [key: string]: string } = {
       Salary: "cash",
       "VA Disability": "medical",
       "Social Security": "shield-checkmark",
       Freelance: "laptop",
+      Business: "briefcase",
       Investment: "trending-up",
+      "Rental Income": "home",
+      "Side Hustle": "construct",
+      Bonus: "gift",
+      Commission: "card",
+      Tips: "cash",
+      Gift: "gift",
+      Refund: "refresh",
+      "Other Income": "ellipsis-horizontal",
       Rent: "home",
-      Utilities: "flash",
-      Groceries: "restaurant",
-      Transportation: "car",
-      Entertainment: "game-controller",
-      Healthcare: "medical",
+      "Car Payment": "car",
       Insurance: "shield-checkmark",
+      Utilities: "flash",
+      Internet: "wifi",
+      Phone: "call",
       Subscriptions: "card",
+      "Credit Card": "card",
+      "Loan Payment": "card",
+      Food: "restaurant",
+      Transport: "car",
+      Health: "medical",
+      Entertainment: "game-controller",
       Shopping: "bag",
-      Dining: "restaurant",
-      Travel: "airplane",
-      Education: "school",
       Other: "ellipsis-horizontal",
     };
     return categoryIcons[category] || "ellipsis-horizontal";
@@ -460,7 +510,9 @@ export const RecurringTransactionsScreen: React.FC<
                     styles.typeButton,
                     formData.type === "income" && styles.typeButtonActive,
                   ]}
-                  onPress={() => setFormData({ ...formData, type: "income" })}
+                  onPress={() =>
+                    setFormData({ ...formData, type: "income", category: "" })
+                  }
                 >
                   <Ionicons
                     name="trending-up"
@@ -481,7 +533,9 @@ export const RecurringTransactionsScreen: React.FC<
                     styles.typeButton,
                     formData.type === "expense" && styles.typeButtonActive,
                   ]}
-                  onPress={() => setFormData({ ...formData, type: "expense" })}
+                  onPress={() =>
+                    setFormData({ ...formData, type: "expense", category: "" })
+                  }
                 >
                   <Ionicons
                     name="trending-down"
@@ -533,15 +587,36 @@ export const RecurringTransactionsScreen: React.FC<
             {/* Category */}
             <View style={styles.formSection}>
               <Text style={styles.formLabel}>Category *</Text>
-              <TextInput
-                style={styles.textInput}
-                value={formData.category}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, category: text })
-                }
-                placeholder="e.g., Salary, Rent, Utilities"
-                placeholderTextColor="#9ca3af"
-              />
+              <View style={styles.categorySelector}>
+                {getCategories(formData.type).map((category) => (
+                  <TouchableOpacity
+                    key={category}
+                    style={[
+                      styles.categoryButton,
+                      formData.category === category &&
+                        styles.categoryButtonActive,
+                    ]}
+                    onPress={() => setFormData({ ...formData, category })}
+                  >
+                    <Ionicons
+                      name={getCategoryIcon(category) as any}
+                      size={16}
+                      color={
+                        formData.category === category ? "#fff" : "#6b7280"
+                      }
+                    />
+                    <Text
+                      style={[
+                        styles.categoryButtonText,
+                        formData.category === category &&
+                          styles.categoryButtonTextActive,
+                      ]}
+                    >
+                      {category}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             {/* Frequency */}
@@ -922,6 +997,34 @@ const styles = StyleSheet.create({
     color: "#374151",
   },
   frequencyButtonTextActive: {
+    color: "#fff",
+  },
+  categorySelector: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  categoryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#fff",
+    gap: 6,
+  },
+  categoryButtonActive: {
+    borderColor: "#6366f1",
+    backgroundColor: "#6366f1",
+  },
+  categoryButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#374151",
+  },
+  categoryButtonTextActive: {
     color: "#fff",
   },
   switchContainer: {
