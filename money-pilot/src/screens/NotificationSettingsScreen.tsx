@@ -48,7 +48,24 @@ export const NotificationSettingsScreen: React.FC<
   const loadSavedSettings = async () => {
     try {
       console.log("Loading saved settings...");
+
+      // First, check badge indicator preference and update notification handler
+      const badgeEnabled = await AsyncStorage.getItem(
+        "notification_badge-indicators"
+      );
+      if (badgeEnabled === "true") {
+        await updateNotificationHandler(true);
+      }
+
       const defaultSettings: NotificationSetting[] = [
+        {
+          id: "badge-indicators",
+          title: "Badge Indicators",
+          description: "Show notification count on app icon",
+          icon: "notifications",
+          enabled: false,
+          type: "badge",
+        },
         {
           id: "budget-reminders",
           title: "Budget Reminders",
@@ -262,11 +279,32 @@ export const NotificationSettingsScreen: React.FC<
     } else {
       await cancelNotification(settingId);
     }
+
+    // Special handling for badge indicators
+    if (settingId === "badge-indicators") {
+      await updateNotificationHandler(setting?.enabled || false);
+    }
+  };
+
+  const updateNotificationHandler = async (badgeEnabled: boolean) => {
+    try {
+      const { notificationService } = await import("../services/notifications");
+      await notificationService.updateNotificationHandler(badgeEnabled);
+      console.log(
+        `Updated notification handler - badge enabled: ${badgeEnabled}`
+      );
+    } catch (error) {
+      console.error("Error updating notification handler:", error);
+    }
   };
 
   const scheduleNotification = async (setting: NotificationSetting) => {
     try {
       switch (setting.type) {
+        case "badge":
+          // Update notification handler for badge setting
+          await updateNotificationHandler(setting.enabled);
+          break;
         case "budget":
           if (user) {
             await budgetReminderService.scheduleAllBudgetReminders(user.uid);

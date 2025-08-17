@@ -39,6 +39,26 @@ export class NotificationService {
     return AppState.currentState === "active";
   }
 
+  // Update notification handler based on user preferences
+  async updateNotificationHandler(badgeEnabled: boolean): Promise<void> {
+    try {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: badgeEnabled,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+      console.log(
+        `Notification handler updated - badge enabled: ${badgeEnabled}`
+      );
+    } catch (error) {
+      console.error("Error updating notification handler:", error);
+    }
+  }
+
   // Request permissions
   async requestPermissions(): Promise<boolean> {
     if (Device.isDevice) {
