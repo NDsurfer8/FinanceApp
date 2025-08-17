@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
+import { useZeroLoading } from "../hooks/useZeroLoading";
 import { saveAsset, saveDebt } from "../services/userData";
 
 interface AddAssetDebtScreenProps {
@@ -24,6 +25,8 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
   route,
 }) => {
   const { user } = useAuth();
+  const { assets, debts, updateDataOptimistically, refreshInBackground } =
+    useZeroLoading();
   const { type } = route.params; // "asset" or "debt"
 
   const [formData, setFormData] = useState({
@@ -52,17 +55,29 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
     try {
       if (type === "asset") {
         const asset = {
-          id: Date.now().toString(),
+          id: `temp-${Date.now()}`,
           name: formData.name,
           balance: parseFloat(formData.balance),
           type: "asset",
           userId: user.uid,
           createdAt: new Date().toISOString(),
         };
-        await saveAsset(asset);
+
+        // Optimistic update - add to UI immediately
+        const updatedAssets = [...assets, asset];
+        updateDataOptimistically({ assets: updatedAssets });
+
+        // Save to database in background
+        const savedAssetId = await saveAsset(asset);
+
+        // Update with real ID from database
+        const finalAssets = updatedAssets.map((a) =>
+          a.id === asset.id ? { ...a, id: savedAssetId } : a
+        );
+        updateDataOptimistically({ assets: finalAssets });
       } else {
         const debt = {
-          id: Date.now().toString(),
+          id: `temp-${Date.now()}`,
           name: formData.name,
           balance: parseFloat(formData.balance),
           rate: parseFloat(formData.rate),
@@ -70,7 +85,19 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           userId: user.uid,
           createdAt: new Date().toISOString(),
         };
-        await saveDebt(debt);
+
+        // Optimistic update - add to UI immediately
+        const updatedDebts = [...debts, debt];
+        updateDataOptimistically({ debts: updatedDebts });
+
+        // Save to database in background
+        const savedDebtId = await saveDebt(debt);
+
+        // Update with real ID from database
+        const finalDebts = updatedDebts.map((d) =>
+          d.id === debt.id ? { ...d, id: savedDebtId } : d
+        );
+        updateDataOptimistically({ debts: finalDebts });
       }
 
       Alert.alert(
@@ -81,6 +108,15 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
     } catch (error) {
       console.error(`Error saving ${type}:`, error);
       Alert.alert("Error", `Failed to save ${type}. Please try again.`);
+
+      // Revert optimistic update on error
+      if (type === "asset") {
+        const revertedAssets = assets.filter((a) => !a.id.startsWith("temp-"));
+        updateDataOptimistically({ assets: revertedAssets });
+      } else {
+        const revertedDebts = debts.filter((d) => !d.id.startsWith("temp-"));
+        updateDataOptimistically({ debts: revertedDebts });
+      }
     }
   };
 

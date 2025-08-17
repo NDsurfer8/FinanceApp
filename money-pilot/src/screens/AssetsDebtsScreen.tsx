@@ -11,12 +11,14 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { AssetsDebtsChart } from "../components/AssetsDebtsChart";
 import { useAuth } from "../hooks/useAuth";
+import { useZeroLoading } from "../hooks/useZeroLoading";
 import {
-  getUserAssets,
-  getUserDebts,
+  saveAsset,
+  saveDebt,
   removeAsset,
   removeDebt,
 } from "../services/userData";
+import { useFocusEffect } from "@react-navigation/native";
 
 interface AssetsDebtsScreenProps {
   navigation: any;
@@ -28,45 +30,18 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
-  const [assets, setAssets] = useState<any[]>([]);
-  const [debts, setDebts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { assets, debts, updateDataOptimistically, refreshInBackground } =
+    useZeroLoading();
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      loadData();
-    }
-  }, [user]);
-
-  // Add focus listener to refresh data when screen comes into focus
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", () => {
+  // Background refresh when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
       if (user) {
-        loadData();
+        refreshInBackground();
       }
-    });
-
-    return unsubscribe;
-  }, [navigation, user]);
-
-  const loadData = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      const [userAssets, userDebts] = await Promise.all([
-        getUserAssets(user.uid),
-        getUserDebts(user.uid),
-      ]);
-      setAssets(userAssets);
-      setDebts(userDebts);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      Alert.alert("Error", "Failed to load data");
-    } finally {
-      setLoading(false);
-    }
-  };
+    }, [user, refreshInBackground])
+  );
 
   const handleDeleteAsset = async (assetId: string) => {
     if (!user) return;
@@ -78,12 +53,19 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         style: "destructive",
         onPress: async () => {
           try {
+            // Optimistic update - remove from UI immediately
+            const updatedAssets = assets.filter((a) => a.id !== assetId);
+            updateDataOptimistically({ assets: updatedAssets });
+
+            // Delete from database in background
             await removeAsset(user.uid, assetId);
-            await loadData();
             Alert.alert("Success", "Asset deleted successfully");
           } catch (error) {
             console.error("Error deleting asset:", error);
             Alert.alert("Error", "Failed to delete asset");
+
+            // Revert optimistic update on error
+            await refreshInBackground();
           }
         },
       },
@@ -100,12 +82,19 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         style: "destructive",
         onPress: async () => {
           try {
+            // Optimistic update - remove from UI immediately
+            const updatedDebts = debts.filter((d) => d.id !== debtId);
+            updateDataOptimistically({ debts: updatedDebts });
+
+            // Delete from database in background
             await removeDebt(user.uid, debtId);
-            await loadData();
             Alert.alert("Success", "Debt deleted successfully");
           } catch (error) {
             console.error("Error deleting debt:", error);
             Alert.alert("Error", "Failed to delete debt");
+
+            // Revert optimistic update on error
+            await refreshInBackground();
           }
         },
       },
@@ -130,7 +119,10 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <View
           style={{
@@ -194,13 +186,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             Assets
           </Text>
 
-          {loading ? (
-            <Text
-              style={{ color: "#6b7280", textAlign: "center", padding: 20 }}
-            >
-              Loading assets...
-            </Text>
-          ) : assets.length === 0 ? (
+          {assets.length === 0 ? (
             <View style={{ alignItems: "center", padding: 20 }}>
               <Ionicons name="wallet-outline" size={32} color="#d1d5db" />
               <Text
@@ -280,13 +266,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             Debts
           </Text>
 
-          {loading ? (
-            <Text
-              style={{ color: "#6b7280", textAlign: "center", padding: 20 }}
-            >
-              Loading debts...
-            </Text>
-          ) : debts.length === 0 ? (
+          {debts.length === 0 ? (
             <View style={{ alignItems: "center", padding: 20 }}>
               <Ionicons name="card-outline" size={32} color="#d1d5db" />
               <Text

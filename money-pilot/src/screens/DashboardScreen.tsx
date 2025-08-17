@@ -10,6 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
+import { useZeroLoading } from "../hooks/useZeroLoading";
 import {
   getUserTransactions,
   getUserAssets,
@@ -24,51 +25,28 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [assets, setAssets] = useState<any[]>([]);
-  const [debts, setDebts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    transactions,
+    assets,
+    debts,
+    hasData,
+    getDataInstantly,
+    refreshInBackground,
+  } = useZeroLoading();
+  const [loading, setLoading] = useState(false);
 
   // Function to determine if name should be on a new line
-  const shouldNameBeOnNewLine = (name: string) => {
-    return name.length > 15; // Adjust this threshold as needed
+  const shouldWrapName = (name: string) => {
+    return name.length > 15;
   };
 
-  const loadData = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      const [userTransactions, userAssets, userDebts] = await Promise.all([
-        getUserTransactions(user.uid),
-        getUserAssets(user.uid),
-        getUserDebts(user.uid),
-      ]);
-      setTransactions(userTransactions);
-      setAssets(userAssets);
-      setDebts(userDebts);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      Alert.alert("Error", "Failed to load data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load data when user changes
-  useEffect(() => {
-    if (user) {
-      loadData();
-    }
-  }, [user]);
-
-  // Refresh data when screen comes into focus
+  // Background refresh when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       if (user) {
-        loadData();
+        refreshInBackground();
       }
-    }, [user])
+    }, [user, refreshInBackground])
   );
 
   // Calculate current month data
@@ -159,28 +137,28 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   // Premium Feature: Quick Actions
   const quickActions = [
     {
-      title: "Add Income",
+      title: "Add Transaction",
       icon: "add-circle",
-      color: "#10b981",
-      onPress: () => navigation.navigate("AddTransaction", { type: "income" }),
-    },
-    {
-      title: "Add Expense",
-      icon: "remove-circle",
-      color: "#ef4444",
-      onPress: () => navigation.navigate("AddTransaction", { type: "expense" }),
+      onPress: () => navigation.navigate("AddTransaction"),
+      color: "#6366f1",
     },
     {
       title: "Add Asset",
       icon: "trending-up",
-      color: "#3b82f6",
       onPress: () => navigation.navigate("AddAssetDebt", { type: "asset" }),
+      color: "#10b981",
     },
     {
       title: "Add Debt",
       icon: "card",
-      color: "#f59e0b",
       onPress: () => navigation.navigate("AddAssetDebt", { type: "debt" }),
+      color: "#ef4444",
+    },
+    {
+      title: "Set Goals",
+      icon: "flag",
+      onPress: () => navigation.navigate("Goals", { openAddModal: true }),
+      color: "#f59e0b",
     },
   ];
 
@@ -233,18 +211,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     }
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <Text style={{ fontSize: 16, color: "#6b7280" }}>Loading...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
       <ScrollView
@@ -272,7 +238,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             >
               Dashboard
             </Text>
-            {shouldNameBeOnNewLine(user?.displayName || "User") ? (
+            {shouldWrapName(user?.displayName || "User") ? (
               <View style={{ marginTop: 6 }}>
                 <Text
                   style={{
@@ -626,7 +592,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
             {quickActions.map((action, index) => (
               <TouchableOpacity
-                key={index}
+                key={`action-${action.title}-${index}`}
                 style={{
                   flex: 1,
                   minWidth: "45%",
@@ -703,7 +669,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
 
             {insights.map((insight, index) => (
-              <View key={index} style={{ marginBottom: 12 }}>
+              <View
+                key={`insight-${insight.title}-${index}`}
+                style={{ marginBottom: 12 }}
+              >
                 <View
                   style={{
                     flexDirection: "row",
@@ -770,7 +739,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
           {trendData.map((month, index) => (
             <View
-              key={index}
+              key={`trend-${month.month}-${index}`}
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",

@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
+import { useZeroLoading } from "../hooks/useZeroLoading";
 import { saveTransaction } from "../services/userData";
 import { billReminderService } from "../services/billReminders";
 
@@ -25,6 +26,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   route,
 }) => {
   const { user } = useAuth();
+  const { transactions, updateDataOptimistically } = useZeroLoading();
+  const [loading, setLoading] = useState(false);
   const { type: initialType, selectedMonth } = route.params || {};
 
   // Use selectedMonth if provided, otherwise use today's date
@@ -108,6 +111,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     }
 
     try {
+      setLoading(true);
+
       const transaction = {
         id: Date.now().toString(),
         description: formData.description,
@@ -117,9 +122,22 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         date: new Date(formData.date).getTime(), // Convert to timestamp
         userId: user.uid,
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
-      await saveTransaction(transaction);
+      // Optimistic update - add to UI immediately
+      const newTransaction = { ...transaction, id: `temp-${Date.now()}` };
+      const updatedTransactions = [...transactions, newTransaction];
+      updateDataOptimistically({ transactions: updatedTransactions });
+
+      // Save to database in background
+      const savedTransaction = await saveTransaction(transaction);
+
+      // Update with real ID from database
+      const finalTransactions = updatedTransactions.map((t) =>
+        t.id === newTransaction.id ? { ...t, id: savedTransaction } : t
+      );
+      updateDataOptimistically({ transactions: finalTransactions });
 
       // Refresh bill reminders when a new transaction is added
       if (user) {
@@ -132,6 +150,14 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     } catch (error) {
       console.error("Error saving transaction:", error);
       Alert.alert("Error", "Failed to save transaction. Please try again.");
+
+      // Revert optimistic update on error
+      const revertedTransactions = transactions.filter(
+        (t) => t.id !== `temp-${Date.now()}`
+      );
+      updateDataOptimistically({ transactions: revertedTransactions });
+    } finally {
+      setLoading(false);
     }
   };
 

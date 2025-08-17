@@ -10,10 +10,10 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useRoute } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
+import { useZeroLoading } from "../hooks/useZeroLoading";
 import {
-  getUserGoals,
   saveGoal,
   updateGoal,
   removeGoal,
@@ -24,12 +24,18 @@ interface GoalTrackingScreenProps {
   navigation: any;
 }
 
+type GoalTrackingRouteParams = {
+  openAddModal?: boolean;
+};
+
 export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
-  const [goals, setGoals] = useState<FinancialGoal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { goals, updateDataOptimistically, refreshInBackground } =
+    useZeroLoading();
+  const route = useRoute();
+  const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -78,34 +84,25 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     low: "#16a34a",
   };
 
-  const loadGoals = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      const userGoals = await getUserGoals(user.uid);
-      setGoals(userGoals);
-    } catch (error) {
-      console.error("Error loading goals:", error);
-      Alert.alert("Error", "Failed to load goals");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      loadGoals();
-    }
-  }, [user]);
-
+  // Background refresh when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       if (user) {
-        loadGoals();
+        refreshInBackground();
       }
-    }, [user])
+    }, [user, refreshInBackground])
   );
+
+  // Check if we should open the add modal from navigation params
+  useEffect(() => {
+    const params = route.params as GoalTrackingRouteParams | undefined;
+    const openAddModal = params?.openAddModal;
+    if (openAddModal) {
+      setShowAddModal(true);
+      // Clear the parameter so it doesn't open again on subsequent visits
+      navigation.setParams({ openAddModal: false });
+    }
+  }, [route.params, navigation]);
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString()}`;
@@ -209,8 +206,20 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
         updatedAt: Date.now(),
       };
 
-      await saveGoal(goal);
-      await loadGoals(); // Reload goals from database
+      // Optimistic update - add to UI immediately
+      const tempGoal = { ...goal, id: `temp-${Date.now()}` };
+      const updatedGoals = [...goals, tempGoal];
+      updateDataOptimistically({ goals: updatedGoals });
+
+      // Save to database in background
+      const savedGoalId = await saveGoal(goal);
+
+      // Update with real ID from database
+      const finalGoals = updatedGoals.map((g) =>
+        g.id === tempGoal.id ? { ...g, id: savedGoalId } : g
+      );
+      updateDataOptimistically({ goals: finalGoals });
+
       setShowAddModal(false);
       setNewGoal({
         name: "",
@@ -227,6 +236,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     } catch (error) {
       console.error("Error adding goal:", error);
       Alert.alert("Error", "Failed to add goal. Please try again.");
+
+      // Revert optimistic update on error
+      const revertedGoals = goals.filter((g) => !g.id.startsWith("temp-"));
+      updateDataOptimistically({ goals: revertedGoals });
     }
   };
 
@@ -243,8 +256,14 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
         userId: user.uid,
       };
 
+      // Optimistic update - update UI immediately
+      const updatedGoals = goals.map((goal) =>
+        goal.id === goalId ? updatedGoal : goal
+      );
+      updateDataOptimistically({ goals: updatedGoals });
+
       await updateGoal(updatedGoal);
-      await loadGoals(); // Reload goals from database
+      await refreshInBackground(); // Reload goals from database
       Alert.alert("Success", "Goal updated successfully!");
     } catch (error) {
       console.error("Error updating goal:", error);
@@ -262,12 +281,19 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
         style: "destructive",
         onPress: async () => {
           try {
+            // Optimistic update - remove from UI immediately
+            const updatedGoals = goals.filter((g) => g.id !== goalId);
+            updateDataOptimistically({ goals: updatedGoals });
+
+            // Delete from database in background
             await removeGoal(user.uid, goalId);
-            await loadGoals(); // Reload goals from database
             Alert.alert("Success", "Goal deleted successfully!");
           } catch (error) {
             console.error("Error deleting goal:", error);
             Alert.alert("Error", "Failed to delete goal. Please try again.");
+
+            // Revert optimistic update on error
+            await refreshInBackground();
           }
         },
       },
@@ -320,6 +346,12 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
         userId: user.uid,
       };
 
+      // Optimistic update - update UI immediately
+      const updatedGoals = goals.map((goal) =>
+        goal.id === editingGoalId ? updatedGoal : goal
+      );
+      updateDataOptimistically({ goals: updatedGoals });
+
       await updateGoal(updatedGoal);
 
       // Reset editing state
@@ -328,7 +360,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
       setEditingValue("");
 
       // Reload goals
-      await loadGoals();
+      await refreshInBackground();
       Alert.alert("Success", "Goal updated successfully!");
     } catch (error) {
       console.error("Error updating goal:", error);
@@ -341,18 +373,6 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     setEditingField(null);
     setEditingValue("");
   };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <Text style={{ fontSize: 16, color: "#6b7280" }}>Loading...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
@@ -586,7 +606,11 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <View
                       style={{
-                        backgroundColor: `${priorityColors[goal.priority]}20`,
+                        backgroundColor: `${
+                          priorityColors[
+                            goal.priority as keyof typeof priorityColors
+                          ]
+                        }20`,
                         paddingHorizontal: 8,
                         paddingVertical: 4,
                         borderRadius: 8,
@@ -597,7 +621,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         style={{
                           fontSize: 12,
                           fontWeight: "600",
-                          color: priorityColors[goal.priority],
+                          color:
+                            priorityColors[
+                              goal.priority as keyof typeof priorityColors
+                            ],
                           textTransform: "uppercase",
                         }}
                       >

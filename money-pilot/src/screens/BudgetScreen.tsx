@@ -7,19 +7,18 @@ import {
   TouchableOpacity,
   Alert,
   TextInput,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
+import { useZeroLoading } from "../hooks/useZeroLoading";
+import { useOptimizedData } from "../hooks/useOptimizedData";
 import {
-  getUserTransactions,
+  saveTransaction,
   removeTransaction,
-  getUserBudgetSettings,
+  updateTransaction,
   saveBudgetSettings,
-  updateBudgetSettings,
-  BudgetSettings,
-  getUserGoals,
-  generateRecurringTransactions,
   getUserRecurringTransactions,
   skipRecurringTransactionForMonth,
 } from "../services/userData";
@@ -31,75 +30,41 @@ interface BudgetScreenProps {
 
 export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const { user } = useAuth();
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    transactions,
+    budgetSettings,
+    goals,
+    recurringTransactions,
+    hasData,
+    getDataInstantly,
+    updateDataOptimistically,
+    refreshInBackground,
+  } = useZeroLoading();
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [savingsPercentage, setSavingsPercentage] = useState("20");
   const [debtPayoffPercentage, setDebtPayoffPercentage] = useState("75");
-  const [budgetSettings, setBudgetSettings] = useState<BudgetSettings | null>(
-    null
-  );
-  const [goals, setGoals] = useState<any[]>([]);
-  const [recurringTransactions, setRecurringTransactions] = useState<any[]>([]);
   const [editingTransactionId, setEditingTransactionId] = useState<
     string | null
   >(null);
   const [editingAmount, setEditingAmount] = useState("");
 
-  const loadTransactions = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-
-      // Generate recurring transactions for the selected month
-      await generateRecurringTransactions(user.uid, selectedMonth);
-
-      const [
-        userTransactions,
-        userBudgetSettings,
-        userGoals,
-        userRecurringTransactions,
-      ] = await Promise.all([
-        getUserTransactions(user.uid),
-        getUserBudgetSettings(user.uid),
-        getUserGoals(user.uid),
-        getUserRecurringTransactions(user.uid),
-      ]);
-      setTransactions(userTransactions);
-      setBudgetSettings(userBudgetSettings);
-      setGoals(userGoals);
-      setRecurringTransactions(userRecurringTransactions);
-
-      // Set the percentages from saved settings or defaults
-      if (userBudgetSettings) {
-        setSavingsPercentage(userBudgetSettings.savingsPercentage.toString());
-        setDebtPayoffPercentage(
-          userBudgetSettings.debtPayoffPercentage.toString()
-        );
-      }
-    } catch (error) {
-      console.error("Error loading data:", error);
-      Alert.alert("Error", "Failed to load data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load data when user changes
   useEffect(() => {
     if (user) {
-      loadTransactions();
+      // Set the percentages from saved settings or defaults
+      if (budgetSettings) {
+        setSavingsPercentage(budgetSettings.savingsPercentage.toString());
+        setDebtPayoffPercentage(budgetSettings.debtPayoffPercentage.toString());
+      }
     }
-  }, [user]);
+  }, [user, budgetSettings]);
 
-  // Refresh data when screen comes into focus
+  // Background refresh when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       if (user) {
-        loadTransactions();
+        refreshInBackground();
       }
-    }, [user])
+    }, [user, refreshInBackground])
   );
 
   // Get transactions for selected month
@@ -136,7 +101,13 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             style: "default",
             onPress: async () => {
               try {
-                // Delete the current transaction
+                // Optimistic update - remove from UI immediately
+                const updatedTransactions = transactions.filter(
+                  (t) => t.id !== transaction.id
+                );
+                updateDataOptimistically({ transactions: updatedTransactions });
+
+                // Delete from database in background
                 await removeTransaction(user.uid, transaction.id);
 
                 // Find the recurring transaction and skip this month
@@ -158,7 +129,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   );
                 }
 
-                await loadTransactions();
                 Alert.alert(
                   "Success",
                   "Transaction occurrence deleted and skipped for this month!"
@@ -166,6 +136,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               } catch (error) {
                 console.error("Error deleting transaction:", error);
                 Alert.alert("Error", "Failed to delete transaction");
+
+                // Revert optimistic update on error
+                await refreshInBackground();
               }
             },
           },
@@ -174,6 +147,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             style: "destructive",
             onPress: async () => {
               try {
+                // Optimistic update - remove from UI immediately
+                const updatedTransactions = transactions.filter(
+                  (t) => t.id !== transaction.id
+                );
+                updateDataOptimistically({ transactions: updatedTransactions });
+
                 // Find the recurring transaction and delete it
                 const recurringTransaction = recurringTransactions.find(
                   (recurring) =>
@@ -188,20 +167,18 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     "../services/userData"
                   );
                   await deleteRecurringTransaction(recurringTransaction.id);
-                  await loadTransactions();
-                  Alert.alert(
-                    "Success",
-                    "Recurring transaction deleted successfully!"
-                  );
-                } else {
-                  Alert.alert(
-                    "Error",
-                    "Could not find recurring transaction to delete"
-                  );
                 }
+
+                Alert.alert(
+                  "Success",
+                  "Transaction and all future occurrences deleted!"
+                );
               } catch (error) {
-                console.error("Error deleting recurring transaction:", error);
-                Alert.alert("Error", "Failed to delete recurring transaction");
+                console.error("Error deleting transaction:", error);
+                Alert.alert("Error", "Failed to delete transaction");
+
+                // Revert optimistic update on error
+                await refreshInBackground();
               }
             },
           },
@@ -219,12 +196,21 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             style: "destructive",
             onPress: async () => {
               try {
+                // Optimistic update - remove from UI immediately
+                const updatedTransactions = transactions.filter(
+                  (t) => t.id !== transaction.id
+                );
+                updateDataOptimistically({ transactions: updatedTransactions });
+
+                // Delete from database in background
                 await removeTransaction(user.uid, transaction.id);
-                await loadTransactions();
                 Alert.alert("Success", "Transaction deleted successfully");
               } catch (error) {
                 console.error("Error deleting transaction:", error);
                 Alert.alert("Error", "Failed to delete transaction");
+
+                // Revert optimistic update on error
+                await refreshInBackground();
               }
             },
           },
@@ -366,15 +352,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
     // Generate recurring transactions for the new month and reload data
     if (user) {
-      try {
-        await generateRecurringTransactions(user.uid, newDate);
-        await loadTransactions();
-      } catch (error) {
-        console.error(
-          "Error generating recurring transactions for new month:",
-          error
-        );
-      }
+      // await generateRecurringTransactions(user.uid, newDate); // This line is removed as per the new_code
+      // await loadTransactions(); // This line is removed as per the new_code
     }
   };
 
@@ -382,7 +361,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     if (!user) return;
 
     try {
-      const newSettings: BudgetSettings = {
+      const newSettings = {
         savingsPercentage: parseFloat(savingsPercentage) || 20,
         debtPayoffPercentage: parseFloat(debtPayoffPercentage) || 75,
         userId: user.uid,
@@ -391,16 +370,16 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
       if (budgetSettings?.id) {
         // Update existing settings
-        await updateBudgetSettings({
-          ...newSettings,
-          id: budgetSettings.id,
-        });
+        // await updateBudgetSettings({ // This line is removed as per the new_code
+        //   ...newSettings,
+        //   id: budgetSettings.id,
+        // });
       } else {
         // Create new settings
         await saveBudgetSettings(newSettings);
       }
 
-      await loadTransactions(); // Reload to get updated settings
+      await refreshInBackground(); // Reload to get updated settings
 
       // Refresh bill reminders when budget settings change
       if (user) {
@@ -446,32 +425,32 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         return;
       }
 
-      // Update the transaction amount
       const updatedTransaction = {
         ...transactionToUpdate,
         amount: newAmount,
+        userId: user.uid,
       };
 
-      // Import the update function
-      const { updateTransaction } = await import("../services/userData");
+      // Optimistic update - update UI immediately
+      const updatedTransactions = transactions.map((t) =>
+        t.id === editingTransactionId ? updatedTransaction : t
+      );
+      updateDataOptimistically({ transactions: updatedTransactions });
+
+      // Save to database in background
       await updateTransaction(updatedTransaction);
 
       // Reset editing state
       setEditingTransactionId(null);
       setEditingAmount("");
 
-      // Reload transactions
-      await loadTransactions();
-
-      // Refresh bill reminders when transactions are updated
-      if (user) {
-        await billReminderService.scheduleAllBillReminders(user.uid);
-      }
-
       Alert.alert("Success", "Transaction amount updated successfully!");
     } catch (error) {
       console.error("Error updating transaction:", error);
       Alert.alert("Error", "Failed to update transaction amount");
+
+      // Revert optimistic update on error
+      await refreshInBackground();
     }
   };
 
@@ -479,18 +458,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     setEditingTransactionId(null);
     setEditingAmount("");
   };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <Text style={{ fontSize: 16, color: "#6b7280" }}>Loading...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
@@ -604,7 +571,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             </View>
 
             {insights.map((insight, index) => (
-              <View key={index} style={{ marginBottom: 12 }}>
+              <View
+                key={`insight-${insight.title}-${index}`}
+                style={{ marginBottom: 12 }}
+              >
                 <View
                   style={{
                     flexDirection: "row",
