@@ -396,13 +396,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     <View
                       style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}
                     >
-                      {[
-                        "weekly",
-                        "biweekly",
-                        "monthly",
-                        "quarterly",
-                        "yearly",
-                      ].map((freq) => (
+                      {["monthly"].map((freq) => (
                         <TouchableOpacity
                           key={freq}
                           style={{
