@@ -19,6 +19,9 @@ import {
   updateBudgetSettings,
   BudgetSettings,
   getUserGoals,
+  generateRecurringTransactions,
+  getUserRecurringTransactions,
+  skipRecurringTransactionForMonth,
 } from "../services/userData";
 
 interface BudgetScreenProps {
@@ -36,21 +39,32 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     null
   );
   const [goals, setGoals] = useState<any[]>([]);
+  const [recurringTransactions, setRecurringTransactions] = useState<any[]>([]);
 
   const loadTransactions = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
-      const [userTransactions, userBudgetSettings, userGoals] =
-        await Promise.all([
-          getUserTransactions(user.uid),
-          getUserBudgetSettings(user.uid),
-          getUserGoals(user.uid),
-        ]);
+
+      // Generate recurring transactions for the selected month
+      await generateRecurringTransactions(user.uid, selectedMonth);
+
+      const [
+        userTransactions,
+        userBudgetSettings,
+        userGoals,
+        userRecurringTransactions,
+      ] = await Promise.all([
+        getUserTransactions(user.uid),
+        getUserBudgetSettings(user.uid),
+        getUserGoals(user.uid),
+        getUserRecurringTransactions(user.uid),
+      ]);
       setTransactions(userTransactions);
       setBudgetSettings(userBudgetSettings);
       setGoals(userGoals);
+      setRecurringTransactions(userRecurringTransactions);
 
       // Set the percentages from saved settings or defaults
       if (userBudgetSettings) {
@@ -103,27 +117,115 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const handleDeleteTransaction = async (transaction: any) => {
     if (!user) return;
 
-    Alert.alert(
-      "Delete Transaction",
-      `Are you sure you want to delete "${transaction.description}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await removeTransaction(user.uid, transaction.id);
-              await loadTransactions(); // Reload data
-              Alert.alert("Success", "Transaction deleted successfully");
-            } catch (error) {
-              console.error("Error deleting transaction:", error);
-              Alert.alert("Error", "Failed to delete transaction");
-            }
+    const isRecurring = isRecurringTransaction(transaction);
+
+    if (isRecurring) {
+      // For recurring transactions, show options
+      Alert.alert(
+        "Delete Recurring Transaction",
+        `"${transaction.description}" is a recurring transaction. What would you like to delete?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete This Occurrence Only",
+            style: "default",
+            onPress: async () => {
+              try {
+                // Delete the current transaction
+                await removeTransaction(user.uid, transaction.id);
+
+                // Find the recurring transaction and skip this month
+                const recurringTransaction = recurringTransactions.find(
+                  (recurring) =>
+                    recurring.name === transaction.description &&
+                    recurring.amount === transaction.amount &&
+                    recurring.type === transaction.type &&
+                    recurring.isActive
+                );
+
+                if (recurringTransaction?.id) {
+                  const monthKey = `${selectedMonth.getFullYear()}-${String(
+                    selectedMonth.getMonth() + 1
+                  ).padStart(2, "0")}`;
+                  await skipRecurringTransactionForMonth(
+                    recurringTransaction.id,
+                    monthKey
+                  );
+                }
+
+                await loadTransactions();
+                Alert.alert(
+                  "Success",
+                  "Transaction occurrence deleted and skipped for this month!"
+                );
+              } catch (error) {
+                console.error("Error deleting transaction:", error);
+                Alert.alert("Error", "Failed to delete transaction");
+              }
+            },
           },
-        },
-      ]
-    );
+          {
+            text: "Delete All Future Occurrences",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Find the recurring transaction and delete it
+                const recurringTransaction = recurringTransactions.find(
+                  (recurring) =>
+                    recurring.name === transaction.description &&
+                    recurring.amount === transaction.amount &&
+                    recurring.type === transaction.type &&
+                    recurring.isActive
+                );
+
+                if (recurringTransaction?.id) {
+                  const { deleteRecurringTransaction } = await import(
+                    "../services/userData"
+                  );
+                  await deleteRecurringTransaction(recurringTransaction.id);
+                  await loadTransactions();
+                  Alert.alert(
+                    "Success",
+                    "Recurring transaction deleted successfully!"
+                  );
+                } else {
+                  Alert.alert(
+                    "Error",
+                    "Could not find recurring transaction to delete"
+                  );
+                }
+              } catch (error) {
+                console.error("Error deleting recurring transaction:", error);
+                Alert.alert("Error", "Failed to delete recurring transaction");
+              }
+            },
+          },
+        ]
+      );
+    } else {
+      // For regular transactions, show simple delete confirmation
+      Alert.alert(
+        "Delete Transaction",
+        `Are you sure you want to delete "${transaction.description}"?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await removeTransaction(user.uid, transaction.id);
+                await loadTransactions();
+                Alert.alert("Success", "Transaction deleted successfully");
+              } catch (error) {
+                console.error("Error deleting transaction:", error);
+                Alert.alert("Error", "Failed to delete transaction");
+              }
+            },
+          },
+        ]
+      );
+    }
   };
 
   // Calculate totals
@@ -206,26 +308,35 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     return date.toLocaleDateString();
   };
 
-  const handleAddIncome = () => {
-    navigation.navigate("AddTransaction", { type: "income" });
-  };
-
-  const handleAddExpense = () => {
-    navigation.navigate("AddTransaction", { type: "expense" });
-  };
-
-  const handleSetupRecurring = () => {
-    Alert.alert(
-      "Premium Feature",
-      "Set up recurring income and expenses for automatic tracking and forecasting!",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Coming Soon", style: "default" },
-      ]
+  const isRecurringTransaction = (transaction: any) => {
+    return recurringTransactions.some(
+      (recurring) =>
+        recurring.name === transaction.description &&
+        recurring.amount === transaction.amount &&
+        recurring.type === transaction.type &&
+        recurring.isActive
     );
   };
 
-  const handleMonthChange = (direction: "prev" | "next") => {
+  const handleAddIncome = () => {
+    navigation.navigate("AddTransaction", {
+      type: "income",
+      selectedMonth: selectedMonth.getTime(),
+    });
+  };
+
+  const handleAddExpense = () => {
+    navigation.navigate("AddTransaction", {
+      type: "expense",
+      selectedMonth: selectedMonth.getTime(),
+    });
+  };
+
+  const handleSetupRecurring = () => {
+    navigation.navigate("RecurringTransactions");
+  };
+
+  const handleMonthChange = async (direction: "prev" | "next") => {
     const newDate = new Date(selectedMonth);
     if (direction === "prev") {
       newDate.setMonth(newDate.getMonth() - 1);
@@ -233,6 +344,19 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       newDate.setMonth(newDate.getMonth() + 1);
     }
     setSelectedMonth(newDate);
+
+    // Generate recurring transactions for the new month and reload data
+    if (user) {
+      try {
+        await generateRecurringTransactions(user.uid, newDate);
+        await loadTransactions();
+      } catch (error) {
+        console.error(
+          "Error generating recurring transactions for new month:",
+          error
+        );
+      }
+    }
   };
 
   const handleSaveBudgetSettings = async () => {
@@ -468,11 +592,39 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           </View>
 
           {incomeTransactions.length === 0 ? (
-            <Text
-              style={{ color: "#6b7280", textAlign: "center", padding: 20 }}
+            <TouchableOpacity
+              onPress={handleAddIncome}
+              style={{
+                padding: 20,
+                alignItems: "center",
+                backgroundColor: "#f8fafc",
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: "#e5e7eb",
+                borderStyle: "dashed",
+              }}
             >
-              No income transactions for this month
-            </Text>
+              <Text
+                style={{
+                  color: "#6b7280",
+                  textAlign: "center",
+                  fontSize: 16,
+                }}
+              >
+                No income transactions for this month
+              </Text>
+              <Text
+                style={{
+                  color: "#16a34a",
+                  textAlign: "center",
+                  fontSize: 14,
+                  marginTop: 4,
+                  fontWeight: "500",
+                }}
+              >
+                Tap to add income
+              </Text>
+            </TouchableOpacity>
           ) : (
             incomeTransactions.map((transaction) => (
               <View
@@ -497,11 +649,25 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   >
                     {transaction.description}
                   </Text>
-                  <Text
-                    style={{ fontSize: 14, color: "#6b7280", marginTop: 2 }}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginTop: 2,
+                    }}
                   >
-                    {transaction.category} • {formatDate(transaction.date)}
-                  </Text>
+                    <Text style={{ fontSize: 14, color: "#6b7280" }}>
+                      {transaction.category} • {formatDate(transaction.date)}
+                    </Text>
+                    {isRecurringTransaction(transaction) && (
+                      <Ionicons
+                        name="repeat"
+                        size={12}
+                        color="#6366f1"
+                        style={{ marginLeft: 8 }}
+                      />
+                    )}
+                  </View>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <Text
@@ -599,11 +765,39 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           </View>
 
           {expenseTransactions.length === 0 ? (
-            <Text
-              style={{ color: "#6b7280", textAlign: "center", padding: 20 }}
+            <TouchableOpacity
+              onPress={handleAddExpense}
+              style={{
+                padding: 20,
+                alignItems: "center",
+                backgroundColor: "#f8fafc",
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: "#e5e7eb",
+                borderStyle: "dashed",
+              }}
             >
-              No expenses for this month
-            </Text>
+              <Text
+                style={{
+                  color: "#6b7280",
+                  textAlign: "center",
+                  fontSize: 16,
+                }}
+              >
+                No expenses for this month
+              </Text>
+              <Text
+                style={{
+                  color: "#dc2626",
+                  textAlign: "center",
+                  fontSize: 14,
+                  marginTop: 4,
+                  fontWeight: "500",
+                }}
+              >
+                Tap to add expense
+              </Text>
+            </TouchableOpacity>
           ) : (
             expenseTransactions.map((transaction) => (
               <View
@@ -628,11 +822,25 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   >
                     {transaction.description}
                   </Text>
-                  <Text
-                    style={{ fontSize: 14, color: "#6b7280", marginTop: 2 }}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginTop: 2,
+                    }}
                   >
-                    {transaction.category} • {formatDate(transaction.date)}
-                  </Text>
+                    <Text style={{ fontSize: 14, color: "#6b7280" }}>
+                      {transaction.category} • {formatDate(transaction.date)}
+                    </Text>
+                    {isRecurringTransaction(transaction) && (
+                      <Ionicons
+                        name="repeat"
+                        size={12}
+                        color="#6366f1"
+                        style={{ marginLeft: 8 }}
+                      />
+                    )}
+                  </View>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <Text

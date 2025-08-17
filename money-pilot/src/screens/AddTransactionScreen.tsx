@@ -24,14 +24,23 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   route,
 }) => {
   const { user } = useAuth();
-  const { type: initialType } = route.params || {};
+  const { type: initialType, selectedMonth } = route.params || {};
+
+  // Use selectedMonth if provided, otherwise use today's date
+  const getInitialDate = () => {
+    if (selectedMonth) {
+      const date = new Date(selectedMonth);
+      return date.toISOString().split("T")[0];
+    }
+    return new Date().toISOString().split("T")[0];
+  };
 
   const [formData, setFormData] = useState({
     description: "",
     amount: "",
     category: "",
     type: initialType || "expense", // Use the passed type or default to expense
-    date: new Date().toISOString().split("T")[0], // Today's date
+    date: getInitialDate(),
   });
 
   const getCategories = (type: string) => {

@@ -9,7 +9,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
-import { getUserTransactions, removeTransaction } from "../services/userData";
+import {
+  getUserTransactions,
+  removeTransaction,
+  getUserRecurringTransactions,
+  skipRecurringTransactionForMonth,
+} from "../services/userData";
 
 interface TransactionsScreenProps {
   navigation: any;
@@ -20,6 +25,7 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [recurringTransactions, setRecurringTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,8 +50,12 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
 
     try {
       setLoading(true);
-      const userTransactions = await getUserTransactions(user.uid);
+      const [userTransactions, userRecurringTransactions] = await Promise.all([
+        getUserTransactions(user.uid),
+        getUserRecurringTransactions(user.uid),
+      ]);
       setTransactions(userTransactions);
+      setRecurringTransactions(userRecurringTransactions);
     } catch (error) {
       console.error("Error loading transactions:", error);
       Alert.alert("Error", "Failed to load transactions");
@@ -54,34 +64,134 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
     }
   };
 
-  const handleDeleteTransaction = async (transactionId: string) => {
-    Alert.alert(
-      "Delete Transaction",
-      "Are you sure you want to delete this transaction?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            if (!user) return;
-            try {
-              await removeTransaction(user.uid, transactionId);
-              await loadTransactions(); // Reload the list
-              Alert.alert("Success", "Transaction deleted successfully");
-            } catch (error) {
-              console.error("Error deleting transaction:", error);
-              Alert.alert("Error", "Failed to delete transaction");
-            }
+  const handleDeleteTransaction = async (transaction: any) => {
+    if (!user) return;
+
+    const isRecurring = isRecurringTransaction(transaction);
+
+    if (isRecurring) {
+      // For recurring transactions, show options
+      Alert.alert(
+        "Delete Recurring Transaction",
+        `"${transaction.description}" is a recurring transaction. What would you like to delete?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete This Occurrence Only",
+            style: "default",
+            onPress: async () => {
+              try {
+                // Delete the current transaction
+                await removeTransaction(user.uid, transaction.id);
+
+                // Find the recurring transaction and skip this month
+                const recurringTransaction = recurringTransactions.find(
+                  (recurring) =>
+                    recurring.name === transaction.description &&
+                    recurring.amount === transaction.amount &&
+                    recurring.type === transaction.type &&
+                    recurring.isActive
+                );
+
+                if (recurringTransaction?.id) {
+                  const transactionDate = new Date(transaction.date);
+                  const monthKey = `${transactionDate.getFullYear()}-${String(
+                    transactionDate.getMonth() + 1
+                  ).padStart(2, "0")}`;
+                  await skipRecurringTransactionForMonth(
+                    recurringTransaction.id,
+                    monthKey
+                  );
+                }
+
+                await loadTransactions();
+                Alert.alert(
+                  "Success",
+                  "Transaction occurrence deleted and skipped for this month!"
+                );
+              } catch (error) {
+                console.error("Error deleting transaction:", error);
+                Alert.alert("Error", "Failed to delete transaction");
+              }
+            },
           },
-        },
-      ]
-    );
+          {
+            text: "Delete All Future Occurrences",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Find the recurring transaction and delete it
+                const recurringTransaction = recurringTransactions.find(
+                  (recurring) =>
+                    recurring.name === transaction.description &&
+                    recurring.amount === transaction.amount &&
+                    recurring.type === transaction.type &&
+                    recurring.isActive
+                );
+
+                if (recurringTransaction?.id) {
+                  const { deleteRecurringTransaction } = await import(
+                    "../services/userData"
+                  );
+                  await deleteRecurringTransaction(recurringTransaction.id);
+                  await loadTransactions();
+                  Alert.alert(
+                    "Success",
+                    "Recurring transaction deleted successfully!"
+                  );
+                } else {
+                  Alert.alert(
+                    "Error",
+                    "Could not find recurring transaction to delete"
+                  );
+                }
+              } catch (error) {
+                console.error("Error deleting recurring transaction:", error);
+                Alert.alert("Error", "Failed to delete recurring transaction");
+              }
+            },
+          },
+        ]
+      );
+    } else {
+      // For regular transactions, show simple delete confirmation
+      Alert.alert(
+        "Delete Transaction",
+        `Are you sure you want to delete "${transaction.description}"?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await removeTransaction(user.uid, transaction.id);
+                await loadTransactions();
+                Alert.alert("Success", "Transaction deleted successfully");
+              } catch (error) {
+                console.error("Error deleting transaction:", error);
+                Alert.alert("Error", "Failed to delete transaction");
+              }
+            },
+          },
+        ]
+      );
+    }
   };
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleDateString();
+  };
+
+  const isRecurringTransaction = (transaction: any) => {
+    return recurringTransactions.some(
+      (recurring) =>
+        recurring.name === transaction.description &&
+        recurring.amount === transaction.amount &&
+        recurring.type === transaction.type &&
+        recurring.isActive
+    );
   };
 
   return (
@@ -221,9 +331,21 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
                     <Text style={{ fontSize: 16, fontWeight: "500" }}>
                       {transaction.description}
                     </Text>
-                    <Text style={{ color: "#6b7280", fontSize: 14 }}>
-                      {transaction.category} • {formatDate(transaction.date)}
-                    </Text>
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Text style={{ color: "#6b7280", fontSize: 14 }}>
+                        {transaction.category} • {formatDate(transaction.date)}
+                      </Text>
+                      {isRecurringTransaction(transaction) && (
+                        <Ionicons
+                          name="repeat"
+                          size={12}
+                          color="#6366f1"
+                          style={{ marginLeft: 8 }}
+                        />
+                      )}
+                    </View>
                   </View>
                   <View style={{ alignItems: "flex-end" }}>
                     <Text
@@ -238,7 +360,7 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
                       {transaction.amount.toFixed(2)}
                     </Text>
                     <TouchableOpacity
-                      onPress={() => handleDeleteTransaction(transaction.id)}
+                      onPress={() => handleDeleteTransaction(transaction)}
                       style={{ marginTop: 4 }}
                     >
                       <Ionicons

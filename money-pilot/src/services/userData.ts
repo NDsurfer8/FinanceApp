@@ -67,6 +67,22 @@ export interface BudgetSettings {
   updatedAt: number;
 }
 
+export interface RecurringTransaction {
+  id?: string;
+  name: string;
+  amount: number;
+  type: "income" | "expense";
+  category: string;
+  frequency: "weekly" | "biweekly" | "monthly" | "quarterly" | "yearly";
+  startDate: number;
+  endDate?: number; // Optional end date
+  isActive: boolean;
+  skippedMonths?: string[]; // Array of "YYYY-MM" strings for skipped months
+  userId: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 // ===== SHARED FINANCE INTERFACES =====
 
 export interface SharedGroup {
@@ -1204,5 +1220,337 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
   } catch (error) {
     console.error("Error deleting user account:", error);
     throw new Error("Failed to delete user account and associated data");
+  }
+};
+
+// ===== RECURRING TRANSACTIONS =====
+
+export const saveRecurringTransaction = async (
+  recurringTransaction: RecurringTransaction
+): Promise<void> => {
+  try {
+    const recurringTransactionRef = ref(db, "recurringTransactions");
+    const newRecurringTransactionRef = push(recurringTransactionRef);
+
+    // Remove undefined values before saving to Firebase
+    const transactionToSave = { ...recurringTransaction };
+    if (transactionToSave.endDate === undefined) {
+      delete transactionToSave.endDate;
+    }
+
+    await set(newRecurringTransactionRef, {
+      ...transactionToSave,
+      id: newRecurringTransactionRef.key,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    console.log("Recurring transaction saved successfully");
+  } catch (error) {
+    console.error("Error saving recurring transaction:", error);
+    throw new Error("Failed to save recurring transaction");
+  }
+};
+
+export const getUserRecurringTransactions = async (
+  userId: string
+): Promise<RecurringTransaction[]> => {
+  try {
+    const recurringTransactionsRef = ref(db, "recurringTransactions");
+    const snapshot = await get(recurringTransactionsRef);
+
+    if (snapshot.exists()) {
+      const recurringTransactions = snapshot.val();
+      return Object.values(recurringTransactions).filter(
+        (transaction: any) => transaction.userId === userId
+      ) as RecurringTransaction[];
+    }
+
+    return [];
+  } catch (error) {
+    console.error("Error getting recurring transactions:", error);
+    throw new Error("Failed to get recurring transactions");
+  }
+};
+
+export const updateRecurringTransaction = async (
+  recurringTransaction: RecurringTransaction
+): Promise<void> => {
+  try {
+    if (!recurringTransaction.id) {
+      throw new Error("Recurring transaction ID is required for update");
+    }
+
+    const recurringTransactionRef = ref(
+      db,
+      `recurringTransactions/${recurringTransaction.id}`
+    );
+
+    // Remove undefined values before updating Firebase
+    const transactionToUpdate = { ...recurringTransaction };
+    if (transactionToUpdate.endDate === undefined) {
+      delete transactionToUpdate.endDate;
+    }
+
+    await update(recurringTransactionRef, {
+      ...transactionToUpdate,
+      updatedAt: Date.now(),
+    });
+
+    console.log("Recurring transaction updated successfully");
+  } catch (error) {
+    console.error("Error updating recurring transaction:", error);
+    throw new Error("Failed to update recurring transaction");
+  }
+};
+
+export const deleteRecurringTransaction = async (
+  recurringTransactionId: string
+): Promise<void> => {
+  try {
+    const recurringTransactionRef = ref(
+      db,
+      `recurringTransactions/${recurringTransactionId}`
+    );
+
+    await remove(recurringTransactionRef);
+    console.log("Recurring transaction deleted successfully");
+  } catch (error) {
+    console.error("Error deleting recurring transaction:", error);
+    throw new Error("Failed to delete recurring transaction");
+  }
+};
+
+export const skipRecurringTransactionForMonth = async (
+  recurringTransactionId: string,
+  monthKey: string
+): Promise<void> => {
+  try {
+    const recurringTransactionRef = ref(
+      db,
+      `recurringTransactions/${recurringTransactionId}`
+    );
+
+    // Get the current recurring transaction
+    const snapshot = await get(recurringTransactionRef);
+    if (!snapshot.exists()) {
+      throw new Error("Recurring transaction not found");
+    }
+
+    const recurringTransaction = snapshot.val();
+    const skippedMonths = recurringTransaction.skippedMonths || [];
+
+    // Add the month to skipped months if not already there
+    if (!skippedMonths.includes(monthKey)) {
+      skippedMonths.push(monthKey);
+    }
+
+    // Update the recurring transaction
+    await update(recurringTransactionRef, {
+      skippedMonths,
+      updatedAt: Date.now(),
+    });
+
+    console.log(`Skipped recurring transaction for month: ${monthKey}`);
+  } catch (error) {
+    console.error("Error skipping recurring transaction for month:", error);
+    throw new Error("Failed to skip recurring transaction for month");
+  }
+};
+
+export const generateRecurringTransactions = async (
+  userId: string,
+  targetMonth: Date
+): Promise<void> => {
+  try {
+    const recurringTransactions = await getUserRecurringTransactions(userId);
+    const targetMonthStart = new Date(
+      targetMonth.getFullYear(),
+      targetMonth.getMonth(),
+      1
+    );
+    const targetMonthEnd = new Date(
+      targetMonth.getFullYear(),
+      targetMonth.getMonth() + 1,
+      0
+    );
+
+    for (const recurringTransaction of recurringTransactions) {
+      if (!recurringTransaction.isActive) continue;
+
+      // Check if transaction should occur in target month
+      const shouldGenerate = checkIfTransactionShouldOccur(
+        recurringTransaction,
+        targetMonthStart,
+        targetMonthEnd
+      );
+
+      if (shouldGenerate) {
+        // Check if transaction already exists for this month
+        const existingTransactions = await getUserTransactions(userId);
+        const transactionExists = existingTransactions.some(
+          (transaction: any) => {
+            const transactionDate = new Date(transaction.date);
+            return (
+              transaction.description === recurringTransaction.name &&
+              transaction.amount === recurringTransaction.amount &&
+              transaction.type === recurringTransaction.type &&
+              transactionDate.getMonth() === targetMonth.getMonth() &&
+              transactionDate.getFullYear() === targetMonth.getFullYear()
+            );
+          }
+        );
+
+        if (!transactionExists) {
+          // Generate the transaction
+          const transactionDate = getNextOccurrenceDate(
+            recurringTransaction,
+            targetMonthStart
+          );
+
+          const newTransaction: Transaction = {
+            amount: recurringTransaction.amount,
+            type: recurringTransaction.type,
+            category: recurringTransaction.category,
+            description: recurringTransaction.name,
+            date: transactionDate.getTime(),
+            userId: userId,
+          };
+
+          await saveTransaction(newTransaction);
+          console.log(
+            `Generated recurring transaction: ${recurringTransaction.name}`
+          );
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error generating recurring transactions:", error);
+    throw new Error("Failed to generate recurring transactions");
+  }
+};
+
+const checkIfTransactionShouldOccur = (
+  recurringTransaction: RecurringTransaction,
+  monthStart: Date,
+  monthEnd: Date
+): boolean => {
+  const startDate = new Date(recurringTransaction.startDate);
+
+  if (startDate > monthEnd) return false;
+
+  if (
+    recurringTransaction.endDate &&
+    new Date(recurringTransaction.endDate) < monthStart
+  ) {
+    return false;
+  }
+
+  // Check if this month is in the skipped months list
+  const monthKey = `${monthStart.getFullYear()}-${String(
+    monthStart.getMonth() + 1
+  ).padStart(2, "0")}`;
+  if (
+    recurringTransaction.skippedMonths &&
+    recurringTransaction.skippedMonths.includes(monthKey)
+  ) {
+    return false;
+  }
+
+  switch (recurringTransaction.frequency) {
+    case "weekly":
+      // Weekly transactions occur every week, so they should occur in any month
+      // that starts after the start date
+      return monthStart >= startDate;
+    case "biweekly":
+      // Biweekly transactions occur every 2 weeks
+      const weeksSinceStart = Math.floor(
+        (monthStart.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)
+      );
+      return weeksSinceStart >= 0 && weeksSinceStart % 2 === 0;
+    case "monthly":
+      // Monthly transactions occur every month
+      const monthsSinceStart =
+        (monthStart.getFullYear() - startDate.getFullYear()) * 12 +
+        (monthStart.getMonth() - startDate.getMonth());
+      return monthsSinceStart >= 0;
+    case "quarterly":
+      // Quarterly transactions occur every 3 months
+      const quarterlyMonthsSinceStart =
+        (monthStart.getFullYear() - startDate.getFullYear()) * 12 +
+        (monthStart.getMonth() - startDate.getMonth());
+      return (
+        quarterlyMonthsSinceStart >= 0 && quarterlyMonthsSinceStart % 3 === 0
+      );
+    case "yearly":
+      // Yearly transactions occur every year
+      const yearsSinceStart =
+        monthStart.getFullYear() - startDate.getFullYear();
+      return yearsSinceStart >= 0;
+    default:
+      return false;
+  }
+};
+
+const getNextOccurrenceDate = (
+  recurringTransaction: RecurringTransaction,
+  monthStart: Date
+): Date => {
+  const startDate = new Date(recurringTransaction.startDate);
+
+  switch (recurringTransaction.frequency) {
+    case "weekly":
+      // For weekly, use the first day of the month plus some days
+      return new Date(monthStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+    case "biweekly":
+      // For biweekly, use the first day of the month plus 14 days
+      return new Date(monthStart.getTime() + 14 * 24 * 60 * 60 * 1000);
+    case "monthly":
+      // For monthly, use the same day of the month as the start date
+      const dayOfMonth = startDate.getDate();
+      const lastDayOfMonth = new Date(
+        monthStart.getFullYear(),
+        monthStart.getMonth() + 1,
+        0
+      ).getDate();
+      const actualDay = Math.min(dayOfMonth, lastDayOfMonth); // Handle months with fewer days
+      return new Date(
+        monthStart.getFullYear(),
+        monthStart.getMonth(),
+        actualDay
+      );
+    case "quarterly":
+      // For quarterly, use the same day of the month as the start date
+      const quarterDayOfMonth = startDate.getDate();
+      const quarterLastDayOfMonth = new Date(
+        monthStart.getFullYear(),
+        monthStart.getMonth() + 1,
+        0
+      ).getDate();
+      const quarterActualDay = Math.min(
+        quarterDayOfMonth,
+        quarterLastDayOfMonth
+      );
+      return new Date(
+        monthStart.getFullYear(),
+        monthStart.getMonth(),
+        quarterActualDay
+      );
+    case "yearly":
+      // For yearly, use the same month and day as the start date
+      const yearlyDayOfMonth = startDate.getDate();
+      const yearlyLastDayOfMonth = new Date(
+        monthStart.getFullYear(),
+        startDate.getMonth() + 1,
+        0
+      ).getDate();
+      const yearlyActualDay = Math.min(yearlyDayOfMonth, yearlyLastDayOfMonth);
+      return new Date(
+        monthStart.getFullYear(),
+        startDate.getMonth(),
+        yearlyActualDay
+      );
+    default:
+      return monthStart;
   }
 };
