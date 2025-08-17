@@ -15,6 +15,7 @@ import { useAuth } from "../hooks/useAuth";
 import {
   getUserSharedGroups,
   getGroupAggregatedData,
+  getGroupSharedData,
   createSharedGroup,
   addGroupMember,
   removeGroupMember,
@@ -38,10 +39,12 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
   const [invitations, setInvitations] = useState<SharedInvitation[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<SharedGroup | null>(null);
   const [groupData, setGroupData] = useState<any>(null);
+  const [groupGoals, setGroupGoals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showInvitationsModal, setShowInvitationsModal] = useState(false);
+  const [showGoalsModal, setShowGoalsModal] = useState(false);
 
   // Form states
   const [newGroup, setNewGroup] = useState({
@@ -89,6 +92,8 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
         description: newGroup.description,
         type: newGroup.type,
         ownerId: user.uid,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
         members: [
           {
             id: user.uid,
@@ -151,6 +156,8 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
         inviteeEmail: inviteEmail.trim(),
         role: inviteRole,
         status: "pending",
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days from now
       };
 
       await createInvitation(invitation);
@@ -215,6 +222,17 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
     } catch (error) {
       console.error("Error loading group data:", error);
       Alert.alert("Error", "Failed to load group data");
+    }
+  };
+
+  const loadGroupGoals = async (groupId: string) => {
+    try {
+      const sharedData = await getGroupSharedData(groupId);
+      setGroupGoals(sharedData.goals);
+      setShowGoalsModal(true);
+    } catch (error) {
+      console.error("Error loading group goals:", error);
+      Alert.alert("Error", "Failed to load group goals");
     }
   };
 
@@ -633,6 +651,23 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                 </Text>
               </View>
             </View>
+
+            {/* Goals Button */}
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#f59e0b",
+                padding: 16,
+                borderRadius: 12,
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+              onPress={() => loadGroupGoals(selectedGroup.id!)}
+            >
+              <Ionicons name="flag" size={20} color="#fff" />
+              <Text style={{ color: "#fff", fontWeight: "600", marginTop: 4 }}>
+                View Group Goals ({groupData.totalGoals})
+              </Text>
+            </TouchableOpacity>
 
             {/* Members List */}
             <View>
@@ -1214,6 +1249,239 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     </View>
                   </View>
                 ))}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Group Goals Modal */}
+      <Modal
+        visible={showGoalsModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowGoalsModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: 20,
+              width: "90%",
+              maxWidth: 400,
+              maxHeight: "85%",
+              padding: 24,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+            >
+              <Text
+                style={{ fontSize: 20, fontWeight: "700", color: "#1f2937" }}
+              >
+                Group Goals
+              </Text>
+              <TouchableOpacity onPress={() => setShowGoalsModal(false)}>
+                <Ionicons name="close" size={24} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            {groupGoals.length === 0 ? (
+              <View style={{ alignItems: "center", padding: 40 }}>
+                <Ionicons name="flag-outline" size={48} color="#d1d5db" />
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: "#374151",
+                    marginTop: 16,
+                  }}
+                >
+                  No Group Goals
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: "#6b7280",
+                    textAlign: "center",
+                    marginTop: 8,
+                  }}
+                >
+                  Group members haven't shared any goals yet
+                </Text>
+              </View>
+            ) : (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {groupGoals.map((goal, index) => {
+                  const progress =
+                    goal.targetAmount > 0
+                      ? (goal.currentAmount / goal.targetAmount) * 100
+                      : 0;
+
+                  const getProgressColor = (progress: number) => {
+                    if (progress >= 100) return "#16a34a";
+                    if (progress >= 75) return "#d97706";
+                    if (progress >= 50) return "#f59e0b";
+                    return "#dc2626";
+                  };
+
+                  return (
+                    <View
+                      key={goal.id || index}
+                      style={{
+                        borderWidth: 1,
+                        borderColor: "#e5e7eb",
+                        borderRadius: 12,
+                        padding: 16,
+                        marginBottom: 12,
+                      }}
+                    >
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 8,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: "600",
+                            color: "#374151",
+                            flex: 1,
+                          }}
+                        >
+                          {goal.name}
+                        </Text>
+                        <View
+                          style={{
+                            backgroundColor: `${getProgressColor(progress)}20`,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: "600",
+                              color: getProgressColor(progress),
+                            }}
+                          >
+                            {progress.toFixed(1)}%
+                          </Text>
+                        </View>
+                      </View>
+
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          color: "#6b7280",
+                          marginBottom: 8,
+                        }}
+                      >
+                        {goal.category?.charAt(0).toUpperCase() +
+                          goal.category?.slice(1) || "Other"}
+                      </Text>
+
+                      {/* Progress Bar */}
+                      <View
+                        style={{
+                          height: 6,
+                          backgroundColor: "#f3f4f6",
+                          borderRadius: 3,
+                          overflow: "hidden",
+                          marginBottom: 8,
+                        }}
+                      >
+                        <View
+                          style={{
+                            height: "100%",
+                            backgroundColor: getProgressColor(progress),
+                            width: `${Math.min(progress, 100)}%`,
+                          }}
+                        />
+                      </View>
+
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <View>
+                          <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                            Current
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              fontWeight: "600",
+                              color: "#374151",
+                            }}
+                          >
+                            {formatCurrency(goal.currentAmount)}
+                          </Text>
+                        </View>
+                        <View>
+                          <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                            Target
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              fontWeight: "600",
+                              color: "#374151",
+                            }}
+                          >
+                            {formatCurrency(goal.targetAmount)}
+                          </Text>
+                        </View>
+                        <View>
+                          <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                            Monthly
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              fontWeight: "600",
+                              color: "#16a34a",
+                            }}
+                          >
+                            {formatCurrency(goal.monthlyContribution)}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {goal.targetDate && (
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#6b7280",
+                            marginTop: 8,
+                            textAlign: "center",
+                          }}
+                        >
+                          Target Date:{" "}
+                          {new Date(goal.targetDate).toLocaleDateString()}
+                        </Text>
+                      )}
+                    </View>
+                  );
+                })}
               </ScrollView>
             )}
           </View>
