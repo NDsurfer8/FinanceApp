@@ -9,6 +9,7 @@ import { useAuth } from "../hooks/useAuth";
 import { notificationService } from "../services/notifications";
 import { billReminderService } from "../services/billReminders";
 import { UserProvider } from "../context/UserContext";
+import { SplashScreen } from "./SplashScreen";
 import {
   DashboardScreen,
   BudgetScreen,
@@ -34,17 +35,65 @@ import {
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const Stack = createStackNavigator();
 
-type AppState = "intro" | "login" | "signup" | "forgot-password" | "main";
+type AppState =
+  | "splash"
+  | "intro"
+  | "login"
+  | "signup"
+  | "forgot-password"
+  | "main";
 
 export const MainApp: React.FC = () => {
-  const [appState, setAppState] = useState<AppState>("intro");
+  const [appState, setAppState] = useState<AppState>("splash");
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState("Initializing...");
   const { user, loading: authLoading, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    checkFirstLaunch();
-    setupNotifications();
+    initializeApp();
   }, []);
+
+  // Fallback timeout to prevent getting stuck
+  useEffect(() => {
+    const fallbackTimeout = setTimeout(() => {
+      if (isLoading) {
+        console.log("Fallback timeout reached, forcing app to proceed");
+        setIsLoading(false);
+      }
+    }, 10000); // 10 seconds max
+
+    return () => clearTimeout(fallbackTimeout);
+  }, [isLoading]);
+
+  const initializeApp = async () => {
+    try {
+      setLoadingMessage("Checking authentication...");
+
+      // Wait for auth to finish loading with timeout
+      let authWaitTime = 0;
+      const maxWaitTime = 5000; // 5 seconds max
+
+      while (authLoading && authWaitTime < maxWaitTime) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        authWaitTime += 100;
+      }
+
+      if (authWaitTime >= maxWaitTime) {
+        console.log("Auth loading timeout, proceeding anyway");
+      }
+
+      setLoadingMessage("Loading app settings...");
+      await checkFirstLaunch();
+
+      setLoadingMessage("Setting up notifications...");
+      setupNotifications();
+
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error initializing app:", error);
+      setIsLoading(false);
+    }
+  };
 
   // Setup bill reminders when user is authenticated
   useEffect(() => {
@@ -81,32 +130,44 @@ export const MainApp: React.FC = () => {
     return cleanup;
   };
 
+  // Handle app state changes based on authentication
   useEffect(() => {
-    if (!authLoading) {
+    console.log("Auth state changed:", {
+      isLoading,
+      authLoading,
+      isAuthenticated,
+      appState,
+      user: user?.uid,
+    });
+
+    if (!isLoading && !authLoading) {
       if (isAuthenticated) {
+        console.log("User is authenticated, going to main app");
         setAppState("main");
       } else if (appState === "main") {
+        console.log("User is not authenticated, going to login");
         setAppState("login");
       }
     }
-  }, [authLoading, isAuthenticated, appState]);
+  }, [isLoading, authLoading, isAuthenticated, appState, user]);
 
   const checkFirstLaunch = async () => {
     try {
       const hasSeenIntro = await AsyncStorage.getItem("hasSeenIntro");
 
       if (!hasSeenIntro) {
+        console.log("First launch detected, showing intro");
         setAppState("intro");
       } else if (!isAuthenticated) {
+        console.log("User not authenticated, showing login");
         setAppState("login");
       } else {
+        console.log("User authenticated, going to main app");
         setAppState("main");
       }
     } catch (error) {
       console.error("Error checking app state:", error);
       setAppState("intro");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -141,8 +202,13 @@ export const MainApp: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return null; // You could add a splash screen here
+  // Show splash screen while loading
+  if (isLoading || authLoading) {
+    return <SplashScreen message={loadingMessage} />;
+  }
+
+  if (appState === "splash") {
+    return <SplashScreen message="Loading..." />;
   }
 
   if (appState === "intro") {
@@ -172,29 +238,63 @@ export const MainApp: React.FC = () => {
     return <ForgotPasswordScreen onBack={() => setAppState("login")} />;
   }
 
-  const MainStack = () => (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="MainTabs" component={MainTabs} />
-      <Stack.Screen name="AddTransaction" component={AddTransactionScreen} />
-      <Stack.Screen name="AddAssetDebt" component={AddAssetDebtScreen} />
-      <Stack.Screen name="BalanceSheet" component={BalanceSheetScreen} />
-      <Stack.Screen name="SharedFinance" component={SharedFinanceScreen} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-      <Stack.Screen
-        name="NotificationSettings"
-        component={NotificationSettingsScreen}
-      />
-      <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
-      <Stack.Screen name="About" component={AboutScreen} />
-      <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
-      <Stack.Screen
-        name="RecurringTransactions"
-        component={RecurringTransactionsScreen}
-      />
-    </Stack.Navigator>
-  );
+  if (appState === "main") {
+    return (
+      <UserProvider>
+        <NavigationContainer>
+          <Stack.Navigator
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
+            <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+            <Stack.Screen
+              name="AddTransaction"
+              component={AddTransactionScreen}
+            />
+            <Stack.Screen name="AddAssetDebt" component={AddAssetDebtScreen} />
+            <Stack.Screen name="GoalTracking" component={GoalTrackingScreen} />
+            <Stack.Screen name="BalanceSheet" component={BalanceSheetScreen} />
+            <Stack.Screen
+              name="SharedFinance"
+              component={SharedFinanceScreen}
+            />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            <Stack.Screen
+              name="NotificationSettings"
+              component={NotificationSettingsScreen}
+            />
+            <Stack.Screen
+              name="PrivacySecurity"
+              component={PrivacySecurityScreen}
+            />
+            <Stack.Screen name="About" component={AboutScreen} />
+            <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+            <Stack.Screen
+              name="RecurringTransactions"
+              component={RecurringTransactionsScreen}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </UserProvider>
+    );
+  }
 
-  const MainTabs = () => (
+  return <SplashScreen message="Loading..." />;
+};
+
+const MainTabNavigator = () => {
+  const handleLogout = async () => {
+    try {
+      const { signOutUser } = await import("../services/auth");
+      await signOutUser();
+      // The auth state change will be handled by the useEffect in MainApp
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
+  return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
@@ -231,13 +331,5 @@ export const MainApp: React.FC = () => {
         )}
       </Tab.Screen>
     </Tab.Navigator>
-  );
-
-  return (
-    <UserProvider>
-      <NavigationContainer>
-        <MainStack />
-      </NavigationContainer>
-    </UserProvider>
   );
 };
