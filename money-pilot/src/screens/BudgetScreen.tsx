@@ -337,7 +337,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   };
 
   const handleSetupRecurring = () => {
-    navigation.navigate("RecurringTransactions");
+    navigation.navigate("RecurringTransactions", {
+      selectedMonth: selectedMonth.getTime(),
+    });
   };
 
   const handleMonthChange = async (direction: "prev" | "next") => {

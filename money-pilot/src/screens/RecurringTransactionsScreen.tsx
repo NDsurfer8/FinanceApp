@@ -23,12 +23,24 @@ import {
 
 interface RecurringTransactionsScreenProps {
   navigation: any;
+  route: any;
 }
 
 export const RecurringTransactionsScreen: React.FC<
   RecurringTransactionsScreenProps
-> = ({ navigation }) => {
+> = ({ navigation, route }) => {
   const { user } = useAuth();
+  const { selectedMonth } = route.params || {};
+
+  // Use selectedMonth if provided, otherwise use today's date
+  const getInitialDate = () => {
+    if (selectedMonth) {
+      const date = new Date(selectedMonth);
+      return date.toISOString().split("T")[0];
+    }
+    return new Date().toISOString().split("T")[0];
+  };
+
   const [recurringTransactions, setRecurringTransactions] = useState<
     RecurringTransaction[]
   >([]);
@@ -47,7 +59,7 @@ export const RecurringTransactionsScreen: React.FC<
       | "monthly"
       | "quarterly"
       | "yearly",
-    startDate: new Date().toISOString().split("T")[0],
+    startDate: getInitialDate(),
     endDate: "",
     isActive: true,
   });
@@ -88,7 +100,7 @@ export const RecurringTransactionsScreen: React.FC<
       type: "expense",
       category: "",
       frequency: "monthly",
-      startDate: new Date().toISOString().split("T")[0],
+      startDate: getInitialDate(),
       endDate: "",
       isActive: true,
     });
