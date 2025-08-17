@@ -18,6 +18,7 @@ import {
   saveBudgetSettings,
   updateBudgetSettings,
   BudgetSettings,
+  getUserGoals,
 } from "../services/userData";
 
 interface BudgetScreenProps {
@@ -34,18 +35,22 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const [budgetSettings, setBudgetSettings] = useState<BudgetSettings | null>(
     null
   );
+  const [goals, setGoals] = useState<any[]>([]);
 
   const loadTransactions = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
-      const [userTransactions, userBudgetSettings] = await Promise.all([
-        getUserTransactions(user.uid),
-        getUserBudgetSettings(user.uid),
-      ]);
+      const [userTransactions, userBudgetSettings, userGoals] =
+        await Promise.all([
+          getUserTransactions(user.uid),
+          getUserBudgetSettings(user.uid),
+          getUserGoals(user.uid),
+        ]);
       setTransactions(userTransactions);
       setBudgetSettings(userBudgetSettings);
+      setGoals(userGoals);
 
       // Set the percentages from saved settings or defaults
       if (userBudgetSettings) {
@@ -140,7 +145,14 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const savingsPercent = parseFloat(savingsPercentage) || 0;
   const debtPayoffPercent = parseFloat(debtPayoffPercentage) || 0;
   const savingsAmount = totalIncome * (savingsPercent / 100);
-  const discretionaryIncome = netIncome - savingsAmount;
+
+  // Calculate total goal contributions
+  const totalGoalContributions = goals.reduce((total, goal) => {
+    return total + goal.monthlyContribution;
+  }, 0);
+
+  const discretionaryIncome =
+    netIncome - savingsAmount - totalGoalContributions;
   const debtPayoffAmount = discretionaryIncome * (debtPayoffPercent / 100);
   const remainingBalance = discretionaryIncome - debtPayoffAmount;
 
@@ -900,6 +912,30 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               </Text>
             </View>
           </View>
+
+          {/* Individual Goal Fields */}
+          {goals.map((goal, index) => (
+            <View key={goal.id} style={{ marginBottom: 16 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginBottom: 8,
+                }}
+              >
+                <Text
+                  style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
+                >
+                  {goal.name}
+                </Text>
+                <Text
+                  style={{ fontSize: 16, fontWeight: "700", color: "#3b82f6" }}
+                >
+                  {formatCurrency(goal.monthlyContribution)}
+                </Text>
+              </View>
+            </View>
+          ))}
 
           <View style={{ marginBottom: 16 }}>
             <View
