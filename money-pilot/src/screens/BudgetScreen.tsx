@@ -408,6 +408,14 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   };
 
   const handleEditTransaction = (transaction: any) => {
+    if (isRecurringTransaction(transaction)) {
+      Alert.alert(
+        "Recurring Transaction",
+        "This transaction is recurring and can only be edited from the Recurring Transactions screen.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
     setEditingTransactionId(transaction.id);
     setEditingAmount(transaction.amount.toString());
   };

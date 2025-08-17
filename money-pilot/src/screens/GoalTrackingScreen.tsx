@@ -43,7 +43,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
       .toISOString()
       .split("T")[0],
     category: "savings",
-    priority: "medium" as const,
+    priority: "medium" as "medium" | "high" | "low",
   });
 
   const goalCategories = [
@@ -205,6 +205,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
         category: newGoal.category,
         priority: newGoal.priority,
         userId: user.uid,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       };
 
       await saveGoal(goal);
@@ -602,7 +604,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         {goal.priority}
                       </Text>
                     </View>
-                    <TouchableOpacity onPress={() => handleDeleteGoal(goal.id)}>
+                    <TouchableOpacity
+                      onPress={() => goal?.id && handleDeleteGoal(goal.id)}
+                    >
                       <Ionicons
                         name="trash-outline"
                         size={20}
@@ -724,6 +728,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     ) : (
                       <TouchableOpacity
                         onPress={() =>
+                          goal.id &&
                           handleEditGoal(
                             goal.id,
                             "targetAmount",
@@ -804,6 +809,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     ) : (
                       <TouchableOpacity
                         onPress={() =>
+                          goal.id &&
                           handleEditGoal(
                             goal.id,
                             "monthlyContribution",
@@ -903,6 +909,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   ) : (
                     <TouchableOpacity
                       onPress={() =>
+                        goal?.id &&
                         handleEditGoal(
                           goal.id,
                           "targetDate",
@@ -944,7 +951,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                           text: "Update",
                           onPress: (value) => {
                             const newAmount = parseFloat(value || "0");
-                            if (!isNaN(newAmount)) {
+                            if (!isNaN(newAmount) && goal?.id) {
                               handleUpdateGoal(goal.id, newAmount);
                             }
                           },
@@ -1169,7 +1176,12 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                               : "#f3f4f6",
                           alignItems: "center",
                         }}
-                        onPress={() => setNewGoal({ ...newGoal, priority })}
+                        onPress={() =>
+                          setNewGoal({
+                            ...newGoal,
+                            priority: priority as "medium" | "high" | "low",
+                          })
+                        }
                       >
                         <Text
                           style={{
