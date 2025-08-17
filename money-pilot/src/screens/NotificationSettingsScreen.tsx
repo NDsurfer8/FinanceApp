@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { notificationService } from "../services/notifications";
 import { billReminderService } from "../services/billReminders";
+import { budgetReminderService } from "../services/budgetReminders";
 import { useAuth } from "../hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -150,30 +151,34 @@ export const NotificationSettingsScreen: React.FC<
           notification.content.data?.type === "bill-due-today"
       );
 
-      console.log(
-        `Found ${scheduledNotifications.length} scheduled notifications, bill reminders: ${hasBillReminders}`
+      const hasBudgetReminders = scheduledNotifications.some(
+        (notification) => notification.content.data?.type === "budget-reminder"
       );
 
-      // Check saved state and update if needed
-      const savedValue = await AsyncStorage.getItem(
+      console.log(
+        `Found ${scheduledNotifications.length} scheduled notifications, bill reminders: ${hasBillReminders}, budget reminders: ${hasBudgetReminders}`
+      );
+
+      // Check saved state and update if needed for bill reminders
+      const savedBillValue = await AsyncStorage.getItem(
         `notification_bill-reminders`
       );
-      const savedEnabled = savedValue === "true";
+      const savedBillEnabled = savedBillValue === "true";
 
       console.log(
-        `Bill reminder status check - saved: ${savedEnabled}, actual: ${hasBillReminders}`
+        `Bill reminder status check - saved: ${savedBillEnabled}, actual: ${hasBillReminders}`
       );
 
       // Only update if there are actual notifications and they don't match saved state
       // If saved is true but no notifications exist, keep the saved state (user wants them enabled)
-      if (savedEnabled && !hasBillReminders) {
+      if (savedBillEnabled && !hasBillReminders) {
         console.log(
           `Saved state is true but no notifications found - keeping saved state`
         );
         // Don't update - keep the saved state
-      } else if (savedEnabled !== hasBillReminders) {
+      } else if (savedBillEnabled !== hasBillReminders) {
         console.log(
-          `Updating bill reminder state from ${savedEnabled} to ${hasBillReminders}`
+          `Updating bill reminder state from ${savedBillEnabled} to ${hasBillReminders}`
         );
         await AsyncStorage.setItem(
           `notification_bill-reminders`,
@@ -189,8 +194,42 @@ export const NotificationSettingsScreen: React.FC<
       } else {
         console.log(`Bill reminder state matches, no update needed`);
       }
+
+      // Check saved state and update if needed for budget reminders
+      const savedBudgetValue = await AsyncStorage.getItem(
+        `notification_budget-reminders`
+      );
+      const savedBudgetEnabled = savedBudgetValue === "true";
+
+      console.log(
+        `Budget reminder status check - saved: ${savedBudgetEnabled}, actual: ${hasBudgetReminders}`
+      );
+
+      if (savedBudgetEnabled && !hasBudgetReminders) {
+        console.log(
+          `Saved budget state is true but no notifications found - keeping saved state`
+        );
+        // Don't update - keep the saved state
+      } else if (savedBudgetEnabled !== hasBudgetReminders) {
+        console.log(
+          `Updating budget reminder state from ${savedBudgetEnabled} to ${hasBudgetReminders}`
+        );
+        await AsyncStorage.setItem(
+          `notification_budget-reminders`,
+          hasBudgetReminders ? "true" : "false"
+        );
+        setSettings((prev) =>
+          prev.map((setting) =>
+            setting.id === "budget-reminders"
+              ? { ...setting, enabled: hasBudgetReminders }
+              : setting
+          )
+        );
+      } else {
+        console.log(`Budget reminder state matches, no update needed`);
+      }
     } catch (error) {
-      console.error("Error checking bill reminder status:", error);
+      console.error("Error checking reminder status:", error);
     }
   };
 
@@ -229,10 +268,9 @@ export const NotificationSettingsScreen: React.FC<
     try {
       switch (setting.type) {
         case "budget":
-          await notificationService.scheduleBudgetReminder(
-            new Date(Date.now() + 60000), // 1 minute from now
-            1000
-          );
+          if (user) {
+            await budgetReminderService.scheduleAllBudgetReminders(user.uid);
+          }
           break;
         case "bills":
           if (user) {
@@ -273,6 +311,9 @@ export const NotificationSettingsScreen: React.FC<
       if (settingId === "bill-reminders") {
         // Cancel all bill reminders specifically
         await billReminderService.cancelAllBillReminders();
+      } else if (settingId === "budget-reminders") {
+        // Cancel all budget reminders specifically
+        await budgetReminderService.cancelAllBudgetReminders();
       } else {
         // Cancel all notifications for this setting type
         const scheduledNotifications =
@@ -295,10 +336,23 @@ export const NotificationSettingsScreen: React.FC<
     try {
       switch (setting.type) {
         case "budget":
-          await notificationService.scheduleBudgetReminder(
-            new Date(Date.now() + 5000), // 5 seconds from now
-            1000
-          );
+          if (user) {
+            // Get current budget status and schedule a test reminder
+            const budgetStatus =
+              await budgetReminderService.getCurrentBudgetStatus(user.uid);
+            console.log("Budget test notification data:", budgetStatus);
+            await notificationService.scheduleNotification({
+              id: `test-budget-${Date.now()}`,
+              title: "💰 Budget Test",
+              body: `Income: $${budgetStatus.totalIncome.toFixed(
+                2
+              )}, Expenses: $${budgetStatus.totalExpenses.toFixed(
+                2
+              )}, Remaining: $${budgetStatus.remainingBudget.toFixed(2)}`,
+              data: { type: "test-budget" },
+              trigger: { seconds: 5 } as any,
+            });
+          }
           break;
         case "bills":
           if (user) {
@@ -336,7 +390,7 @@ export const NotificationSettingsScreen: React.FC<
             title: "🧪 Test Notification",
             body: "This is a test notification from Money Pilot!",
             data: { type: "test" },
-            trigger: { seconds: 5 },
+            trigger: { seconds: 5 } as any,
           });
       }
       Alert.alert(
