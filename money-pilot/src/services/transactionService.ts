@@ -418,7 +418,7 @@ export const getProjectedTransactionsForMonth = async (
             amount: recurringTransaction.amount,
             type: recurringTransaction.type,
             category: recurringTransaction.category,
-            description: `${recurringTransaction.name} (Projected)`,
+            description: recurringTransaction.name,
             date: transactionDate.getTime(),
             userId: userId,
           };
