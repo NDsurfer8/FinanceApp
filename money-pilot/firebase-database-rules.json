@@ -49,6 +49,9 @@
               ".validate": "newData.val() === auth.uid"
             },
             "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "recurringTransactionId": {
               ".validate": "newData.isString() && newData.val().length > 0"
             }
           }

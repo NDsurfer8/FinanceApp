@@ -15,6 +15,7 @@ import {
   getUserRecurringTransactions,
   skipRecurringTransactionForMonth,
 } from "../services/userData";
+import { deleteRecurringTransaction } from "../services/transactionService";
 
 interface TransactionsScreenProps {
   navigation: any;
@@ -130,14 +131,11 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
                 );
 
                 if (recurringTransaction?.id) {
-                  const { deleteRecurringTransaction } = await import(
-                    "../services/userData"
-                  );
                   await deleteRecurringTransaction(recurringTransaction.id);
                   await loadTransactions();
                   Alert.alert(
                     "Success",
-                    "Recurring transaction deleted successfully!"
+                    "Recurring transaction and all related transactions deleted successfully!"
                   );
                 } else {
                   Alert.alert(

@@ -22,6 +22,7 @@ import {
   getUserRecurringTransactions,
   skipRecurringTransactionForMonth,
 } from "../services/userData";
+import { getProjectedTransactionsForMonth } from "../services/transactionService";
 import { billReminderService } from "../services/billReminders";
 
 interface BudgetScreenProps {
@@ -39,6 +40,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     getDataInstantly,
     updateDataOptimistically,
     refreshInBackground,
+    refreshData,
   } = useZeroLoading();
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [savingsPercentage, setSavingsPercentage] = useState("20");
@@ -47,6 +49,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     string | null
   >(null);
   const [editingAmount, setEditingAmount] = useState("");
+  const [projectedTransactions, setProjectedTransactions] = useState<any[]>([]);
+  const [isFutureMonth, setIsFutureMonth] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -61,10 +65,15 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   // Background refresh when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
+      console.log("BudgetScreen useFocusEffect triggered");
       if (user) {
-        refreshInBackground();
+        console.log("Refreshing data in background...");
+        // Force refresh when screen comes into focus to get latest data
+        refreshData().catch((error: any) => {
+          console.error("Background refresh failed:", error);
+        });
       }
-    }, [user, refreshInBackground])
+    }, [user, refreshData])
   );
 
   // Get transactions for selected month
@@ -82,6 +91,42 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   };
 
   const monthlyTransactions = getMonthlyTransactions(selectedMonth);
+
+  // Check if selected month is in the future
+  const checkIfFutureMonth = (date: Date) => {
+    const now = new Date();
+    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const selectedMonthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+    return selectedMonthStart > currentMonth;
+  };
+
+  // Load projected transactions for future months
+  const loadProjectedTransactions = async (date: Date) => {
+    if (!user) return;
+
+    const isFuture = checkIfFutureMonth(date);
+    setIsFutureMonth(isFuture);
+
+    if (isFuture) {
+      try {
+        const { projected } = await getProjectedTransactionsForMonth(
+          user.uid,
+          date
+        );
+        setProjectedTransactions(projected);
+      } catch (error) {
+        console.error("Error loading projected transactions:", error);
+        setProjectedTransactions([]);
+      }
+    } else {
+      setProjectedTransactions([]);
+    }
+  };
+
+  // Load projected transactions when selected month changes
+  useEffect(() => {
+    loadProjectedTransactions(selectedMonth);
+  }, [selectedMonth, user]);
 
   // Handle delete transaction
   const handleDeleteTransaction = async (transaction: any) => {
@@ -111,13 +156,23 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 await removeTransaction(user.uid, transaction.id);
 
                 // Find the recurring transaction and skip this month
-                const recurringTransaction = recurringTransactions.find(
-                  (recurring) =>
-                    recurring.name === transaction.description &&
-                    recurring.amount === transaction.amount &&
-                    recurring.type === transaction.type &&
-                    recurring.isActive
-                );
+                let recurringTransaction;
+                if (transaction.recurringTransactionId) {
+                  // Use the direct reference if available
+                  recurringTransaction = recurringTransactions.find(
+                    (recurring) =>
+                      recurring.id === transaction.recurringTransactionId
+                  );
+                } else {
+                  // Fallback to the old method for backward compatibility
+                  recurringTransaction = recurringTransactions.find(
+                    (recurring) =>
+                      recurring.name === transaction.description &&
+                      recurring.amount === transaction.amount &&
+                      recurring.type === transaction.type &&
+                      recurring.isActive
+                  );
+                }
 
                 if (recurringTransaction?.id) {
                   const monthKey = `${selectedMonth.getFullYear()}-${String(
@@ -154,24 +209,34 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 updateDataOptimistically({ transactions: updatedTransactions });
 
                 // Find the recurring transaction and delete it
-                const recurringTransaction = recurringTransactions.find(
-                  (recurring) =>
-                    recurring.name === transaction.description &&
-                    recurring.amount === transaction.amount &&
-                    recurring.type === transaction.type &&
-                    recurring.isActive
-                );
+                let recurringTransaction;
+                if (transaction.recurringTransactionId) {
+                  // Use the direct reference if available
+                  recurringTransaction = recurringTransactions.find(
+                    (recurring) =>
+                      recurring.id === transaction.recurringTransactionId
+                  );
+                } else {
+                  // Fallback to the old method for backward compatibility
+                  recurringTransaction = recurringTransactions.find(
+                    (recurring) =>
+                      recurring.name === transaction.description &&
+                      recurring.amount === transaction.amount &&
+                      recurring.type === transaction.type &&
+                      recurring.isActive
+                  );
+                }
 
                 if (recurringTransaction?.id) {
                   const { deleteRecurringTransaction } = await import(
-                    "../services/userData"
+                    "../services/transactionService"
                   );
                   await deleteRecurringTransaction(recurringTransaction.id);
                 }
 
                 Alert.alert(
                   "Success",
-                  "Transaction and all future occurrences deleted!"
+                  "Recurring transaction and all related transactions deleted!"
                 );
               } catch (error) {
                 console.error("Error deleting transaction:", error);
@@ -227,11 +292,20 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     (t) => t.type === "expense"
   );
 
-  const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = expenseTransactions.reduce(
-    (sum, t) => sum + t.amount,
-    0
-  );
+  // Include projected transactions for future months
+  const projectedIncomeTransactions = isFutureMonth
+    ? projectedTransactions.filter((t) => t.type === "income")
+    : [];
+  const projectedExpenseTransactions = isFutureMonth
+    ? projectedTransactions.filter((t) => t.type === "expense")
+    : [];
+
+  const totalIncome =
+    incomeTransactions.reduce((sum, t) => sum + t.amount, 0) +
+    projectedIncomeTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses =
+    expenseTransactions.reduce((sum, t) => sum + t.amount, 0) +
+    projectedExpenseTransactions.reduce((sum, t) => sum + t.amount, 0);
   const netIncome = totalIncome - totalExpenses;
 
   // Calculate budget metrics
@@ -312,6 +386,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   };
 
   const isRecurringTransaction = (transaction: any) => {
+    // Check if transaction has a recurring transaction ID
+    if (transaction.recurringTransactionId) {
+      return true;
+    }
+
+    // Fallback to the old method for backward compatibility
     return recurringTransactions.some(
       (recurring) =>
         recurring.name === transaction.description &&
@@ -335,12 +415,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     });
   };
 
-  const handleSetupRecurring = () => {
-    navigation.navigate("RecurringTransactions", {
-      selectedMonth: selectedMonth.getTime(),
-    });
-  };
-
   const handleMonthChange = async (direction: "prev" | "next") => {
     const newDate = new Date(selectedMonth);
     if (direction === "prev") {
@@ -349,12 +423,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       newDate.setMonth(newDate.getMonth() + 1);
     }
     setSelectedMonth(newDate);
-
-    // Generate recurring transactions for the new month and reload data
-    if (user) {
-      // await generateRecurringTransactions(user.uid, newDate); // This line is removed as per the new_code
-      // await loadTransactions(); // This line is removed as per the new_code
-    }
   };
 
   const handleSaveBudgetSettings = async () => {
@@ -503,33 +571,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         </View>
 
         {/* Premium Feature: Quick Setup */}
-        <TouchableOpacity
-          style={{
-            backgroundColor: "#6366f1",
-            borderRadius: 16,
-            padding: 20,
-            marginBottom: 20,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            shadowColor: "#6366f1",
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-          onPress={handleSetupRecurring}
-        >
-          <Ionicons
-            name="settings"
-            size={20}
-            color="#fff"
-            style={{ marginRight: 12 }}
-          />
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
-            Setup Recurring Income & Expenses
-          </Text>
-        </TouchableOpacity>
 
         {/* Premium Feature: Smart Insights */}
         {insights.length > 0 && (
@@ -810,6 +851,91 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             ))
           )}
 
+          {/* Show projected transactions for future months */}
+          {isFutureMonth &&
+            projectedTransactions.filter((t) => t.type === "income").length >
+              0 && (
+              <View
+                style={{
+                  marginTop: 20,
+                  paddingTop: 20,
+                  borderTopWidth: 1,
+                  borderTopColor: "#e5e7eb",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: "#6b7280",
+                    marginBottom: 12,
+                  }}
+                >
+                  Projected Income (from recurring transactions)
+                </Text>
+                {projectedTransactions
+                  .filter((t) => t.type === "income")
+                  .map((transaction) => (
+                    <View
+                      key={transaction.id}
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 12,
+                        paddingVertical: 8,
+                        borderBottomWidth: 1,
+                        borderBottomColor: "#f3f4f6",
+                        opacity: 0.7,
+                      }}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            color: "#374151",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {transaction.description}
+                        </Text>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 2,
+                          }}
+                        >
+                          <Text style={{ fontSize: 14, color: "#6b7280" }}>
+                            {transaction.category} •{" "}
+                            {formatDate(transaction.date)}
+                          </Text>
+                          <Ionicons
+                            name="time-outline"
+                            size={12}
+                            color="#6366f1"
+                            style={{ marginLeft: 8 }}
+                          />
+                        </View>
+                      </View>
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: "700",
+                            color: "#16a34a",
+                          }}
+                        >
+                          {formatCurrency(transaction.amount)}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+              </View>
+            )}
+
           <View
             style={{
               borderTopWidth: 2,
@@ -1036,6 +1162,91 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               </View>
             ))
           )}
+
+          {/* Show projected transactions for future months */}
+          {isFutureMonth &&
+            projectedTransactions.filter((t) => t.type === "expense").length >
+              0 && (
+              <View
+                style={{
+                  marginTop: 20,
+                  paddingTop: 20,
+                  borderTopWidth: 1,
+                  borderTopColor: "#e5e7eb",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: "#6b7280",
+                    marginBottom: 12,
+                  }}
+                >
+                  Projected Expenses (from recurring transactions)
+                </Text>
+                {projectedTransactions
+                  .filter((t) => t.type === "expense")
+                  .map((transaction) => (
+                    <View
+                      key={transaction.id}
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 12,
+                        paddingVertical: 8,
+                        borderBottomWidth: 1,
+                        borderBottomColor: "#f3f4f6",
+                        opacity: 0.7,
+                      }}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            color: "#374151",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {transaction.description}
+                        </Text>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 2,
+                          }}
+                        >
+                          <Text style={{ fontSize: 14, color: "#6b7280" }}>
+                            {transaction.category} •{" "}
+                            {formatDate(transaction.date)}
+                          </Text>
+                          <Ionicons
+                            name="time-outline"
+                            size={12}
+                            color="#6366f1"
+                            style={{ marginLeft: 8 }}
+                          />
+                        </View>
+                      </View>
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: "700",
+                            color: "#dc2626",
+                          }}
+                        >
+                          {formatCurrency(transaction.amount)}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+              </View>
+            )}
 
           <View
             style={{

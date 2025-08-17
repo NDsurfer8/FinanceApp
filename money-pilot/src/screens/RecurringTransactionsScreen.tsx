@@ -15,11 +15,13 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import {
   getUserRecurringTransactions,
-  saveRecurringTransaction,
-  updateRecurringTransaction,
   deleteRecurringTransaction,
   RecurringTransaction,
 } from "../services/userData";
+import {
+  createRecurringTransaction,
+  updateRecurringTransaction,
+} from "../services/transactionService";
 
 interface RecurringTransactionsScreenProps {
   navigation: any;
@@ -148,6 +150,16 @@ export const RecurringTransactionsScreen: React.FC<
     }
 
     try {
+      console.log("Form data startDate:", formData.startDate);
+      console.log(
+        "Parsed startDate timestamp:",
+        new Date(formData.startDate).getTime()
+      );
+      console.log(
+        "Parsed startDate ISO:",
+        new Date(formData.startDate).toISOString()
+      );
+
       const recurringTransaction: RecurringTransaction = {
         name: formData.name.trim(),
         amount: amount,
@@ -172,13 +184,16 @@ export const RecurringTransactionsScreen: React.FC<
         });
         Alert.alert("Success", "Recurring transaction updated successfully!");
       } else {
-        await saveRecurringTransaction(recurringTransaction);
+        await createRecurringTransaction(recurringTransaction);
         Alert.alert("Success", "Recurring transaction created successfully!");
       }
 
       setModalVisible(false);
       resetForm();
       await loadRecurringTransactions();
+
+      // Force navigation back to trigger refresh
+      navigation.goBack();
     } catch (error) {
       console.error("Error saving recurring transaction:", error);
       Alert.alert("Error", "Failed to save recurring transaction");

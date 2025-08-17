@@ -17,6 +17,9 @@ export interface Transaction {
   description: string;
   date: number;
   userId: string;
+  recurringTransactionId?: string; // Reference to the recurring transaction that created this
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export interface Asset {
@@ -1581,6 +1584,80 @@ export const generateRecurringTransactions = async (
   } catch (error) {
     console.error("Error generating recurring transactions:", error);
     throw new Error("Failed to generate recurring transactions");
+  }
+};
+
+export const getProjectedRecurringTransactionsForMonth = async (
+  userId: string,
+  targetMonth: Date
+): Promise<Transaction[]> => {
+  try {
+    const recurringTransactions = await getUserRecurringTransactions(userId);
+    const targetMonthStart = new Date(
+      targetMonth.getFullYear(),
+      targetMonth.getMonth(),
+      1
+    );
+    const targetMonthEnd = new Date(
+      targetMonth.getFullYear(),
+      targetMonth.getMonth() + 1,
+      0
+    );
+
+    const projectedTransactions: Transaction[] = [];
+
+    for (const recurringTransaction of recurringTransactions) {
+      if (!recurringTransaction.isActive) continue;
+
+      // Check if transaction should occur in target month
+      const shouldGenerate = checkIfTransactionShouldOccur(
+        recurringTransaction,
+        targetMonthStart,
+        targetMonthEnd
+      );
+
+      if (shouldGenerate) {
+        // Check if transaction already exists for this month
+        const existingTransactions = await getUserTransactions(userId);
+        const transactionExists = existingTransactions.some(
+          (transaction: any) => {
+            const transactionDate = new Date(transaction.date);
+            return (
+              transaction.description === recurringTransaction.name &&
+              transaction.amount === recurringTransaction.amount &&
+              transaction.type === recurringTransaction.type &&
+              transactionDate.getMonth() === targetMonth.getMonth() &&
+              transactionDate.getFullYear() === targetMonth.getFullYear()
+            );
+          }
+        );
+
+        if (!transactionExists) {
+          // Generate the projected transaction (not saved to database)
+          const transactionDate = getNextOccurrenceDate(
+            recurringTransaction,
+            targetMonthStart
+          );
+
+          const projectedTransaction: Transaction = {
+            id: `projected-${recurringTransaction.id}-${targetMonth.getTime()}`,
+            amount: recurringTransaction.amount,
+            type: recurringTransaction.type,
+            category: recurringTransaction.category,
+            description: recurringTransaction.name,
+            date: transactionDate.getTime(),
+            userId: userId,
+          };
+
+          projectedTransactions.push(projectedTransaction);
+        }
+      }
+    }
+
+    return projectedTransactions;
+  } catch (error) {
+    console.error("Error getting projected recurring transactions:", error);
+    throw new Error("Failed to get projected recurring transactions");
   }
 };
 

@@ -45,6 +45,14 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     category: "",
     type: initialType || "expense", // Use the passed type or default to expense
     date: getInitialDate(),
+    isRecurring: false,
+    frequency: "monthly" as
+      | "weekly"
+      | "biweekly"
+      | "monthly"
+      | "quarterly"
+      | "yearly",
+    endDate: "",
   });
 
   const getCategories = (type: string) => {
@@ -113,49 +121,81 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     try {
       setLoading(true);
 
-      const transaction = {
-        id: Date.now().toString(),
-        description: formData.description,
-        amount: parseFloat(formData.amount),
-        category: formData.category,
-        type: formData.type as "income" | "expense",
-        date: new Date(formData.date).getTime(), // Convert to timestamp
-        userId: user.uid,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      if (formData.isRecurring) {
+        // Create recurring transaction
+        const { createRecurringTransaction } = await import(
+          "../services/transactionService"
+        );
 
-      // Optimistic update - add to UI immediately
-      const newTransaction = { ...transaction, id: `temp-${Date.now()}` };
-      const updatedTransactions = [...transactions, newTransaction];
-      updateDataOptimistically({ transactions: updatedTransactions });
+        const recurringTransaction = {
+          name: formData.description,
+          amount: parseFloat(formData.amount),
+          type: formData.type as "income" | "expense",
+          category: formData.category,
+          frequency: formData.frequency,
+          startDate: new Date(formData.date).getTime(),
+          endDate:
+            formData.endDate && formData.endDate.trim() !== ""
+              ? new Date(formData.endDate).getTime()
+              : undefined,
+          isActive: true,
+          userId: user.uid,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
 
-      // Save to database in background
-      const savedTransaction = await saveTransaction(transaction);
+        await createRecurringTransaction(recurringTransaction);
+        Alert.alert("Success", "Recurring transaction created successfully!", [
+          { text: "OK", onPress: () => navigation.goBack() },
+        ]);
+      } else {
+        // Create regular transaction
+        const transaction = {
+          id: Date.now().toString(),
+          description: formData.description,
+          amount: parseFloat(formData.amount),
+          category: formData.category,
+          type: formData.type as "income" | "expense",
+          date: new Date(formData.date).getTime(), // Convert to timestamp
+          userId: user.uid,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
 
-      // Update with real ID from database
-      const finalTransactions = updatedTransactions.map((t) =>
-        t.id === newTransaction.id ? { ...t, id: savedTransaction } : t
-      );
-      updateDataOptimistically({ transactions: finalTransactions });
+        // Optimistic update - add to UI immediately
+        const newTransaction = { ...transaction, id: `temp-${Date.now()}` };
+        const updatedTransactions = [...transactions, newTransaction];
+        updateDataOptimistically({ transactions: updatedTransactions });
 
-      // Refresh bill reminders when a new transaction is added
-      if (user) {
-        await billReminderService.scheduleAllBillReminders(user.uid);
+        // Save to database in background
+        const savedTransaction = await saveTransaction(transaction);
+
+        // Update with real ID from database
+        const finalTransactions = updatedTransactions.map((t) =>
+          t.id === newTransaction.id ? { ...t, id: savedTransaction } : t
+        );
+        updateDataOptimistically({ transactions: finalTransactions });
+
+        // Refresh bill reminders when a new transaction is added
+        if (user) {
+          await billReminderService.scheduleAllBillReminders(user.uid);
+        }
+
+        Alert.alert("Success", "Transaction saved successfully!", [
+          { text: "OK", onPress: () => navigation.goBack() },
+        ]);
       }
-
-      Alert.alert("Success", "Transaction saved successfully!", [
-        { text: "OK", onPress: () => navigation.goBack() },
-      ]);
     } catch (error) {
       console.error("Error saving transaction:", error);
       Alert.alert("Error", "Failed to save transaction. Please try again.");
 
-      // Revert optimistic update on error
-      const revertedTransactions = transactions.filter(
-        (t) => t.id !== `temp-${Date.now()}`
-      );
-      updateDataOptimistically({ transactions: revertedTransactions });
+      // Revert optimistic update on error if it was a regular transaction
+      if (!formData.isRecurring) {
+        const revertedTransactions = transactions.filter(
+          (t) => t.id !== `temp-${Date.now()}`
+        );
+        updateDataOptimistically({ transactions: revertedTransactions });
+      }
     } finally {
       setLoading(false);
     }
@@ -292,6 +332,142 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               elevation: 2,
             }}
           >
+            {/* Recurring Option */}
+            <View style={{ marginBottom: 20 }}>
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderRadius: 8,
+                  backgroundColor: formData.isRecurring ? "#6366f1" : "#f8fafc",
+                  borderWidth: 1,
+                  borderColor: formData.isRecurring ? "#6366f1" : "#e5e7eb",
+                }}
+                onPress={() =>
+                  setFormData({
+                    ...formData,
+                    isRecurring: !formData.isRecurring,
+                  })
+                }
+              >
+                <Ionicons
+                  name="repeat"
+                  size={18}
+                  color={formData.isRecurring ? "#fff" : "#6b7280"}
+                  style={{ marginRight: 8 }}
+                />
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: formData.isRecurring ? "#fff" : "#374151",
+                  }}
+                >
+                  {formData.isRecurring
+                    ? "Recurring Transaction"
+                    : "Make Recurring"}
+                </Text>
+              </TouchableOpacity>
+
+              {formData.isRecurring && (
+                <View
+                  style={{
+                    marginTop: 16,
+                    paddingTop: 16,
+                    borderTopWidth: 1,
+                    borderTopColor: "#e5e7eb",
+                  }}
+                >
+                  {/* Frequency Dropdown */}
+                  <View style={{ marginBottom: 16 }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "500",
+                        marginBottom: 4,
+                        color: "#6b7280",
+                      }}
+                    >
+                      Frequency
+                    </Text>
+                    <View
+                      style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}
+                    >
+                      {[
+                        "weekly",
+                        "biweekly",
+                        "monthly",
+                        "quarterly",
+                        "yearly",
+                      ].map((freq) => (
+                        <TouchableOpacity
+                          key={freq}
+                          style={{
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 4,
+                            backgroundColor:
+                              formData.frequency === freq
+                                ? "#6366f1"
+                                : "#f3f4f6",
+                          }}
+                          onPress={() =>
+                            setFormData({ ...formData, frequency: freq as any })
+                          }
+                        >
+                          <Text
+                            style={{
+                              color:
+                                formData.frequency === freq
+                                  ? "#fff"
+                                  : "#374151",
+                              fontSize: 12,
+                              fontWeight: "500",
+                            }}
+                          >
+                            {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  {/* End Date (Optional) */}
+                  <View style={{ marginBottom: 16 }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "500",
+                        marginBottom: 4,
+                        color: "#6b7280",
+                      }}
+                    >
+                      End Date (Optional)
+                    </Text>
+                    <TextInput
+                      style={{
+                        borderWidth: 1,
+                        borderColor: "#d1d5db",
+                        borderRadius: 6,
+                        padding: 8,
+                        fontSize: 14,
+                      }}
+                      placeholder="YYYY-MM-DD (leave empty for no end date)"
+                      value={formData.endDate}
+                      onChangeText={(text) =>
+                        setFormData({ ...formData, endDate: text })
+                      }
+                      autoCorrect={false}
+                      returnKeyType="done"
+                    />
+                  </View>
+                </View>
+              )}
+            </View>
+
             {/* Amount */}
             <View style={{ marginBottom: 16 }}>
               <Text
@@ -436,7 +612,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             onPress={handleSave}
           >
             <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
-              Save {formData.type === "income" ? "Income" : "Expense"}
+              {formData.isRecurring ? "Create Recurring" : "Save"}{" "}
+              {formData.type === "income" ? "Income" : "Expense"}
             </Text>
           </TouchableOpacity>
         </ScrollView>
