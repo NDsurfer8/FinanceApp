@@ -1,5 +1,6 @@
 import { notificationService } from "./notifications";
 import { getUserTransactions, getUserRecurringTransactions } from "./userData";
+import * as Notifications from "expo-notifications";
 
 export interface BillReminder {
   id: string;
@@ -107,17 +108,25 @@ export class BillReminderService {
         return;
       }
 
-      // Calculate seconds until reminder
+      // Calculate seconds until reminder with minimum delay
       const secondsUntilReminder = Math.max(
-        1,
+        300, // Minimum 5 minute delay to prevent immediate firing
         Math.floor((reminderDate.getTime() - Date.now()) / 1000)
       );
 
+      console.log(`Scheduling reminder for ${billName}:`, {
+        dueDate: dueDate.toLocaleDateString(),
+        isDueToday,
+        isOverdue,
+        secondsUntilReminder,
+        reminderDate: reminderDate.toLocaleDateString(),
+      });
+
       if (isDueToday || isOverdue) {
         console.log(
-          `Scheduling immediate notification for ${billName} - Due today: ${isDueToday}, Overdue: ${isOverdue}`
+          `Scheduling notification for ${billName} - Due today: ${isDueToday}, Overdue: ${isOverdue}`
         );
-        // Send immediate notification for bills due today or overdue
+        // Send notification for bills due today or overdue with minimum delay
         await notificationService.scheduleNotification({
           id: `bill-reminder-${billName}-${dueDate.getTime()}`,
           title: isOverdue ? "🚨 Overdue Bill!" : "🚨 Bill Due Today!",
@@ -132,7 +141,10 @@ export class BillReminderService {
             reminderDays,
             isRecurring,
           },
-          trigger: null, // Immediate
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            seconds: secondsUntilReminder,
+          },
         });
       } else {
         // For future bills, schedule with delay
@@ -150,12 +162,20 @@ export class BillReminderService {
             reminderDays,
             isRecurring,
           },
-          trigger: null, // Immediate for testing
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            seconds: secondsUntilReminder,
+          },
         });
       }
 
-      // Also schedule a day-of reminder (immediate for testing)
+      // Also schedule a day-of reminder with minimum delay
       if (isDueToday || isOverdue) {
+        const secondsUntilDue = Math.max(
+          300, // Minimum 5 minute delay
+          Math.floor((dueDate.getTime() - Date.now()) / 1000)
+        );
+
         await notificationService.scheduleNotification({
           id: `bill-due-today-${billName}-${dueDate.getTime()}`,
           title: "🚨 Bill Due Today",
@@ -167,7 +187,10 @@ export class BillReminderService {
             dueDate: dueDate.toISOString(),
             isRecurring,
           },
-          trigger: null, // Immediate
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            seconds: secondsUntilDue,
+          },
         });
       }
 

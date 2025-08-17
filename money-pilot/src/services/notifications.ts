@@ -1,6 +1,6 @@
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
-import { Platform } from "react-native";
+import { Platform, AppState } from "react-native";
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -32,6 +32,11 @@ export class NotificationService {
       NotificationService.instance = new NotificationService();
     }
     return NotificationService.instance;
+  }
+
+  // Check if app is currently active/foreground
+  private isAppActive(): boolean {
+    return AppState.currentState === "active";
   }
 
   // Request permissions
@@ -85,6 +90,15 @@ export class NotificationService {
       throw new Error("Notification permissions not granted");
     }
 
+    // Don't schedule notifications when app is active/foreground
+    if (this.isAppActive()) {
+      console.log(
+        "App is active, skipping notification scheduling:",
+        notification.title
+      );
+      return "";
+    }
+
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: notification.title,
@@ -115,7 +129,7 @@ export class NotificationService {
     return await Notifications.getAllScheduledNotificationsAsync();
   }
 
-  // Financial notification types
+  // Financial notification types with proper trigger types
   async scheduleBudgetReminder(date: Date, amount: number): Promise<string> {
     return this.scheduleNotification({
       id: `budget-reminder-${Date.now()}`,
@@ -124,7 +138,10 @@ export class NotificationService {
         2
       )} remaining this month.`,
       data: { type: "budget-reminder", amount },
-      trigger: null, // Immediate for testing
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 60,
+      },
     });
   }
 
@@ -159,153 +176,13 @@ export class NotificationService {
         reminderDays,
       },
       trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: Math.max(
-          1,
+          300, // Minimum 5 minute delay
           Math.floor((reminderDate.getTime() - Date.now()) / 1000)
         ),
-      } as any,
+      },
     });
-  }
-
-  // Schedule multiple bill reminders for a user
-  async scheduleAllBillReminders(userId: string): Promise<void> {
-    try {
-      // Import the userData functions
-      const { getUserTransactions, getUserRecurringTransactions } =
-        await import("./userData");
-
-      // Get all transactions and recurring transactions
-      const [transactions, recurringTransactions] = await Promise.all([
-        getUserTransactions(userId),
-        getUserRecurringTransactions(userId),
-      ]);
-
-      // Cancel existing bill reminders
-      await this.cancelBillReminders();
-
-      // Schedule reminders for regular transactions with due dates
-      for (const transaction of transactions) {
-        if (transaction.type === "expense" && transaction.date) {
-          const dueDate = new Date(transaction.date);
-          const now = new Date();
-
-          // Only schedule if due date is in the future
-          if (dueDate > now) {
-            await this.scheduleBillReminder(
-              transaction.description,
-              dueDate,
-              transaction.amount,
-              3 // 3 days before
-            );
-
-            // Also schedule a day-of reminder
-            await this.scheduleNotification({
-              id: `bill-due-today-${
-                transaction.description
-              }-${dueDate.getTime()}`,
-              title: "🚨 Bill Due Today",
-              body: `${
-                transaction.description
-              } is due today! Amount: $${transaction.amount.toFixed(2)}`,
-              data: {
-                type: "bill-due-today",
-                billName: transaction.description,
-                amount: transaction.amount,
-                dueDate: dueDate.toISOString(),
-              },
-              trigger: {
-                seconds: Math.max(
-                  1,
-                  Math.floor((dueDate.getTime() - Date.now()) / 1000)
-                ),
-              } as any,
-            });
-          }
-        }
-      }
-
-      // Schedule reminders for recurring transactions
-      for (const recurring of recurringTransactions) {
-        if (recurring.type === "expense" && recurring.isActive) {
-          // Calculate next occurrence
-          const nextOccurrence = this.calculateNextOccurrence(recurring);
-          if (nextOccurrence) {
-            await this.scheduleBillReminder(
-              recurring.name,
-              nextOccurrence,
-              recurring.amount,
-              3 // 3 days before
-            );
-          }
-        }
-      }
-
-      console.log("All bill reminders scheduled successfully");
-    } catch (error) {
-      console.error("Error scheduling bill reminders:", error);
-    }
-  }
-
-  // Calculate next occurrence for recurring transactions
-  private calculateNextOccurrence(recurringTransaction: any): Date | null {
-    const now = new Date();
-    const startDate = new Date(recurringTransaction.startDate);
-
-    if (startDate > now) {
-      return startDate;
-    }
-
-    if (recurringTransaction.endDate) {
-      const endDate = new Date(recurringTransaction.endDate);
-      if (endDate < now) {
-        return null; // Recurring transaction has ended
-      }
-    }
-
-    // Calculate next occurrence based on frequency
-    let nextDate = new Date(startDate);
-
-    while (nextDate <= now) {
-      switch (recurringTransaction.frequency) {
-        case "weekly":
-          nextDate.setDate(nextDate.getDate() + 7);
-          break;
-        case "biweekly":
-          nextDate.setDate(nextDate.getDate() + 14);
-          break;
-        case "monthly":
-          nextDate.setMonth(nextDate.getMonth() + 1);
-          break;
-        case "quarterly":
-          nextDate.setMonth(nextDate.getMonth() + 3);
-          break;
-        case "yearly":
-          nextDate.setFullYear(nextDate.getFullYear() + 1);
-          break;
-        default:
-          return null;
-      }
-    }
-
-    return nextDate;
-  }
-
-  // Cancel all bill reminders
-  async cancelBillReminders(): Promise<void> {
-    try {
-      const scheduledNotifications = await this.getScheduledNotifications();
-
-      for (const notification of scheduledNotifications) {
-        const data = notification.content.data;
-        if (data?.type === "bill-reminder" || data?.type === "bill-due-today") {
-          await this.cancelNotification(notification.identifier);
-        }
-      }
-
-      console.log("All bill reminders cancelled");
-    } catch (error) {
-      console.error("Error cancelling bill reminders:", error);
-    }
   }
 
   async scheduleGoalReminder(
@@ -319,7 +196,10 @@ export class NotificationService {
       title: "🎯 Goal Progress Update",
       body: `${goalName}: ${progress}% complete! Keep up the great work!`,
       data: { type: "goal-reminder", goalName, progress },
-      trigger: null, // Immediate for testing
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 60,
+      },
     });
   }
 
@@ -329,7 +209,10 @@ export class NotificationService {
       title: "📊 Weekly Financial Report",
       body: "Your weekly financial summary is ready. Check your progress!",
       data: { type: "weekly-report" },
-      trigger: null, // Immediate for testing
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 60,
+      },
     });
   }
 
@@ -339,7 +222,10 @@ export class NotificationService {
       title: "📈 Monthly Financial Review",
       body: "Time to review your monthly financial performance!",
       data: { type: "monthly-report" },
-      trigger: null, // Immediate for testing
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 60,
+      },
     });
   }
 
@@ -352,7 +238,10 @@ export class NotificationService {
       title: "⚠️ Low Balance Alert",
       body: `${accountName} balance is low: $${currentBalance.toFixed(2)}`,
       data: { type: "low-balance", accountName, balance: currentBalance },
-      trigger: null, // Immediate
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 60,
+      },
     });
   }
 
@@ -366,7 +255,10 @@ export class NotificationService {
       title: "💎 Savings Goal",
       body: `You're $${remaining.toFixed(2)} away from your savings goal!`,
       data: { type: "savings-reminder", remaining },
-      trigger: null, // Immediate for testing
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 60,
+      },
     });
   }
 

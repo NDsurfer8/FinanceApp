@@ -4,6 +4,7 @@ import {
   getUserBudgetSettings,
   getUserGoals,
 } from "./userData";
+import * as Notifications from "expo-notifications";
 
 export interface BudgetReminder {
   id: string;
@@ -140,7 +141,13 @@ export class BudgetReminderService {
           budgetLimit,
           daysLeft,
         },
-        trigger: null, // Immediate for testing
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: Math.max(
+            300, // Minimum 5 minute delay
+            Math.floor((tomorrow.getTime() - Date.now()) / 1000)
+          ),
+        },
       });
 
       console.log(
@@ -198,7 +205,13 @@ export class BudgetReminderService {
           weeklyBudget,
           weeksLeft,
         },
-        trigger: null, // Immediate for testing
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: Math.max(
+            300, // Minimum 5 minute delay
+            Math.floor((tomorrow.getTime() - Date.now()) / 1000)
+          ),
+        },
       });
 
       console.log(
@@ -256,7 +269,13 @@ export class BudgetReminderService {
           dailyBudget,
           daysLeft,
         },
-        trigger: null, // Immediate for testing
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: Math.max(
+            300, // Minimum 5 minute delay
+            Math.floor((tomorrow.getTime() - Date.now()) / 1000)
+          ),
+        },
       });
 
       console.log(
