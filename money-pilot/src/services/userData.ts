@@ -918,6 +918,87 @@ export const addUserDataToGroup = async (
   }
 };
 
+// Add selective user data to shared group
+export const addSelectiveUserDataToGroup = async (
+  groupId: string,
+  userId: string,
+  selectedData: {
+    goals?: string[]; // Array of goal IDs to sync
+    assets?: string[]; // Array of asset IDs to sync
+    debts?: string[]; // Array of debt IDs to sync
+    transactions?: boolean; // Whether to sync all transactions
+  }
+): Promise<void> => {
+  try {
+    const groupRef = ref(db, `sharedGroups/${groupId}/sharedData/${userId}`);
+
+    // Get all user's data
+    const [allAssets, allDebts, allTransactions, allGoals] = await Promise.all([
+      getUserAssets(userId),
+      getUserDebts(userId),
+      getUserTransactions(userId),
+      getUserGoals(userId),
+    ]);
+
+    // Filter data based on selection
+    const filteredAssets = selectedData.assets
+      ? allAssets.filter((asset) => selectedData.assets!.includes(asset.id!))
+      : allAssets;
+
+    const filteredDebts = selectedData.debts
+      ? allDebts.filter((debt) => selectedData.debts!.includes(debt.id!))
+      : allDebts;
+
+    const filteredTransactions = selectedData.transactions
+      ? allTransactions
+      : [];
+
+    const filteredGoals = selectedData.goals
+      ? allGoals.filter((goal) => selectedData.goals!.includes(goal.id!))
+      : allGoals;
+
+    // Store filtered data in group's shared data
+    await set(groupRef, {
+      assets: filteredAssets,
+      debts: filteredDebts,
+      transactions: filteredTransactions,
+      goals: filteredGoals,
+      lastUpdated: Date.now(),
+      syncSettings: selectedData, // Store sync settings for future reference
+    });
+
+    console.log("Selective user data added to shared group successfully");
+  } catch (error) {
+    console.error("Error adding selective user data to group:", error);
+    throw error;
+  }
+};
+
+// Get user's sync settings for a specific group
+export const getUserGroupSyncSettings = async (
+  groupId: string,
+  userId: string
+): Promise<{
+  goals?: string[];
+  assets?: string[];
+  debts?: string[];
+  transactions?: boolean;
+} | null> => {
+  try {
+    const groupRef = ref(db, `sharedGroups/${groupId}/sharedData/${userId}`);
+    const snapshot = await get(groupRef);
+
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      return data.syncSettings || null;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting user group sync settings:", error);
+    return null;
+  }
+};
+
 // Get user's group memberships
 export const getUserGroupMemberships = async (
   userId: string
@@ -955,7 +1036,16 @@ export const updateSharedGroupsForUser = async (
 
     // Update each group the user is a member of
     for (const groupId of groupIds) {
-      await addUserDataToGroup(groupId, userId);
+      // Get current sync settings for this group
+      const syncSettings = await getUserGroupSyncSettings(groupId, userId);
+
+      if (syncSettings) {
+        // Use selective sync with current settings
+        await addSelectiveUserDataToGroup(groupId, userId, syncSettings);
+      } else {
+        // If no sync settings exist, use the old method (backward compatibility)
+        await addUserDataToGroup(groupId, userId);
+      }
     }
 
     console.log(
@@ -988,11 +1078,52 @@ export const getGroupSharedData = async (
     if (snapshot.exists()) {
       snapshot.forEach((userSnapshot) => {
         const userData = userSnapshot.val();
-        if (userData.assets) allAssets.push(...userData.assets);
-        if (userData.debts) allDebts.push(...userData.debts);
-        if (userData.transactions)
-          allTransactions.push(...userData.transactions);
-        if (userData.goals) allGoals.push(...userData.goals);
+
+        // Only include data that the user has explicitly shared
+        // If no syncSettings exist, include all data (backward compatibility)
+        if (userData.syncSettings) {
+          // Respect selective sync settings
+          if (userData.syncSettings.assets && userData.assets) {
+            const selectedAssets = userData.assets.filter((asset: Asset) =>
+              userData.syncSettings.assets.includes(asset.id)
+            );
+            allAssets.push(...selectedAssets);
+          } else if (!userData.syncSettings.assets && userData.assets) {
+            // If assets not specified in syncSettings, include all (backward compatibility)
+            allAssets.push(...userData.assets);
+          }
+
+          if (userData.syncSettings.debts && userData.debts) {
+            const selectedDebts = userData.debts.filter((debt: Debt) =>
+              userData.syncSettings.debts.includes(debt.id)
+            );
+            allDebts.push(...selectedDebts);
+          } else if (!userData.syncSettings.debts && userData.debts) {
+            // If debts not specified in syncSettings, include all (backward compatibility)
+            allDebts.push(...userData.debts);
+          }
+
+          if (userData.syncSettings.transactions && userData.transactions) {
+            allTransactions.push(...userData.transactions);
+          }
+
+          if (userData.syncSettings.goals && userData.goals) {
+            const selectedGoals = userData.goals.filter((goal: FinancialGoal) =>
+              userData.syncSettings.goals.includes(goal.id)
+            );
+            allGoals.push(...selectedGoals);
+          } else if (!userData.syncSettings.goals && userData.goals) {
+            // If goals not specified in syncSettings, include all (backward compatibility)
+            allGoals.push(...userData.goals);
+          }
+        } else {
+          // Backward compatibility: if no syncSettings, include all data
+          if (userData.assets) allAssets.push(...userData.assets);
+          if (userData.debts) allDebts.push(...userData.debts);
+          if (userData.transactions)
+            allTransactions.push(...userData.transactions);
+          if (userData.goals) allGoals.push(...userData.goals);
+        }
       });
     }
 

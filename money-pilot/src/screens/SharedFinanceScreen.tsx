@@ -11,7 +11,9 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
+import { useZeroLoading } from "../hooks/useZeroLoading";
 import {
   getUserSharedGroups,
   getGroupAggregatedData,
@@ -22,10 +24,15 @@ import {
   createInvitation,
   getUserInvitations,
   updateInvitationStatus,
+  addUserDataToGroup,
+  addSelectiveUserDataToGroup,
+  getUserGroupSyncSettings,
   SharedGroup,
   SharedGroupMember,
   SharedInvitation,
 } from "../services/userData";
+import { ref, onValue, off } from "firebase/database";
+import { db } from "../services/firebase";
 
 interface SharedFinanceScreenProps {
   navigation: any;
@@ -35,6 +42,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
+  const { goals: userGoals } = useZeroLoading();
   const [groups, setGroups] = useState<SharedGroup[]>([]);
   const [invitations, setInvitations] = useState<SharedInvitation[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<SharedGroup | null>(null);
@@ -45,6 +53,12 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showInvitationsModal, setShowInvitationsModal] = useState(false);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
+  const [showSelectiveSyncModal, setShowSelectiveSyncModal] = useState(false);
+
+  // Selective sync state
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [syncTransactions, setSyncTransactions] = useState(true);
+  const [currentSyncSettings, setCurrentSyncSettings] = useState<any>(null);
 
   // Form states
   const [newGroup, setNewGroup] = useState({
@@ -58,6 +72,42 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
   useEffect(() => {
     loadData();
   }, []);
+
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user) {
+        loadData();
+        // Also refresh selected group data if one is selected
+        if (selectedGroup) {
+          loadGroupData(selectedGroup);
+        }
+      }
+    }, [user, selectedGroup])
+  );
+
+  // Real-time listener for selected group data
+  useEffect(() => {
+    if (!selectedGroup?.id) return;
+
+    const groupDataRef = ref(db, `sharedGroups/${selectedGroup.id}/sharedData`);
+
+    const unsubscribe = onValue(groupDataRef, async (snapshot) => {
+      if (snapshot.exists()) {
+        // Refresh the aggregated data when shared data changes
+        try {
+          const data = await getGroupAggregatedData(selectedGroup.id!);
+          setGroupData(data);
+        } catch (error) {
+          console.error("Error refreshing group data:", error);
+        }
+      }
+    });
+
+    return () => {
+      off(groupDataRef, "value", unsubscribe);
+    };
+  }, [selectedGroup?.id]);
 
   const loadData = async () => {
     if (!user) return;
@@ -234,6 +284,74 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
       console.error("Error loading group goals:", error);
       Alert.alert("Error", "Failed to load group goals");
     }
+  };
+
+  const syncUserDataToGroup = async (groupId: string) => {
+    if (!user) return;
+
+    try {
+      await addUserDataToGroup(groupId, user.uid);
+      Alert.alert("Success", "Your data has been synced to the group!");
+      // Refresh the group data to show updated totals
+      if (selectedGroup) {
+        await loadGroupData(selectedGroup);
+      }
+    } catch (error) {
+      console.error("Error syncing user data to group:", error);
+      Alert.alert("Error", "Failed to sync data to group");
+    }
+  };
+
+  const openSelectiveSyncModal = async (groupId: string) => {
+    if (!user) return;
+
+    try {
+      // Load current sync settings
+      const settings = await getUserGroupSyncSettings(groupId, user.uid);
+      setCurrentSyncSettings(settings);
+
+      // Set current selections
+      if (settings) {
+        setSelectedGoals(settings.goals || []);
+        setSyncTransactions(settings.transactions !== false);
+      } else {
+        setSelectedGoals([]);
+        setSyncTransactions(true);
+      }
+
+      setShowSelectiveSyncModal(true);
+    } catch (error) {
+      console.error("Error loading sync settings:", error);
+      Alert.alert("Error", "Failed to load sync settings");
+    }
+  };
+
+  const handleSelectiveSync = async () => {
+    if (!user || !selectedGroup) return;
+
+    try {
+      await addSelectiveUserDataToGroup(selectedGroup.id!, user.uid, {
+        goals: selectedGoals,
+        transactions: syncTransactions,
+      });
+
+      Alert.alert("Success", "Selected data has been synced to the group!");
+      setShowSelectiveSyncModal(false);
+
+      // Refresh the group data
+      await loadGroupData(selectedGroup);
+    } catch (error) {
+      console.error("Error selective syncing data to group:", error);
+      Alert.alert("Error", "Failed to sync selected data to group");
+    }
+  };
+
+  const toggleGoalSelection = (goalId: string) => {
+    setSelectedGoals((prev) =>
+      prev.includes(goalId)
+        ? prev.filter((id) => id !== goalId)
+        : [...prev, goalId]
+    );
   };
 
   const formatCurrency = (amount: number) => {
@@ -560,9 +678,17 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               >
                 {selectedGroup.name} Overview
               </Text>
-              <TouchableOpacity onPress={() => setSelectedGroup(null)}>
-                <Ionicons name="close" size={24} color="#6b7280" />
-              </TouchableOpacity>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <TouchableOpacity
+                  onPress={() => loadGroupData(selectedGroup)}
+                  style={{ marginRight: 12 }}
+                >
+                  <Ionicons name="refresh" size={20} color="#6366f1" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setSelectedGroup(null)}>
+                  <Ionicons name="close" size={24} color="#6b7280" />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Group Stats */}
@@ -668,6 +794,66 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                 View Group Goals ({groupData.totalGoals})
               </Text>
             </TouchableOpacity>
+
+            {/* Sync Data Button */}
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#4f46e5",
+                padding: 16,
+                borderRadius: 12,
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+              onPress={() => openSelectiveSyncModal(selectedGroup.id!)}
+            >
+              <Ionicons name="settings" size={20} color="#fff" />
+              <Text style={{ color: "#fff", fontWeight: "600", marginTop: 4 }}>
+                Selective Sync
+              </Text>
+            </TouchableOpacity>
+
+            {/* Info Section */}
+            <View
+              style={{
+                backgroundColor: "#f0f9ff",
+                borderWidth: 1,
+                borderColor: "#0ea5e9",
+                borderRadius: 12,
+                padding: 16,
+                marginBottom: 20,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+              >
+                <Ionicons name="information-circle" size={20} color="#0ea5e9" />
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    color: "#0ea5e9",
+                    marginLeft: 8,
+                  }}
+                >
+                  Selective Data Syncing
+                </Text>
+              </View>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: "#0369a1",
+                  lineHeight: 16,
+                }}
+              >
+                Choose which specific goals and data to share with this group.
+                Use "Selective Sync" to customize what financial information is
+                visible to group members.
+              </Text>
+            </View>
 
             {/* Members List */}
             <View>
@@ -1484,6 +1670,236 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                 })}
               </ScrollView>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Selective Sync Modal */}
+      <Modal
+        visible={showSelectiveSyncModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowSelectiveSyncModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: 20,
+              width: "90%",
+              maxWidth: 400,
+              maxHeight: "85%",
+              padding: 24,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+            >
+              <Text
+                style={{ fontSize: 20, fontWeight: "700", color: "#1f2937" }}
+              >
+                Selective Sync
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowSelectiveSyncModal(false)}
+              >
+                <Ionicons name="close" size={24} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Transactions Toggle */}
+              <View style={{ marginBottom: 24 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 12,
+                  }}
+                >
+                  <View>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        color: "#374151",
+                      }}
+                    >
+                      Share Transactions
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: "#6b7280",
+                      }}
+                    >
+                      Include your income and expenses
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setSyncTransactions(!syncTransactions)}
+                    style={{
+                      backgroundColor: syncTransactions ? "#6366f1" : "#e5e7eb",
+                      width: 48,
+                      height: 24,
+                      borderRadius: 12,
+                      justifyContent: "center",
+                      alignItems: syncTransactions ? "flex-end" : "flex-start",
+                      paddingHorizontal: 2,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: 10,
+                        backgroundColor: "#fff",
+                      }}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Goals Selection */}
+              <View style={{ marginBottom: 24 }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: "#374151",
+                    marginBottom: 12,
+                  }}
+                >
+                  Select Goals to Share
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: "#6b7280",
+                    marginBottom: 16,
+                  }}
+                >
+                  Choose which goals to share with this group
+                </Text>
+
+                {userGoals.length === 0 ? (
+                  <View
+                    style={{
+                      backgroundColor: "#f9fafb",
+                      borderRadius: 12,
+                      padding: 20,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Ionicons name="flag-outline" size={32} color="#9ca3af" />
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: "#6b7280",
+                        marginTop: 8,
+                        textAlign: "center",
+                      }}
+                    >
+                      No goals available to sync
+                    </Text>
+                  </View>
+                ) : (
+                  userGoals.map((goal) => (
+                    <TouchableOpacity
+                      key={goal.id}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        padding: 12,
+                        borderWidth: 1,
+                        borderColor: selectedGoals.includes(goal.id!)
+                          ? "#6366f1"
+                          : "#e5e7eb",
+                        borderRadius: 12,
+                        marginBottom: 8,
+                        backgroundColor: selectedGoals.includes(goal.id!)
+                          ? "#f0f9ff"
+                          : "#fff",
+                      }}
+                      onPress={() => toggleGoalSelection(goal.id!)}
+                    >
+                      <View
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: 10,
+                          borderWidth: 2,
+                          borderColor: selectedGoals.includes(goal.id!)
+                            ? "#6366f1"
+                            : "#d1d5db",
+                          backgroundColor: selectedGoals.includes(goal.id!)
+                            ? "#6366f1"
+                            : "#fff",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          marginRight: 12,
+                        }}
+                      >
+                        {selectedGoals.includes(goal.id!) && (
+                          <Ionicons name="checkmark" size={12} color="#fff" />
+                        )}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            fontWeight: "600",
+                            color: "#374151",
+                          }}
+                        >
+                          {goal.name}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#6b7280",
+                          }}
+                        >
+                          {goal.category} • {formatCurrency(goal.currentAmount)}{" "}
+                          / {formatCurrency(goal.targetAmount)}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </View>
+
+              {/* Sync Button */}
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#6366f1",
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: "center",
+                  marginTop: 16,
+                }}
+                onPress={handleSelectiveSync}
+              >
+                <Text
+                  style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}
+                >
+                  Sync Selected Data
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
