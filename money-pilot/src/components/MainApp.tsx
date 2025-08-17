@@ -141,11 +141,14 @@ export const MainApp: React.FC = () => {
     });
 
     if (!isLoading && !authLoading) {
-      if (isAuthenticated) {
+      if (isAuthenticated && appState !== "main") {
         console.log("User is authenticated, going to main app");
         setAppState("main");
-      } else if (appState === "main") {
+      } else if (!isAuthenticated && appState === "main") {
         console.log("User is not authenticated, going to login");
+        setAppState("login");
+      } else if (!isAuthenticated && appState === "splash") {
+        console.log("User is not authenticated, going to login from splash");
         setAppState("login");
       }
     }
@@ -205,10 +208,6 @@ export const MainApp: React.FC = () => {
   // Show splash screen while loading
   if (isLoading || authLoading) {
     return <SplashScreen message={loadingMessage} />;
-  }
-
-  if (appState === "splash") {
-    return <SplashScreen message="Loading..." />;
   }
 
   if (appState === "intro") {
@@ -280,7 +279,8 @@ export const MainApp: React.FC = () => {
     );
   }
 
-  return <SplashScreen message="Loading..." />;
+  // If we reach here, something went wrong - show splash screen with better message
+  return <SplashScreen message="Preparing your financial dashboard..." />;
 };
 
 const MainTabNavigator = () => {
