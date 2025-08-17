@@ -312,6 +312,18 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     return date.toLocaleDateString();
   };
 
+  const calculatePaymentsRemaining = (goal: any) => {
+    if (goal.monthlyContribution <= 0) return "∞";
+
+    const remainingAmount = goal.targetAmount - goal.currentAmount;
+    if (remainingAmount <= 0) return "Complete!";
+
+    const paymentsNeeded = Math.ceil(
+      remainingAmount / goal.monthlyContribution
+    );
+    return `${paymentsNeeded} payment${paymentsNeeded !== 1 ? "s" : ""} left`;
+  };
+
   const isRecurringTransaction = (transaction: any) => {
     return recurringTransactions.some(
       (recurring) =>
@@ -1161,7 +1173,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 style={{
                   flexDirection: "row",
                   justifyContent: "space-between",
-                  marginBottom: 8,
+                  marginBottom: 4,
                 }}
               >
                 <Text
@@ -1174,6 +1186,40 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 >
                   {formatCurrency(goal.monthlyContribution)}
                 </Text>
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: "#9ca3af",
+                    fontStyle: "italic",
+                  }}
+                >
+                  {calculatePaymentsRemaining(goal)}
+                </Text>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text
+                    style={{ fontSize: 12, color: "#9ca3af", marginRight: 4 }}
+                  >
+                    Progress:
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: "#3b82f6",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {formatCurrency(goal.currentAmount)} /{" "}
+                    {formatCurrency(goal.targetAmount)}
+                  </Text>
+                </View>
               </View>
             </View>
           ))}
