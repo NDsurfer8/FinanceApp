@@ -230,6 +230,8 @@ export const RecurringTransactionsScreen: React.FC<
   const getCategoryIcon = (category: string) => {
     const categoryIcons: { [key: string]: string } = {
       Salary: "cash",
+      "VA Disability": "medical",
+      "Social Security": "shield-checkmark",
       Freelance: "laptop",
       Investment: "trending-up",
       Rent: "home",

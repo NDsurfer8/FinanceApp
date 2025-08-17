@@ -40,6 +40,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   );
   const [goals, setGoals] = useState<any[]>([]);
   const [recurringTransactions, setRecurringTransactions] = useState<any[]>([]);
+  const [editingTransactionId, setEditingTransactionId] = useState<
+    string | null
+  >(null);
+  const [editingAmount, setEditingAmount] = useState("");
 
   const loadTransactions = async () => {
     if (!user) return;
@@ -389,6 +393,58 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     }
   };
 
+  const handleEditTransaction = (transaction: any) => {
+    setEditingTransactionId(transaction.id);
+    setEditingAmount(transaction.amount.toString());
+  };
+
+  const handleSaveTransactionEdit = async () => {
+    if (!user || !editingTransactionId) return;
+
+    const newAmount = parseFloat(editingAmount);
+    if (isNaN(newAmount) || newAmount <= 0) {
+      Alert.alert("Error", "Please enter a valid amount");
+      return;
+    }
+
+    try {
+      // Find the transaction to update
+      const transactionToUpdate = transactions.find(
+        (t) => t.id === editingTransactionId
+      );
+      if (!transactionToUpdate) {
+        Alert.alert("Error", "Transaction not found");
+        return;
+      }
+
+      // Update the transaction amount
+      const updatedTransaction = {
+        ...transactionToUpdate,
+        amount: newAmount,
+      };
+
+      // Import the update function
+      const { updateTransaction } = await import("../services/userData");
+      await updateTransaction(updatedTransaction);
+
+      // Reset editing state
+      setEditingTransactionId(null);
+      setEditingAmount("");
+
+      // Reload transactions
+      await loadTransactions();
+      Alert.alert("Success", "Transaction amount updated successfully!");
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      Alert.alert("Error", "Failed to update transaction amount");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTransactionId(null);
+    setEditingAmount("");
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
@@ -670,26 +726,80 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   </View>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "700",
-                      color: "#16a34a",
-                      marginRight: 12,
-                    }}
-                  >
-                    {formatCurrency(transaction.amount)}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => handleDeleteTransaction(transaction)}
-                    style={{
-                      padding: 8,
-                      borderRadius: 8,
-                      backgroundColor: "#fee2e2",
-                    }}
-                  >
-                    <Ionicons name="trash-outline" size={16} color="#dc2626" />
-                  </TouchableOpacity>
+                  {editingTransactionId === transaction.id ? (
+                    <>
+                      <TextInput
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "700",
+                          color: "#16a34a",
+                          marginRight: 8,
+                          borderBottomWidth: 1,
+                          borderBottomColor: "#16a34a",
+                          paddingHorizontal: 4,
+                          minWidth: 80,
+                          textAlign: "right",
+                        }}
+                        value={editingAmount}
+                        onChangeText={setEditingAmount}
+                        keyboardType="numeric"
+                        autoFocus
+                      />
+                      <TouchableOpacity
+                        onPress={handleSaveTransactionEdit}
+                        style={{
+                          padding: 6,
+                          borderRadius: 6,
+                          backgroundColor: "#dcfce7",
+                          marginRight: 4,
+                        }}
+                      >
+                        <Ionicons name="checkmark" size={14} color="#16a34a" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={handleCancelEdit}
+                        style={{
+                          padding: 6,
+                          borderRadius: 6,
+                          backgroundColor: "#fee2e2",
+                          marginRight: 8,
+                        }}
+                      >
+                        <Ionicons name="close" size={14} color="#dc2626" />
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => handleEditTransaction(transaction)}
+                        style={{ marginRight: 12 }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: "700",
+                            color: "#16a34a",
+                          }}
+                        >
+                          {formatCurrency(transaction.amount)}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleDeleteTransaction(transaction)}
+                        style={{
+                          padding: 8,
+                          borderRadius: 8,
+                          backgroundColor: "#fee2e2",
+                        }}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={16}
+                          color="#dc2626"
+                        />
+                      </TouchableOpacity>
+                    </>
+                  )}
                 </View>
               </View>
             ))
@@ -843,26 +953,80 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   </View>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "700",
-                      color: "#dc2626",
-                      marginRight: 12,
-                    }}
-                  >
-                    {formatCurrency(transaction.amount)}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => handleDeleteTransaction(transaction)}
-                    style={{
-                      padding: 8,
-                      borderRadius: 8,
-                      backgroundColor: "#fee2e2",
-                    }}
-                  >
-                    <Ionicons name="trash-outline" size={16} color="#dc2626" />
-                  </TouchableOpacity>
+                  {editingTransactionId === transaction.id ? (
+                    <>
+                      <TextInput
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "700",
+                          color: "#dc2626",
+                          marginRight: 8,
+                          borderBottomWidth: 1,
+                          borderBottomColor: "#dc2626",
+                          paddingHorizontal: 4,
+                          minWidth: 80,
+                          textAlign: "right",
+                        }}
+                        value={editingAmount}
+                        onChangeText={setEditingAmount}
+                        keyboardType="numeric"
+                        autoFocus
+                      />
+                      <TouchableOpacity
+                        onPress={handleSaveTransactionEdit}
+                        style={{
+                          padding: 6,
+                          borderRadius: 6,
+                          backgroundColor: "#dcfce7",
+                          marginRight: 4,
+                        }}
+                      >
+                        <Ionicons name="checkmark" size={14} color="#16a34a" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={handleCancelEdit}
+                        style={{
+                          padding: 6,
+                          borderRadius: 6,
+                          backgroundColor: "#fee2e2",
+                          marginRight: 8,
+                        }}
+                      >
+                        <Ionicons name="close" size={14} color="#dc2626" />
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => handleEditTransaction(transaction)}
+                        style={{ marginRight: 12 }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: "700",
+                            color: "#dc2626",
+                          }}
+                        >
+                          {formatCurrency(transaction.amount)}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleDeleteTransaction(transaction)}
+                        style={{
+                          padding: 8,
+                          borderRadius: 8,
+                          backgroundColor: "#fee2e2",
+                        }}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={16}
+                          color="#dc2626"
+                        />
+                      </TouchableOpacity>
+                    </>
+                  )}
                 </View>
               </View>
             ))

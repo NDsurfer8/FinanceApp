@@ -344,6 +344,29 @@ export const removeTransaction = async (
   }
 };
 
+// Update transaction
+export const updateTransaction = async (
+  transaction: Transaction
+): Promise<void> => {
+  try {
+    const transactionRef = ref(
+      db,
+      `users/${transaction.userId}/transactions/${transaction.id}`
+    );
+    await set(transactionRef, {
+      ...transaction,
+      updatedAt: Date.now(),
+    });
+    console.log("Transaction updated successfully");
+
+    // Auto-update shared groups
+    await updateSharedGroupsForUser(transaction.userId);
+  } catch (error) {
+    console.error("Error updating transaction:", error);
+    throw error;
+  }
+};
+
 // Remove asset
 export const removeAsset = async (
   userId: string,

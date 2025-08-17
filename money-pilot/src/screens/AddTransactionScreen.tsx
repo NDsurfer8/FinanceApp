@@ -47,6 +47,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     if (type === "income") {
       return [
         "Salary",
+        "VA Disability",
+        "Social Security",
         "Freelance",
         "Business",
         "Investment",
@@ -358,7 +360,11 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               <Text
                 style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
               >
-                Date
+                {formData.type === "expense"
+                  ? "Due Date"
+                  : formData.type === "income"
+                  ? "Payment Date"
+                  : "Date"}
               </Text>
               <TextInput
                 style={{
@@ -368,7 +374,13 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   padding: 12,
                   fontSize: 16,
                 }}
-                placeholder="YYYY-MM-DD"
+                placeholder={
+                  formData.type === "expense"
+                    ? "Due Date (YYYY-MM-DD)"
+                    : formData.type === "income"
+                    ? "Payment Date (YYYY-MM-DD)"
+                    : "Date (YYYY-MM-DD)"
+                }
                 value={formData.date}
                 onChangeText={(text) =>
                   setFormData({ ...formData, date: text })
