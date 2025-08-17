@@ -23,6 +23,7 @@ import {
   getUserRecurringTransactions,
   skipRecurringTransactionForMonth,
 } from "../services/userData";
+import { billReminderService } from "../services/billReminders";
 
 interface BudgetScreenProps {
   navigation: any;
@@ -400,6 +401,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       }
 
       await loadTransactions(); // Reload to get updated settings
+
+      // Refresh bill reminders when budget settings change
+      if (user) {
+        await billReminderService.scheduleAllBillReminders(user.uid);
+      }
+
       Alert.alert("Success", "Budget settings saved successfully!");
     } catch (error) {
       console.error("Error saving budget settings:", error);
@@ -455,6 +462,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
       // Reload transactions
       await loadTransactions();
+
+      // Refresh bill reminders when transactions are updated
+      if (user) {
+        await billReminderService.scheduleAllBillReminders(user.uid);
+      }
+
       Alert.alert("Success", "Transaction amount updated successfully!");
     } catch (error) {
       console.error("Error updating transaction:", error);

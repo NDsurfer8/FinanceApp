@@ -131,15 +131,181 @@ export class NotificationService {
   async scheduleBillReminder(
     billName: string,
     dueDate: Date,
-    amount: number
+    amount: number,
+    reminderDays: number = 3
   ): Promise<string> {
+    const reminderDate = new Date(dueDate);
+    reminderDate.setDate(reminderDate.getDate() - reminderDays);
+
+    // Don't schedule if the reminder date is in the past
+    if (reminderDate <= new Date()) {
+      console.log(
+        `Bill reminder for ${billName} would be in the past, skipping`
+      );
+      return "";
+    }
+
     return this.scheduleNotification({
-      id: `bill-reminder-${Date.now()}`,
+      id: `bill-reminder-${billName}-${dueDate.getTime()}`,
       title: "📅 Bill Due Soon",
-      body: `${billName} is due in 3 days. Amount: $${amount.toFixed(2)}`,
-      data: { type: "bill-reminder", billName, amount },
-      trigger: null, // Immediate for testing
+      body: `${billName} is due in ${reminderDays} day${
+        reminderDays > 1 ? "s" : ""
+      }. Amount: $${amount.toFixed(2)}`,
+      data: {
+        type: "bill-reminder",
+        billName,
+        amount,
+        dueDate: dueDate.toISOString(),
+        reminderDays,
+      },
+      trigger: {
+        seconds: Math.max(
+          1,
+          Math.floor((reminderDate.getTime() - Date.now()) / 1000)
+        ),
+      } as any,
     });
+  }
+
+  // Schedule multiple bill reminders for a user
+  async scheduleAllBillReminders(userId: string): Promise<void> {
+    try {
+      // Import the userData functions
+      const { getUserTransactions, getUserRecurringTransactions } =
+        await import("./userData");
+
+      // Get all transactions and recurring transactions
+      const [transactions, recurringTransactions] = await Promise.all([
+        getUserTransactions(userId),
+        getUserRecurringTransactions(userId),
+      ]);
+
+      // Cancel existing bill reminders
+      await this.cancelBillReminders();
+
+      // Schedule reminders for regular transactions with due dates
+      for (const transaction of transactions) {
+        if (transaction.type === "expense" && transaction.date) {
+          const dueDate = new Date(transaction.date);
+          const now = new Date();
+
+          // Only schedule if due date is in the future
+          if (dueDate > now) {
+            await this.scheduleBillReminder(
+              transaction.description,
+              dueDate,
+              transaction.amount,
+              3 // 3 days before
+            );
+
+            // Also schedule a day-of reminder
+            await this.scheduleNotification({
+              id: `bill-due-today-${
+                transaction.description
+              }-${dueDate.getTime()}`,
+              title: "🚨 Bill Due Today",
+              body: `${
+                transaction.description
+              } is due today! Amount: $${transaction.amount.toFixed(2)}`,
+              data: {
+                type: "bill-due-today",
+                billName: transaction.description,
+                amount: transaction.amount,
+                dueDate: dueDate.toISOString(),
+              },
+              trigger: {
+                seconds: Math.max(
+                  1,
+                  Math.floor((dueDate.getTime() - Date.now()) / 1000)
+                ),
+              } as any,
+            });
+          }
+        }
+      }
+
+      // Schedule reminders for recurring transactions
+      for (const recurring of recurringTransactions) {
+        if (recurring.type === "expense" && recurring.isActive) {
+          // Calculate next occurrence
+          const nextOccurrence = this.calculateNextOccurrence(recurring);
+          if (nextOccurrence) {
+            await this.scheduleBillReminder(
+              recurring.name,
+              nextOccurrence,
+              recurring.amount,
+              3 // 3 days before
+            );
+          }
+        }
+      }
+
+      console.log("All bill reminders scheduled successfully");
+    } catch (error) {
+      console.error("Error scheduling bill reminders:", error);
+    }
+  }
+
+  // Calculate next occurrence for recurring transactions
+  private calculateNextOccurrence(recurringTransaction: any): Date | null {
+    const now = new Date();
+    const startDate = new Date(recurringTransaction.startDate);
+
+    if (startDate > now) {
+      return startDate;
+    }
+
+    if (recurringTransaction.endDate) {
+      const endDate = new Date(recurringTransaction.endDate);
+      if (endDate < now) {
+        return null; // Recurring transaction has ended
+      }
+    }
+
+    // Calculate next occurrence based on frequency
+    let nextDate = new Date(startDate);
+
+    while (nextDate <= now) {
+      switch (recurringTransaction.frequency) {
+        case "weekly":
+          nextDate.setDate(nextDate.getDate() + 7);
+          break;
+        case "biweekly":
+          nextDate.setDate(nextDate.getDate() + 14);
+          break;
+        case "monthly":
+          nextDate.setMonth(nextDate.getMonth() + 1);
+          break;
+        case "quarterly":
+          nextDate.setMonth(nextDate.getMonth() + 3);
+          break;
+        case "yearly":
+          nextDate.setFullYear(nextDate.getFullYear() + 1);
+          break;
+        default:
+          return null;
+      }
+    }
+
+    return nextDate;
+  }
+
+  // Cancel all bill reminders
+  async cancelBillReminders(): Promise<void> {
+    try {
+      const scheduledNotifications = await this.getScheduledNotifications();
+
+      for (const notification of scheduledNotifications) {
+        const data = notification.content.data;
+        if (data?.type === "bill-reminder" || data?.type === "bill-due-today") {
+          await this.cancelNotification(notification.identifier);
+        }
+      }
+
+      console.log("All bill reminders cancelled");
+    } catch (error) {
+      console.error("Error cancelling bill reminders:", error);
+    }
   }
 
   async scheduleGoalReminder(

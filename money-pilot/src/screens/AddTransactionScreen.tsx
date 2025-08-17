@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { saveTransaction } from "../services/userData";
+import { billReminderService } from "../services/billReminders";
 
 interface AddTransactionScreenProps {
   navigation: any;
@@ -119,6 +120,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       };
 
       await saveTransaction(transaction);
+
+      // Refresh bill reminders when a new transaction is added
+      if (user) {
+        await billReminderService.scheduleAllBillReminders(user.uid);
+      }
+
       Alert.alert("Success", "Transaction saved successfully!", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);

@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomTabParamList } from "../types/finance";
 import { useAuth } from "../hooks/useAuth";
 import { notificationService } from "../services/notifications";
+import { billReminderService } from "../services/billReminders";
 import { UserProvider } from "../context/UserContext";
 import {
   DashboardScreen,
@@ -44,6 +45,24 @@ export const MainApp: React.FC = () => {
     checkFirstLaunch();
     setupNotifications();
   }, []);
+
+  // Setup bill reminders when user is authenticated
+  useEffect(() => {
+    if (user && isAuthenticated) {
+      setupBillReminders();
+    }
+  }, [user, isAuthenticated]);
+
+  const setupBillReminders = async () => {
+    if (!user) return;
+
+    try {
+      console.log("Setting up bill reminders for user:", user.uid);
+      await billReminderService.scheduleAllBillReminders(user.uid);
+    } catch (error) {
+      console.error("Error setting up bill reminders:", error);
+    }
+  };
 
   const setupNotifications = () => {
     // Setup notification listeners

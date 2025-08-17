@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -11,6 +11,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { notificationService } from "../services/notifications";
+import { billReminderService } from "../services/billReminders";
+import { useAuth } from "../hooks/useAuth";
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface NotificationSettingsScreenProps {
   navigation: any;
@@ -28,71 +32,167 @@ interface NotificationSetting {
 export const NotificationSettingsScreen: React.FC<
   NotificationSettingsScreenProps
 > = ({ navigation }) => {
-  const [settings, setSettings] = useState<NotificationSetting[]>([
-    {
-      id: "budget-reminders",
-      title: "Budget Reminders",
-      description: "Get reminded to track your expenses",
-      icon: "wallet",
-      enabled: false,
-      type: "budget",
-    },
-    {
-      id: "bill-reminders",
-      title: "Bill Due Reminders",
-      description: "Get notified before bills are due",
-      icon: "calendar",
-      enabled: false,
-      type: "bills",
-    },
-    {
-      id: "goal-updates",
-      title: "Goal Progress Updates",
-      description: "Track your financial goals progress",
-      icon: "flag",
-      enabled: false,
-      type: "goals",
-    },
-    {
-      id: "weekly-reports",
-      title: "Weekly Reports",
-      description: "Receive weekly financial summaries",
-      icon: "bar-chart",
-      enabled: false,
-      type: "weekly",
-    },
-    {
-      id: "monthly-reports",
-      title: "Monthly Reports",
-      description: "Get monthly financial reviews",
-      icon: "trending-up",
-      enabled: false,
-      type: "monthly",
-    },
-    {
-      id: "low-balance-alerts",
-      title: "Low Balance Alerts",
-      description: "Get notified when account balances are low",
-      icon: "warning",
-      enabled: false,
-      type: "balance",
-    },
-    {
-      id: "savings-reminders",
-      title: "Savings Reminders",
-      description: "Stay on track with your savings goals",
-      icon: "diamond",
-      enabled: false,
-      type: "savings",
-    },
-  ]);
+  const { user } = useAuth();
+  const [settings, setSettings] = useState<NotificationSetting[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     checkPermissions();
+    loadSavedSettings();
   }, []);
+
+  const loadSavedSettings = async () => {
+    try {
+      console.log("Loading saved settings...");
+      const defaultSettings: NotificationSetting[] = [
+        {
+          id: "budget-reminders",
+          title: "Budget Reminders",
+          description: "Get reminded to track your expenses",
+          icon: "wallet",
+          enabled: false,
+          type: "budget",
+        },
+        {
+          id: "bill-reminders",
+          title: "Bill Due Reminders",
+          description: "Get notified before bills are due",
+          icon: "calendar",
+          enabled: false,
+          type: "bills",
+        },
+        {
+          id: "goal-updates",
+          title: "Goal Progress Updates",
+          description: "Track your financial goals progress",
+          icon: "flag",
+          enabled: false,
+          type: "goals",
+        },
+        {
+          id: "weekly-reports",
+          title: "Weekly Reports",
+          description: "Receive weekly financial summaries",
+          icon: "bar-chart",
+          enabled: false,
+          type: "weekly",
+        },
+        {
+          id: "monthly-reports",
+          title: "Monthly Reports",
+          description: "Get monthly financial reviews",
+          icon: "trending-up",
+          enabled: false,
+          type: "monthly",
+        },
+        {
+          id: "low-balance-alerts",
+          title: "Low Balance Alerts",
+          description: "Get notified when account balances are low",
+          icon: "warning",
+          enabled: false,
+          type: "balance",
+        },
+        {
+          id: "savings-reminders",
+          title: "Savings Reminders",
+          description: "Stay on track with your savings goals",
+          icon: "diamond",
+          enabled: false,
+          type: "savings",
+        },
+      ];
+
+      const savedSettings = await Promise.all(
+        defaultSettings.map(async (setting) => {
+          const savedValue = await AsyncStorage.getItem(
+            `notification_${setting.id}`
+          );
+          const isEnabled = savedValue === "true";
+          console.log(
+            `Loaded from AsyncStorage: notification_${setting.id} = ${savedValue} (enabled: ${isEnabled})`
+          );
+          return {
+            ...setting,
+            enabled: isEnabled,
+          };
+        })
+      );
+      console.log("Final saved settings:", savedSettings);
+      setSettings(savedSettings);
+
+      // Then check actual notification status
+      await checkBillReminderStatus();
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error loading saved settings:", error);
+      checkBillReminderStatus();
+      setIsLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadSavedSettings();
+    }, [])
+  );
+
+  const checkBillReminderStatus = async () => {
+    try {
+      const scheduledNotifications =
+        await notificationService.getScheduledNotifications();
+      const hasBillReminders = scheduledNotifications.some(
+        (notification) =>
+          notification.content.data?.type === "bill-reminder" ||
+          notification.content.data?.type === "bill-due-today"
+      );
+
+      console.log(
+        `Found ${scheduledNotifications.length} scheduled notifications, bill reminders: ${hasBillReminders}`
+      );
+
+      // Check saved state and update if needed
+      const savedValue = await AsyncStorage.getItem(
+        `notification_bill-reminders`
+      );
+      const savedEnabled = savedValue === "true";
+
+      console.log(
+        `Bill reminder status check - saved: ${savedEnabled}, actual: ${hasBillReminders}`
+      );
+
+      // Only update if there are actual notifications and they don't match saved state
+      // If saved is true but no notifications exist, keep the saved state (user wants them enabled)
+      if (savedEnabled && !hasBillReminders) {
+        console.log(
+          `Saved state is true but no notifications found - keeping saved state`
+        );
+        // Don't update - keep the saved state
+      } else if (savedEnabled !== hasBillReminders) {
+        console.log(
+          `Updating bill reminder state from ${savedEnabled} to ${hasBillReminders}`
+        );
+        await AsyncStorage.setItem(
+          `notification_bill-reminders`,
+          hasBillReminders ? "true" : "false"
+        );
+        setSettings((prev) =>
+          prev.map((setting) =>
+            setting.id === "bill-reminders"
+              ? { ...setting, enabled: hasBillReminders }
+              : setting
+          )
+        );
+      } else {
+        console.log(`Bill reminder state matches, no update needed`);
+      }
+    } catch (error) {
+      console.error("Error checking bill reminder status:", error);
+    }
+  };
 
   const checkPermissions = async () => {
     const hasPermission = await notificationService.requestPermissions();
@@ -100,6 +200,8 @@ export const NotificationSettingsScreen: React.FC<
   };
 
   const toggleSetting = async (settingId: string) => {
+    console.log(`Toggling ${settingId} - current settings:`, settings);
+
     const updatedSettings = settings.map((setting) =>
       setting.id === settingId
         ? { ...setting, enabled: !setting.enabled }
@@ -108,6 +210,14 @@ export const NotificationSettingsScreen: React.FC<
     setSettings(updatedSettings);
 
     const setting = updatedSettings.find((s) => s.id === settingId);
+    console.log(`New setting state for ${settingId}:`, setting?.enabled);
+
+    // Save the setting state to AsyncStorage
+    const storageKey = `notification_${settingId}`;
+    const storageValue = setting?.enabled ? "true" : "false";
+    await AsyncStorage.setItem(storageKey, storageValue);
+    console.log(`Saved to AsyncStorage: ${storageKey} = ${storageValue}`);
+
     if (setting?.enabled) {
       await scheduleNotification(setting);
     } else {
@@ -125,11 +235,9 @@ export const NotificationSettingsScreen: React.FC<
           );
           break;
         case "bills":
-          await notificationService.scheduleBillReminder(
-            "Electric Bill",
-            new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
-            150
-          );
+          if (user) {
+            await billReminderService.scheduleAllBillReminders(user.uid);
+          }
           break;
         case "goals":
           await notificationService.scheduleGoalReminder(
@@ -162,12 +270,19 @@ export const NotificationSettingsScreen: React.FC<
 
   const cancelNotification = async (settingId: string) => {
     try {
-      // Cancel all notifications for this setting type
-      const scheduledNotifications =
-        await notificationService.getScheduledNotifications();
-      for (const notification of scheduledNotifications) {
-        if (notification.content.data?.type === settingId) {
-          await notificationService.cancelNotification(notification.identifier);
+      if (settingId === "bill-reminders") {
+        // Cancel all bill reminders specifically
+        await billReminderService.cancelAllBillReminders();
+      } else {
+        // Cancel all notifications for this setting type
+        const scheduledNotifications =
+          await notificationService.getScheduledNotifications();
+        for (const notification of scheduledNotifications) {
+          if (notification.content.data?.type === settingId) {
+            await notificationService.cancelNotification(
+              notification.identifier
+            );
+          }
         }
       }
     } catch (error) {
@@ -186,11 +301,18 @@ export const NotificationSettingsScreen: React.FC<
           );
           break;
         case "bills":
-          await notificationService.scheduleBillReminder(
-            "Test Bill",
-            new Date(Date.now() + 5000),
-            150
-          );
+          if (user) {
+            // Schedule a test bill reminder for 10 seconds from now
+            const testDate = new Date();
+            testDate.setSeconds(testDate.getSeconds() + 10);
+            await billReminderService.scheduleBillReminder(
+              "Test Bill",
+              testDate,
+              150.0,
+              false,
+              0 // Due today
+            );
+          }
           break;
         case "goals":
           await notificationService.scheduleGoalReminder(
@@ -240,6 +362,25 @@ export const NotificationSettingsScreen: React.FC<
       );
     }
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color="#475569" />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.title}>Notification Settings</Text>
+            <Text style={styles.subtitle}>Loading...</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
