@@ -331,7 +331,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   // Calculate budget metrics
   const savingsPercent = parseFloat(savingsPercentage) || 0;
   const debtPayoffPercent = parseFloat(debtPayoffPercentage) || 0;
-  const savingsAmount = totalIncome * (savingsPercent / 100);
+  const savingsAmount = netIncome * (savingsPercent / 100);
 
   // Calculate total goal contributions
   const totalGoalContributions = goals.reduce((total, goal) => {
