@@ -1033,8 +1033,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   >
                     <Text style={{ fontSize: 14, color: "#6b7280" }}>
                       {transaction.category} • {formatDate(transaction.date)}
-                      {transaction.id?.startsWith("projected-") &&
-                        " (Projected)"}
                     </Text>
                     {(isRecurringTransaction(transaction) ||
                       transaction.id?.startsWith("projected-")) && (
