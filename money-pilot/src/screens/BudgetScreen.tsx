@@ -1353,7 +1353,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 Discretionary Income
               </Text>
               <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#d97706" }}
+                style={{ fontSize: 16, fontWeight: "700", color: "#f59e0b" }}
               >
                 {formatCurrency(discretionaryIncome)}
               </Text>
@@ -1378,12 +1378,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 <TextInput
                   style={{
                     fontSize: 16,
-                    color: "#8b5cf6",
+                    color: "#dc2626",
                     fontWeight: "600",
                     width: 35,
                     textAlign: "center",
                     borderBottomWidth: 1,
-                    borderBottomColor: "#8b5cf6",
+                    borderBottomColor: "#dc2626",
                     paddingHorizontal: 4,
                   }}
                   value={debtPayoffPercentage}
@@ -1399,7 +1399,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 </Text>
               </View>
               <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#8b5cf6" }}
+                style={{ fontSize: 16, fontWeight: "700", color: "#dc2626" }}
               >
                 {formatCurrency(debtPayoffAmount)}
               </Text>
@@ -1417,12 +1417,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               style={{ flexDirection: "row", justifyContent: "space-between" }}
             >
               <Text
-                style={{ fontSize: 20, fontWeight: "800", color: "#f97316" }}
+                style={{ fontSize: 20, fontWeight: "800", color: "#16a34a" }}
               >
                 $ Available
               </Text>
               <Text
-                style={{ fontSize: 20, fontWeight: "800", color: "#f97316" }}
+                style={{ fontSize: 20, fontWeight: "800", color: "#16a34a" }}
               >
                 {formatCurrency(remainingBalance)}
               </Text>
