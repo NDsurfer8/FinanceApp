@@ -12,8 +12,13 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { signUp, validateEmail, validatePassword } from "../services/auth";
-import { checkAppleAuthAvailability } from "../utils/deviceUtils";
+import {
+  signUp,
+  validateEmail,
+  validatePassword,
+  signInWithApple,
+} from "../services/auth";
+import * as AppleAuthentication from "expo-apple-authentication";
 
 interface SignUpScreenProps {
   onSignUp: () => void;
@@ -44,7 +49,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
   // Check Apple Authentication availability
   useEffect(() => {
     const checkAvailability = async () => {
-      const isAvailable = await checkAppleAuthAvailability();
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
       setIsAppleAuthAvailable(isAvailable);
     };
 
@@ -302,18 +307,31 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               </TouchableOpacity>
 
               {isAppleAuthAvailable && (
-                <TouchableOpacity
-                  style={styles.socialButton}
-                  onPress={() => {
-                    Alert.alert(
-                      "Apple Login",
-                      "Apple login functionality would be implemented here"
-                    );
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={
+                    AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
+                  }
+                  buttonStyle={
+                    AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                  }
+                  cornerRadius={12}
+                  style={styles.appleButton}
+                  onPress={async () => {
+                    setIsLoading(true);
+                    try {
+                      await signInWithApple();
+                      onSignUp();
+                    } catch (error: any) {
+                      console.error("Apple sign up error:", error);
+                      const errorMessage =
+                        error.message ||
+                        "An error occurred with Apple Sign In. Please try again.";
+                      Alert.alert("Apple Sign In Failed", errorMessage);
+                    } finally {
+                      setIsLoading(false);
+                    }
                   }}
-                >
-                  <Ionicons name="logo-apple" size={24} color="#000" />
-                  <Text style={styles.socialButtonText}>Apple</Text>
-                </TouchableOpacity>
+                />
               )}
             </View>
 
@@ -510,5 +528,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: "#1f2937",
+  },
+  appleButton: {
+    flex: 1,
+    height: 56,
   },
 });

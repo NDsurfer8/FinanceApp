@@ -12,8 +12,8 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { signIn, validateEmail } from "../services/auth";
-import { checkAppleAuthAvailability } from "../utils/deviceUtils";
+import { signIn, validateEmail, signInWithApple } from "../services/auth";
+import * as AppleAuthentication from "expo-apple-authentication";
 import Constants from "expo-constants";
 
 interface LoginScreenProps {
@@ -40,7 +40,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   // Check Apple Authentication availability
   useEffect(() => {
     const checkAvailability = async () => {
-      const isAvailable = await checkAppleAuthAvailability();
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
       setIsAppleAuthAvailable(isAvailable);
     };
 
@@ -80,11 +80,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     );
   };
 
-  const handleAppleLogin = () => {
-    Alert.alert(
-      "Apple Login",
-      "Apple login functionality would be implemented here"
-    );
+  const handleAppleLogin = async () => {
+    setIsLoading(true);
+    try {
+      await signInWithApple();
+      onLogin();
+    } catch (error: any) {
+      console.error("Apple login error:", error);
+      const errorMessage =
+        error.message ||
+        "An error occurred with Apple Sign In. Please try again.";
+      Alert.alert("Apple Sign In Failed", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleForgotPassword = () => {
@@ -202,13 +211,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </TouchableOpacity>
 
               {isAppleAuthAvailable && (
-                <TouchableOpacity
-                  style={styles.socialButton}
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={
+                    AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+                  }
+                  buttonStyle={
+                    AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                  }
+                  cornerRadius={12}
+                  style={styles.appleButton}
                   onPress={handleAppleLogin}
-                >
-                  <Ionicons name="logo-apple" size={24} color="#000" />
-                  <Text style={styles.socialButtonText}>Apple</Text>
-                </TouchableOpacity>
+                />
               )}
             </View>
 
@@ -362,6 +375,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#374151",
+  },
+  appleButton: {
+    flex: 1,
+    height: 56,
   },
   signUpContainer: {
     flexDirection: "row",

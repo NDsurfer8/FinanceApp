@@ -148,12 +148,19 @@ export interface SharedInvitation {
 // Create or update user profile
 export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
   try {
+    console.log("Attempting to save user profile:", profile);
+    console.log("Current auth state:", auth.currentUser?.uid);
+    console.log(
+      "Profile UID matches auth UID:",
+      profile.uid === auth.currentUser?.uid
+    );
+
     const userRef = ref(db, `users/${profile.uid}/profile`);
     await set(userRef, {
       ...profile,
       updatedAt: Date.now(),
     });
-    console.log("User profile saved successfully");
+    console.log("User profile saved successfully to database");
   } catch (error) {
     console.error("Error saving user profile:", error);
     throw error;
