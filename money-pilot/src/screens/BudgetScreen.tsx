@@ -490,13 +490,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   };
 
   const handleEditTransaction = (transaction: any) => {
-    if (
-      isRecurringTransaction(transaction) ||
-      transaction.id?.startsWith("projected-")
-    ) {
+    if (transaction.id?.startsWith("projected-")) {
       Alert.alert(
-        "Recurring Transaction",
-        "This transaction is recurring and can only be edited from the Recurring Transactions screen.",
+        "Projected Transaction",
+        "This is a projected transaction and cannot be edited directly.",
         [{ text: "OK" }]
       );
       return;
@@ -524,20 +521,59 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         return;
       }
 
-      const updatedTransaction = {
-        ...transactionToUpdate,
-        amount: newAmount,
-        userId: user.uid,
-      };
+      // Check if this is a recurring transaction
+      const isRecurring = isRecurringTransaction(transactionToUpdate);
 
-      // Optimistic update - update UI immediately
-      const updatedTransactions = transactions.map((t) =>
-        t.id === editingTransactionId ? updatedTransaction : t
-      );
-      updateDataOptimistically({ transactions: updatedTransactions });
+      if (isRecurring) {
+        // Handle recurring transaction update
+        const { updateRecurringTransaction } = await import(
+          "../services/transactionService"
+        );
 
-      // Save to database in background
-      await updateTransaction(updatedTransaction);
+        // Find the recurring transaction
+        const recurringTransaction = recurringTransactions.find(
+          (recurring) =>
+            recurring.name === transactionToUpdate.description &&
+            recurring.amount === transactionToUpdate.amount &&
+            recurring.type === transactionToUpdate.type &&
+            recurring.isActive
+        );
+
+        if (recurringTransaction?.id) {
+          const updatedRecurringTransaction = {
+            ...recurringTransaction,
+            amount: newAmount,
+            updatedAt: Date.now(),
+          };
+
+          // Optimistic update - update UI immediately
+          const updatedTransactions = transactions.map((t) =>
+            t.id === editingTransactionId ? { ...t, amount: newAmount } : t
+          );
+          updateDataOptimistically({ transactions: updatedTransactions });
+
+          // Save recurring transaction to database
+          await updateRecurringTransaction(updatedRecurringTransaction);
+        } else {
+          throw new Error("Recurring transaction not found");
+        }
+      } else {
+        // Handle regular transaction update
+        const updatedTransaction = {
+          ...transactionToUpdate,
+          amount: newAmount,
+          userId: user.uid,
+        };
+
+        // Optimistic update - update UI immediately
+        const updatedTransactions = transactions.map((t) =>
+          t.id === editingTransactionId ? updatedTransaction : t
+        );
+        updateDataOptimistically({ transactions: updatedTransactions });
+
+        // Save to database in background
+        await updateTransaction(updatedTransaction);
+      }
 
       // Reset editing state
       setEditingTransactionId(null);

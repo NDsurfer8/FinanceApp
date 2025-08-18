@@ -50,6 +50,10 @@ export const RecurringTransactionsScreen: React.FC<
   const [modalVisible, setModalVisible] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<RecurringTransaction | null>(null);
+  const [editingTransactionId, setEditingTransactionId] = useState<
+    string | null
+  >(null);
+  const [editingAmount, setEditingAmount] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     amount: "",
@@ -227,6 +231,64 @@ export const RecurringTransactionsScreen: React.FC<
         },
       ]
     );
+  };
+
+  const handleEditTransaction = (transaction: RecurringTransaction) => {
+    setEditingTransactionId(transaction.id || null);
+    setEditingAmount(transaction.amount.toString());
+  };
+
+  const handleSaveTransactionEdit = async () => {
+    if (!user || !editingTransactionId) return;
+
+    const newAmount = parseFloat(editingAmount);
+    if (isNaN(newAmount) || newAmount <= 0) {
+      Alert.alert("Error", "Please enter a valid amount");
+      return;
+    }
+
+    try {
+      // Find the transaction to update
+      const transactionToUpdate = recurringTransactions.find(
+        (t) => t.id === editingTransactionId
+      );
+      if (!transactionToUpdate) {
+        Alert.alert("Error", "Transaction not found");
+        return;
+      }
+
+      const updatedTransaction = {
+        ...transactionToUpdate,
+        amount: newAmount,
+        updatedAt: Date.now(),
+      };
+
+      // Optimistic update - update UI immediately
+      const updatedTransactions = recurringTransactions.map((t) =>
+        t.id === editingTransactionId ? updatedTransaction : t
+      );
+      setRecurringTransactions(updatedTransactions);
+
+      // Save to database in background
+      await updateRecurringTransaction(updatedTransaction);
+
+      // Reset editing state
+      setEditingTransactionId(null);
+      setEditingAmount("");
+
+      Alert.alert("Success", "Transaction amount updated successfully!");
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      Alert.alert("Error", "Failed to update transaction amount");
+
+      // Revert optimistic update on error
+      await loadRecurringTransactions();
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTransactionId(null);
+    setEditingAmount("");
   };
 
   const formatCurrency = (amount: number) => {
@@ -426,23 +488,93 @@ export const RecurringTransactionsScreen: React.FC<
                     </View>
                   </View>
                   <View style={styles.transactionAmount}>
-                    <Text
-                      style={[
-                        styles.amountText,
-                        {
-                          color:
-                            transaction.type === "income"
-                              ? "#16a34a"
-                              : "#dc2626",
-                        },
-                      ]}
-                    >
-                      {transaction.type === "income" ? "+" : "-"}
-                      {formatCurrency(transaction.amount)}
-                    </Text>
-                    <Text style={styles.frequencyText}>
-                      {getFrequencyLabel(transaction.frequency)}
-                    </Text>
+                    {editingTransactionId === transaction.id ? (
+                      <View style={{ alignItems: "flex-end" }}>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginBottom: 4,
+                          }}
+                        >
+                          <TextInput
+                            style={{
+                              fontSize: 16,
+                              fontWeight: "700",
+                              color:
+                                transaction.type === "income"
+                                  ? "#16a34a"
+                                  : "#dc2626",
+                              marginRight: 8,
+                              borderBottomWidth: 1,
+                              borderBottomColor:
+                                transaction.type === "income"
+                                  ? "#16a34a"
+                                  : "#dc2626",
+                              paddingHorizontal: 4,
+                              minWidth: 80,
+                              textAlign: "right",
+                            }}
+                            value={editingAmount}
+                            onChangeText={setEditingAmount}
+                            keyboardType="numeric"
+                            autoFocus
+                          />
+                          <TouchableOpacity
+                            onPress={handleSaveTransactionEdit}
+                            style={{
+                              padding: 6,
+                              borderRadius: 6,
+                              backgroundColor: "#dcfce7",
+                              marginRight: 4,
+                            }}
+                          >
+                            <Ionicons
+                              name="checkmark"
+                              size={14}
+                              color="#16a34a"
+                            />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={handleCancelEdit}
+                            style={{
+                              padding: 6,
+                              borderRadius: 6,
+                              backgroundColor: "#fee2e2",
+                            }}
+                          >
+                            <Ionicons name="close" size={14} color="#dc2626" />
+                          </TouchableOpacity>
+                        </View>
+                        <Text style={styles.frequencyText}>
+                          {getFrequencyLabel(transaction.frequency)}
+                        </Text>
+                      </View>
+                    ) : (
+                      <>
+                        <TouchableOpacity
+                          onPress={() => handleEditTransaction(transaction)}
+                        >
+                          <Text
+                            style={[
+                              styles.amountText,
+                              {
+                                color:
+                                  transaction.type === "income"
+                                    ? "#16a34a"
+                                    : "#dc2626",
+                              },
+                            ]}
+                          >
+                            {transaction.type === "income" ? "+" : "-"}
+                            {formatCurrency(transaction.amount)}
+                          </Text>
+                        </TouchableOpacity>
+                        <Text style={styles.frequencyText}>
+                          {getFrequencyLabel(transaction.frequency)}
+                        </Text>
+                      </>
+                    )}
                   </View>
                 </View>
 
