@@ -125,7 +125,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
             </View>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>
-              Join Money Pilot to start tracking your finances
+              Join VectorFi to start tracking your finances
             </Text>
           </View>
 

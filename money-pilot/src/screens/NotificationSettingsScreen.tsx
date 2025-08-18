@@ -426,7 +426,7 @@ export const NotificationSettingsScreen: React.FC<
           await notificationService.scheduleNotification({
             id: `test-${Date.now()}`,
             title: "🧪 Test Notification",
-            body: "This is a test notification from Money Pilot!",
+            body: "This is a test notification from VectorFi!",
             data: { type: "test" },
             trigger: { seconds: 5 } as any,
           });

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "money-pilot",
+    "name": "VectorFi",
     "slug": "money-pilot",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ndsurf888.moneypilot",
+      "bundleIdentifier": "com.ndsurf888.vectorfii",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -26,7 +26,7 @@
       },
       "edgeToEdgeEnabled": true,
       "permissions": ["android.permission.RECORD_AUDIO"],
-      "package": "com.ndsurf888.moneypilot"
+      "package": "com.ndsurf888.vectorfii"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -61,6 +61,7 @@
       "eas": {
         "projectId": "ad418174-c1b3-4cd0-a54e-d1198eecb1f7"
       }
-    }
+    },
+    "owner": "ndsurf888"
   }
 }

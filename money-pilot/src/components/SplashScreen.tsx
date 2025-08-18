@@ -8,7 +8,7 @@ interface SplashScreenProps {
 const { width, height } = Dimensions.get("window");
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({
-  message = "Loading Money Pilot...",
+  message = "Loading VectorFi...",
 }) => {
   const bounceAnim1 = useRef(new Animated.Value(0)).current;
   const bounceAnim2 = useRef(new Animated.Value(0)).current;
@@ -51,7 +51,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
         {/* App Logo/Icon */}
         <View style={styles.logoContainer}>
           <Text style={styles.logo}>💰</Text>
-          <Text style={styles.appName}>Money Pilot</Text>
+          <Text style={styles.appName}>VectorFi</Text>
         </View>
 
         {/* Bouncing Money Animation */}

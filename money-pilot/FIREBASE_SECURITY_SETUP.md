@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide will help you apply the comprehensive security rules for the Money Pilot app. The rules ensure that users can only access their own data and that all data is properly validated.
+This guide will help you apply the comprehensive security rules for the VectorFi app. The rules ensure that users can only access their own data and that all data is properly validated.
 
 ## New Features Covered
 
@@ -108,7 +108,7 @@ users/
 ### Step 1: Access Firebase Console
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Select your Money Pilot project
+2. Select your VectorFi project
 3. Navigate to **Realtime Database** in the left sidebar
 
 ### Step 2: Apply Security Rules

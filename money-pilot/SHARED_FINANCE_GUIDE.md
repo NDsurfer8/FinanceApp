@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **Shared Finance** feature transforms Money Pilot from a personal budgeting app into a powerful collaborative financial management platform. This feature allows users to create shared financial groups, track combined net worth, and manage finances together with transparency and security.
+The **Shared Finance** feature transforms VectorFi from a personal budgeting app into a powerful collaborative financial management platform. This feature allows users to create shared financial groups, track combined net worth, and manage finances together with transparency and security.
 
 ## 🎯 **Why This Feature is Revolutionary**
 
@@ -293,7 +293,7 @@ Group Metrics:
 
 ## 🎉 **Conclusion**
 
-The Shared Finance feature positions Money Pilot as a revolutionary financial management platform that goes beyond personal budgeting. By enabling collaborative financial tracking with proper security and privacy controls, we're creating a unique value proposition that addresses real pain points for couples, families, and investment groups.
+The Shared Finance feature positions VectorFi as a revolutionary financial management platform that goes beyond personal budgeting. By enabling collaborative financial tracking with proper security and privacy controls, we're creating a unique value proposition that addresses real pain points for couples, families, and investment groups.
 
 This feature has the potential to:
 

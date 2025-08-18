@@ -19,7 +19,7 @@ interface AboutScreenProps {
 export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
   const appVersion = Constants.expoConfig?.version || "1.0.0";
   const buildNumber = Constants.expoConfig?.ios?.buildNumber || "1";
-  const appName = Constants.expoConfig?.name || "Money Pilot";
+  const appName = Constants.expoConfig?.name || "VectorFi";
 
   const openPrivacyPolicy = () => {
     Linking.openURL("https://your-app.com/privacy-policy");
@@ -38,12 +38,12 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
   };
 
   const openGitHub = () => {
-    Linking.openURL("https://github.com/your-username/money-pilot");
+    Linking.openURL("https://github.com/ndsurf888/vectorfii");
   };
 
   const shareApp = () => {
     Alert.alert(
-      "Share Money Pilot",
+      "Share VectorFi",
       "Help others take control of their finances! Share this app with friends and family.",
       [
         { text: "Cancel", style: "cancel" },
@@ -64,7 +64,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
   const rateApp = () => {
     // This would open the app store for rating
     Alert.alert(
-      "Rate Money Pilot",
+      "Rate VectorFi",
       "Enjoying the app? Please rate us on the App Store!",
       [
         { text: "Cancel", style: "cancel" },
@@ -92,7 +92,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
           </TouchableOpacity>
           <View>
             <Text style={styles.title}>About</Text>
-            <Text style={styles.subtitle}>Learn more about Money Pilot</Text>
+            <Text style={styles.subtitle}>Learn more about VectorFi</Text>
           </View>
         </View>
 
@@ -114,10 +114,10 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
 
         {/* App Description */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About Money Pilot</Text>
+          <Text style={styles.sectionTitle}>About VectorFi</Text>
           <View style={styles.descriptionCard}>
             <Text style={styles.descriptionText}>
-              Money Pilot is your comprehensive personal finance companion,
+              VectorFi is your comprehensive personal finance companion,
               designed to help you track expenses, manage budgets, set financial
               goals, and build wealth with confidence.
             </Text>
@@ -243,7 +243,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Developer</Text>
           <View style={styles.developerCard}>
-            <Text style={styles.developerName}>Money Pilot Team</Text>
+            <Text style={styles.developerName}>VectorFi Team</Text>
             <Text style={styles.developerDescription}>
               Built with ❤️ using React Native and Expo
             </Text>
@@ -256,7 +256,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
         {/* Copyright */}
         <View style={styles.copyrightSection}>
           <Text style={styles.copyrightText}>
-            © 2024 Money Pilot. All rights reserved.
+            © 2024 VectorFi. All rights reserved.
           </Text>
           <Text style={styles.copyrightText}>
             Made with passion for financial empowerment.

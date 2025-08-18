@@ -108,7 +108,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <View style={styles.logoContainer}>
               <Ionicons name="wallet" size={60} color="#6366f1" />
             </View>
-            <Text style={styles.title}>Money Pilot</Text>
+            <Text style={styles.title}>VectorFi</Text>
             <Text style={styles.subtitle}>Take control of your finances</Text>
           </View>
 
