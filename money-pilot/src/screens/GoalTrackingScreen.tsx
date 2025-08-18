@@ -990,7 +990,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   }}
                 >
                   <Text style={{ color: "#374151", fontWeight: "600" }}>
-                    Update Progress
+                    Update Goal
                   </Text>
                 </TouchableOpacity>
               </View>

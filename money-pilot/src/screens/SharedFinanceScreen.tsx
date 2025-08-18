@@ -764,126 +764,322 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               </View>
             </View>
 
-            {/* Group Stats */}
-            <View style={{ marginBottom: 20 }}>
+            {/* Enhanced Group Stats Overview */}
+            <View style={{ marginBottom: 24 }}>
+              {/* Net Worth Card - Hero Metric */}
               <View
                 style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 12,
+                  backgroundColor: "#fff",
+                  borderRadius: 16,
+                  padding: 20,
+                  marginBottom: 16,
+                  borderWidth: 1,
+                  borderColor: "#e5e7eb",
+                  shadowColor: groupData.netWorth >= 0 ? "#16a34a" : "#dc2626",
+                  shadowOpacity: 0.08,
+                  shadowRadius: 12,
+                  shadowOffset: { width: 0, height: 4 },
+                  elevation: 4,
                 }}
               >
-                <Text style={{ fontSize: 16, color: "#6b7280" }}>
-                  Net Worth
-                </Text>
-                <Text
+                <View
                   style={{
-                    fontSize: 18,
-                    fontWeight: "700",
-                    color: groupData.netWorth >= 0 ? "#16a34a" : "#dc2626",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 16,
                   }}
                 >
-                  {formatCurrency(groupData.netWorth)}
-                </Text>
+                  <View
+                    style={{
+                      backgroundColor:
+                        groupData.netWorth >= 0 ? "#dcfce7" : "#fee2e2",
+                      width: 44,
+                      height: 44,
+                      borderRadius: 22,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      marginRight: 16,
+                    }}
+                  >
+                    <Ionicons
+                      name={
+                        groupData.netWorth >= 0
+                          ? "trending-up"
+                          : "trending-down"
+                      }
+                      size={22}
+                      color={groupData.netWorth >= 0 ? "#16a34a" : "#dc2626"}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: "#6b7280",
+                        fontWeight: "600",
+                        marginBottom: 4,
+                      }}
+                    >
+                      Group Net Worth
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 24,
+                        fontWeight: "700",
+                        color: "#374151",
+                      }}
+                    >
+                      {formatCurrency(groupData.netWorth)}
+                    </Text>
+                  </View>
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    paddingTop: 16,
+                    borderTopWidth: 1,
+                    borderTopColor: "#f3f4f6",
+                  }}
+                >
+                  <View style={{ alignItems: "center", flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: "#6b7280",
+                        fontWeight: "500",
+                        marginBottom: 6,
+                      }}
+                    >
+                      Assets
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: "#16a34a",
+                      }}
+                    >
+                      {formatCurrency(groupData.totalAssets)}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: "center", flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: "#6b7280",
+                        fontWeight: "500",
+                        marginBottom: 6,
+                      }}
+                    >
+                      Debts
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: "#dc2626",
+                      }}
+                    >
+                      {formatCurrency(groupData.totalDebts)}
+                    </Text>
+                  </View>
+                </View>
               </View>
+
+              {/* Monthly Cash Flow Card */}
               <View
                 style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 12,
+                  backgroundColor: "#fff",
+                  borderRadius: 16,
+                  padding: 20,
+                  marginBottom: 16,
+                  borderWidth: 1,
+                  borderColor: "#e5e7eb",
+                  shadowColor: "#6366f1",
+                  shadowOpacity: 0.08,
+                  shadowRadius: 12,
+                  shadowOffset: { width: 0, height: 4 },
+                  elevation: 4,
                 }}
               >
-                <Text style={{ fontSize: 16, color: "#6b7280" }}>
-                  Total Assets
-                </Text>
-                <Text
-                  style={{ fontSize: 18, fontWeight: "700", color: "#16a34a" }}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 16,
+                  }}
                 >
-                  {formatCurrency(groupData.totalAssets)}
-                </Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 12,
-                }}
-              >
-                <Text style={{ fontSize: 16, color: "#6b7280" }}>
-                  Total Debts
-                </Text>
-                <Text
-                  style={{ fontSize: 18, fontWeight: "700", color: "#dc2626" }}
+                  <View
+                    style={{
+                      backgroundColor: "#eef2ff",
+                      width: 44,
+                      height: 44,
+                      borderRadius: 22,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      marginRight: 16,
+                    }}
+                  >
+                    <Ionicons name="cash" size={22} color="#6366f1" />
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: "#6b7280",
+                    }}
+                  >
+                    Monthly Cash Flow
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    marginBottom: 12,
+                  }}
                 >
-                  {formatCurrency(groupData.totalDebts)}
-                </Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 12,
-                }}
-              >
-                <Text style={{ fontSize: 16, color: "#6b7280" }}>
-                  Monthly Income
-                </Text>
-                <Text
-                  style={{ fontSize: 18, fontWeight: "700", color: "#16a34a" }}
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: "#6b7280",
+                        fontWeight: "500",
+                        marginBottom: 6,
+                      }}
+                    >
+                      Income
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: "700",
+                        color: "#16a34a",
+                      }}
+                    >
+                      {formatCurrency(groupData.totalIncome)}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1, alignItems: "flex-end" }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: "#6b7280",
+                        fontWeight: "500",
+                        marginBottom: 6,
+                      }}
+                    >
+                      Expenses
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: "700",
+                        color: "#dc2626",
+                      }}
+                    >
+                      {formatCurrency(groupData.totalExpenses)}
+                    </Text>
+                  </View>
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingTop: 16,
+                    borderTopWidth: 1,
+                    borderTopColor: "#f3f4f6",
+                  }}
                 >
-                  {formatCurrency(groupData.totalIncome)}
-                </Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ fontSize: 16, color: "#6b7280" }}>
-                  Monthly Expenses
-                </Text>
-                <Text
-                  style={{ fontSize: 18, fontWeight: "700", color: "#dc2626" }}
-                >
-                  {formatCurrency(groupData.totalExpenses)}
-                </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: "#6b7280",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Net Monthly
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "700",
+                      color:
+                        groupData.totalIncome - groupData.totalExpenses >= 0
+                          ? "#16a34a"
+                          : "#dc2626",
+                    }}
+                  >
+                    {formatCurrency(
+                      groupData.totalIncome - groupData.totalExpenses
+                    )}
+                  </Text>
+                </View>
               </View>
             </View>
 
-            {/* Goals Button */}
-            <TouchableOpacity
-              style={{
-                backgroundColor: "#f59e0b",
-                padding: 16,
-                borderRadius: 12,
-                alignItems: "center",
-                marginBottom: 20,
-              }}
-              onPress={() => loadGroupGoals(selectedGroup.id!)}
-            >
-              <Ionicons name="flag" size={20} color="#fff" />
-              <Text style={{ color: "#fff", fontWeight: "600", marginTop: 4 }}>
-                View Group Goals ({groupData.totalGoals})
-              </Text>
-            </TouchableOpacity>
+            {/* Enhanced Action Buttons */}
+            <View style={{ marginBottom: 24 }}>
+              {/* View Group Goals Button */}
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#f59e0b",
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: "center",
+                  marginBottom: 12,
+                  shadowColor: "#f59e0b",
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 3,
+                }}
+                onPress={() => loadGroupGoals(selectedGroup.id!)}
+              >
+                <Ionicons name="flag" size={20} color="#fff" />
+                <Text
+                  style={{
+                    color: "#fff",
+                    fontWeight: "600",
+                    fontSize: 14,
+                    marginTop: 4,
+                  }}
+                >
+                  Contribute to Group Goals ({groupData.totalGoals})
+                </Text>
+              </TouchableOpacity>
 
-            {/* Sync Data Button */}
-            <TouchableOpacity
-              style={{
-                backgroundColor: "#4f46e5",
-                padding: 16,
-                borderRadius: 12,
-                alignItems: "center",
-                marginBottom: 20,
-              }}
-              onPress={() => openSelectiveSyncModal(selectedGroup.id!)}
-            >
-              <Ionicons name="settings" size={20} color="#fff" />
-              <Text style={{ color: "#fff", fontWeight: "600", marginTop: 4 }}>
-                Selective Sync
-              </Text>
-            </TouchableOpacity>
+              {/* Selective Sync Button */}
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#6366f1",
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: "center",
+                  marginBottom: 20,
+                  shadowColor: "#6366f1",
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 3,
+                }}
+                onPress={() => openSelectiveSyncModal(selectedGroup.id!)}
+              >
+                <Ionicons name="sync" size={20} color="#fff" />
+                <Text
+                  style={{
+                    color: "#fff",
+                    fontWeight: "600",
+                    fontSize: 14,
+                    marginTop: 4,
+                  }}
+                >
+                  Selective Sync
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Info Section */}
             <View
