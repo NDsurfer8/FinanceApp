@@ -42,7 +42,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
-  const { goals: userGoals } = useZeroLoading();
+  const { goals: userGoals, updateDataOptimistically } = useZeroLoading();
   const [groups, setGroups] = useState<SharedGroup[]>([]);
   const [invitations, setInvitations] = useState<SharedInvitation[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<SharedGroup | null>(null);
@@ -54,6 +54,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
   const [showInvitationsModal, setShowInvitationsModal] = useState(false);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
   const [showSelectiveSyncModal, setShowSelectiveSyncModal] = useState(false);
+  const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
 
   // Selective sync state
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
@@ -283,6 +284,78 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
     } catch (error) {
       console.error("Error loading group goals:", error);
       Alert.alert("Error", "Failed to load group goals");
+    }
+  };
+
+  const toggleGoalExpansion = (goalId: string) => {
+    setExpandedGoalId(expandedGoalId === goalId ? null : goalId);
+  };
+
+  const handleAddMonthlyContribution = async (goal: any) => {
+    if (!user || !selectedGroup) return;
+
+    try {
+      // Calculate new amount by adding monthly contribution
+      const newAmount = goal.currentAmount + goal.monthlyContribution;
+
+      // Find the goal to update
+      const goalToUpdate = groupGoals.find((g) => g.id === goal.id);
+      if (!goalToUpdate) {
+        Alert.alert("Error", "Goal not found");
+        return;
+      }
+
+      // Import the updateGoal function
+      const { updateGoal } = await import("../services/userData");
+
+      // Create contribution record
+      const contribution = {
+        userId: user.uid,
+        displayName: user.displayName || "Unknown",
+        amount: goal.monthlyContribution,
+        timestamp: Date.now(),
+        previousAmount: goal.currentAmount,
+        newAmount: newAmount,
+      };
+
+      // Initialize or update contribution history
+      const contributionHistory = goal.contributionHistory || [];
+      contributionHistory.push(contribution);
+
+      const updatedGoal = {
+        ...goalToUpdate,
+        currentAmount: newAmount,
+        updatedAt: Date.now(),
+        lastUpdatedBy: {
+          userId: user.uid,
+          displayName: user.displayName || "Unknown",
+          timestamp: Date.now(),
+        },
+        contributionHistory: contributionHistory,
+      };
+
+      // Update the goal in the database
+      await updateGoal(updatedGoal);
+
+      // Optimistic update - update UI immediately
+      const updatedGoals = groupGoals.map((g) =>
+        g.id === goal.id ? updatedGoal : g
+      );
+      setGroupGoals(updatedGoals);
+
+      // Also update the local context so personal goals screen reflects the change
+      const updatedUserGoals = userGoals.map((g) =>
+        g.id === goal.id ? updatedGoal : g
+      );
+      updateDataOptimistically({ goals: updatedUserGoals });
+
+      Alert.alert(
+        "Success",
+        `Added ${formatCurrency(goal.monthlyContribution)} to ${goal.name}!`
+      );
+    } catch (error) {
+      console.error("Error updating goal:", error);
+      Alert.alert("Error", "Failed to add monthly contribution");
     }
   };
 
@@ -1484,6 +1557,32 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               </TouchableOpacity>
             </View>
 
+            {/* Editable Indicator */}
+            <View
+              style={{
+                backgroundColor: "#f0f9ff",
+                borderWidth: 1,
+                borderColor: "#0ea5e9",
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 20,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <Ionicons name="create" size={16} color="#0ea5e9" />
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: "#0369a1",
+                  marginLeft: 8,
+                  fontWeight: "500",
+                }}
+              >
+                Tap the + button to add your monthly contribution
+              </Text>
+            </View>
+
             {groupGoals.length === 0 ? (
               <View style={{ alignItems: "center", padding: 40 }}>
                 <Ionicons name="flag-outline" size={48} color="#d1d5db" />
@@ -1529,9 +1628,15 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       style={{
                         borderWidth: 1,
                         borderColor: "#e5e7eb",
-                        borderRadius: 12,
-                        padding: 16,
-                        marginBottom: 12,
+                        borderRadius: 16,
+                        padding: 20,
+                        marginBottom: 16,
+                        backgroundColor: "#fff",
+                        shadowColor: "#000",
+                        shadowOpacity: 0.05,
+                        shadowRadius: 8,
+                        shadowOffset: { width: 0, height: 2 },
+                        elevation: 2,
                       }}
                     >
                       <View
@@ -1539,13 +1644,13 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                           flexDirection: "row",
                           justifyContent: "space-between",
                           alignItems: "center",
-                          marginBottom: 8,
+                          marginBottom: 12,
                         }}
                       >
                         <Text
                           style={{
-                            fontSize: 16,
-                            fontWeight: "600",
+                            fontSize: 18,
+                            fontWeight: "700",
                             color: "#374151",
                             flex: 1,
                           }}
@@ -1555,15 +1660,15 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                         <View
                           style={{
                             backgroundColor: `${getProgressColor(progress)}20`,
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 8,
+                            paddingHorizontal: 10,
+                            paddingVertical: 6,
+                            borderRadius: 12,
                           }}
                         >
                           <Text
                             style={{
-                              fontSize: 12,
-                              fontWeight: "600",
+                              fontSize: 14,
+                              fontWeight: "700",
                               color: getProgressColor(progress),
                             }}
                           >
@@ -1574,9 +1679,10 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
 
                       <Text
                         style={{
-                          fontSize: 14,
+                          fontSize: 15,
                           color: "#6b7280",
-                          marginBottom: 8,
+                          marginBottom: 12,
+                          fontWeight: "500",
                         }}
                       >
                         {goal.category?.charAt(0).toUpperCase() +
@@ -1586,11 +1692,11 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       {/* Progress Bar */}
                       <View
                         style={{
-                          height: 6,
+                          height: 8,
                           backgroundColor: "#f3f4f6",
-                          borderRadius: 3,
+                          borderRadius: 4,
                           overflow: "hidden",
-                          marginBottom: 8,
+                          marginBottom: 16,
                         }}
                       >
                         <View
@@ -1609,27 +1715,60 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                         }}
                       >
                         <View>
-                          <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              color: "#6b7280",
+                              marginBottom: 8,
+                            }}
+                          >
                             Current
                           </Text>
                           <Text
                             style={{
-                              fontSize: 14,
-                              fontWeight: "600",
+                              fontSize: 16,
+                              fontWeight: "700",
                               color: "#374151",
+                              marginBottom: 8,
                             }}
                           >
                             {formatCurrency(goal.currentAmount)}
                           </Text>
+                          <TouchableOpacity
+                            onPress={() => handleAddMonthlyContribution(goal)}
+                            style={{
+                              backgroundColor: "#6366f1",
+                              paddingHorizontal: 12,
+                              paddingVertical: 6,
+                              borderRadius: 8,
+                              alignItems: "center",
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: 12,
+                                fontWeight: "600",
+                                color: "#fff",
+                              }}
+                            >
+                              +{formatCurrency(goal.monthlyContribution)}
+                            </Text>
+                          </TouchableOpacity>
                         </View>
                         <View>
-                          <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              color: "#6b7280",
+                              marginBottom: 4,
+                            }}
+                          >
                             Target
                           </Text>
                           <Text
                             style={{
-                              fontSize: 14,
-                              fontWeight: "600",
+                              fontSize: 16,
+                              fontWeight: "700",
                               color: "#374151",
                             }}
                           >
@@ -1637,13 +1776,19 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                           </Text>
                         </View>
                         <View>
-                          <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              color: "#6b7280",
+                              marginBottom: 4,
+                            }}
+                          >
                             Monthly
                           </Text>
                           <Text
                             style={{
-                              fontSize: 14,
-                              fontWeight: "600",
+                              fontSize: 16,
+                              fontWeight: "700",
                               color: "#16a34a",
                             }}
                           >
@@ -1655,16 +1800,197 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       {goal.targetDate && (
                         <Text
                           style={{
-                            fontSize: 12,
+                            fontSize: 13,
                             color: "#6b7280",
-                            marginTop: 8,
+                            marginTop: 12,
                             textAlign: "center",
+                            fontWeight: "500",
                           }}
                         >
                           Target Date:{" "}
                           {new Date(goal.targetDate).toLocaleDateString()}
                         </Text>
                       )}
+
+                      <View
+                        style={{
+                          marginTop: 12,
+                          paddingTop: 12,
+                          borderTopWidth: 1,
+                          borderTopColor: "#f3f4f6",
+                        }}
+                      >
+                        {goal.lastUpdatedBy && (
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginBottom: 8,
+                            }}
+                          >
+                            <Ionicons name="time" size={14} color="#9ca3af" />
+                            <Text
+                              style={{
+                                fontSize: 12,
+                                color: "#9ca3af",
+                                marginLeft: 6,
+                                fontWeight: "500",
+                              }}
+                            >
+                              Last updated by {goal.lastUpdatedBy.displayName}{" "}
+                              on{" "}
+                              {new Date(
+                                goal.lastUpdatedBy.timestamp
+                              ).toLocaleDateString()}
+                            </Text>
+                          </View>
+                        )}
+
+                        {/* Contribution History Toggle */}
+                        <TouchableOpacity
+                          onPress={() => toggleGoalExpansion(goal.id)}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            paddingVertical: 8,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: "600",
+                              color: "#6366f1",
+                              marginRight: 4,
+                            }}
+                          >
+                            {expandedGoalId === goal.id ? "Hide" : "Show"}{" "}
+                            Contribution History
+                          </Text>
+                          <Ionicons
+                            name={
+                              expandedGoalId === goal.id
+                                ? "chevron-up"
+                                : "chevron-down"
+                            }
+                            size={14}
+                            color="#6366f1"
+                          />
+                        </TouchableOpacity>
+
+                        {/* Expanded Contribution History */}
+                        {expandedGoalId === goal.id && (
+                          <View style={{ marginTop: 8 }}>
+                            {goal.contributionHistory &&
+                            goal.contributionHistory.length > 0 ? (
+                              goal.contributionHistory
+                                .slice()
+                                .reverse()
+                                .map((contribution: any, index: number) => (
+                                  <View
+                                    key={index}
+                                    style={{
+                                      backgroundColor: "#f9fafb",
+                                      padding: 12,
+                                      borderRadius: 8,
+                                      marginBottom: 8,
+                                      borderLeftWidth: 3,
+                                      borderLeftColor: "#6366f1",
+                                    }}
+                                  >
+                                    <View
+                                      style={{
+                                        flexDirection: "row",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        marginBottom: 4,
+                                      }}
+                                    >
+                                      <Text
+                                        style={{
+                                          fontSize: 14,
+                                          fontWeight: "700",
+                                          color: "#16a34a",
+                                        }}
+                                      >
+                                        +{formatCurrency(contribution.amount)}
+                                      </Text>
+                                      <Text
+                                        style={{
+                                          fontSize: 11,
+                                          color: "#6b7280",
+                                        }}
+                                      >
+                                        {new Date(
+                                          contribution.timestamp
+                                        ).toLocaleDateString()}
+                                      </Text>
+                                    </View>
+                                    <Text
+                                      style={{
+                                        fontSize: 12,
+                                        fontWeight: "600",
+                                        color: "#374151",
+                                        marginBottom: 2,
+                                      }}
+                                    >
+                                      {contribution.displayName}
+                                    </Text>
+                                    <Text
+                                      style={{
+                                        fontSize: 10,
+                                        color: "#6b7280",
+                                      }}
+                                    >
+                                      {new Date(
+                                        contribution.timestamp
+                                      ).toLocaleTimeString([], {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </Text>
+                                  </View>
+                                ))
+                            ) : (
+                              <View
+                                style={{
+                                  padding: 16,
+                                  alignItems: "center",
+                                  backgroundColor: "#f9fafb",
+                                  borderRadius: 8,
+                                }}
+                              >
+                                <Ionicons
+                                  name="time-outline"
+                                  size={24}
+                                  color="#9ca3af"
+                                  style={{ marginBottom: 8 }}
+                                />
+                                <Text
+                                  style={{
+                                    fontSize: 12,
+                                    color: "#6b7280",
+                                    textAlign: "center",
+                                  }}
+                                >
+                                  No contributions yet
+                                </Text>
+                                <Text
+                                  style={{
+                                    fontSize: 10,
+                                    color: "#9ca3af",
+                                    textAlign: "center",
+                                    marginTop: 2,
+                                  }}
+                                >
+                                  Tap + button to contribute
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        )}
+                      </View>
                     </View>
                   );
                 })}
