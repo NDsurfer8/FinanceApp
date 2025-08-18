@@ -183,6 +183,9 @@ export const saveTransaction = async (
   transaction: Transaction
 ): Promise<string> => {
   try {
+    const { encryptTransaction } = await import("./encryption");
+    const encryptedTransaction = await encryptTransaction(transaction);
+
     const transactionsRef = ref(db, `users/${transaction.userId}/transactions`);
     const newTransactionRef = push(transactionsRef);
     const transactionId = newTransactionRef.key;
@@ -192,7 +195,7 @@ export const saveTransaction = async (
     }
 
     await set(newTransactionRef, {
-      ...transaction,
+      ...encryptedTransaction,
       id: transactionId,
     });
 
@@ -213,6 +216,7 @@ export const getUserTransactions = async (
   userId: string
 ): Promise<Transaction[]> => {
   try {
+    const { decryptTransactions } = await import("./encryption");
     const transactionsRef = ref(db, `users/${userId}/transactions`);
     const snapshot = await get(transactionsRef);
 
@@ -221,7 +225,10 @@ export const getUserTransactions = async (
       snapshot.forEach((childSnapshot) => {
         transactions.push(childSnapshot.val());
       });
-      return transactions.sort((a, b) => b.date - a.date);
+
+      // Decrypt all transactions
+      const decryptedTransactions = await decryptTransactions(transactions);
+      return decryptedTransactions.sort((a, b) => b.date - a.date);
     }
     return [];
   } catch (error) {
@@ -233,6 +240,9 @@ export const getUserTransactions = async (
 // Save asset
 export const saveAsset = async (asset: Asset): Promise<string> => {
   try {
+    const { encryptAsset } = await import("./encryption");
+    const encryptedAsset = await encryptAsset(asset);
+
     const assetsRef = ref(db, `users/${asset.userId}/assets`);
     const newAssetRef = push(assetsRef);
     const assetId = newAssetRef.key;
@@ -242,7 +252,7 @@ export const saveAsset = async (asset: Asset): Promise<string> => {
     }
 
     await set(newAssetRef, {
-      ...asset,
+      ...encryptedAsset,
       id: assetId,
     });
 
@@ -261,6 +271,7 @@ export const saveAsset = async (asset: Asset): Promise<string> => {
 // Get user assets
 export const getUserAssets = async (userId: string): Promise<Asset[]> => {
   try {
+    const { decryptAssets } = await import("./encryption");
     const assetsRef = ref(db, `users/${userId}/assets`);
     const snapshot = await get(assetsRef);
 
@@ -269,7 +280,10 @@ export const getUserAssets = async (userId: string): Promise<Asset[]> => {
       snapshot.forEach((childSnapshot) => {
         assets.push(childSnapshot.val());
       });
-      return assets;
+
+      // Decrypt all assets
+      const decryptedAssets = await decryptAssets(assets);
+      return decryptedAssets;
     }
     return [];
   } catch (error) {
@@ -281,6 +295,9 @@ export const getUserAssets = async (userId: string): Promise<Asset[]> => {
 // Save debt
 export const saveDebt = async (debt: Debt): Promise<string> => {
   try {
+    const { encryptDebt } = await import("./encryption");
+    const encryptedDebt = await encryptDebt(debt);
+
     const debtsRef = ref(db, `users/${debt.userId}/debts`);
     const newDebtRef = push(debtsRef);
     const debtId = newDebtRef.key;
@@ -290,7 +307,7 @@ export const saveDebt = async (debt: Debt): Promise<string> => {
     }
 
     await set(newDebtRef, {
-      ...debt,
+      ...encryptedDebt,
       id: debtId,
     });
 
@@ -309,6 +326,7 @@ export const saveDebt = async (debt: Debt): Promise<string> => {
 // Get user debts
 export const getUserDebts = async (userId: string): Promise<Debt[]> => {
   try {
+    const { decryptDebts } = await import("./encryption");
     const debtsRef = ref(db, `users/${userId}/debts`);
     const snapshot = await get(debtsRef);
 
@@ -317,7 +335,10 @@ export const getUserDebts = async (userId: string): Promise<Debt[]> => {
       snapshot.forEach((childSnapshot) => {
         debts.push(childSnapshot.val());
       });
-      return debts;
+
+      // Decrypt all debts
+      const decryptedDebts = await decryptDebts(debts);
+      return decryptedDebts;
     }
     return [];
   } catch (error) {
@@ -352,12 +373,15 @@ export const updateTransaction = async (
   transaction: Transaction
 ): Promise<void> => {
   try {
+    const { encryptTransaction } = await import("./encryption");
+    const encryptedTransaction = await encryptTransaction(transaction);
+
     const transactionRef = ref(
       db,
       `users/${transaction.userId}/transactions/${transaction.id}`
     );
     await set(transactionRef, {
-      ...transaction,
+      ...encryptedTransaction,
       updatedAt: Date.now(),
     });
     console.log("Transaction updated successfully");
@@ -411,6 +435,9 @@ export const removeDebt = async (
 // Save goal
 export const saveGoal = async (goal: FinancialGoal): Promise<string> => {
   try {
+    const { encryptGoal } = await import("./encryption");
+    const encryptedGoal = await encryptGoal(goal);
+
     const goalsRef = ref(db, `users/${goal.userId}/goals`);
     const newGoalRef = push(goalsRef);
     const goalId = newGoalRef.key;
@@ -420,7 +447,7 @@ export const saveGoal = async (goal: FinancialGoal): Promise<string> => {
     }
 
     await set(newGoalRef, {
-      ...goal,
+      ...encryptedGoal,
       id: goalId,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -443,6 +470,7 @@ export const getUserGoals = async (
   userId: string
 ): Promise<FinancialGoal[]> => {
   try {
+    const { decryptGoals } = await import("./encryption");
     const goalsRef = ref(db, `users/${userId}/goals`);
     const snapshot = await get(goalsRef);
 
@@ -451,7 +479,10 @@ export const getUserGoals = async (
       snapshot.forEach((childSnapshot) => {
         goals.push(childSnapshot.val());
       });
-      return goals.sort((a, b) => b.createdAt - a.createdAt);
+
+      // Decrypt all goals
+      const decryptedGoals = await decryptGoals(goals);
+      return decryptedGoals.sort((a, b) => b.createdAt - a.createdAt);
     }
     return [];
   } catch (error) {
@@ -463,9 +494,12 @@ export const getUserGoals = async (
 // Update goal
 export const updateGoal = async (goal: FinancialGoal): Promise<void> => {
   try {
+    const { encryptGoal } = await import("./encryption");
+    const encryptedGoal = await encryptGoal(goal);
+
     const goalRef = ref(db, `users/${goal.userId}/goals/${goal.id}`);
     await update(goalRef, {
-      ...goal,
+      ...encryptedGoal,
       updatedAt: Date.now(),
     });
     console.log("Goal updated successfully");
@@ -503,6 +537,9 @@ export const saveEmergencyFund = async (
   emergencyFund: EmergencyFund
 ): Promise<string> => {
   try {
+    const { encryptEmergencyFund } = await import("./encryption");
+    const encryptedFund = await encryptEmergencyFund(emergencyFund);
+
     const emergencyFundRef = ref(
       db,
       `users/${emergencyFund.userId}/emergencyFund`
@@ -515,7 +552,7 @@ export const saveEmergencyFund = async (
     }
 
     await set(newEmergencyFundRef, {
-      ...emergencyFund,
+      ...encryptedFund,
       id: emergencyFundId,
       updatedAt: Date.now(),
     });
@@ -533,6 +570,7 @@ export const getUserEmergencyFund = async (
   userId: string
 ): Promise<EmergencyFund | null> => {
   try {
+    const { decryptEmergencyFund } = await import("./encryption");
     const emergencyFundRef = ref(db, `users/${userId}/emergencyFund`);
     const snapshot = await get(emergencyFundRef);
 
@@ -541,10 +579,16 @@ export const getUserEmergencyFund = async (
       snapshot.forEach((childSnapshot) => {
         emergencyFunds.push(childSnapshot.val());
       });
-      // Return the most recent emergency fund entry
-      return (
-        emergencyFunds.sort((a, b) => b.updatedAt - a.updatedAt)[0] || null
-      );
+
+      // Decrypt the most recent emergency fund entry
+      const mostRecent = emergencyFunds.sort(
+        (a, b) => b.updatedAt - a.updatedAt
+      )[0];
+      if (mostRecent) {
+        const decryptedFund = await decryptEmergencyFund(mostRecent);
+        return decryptedFund;
+      }
+      return null;
     }
     return null;
   } catch (error) {
@@ -558,12 +602,15 @@ export const updateEmergencyFund = async (
   emergencyFund: EmergencyFund
 ): Promise<void> => {
   try {
+    const { encryptEmergencyFund } = await import("./encryption");
+    const encryptedFund = await encryptEmergencyFund(emergencyFund);
+
     const emergencyFundRef = ref(
       db,
       `users/${emergencyFund.userId}/emergencyFund/${emergencyFund.id}`
     );
     await update(emergencyFundRef, {
-      ...emergencyFund,
+      ...encryptedFund,
       updatedAt: Date.now(),
     });
     console.log("Emergency fund updated successfully");
@@ -580,6 +627,9 @@ export const saveBudgetSettings = async (
   budgetSettings: BudgetSettings
 ): Promise<string> => {
   try {
+    const { encryptBudgetSettings } = await import("./encryption");
+    const encryptedSettings = await encryptBudgetSettings(budgetSettings);
+
     const budgetSettingsRef = ref(
       db,
       `users/${budgetSettings.userId}/budgetSettings`
@@ -592,7 +642,7 @@ export const saveBudgetSettings = async (
     }
 
     await set(newBudgetSettingsRef, {
-      ...budgetSettings,
+      ...encryptedSettings,
       id: budgetSettingsId,
       updatedAt: Date.now(),
     });
@@ -610,6 +660,7 @@ export const getUserBudgetSettings = async (
   userId: string
 ): Promise<BudgetSettings | null> => {
   try {
+    const { decryptBudgetSettings } = await import("./encryption");
     const budgetSettingsRef = ref(db, `users/${userId}/budgetSettings`);
     const snapshot = await get(budgetSettingsRef);
 
@@ -618,10 +669,16 @@ export const getUserBudgetSettings = async (
       snapshot.forEach((childSnapshot) => {
         budgetSettings.push(childSnapshot.val());
       });
-      // Return the most recent budget settings entry
-      return (
-        budgetSettings.sort((a, b) => b.updatedAt - a.updatedAt)[0] || null
-      );
+
+      // Decrypt the most recent budget settings entry
+      const mostRecent = budgetSettings.sort(
+        (a, b) => b.updatedAt - a.updatedAt
+      )[0];
+      if (mostRecent) {
+        const decryptedSettings = await decryptBudgetSettings(mostRecent);
+        return decryptedSettings;
+      }
+      return null;
     }
     return null;
   } catch (error) {
@@ -635,12 +692,15 @@ export const updateBudgetSettings = async (
   budgetSettings: BudgetSettings
 ): Promise<void> => {
   try {
+    const { encryptBudgetSettings } = await import("./encryption");
+    const encryptedSettings = await encryptBudgetSettings(budgetSettings);
+
     const budgetSettingsRef = ref(
       db,
       `users/${budgetSettings.userId}/budgetSettings/${budgetSettings.id}`
     );
     await update(budgetSettingsRef, {
-      ...budgetSettings,
+      ...encryptedSettings,
       updatedAt: Date.now(),
     });
     console.log("Budget settings updated successfully");
@@ -1386,11 +1446,16 @@ export const saveRecurringTransaction = async (
   recurringTransaction: RecurringTransaction
 ): Promise<void> => {
   try {
+    const { encryptRecurringTransaction } = await import("./encryption");
+    const encryptedTransaction = await encryptRecurringTransaction(
+      recurringTransaction
+    );
+
     const recurringTransactionRef = ref(db, "recurringTransactions");
     const newRecurringTransactionRef = push(recurringTransactionRef);
 
     // Remove undefined values before saving to Firebase
-    const transactionToSave = { ...recurringTransaction };
+    const transactionToSave = { ...encryptedTransaction };
     if (transactionToSave.endDate === undefined) {
       delete transactionToSave.endDate;
     }
@@ -1413,14 +1478,21 @@ export const getUserRecurringTransactions = async (
   userId: string
 ): Promise<RecurringTransaction[]> => {
   try {
+    const { decryptRecurringTransactions } = await import("./encryption");
     const recurringTransactionsRef = ref(db, "recurringTransactions");
     const snapshot = await get(recurringTransactionsRef);
 
     if (snapshot.exists()) {
       const recurringTransactions = snapshot.val();
-      return Object.values(recurringTransactions).filter(
+      const userTransactions = Object.values(recurringTransactions).filter(
         (transaction: any) => transaction.userId === userId
       ) as RecurringTransaction[];
+
+      // Decrypt all recurring transactions
+      const decryptedTransactions = await decryptRecurringTransactions(
+        userTransactions
+      );
+      return decryptedTransactions;
     }
 
     return [];
@@ -1434,6 +1506,11 @@ export const updateRecurringTransaction = async (
   recurringTransaction: RecurringTransaction
 ): Promise<void> => {
   try {
+    const { encryptRecurringTransaction } = await import("./encryption");
+    const encryptedTransaction = await encryptRecurringTransaction(
+      recurringTransaction
+    );
+
     if (!recurringTransaction.id) {
       throw new Error("Recurring transaction ID is required for update");
     }
@@ -1444,7 +1521,7 @@ export const updateRecurringTransaction = async (
     );
 
     // Remove undefined values before updating Firebase
-    const transactionToUpdate = { ...recurringTransaction };
+    const transactionToUpdate = { ...encryptedTransaction };
     if (transactionToUpdate.endDate === undefined) {
       delete transactionToUpdate.endDate;
     }

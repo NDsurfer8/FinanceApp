@@ -33,14 +33,23 @@
             "description": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
             },
+            "descriptionEncrypted": {
+              ".validate": "newData.isString()"
+            },
             "amount": {
               ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "amountEncrypted": {
+              ".validate": "newData.isString()"
             },
             "type": {
               ".validate": "newData.val() === 'income' || newData.val() === 'expense'"
             },
             "category": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            "categoryEncrypted": {
+              ".validate": "newData.isString()"
             },
             "date": {
               ".validate": "newData.isNumber() && newData.val() > 0"
@@ -66,8 +75,14 @@
             "name": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
             },
+            "nameEncrypted": {
+              ".validate": "newData.isString()"
+            },
             "balance": {
               ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "balanceEncrypted": {
+              ".validate": "newData.isString()"
             },
             "type": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
@@ -87,14 +102,26 @@
             "name": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
             },
+            "nameEncrypted": {
+              ".validate": "newData.isString()"
+            },
             "balance": {
               ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "balanceEncrypted": {
+              ".validate": "newData.isString()"
             },
             "rate": {
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
             },
+            "rateEncrypted": {
+              ".validate": "newData.isString()"
+            },
             "payment": {
               ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "paymentEncrypted": {
+              ".validate": "newData.isString()"
             },
             "userId": {
               ".validate": "newData.val() === auth.uid"
@@ -111,20 +138,35 @@
             "name": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
             },
+            "nameEncrypted": {
+              ".validate": "newData.isString()"
+            },
             "targetAmount": {
               ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "targetAmountEncrypted": {
+              ".validate": "newData.isString()"
             },
             "currentAmount": {
               ".validate": "newData.isNumber() && newData.val() >= 0"
             },
+            "currentAmountEncrypted": {
+              ".validate": "newData.isString()"
+            },
             "monthlyContribution": {
               ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "monthlyContributionEncrypted": {
+              ".validate": "newData.isString()"
             },
             "targetDate": {
               ".validate": "newData.isString() && newData.val().length > 0"
             },
             "category": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            "categoryEncrypted": {
+              ".validate": "newData.isString()"
             },
             "priority": {
               ".validate": "newData.val() === 'high' || newData.val() === 'medium' || newData.val() === 'low'"
@@ -150,11 +192,20 @@
             "currentBalance": {
               ".validate": "newData.isNumber() && newData.val() >= 0"
             },
+            "currentBalanceEncrypted": {
+              ".validate": "newData.isString()"
+            },
             "targetMonths": {
               ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 24"
             },
+            "targetMonthsEncrypted": {
+              ".validate": "newData.isString()"
+            },
             "monthlyContribution": {
               ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "monthlyContributionEncrypted": {
+              ".validate": "newData.isString()"
             },
             "userId": {
               ".validate": "newData.val() === auth.uid"
@@ -174,8 +225,14 @@
             "savingsPercentage": {
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
             },
+            "savingsPercentageEncrypted": {
+              ".validate": "newData.isString()"
+            },
             "debtPayoffPercentage": {
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "debtPayoffPercentageEncrypted": {
+              ".validate": "newData.isString()"
             },
             "userId": {
               ".validate": "newData.val() === auth.uid"
@@ -201,14 +258,23 @@
         "name": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
         },
+        "nameEncrypted": {
+          ".validate": "newData.isString()"
+        },
         "amount": {
           ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "amountEncrypted": {
+          ".validate": "newData.isString()"
         },
         "type": {
           ".validate": "newData.val() === 'income' || newData.val() === 'expense'"
         },
         "category": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+        },
+        "categoryEncrypted": {
+          ".validate": "newData.isString()"
         },
         "frequency": {
           ".validate": "newData.val() === 'weekly' || newData.val() === 'biweekly' || newData.val() === 'monthly' || newData.val() === 'quarterly' || newData.val() === 'yearly'"
