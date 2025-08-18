@@ -1344,6 +1344,27 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
+                marginBottom: 8,
+              }}
+            >
+              <Text
+                style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
+              >
+                Discretionary Income
+              </Text>
+              <Text
+                style={{ fontSize: 16, fontWeight: "700", color: "#d97706" }}
+              >
+                {formatCurrency(discretionaryIncome)}
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ marginBottom: 16 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
                 alignItems: "center",
                 marginBottom: 8,
               }}
@@ -1385,27 +1406,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             </View>
           </View>
 
-          <View style={{ marginBottom: 20 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 8,
-              }}
-            >
-              <Text
-                style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
-              >
-                Discretionary Income
-              </Text>
-              <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#d97706" }}
-              >
-                {formatCurrency(discretionaryIncome)}
-              </Text>
-            </View>
-          </View>
-
           <View
             style={{
               borderTopWidth: 2,
@@ -1419,7 +1419,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               <Text
                 style={{ fontSize: 20, fontWeight: "800", color: "#f97316" }}
               >
-                End Balance
+                $ Available
               </Text>
               <Text
                 style={{ fontSize: 20, fontWeight: "800", color: "#f97316" }}
