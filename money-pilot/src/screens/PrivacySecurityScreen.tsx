@@ -20,6 +20,14 @@ import {
   deleteUser,
 } from "firebase/auth";
 import { deleteUserAccount } from "../services/userData";
+import {
+  getEncryptionEnabled,
+  setEncryptionEnabled,
+  getBiometricAuthEnabled,
+  setBiometricAuthEnabled,
+  getAutoLockEnabled,
+  setAutoLockEnabled,
+} from "../services/settings";
 
 interface PrivacySecurityScreenProps {
   navigation: any;
@@ -108,14 +116,80 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
   const [loading, setLoading] = useState(false);
 
-  const toggleSetting = (settingId: string) => {
-    setSettings((prevSettings) =>
-      prevSettings.map((setting) =>
-        setting.id === settingId
-          ? { ...setting, enabled: !setting.enabled }
-          : setting
-      )
-    );
+  // Load settings on component mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const [encryptionEnabled, biometricAuthEnabled, autoLockEnabled] =
+        await Promise.all([
+          getEncryptionEnabled(),
+          getBiometricAuthEnabled(),
+          getAutoLockEnabled(),
+        ]);
+
+      setSettings((prevSettings) =>
+        prevSettings.map((setting) => {
+          switch (setting.id) {
+            case "data-encryption":
+              return { ...setting, enabled: encryptionEnabled };
+            case "biometric-auth":
+              return { ...setting, enabled: biometricAuthEnabled };
+            case "auto-lock":
+              return { ...setting, enabled: autoLockEnabled };
+            default:
+              return setting;
+          }
+        })
+      );
+    } catch (error) {
+      console.error("Error loading settings:", error);
+    }
+  };
+
+  const toggleSetting = async (settingId: string) => {
+    try {
+      const setting = settings.find((s) => s.id === settingId);
+      if (!setting) return;
+
+      const newEnabled = !setting.enabled;
+
+      // Update the setting in AsyncStorage
+      switch (settingId) {
+        case "data-encryption":
+          await setEncryptionEnabled(newEnabled);
+          break;
+        case "biometric-auth":
+          await setBiometricAuthEnabled(newEnabled);
+          break;
+        case "auto-lock":
+          await setAutoLockEnabled(newEnabled);
+          break;
+      }
+
+      // Update the UI
+      setSettings((prevSettings) =>
+        prevSettings.map((s) =>
+          s.id === settingId ? { ...s, enabled: newEnabled } : s
+        )
+      );
+
+      // Show confirmation for encryption toggle
+      if (settingId === "data-encryption") {
+        Alert.alert(
+          "Encryption Updated",
+          newEnabled
+            ? "Data encryption has been enabled. All new financial data will be encrypted."
+            : "Data encryption has been disabled. New data will not be encrypted.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("Error toggling setting:", error);
+      Alert.alert("Error", "Failed to update setting. Please try again.");
+    }
   };
 
   const handleTwoFactorAuth = () => {

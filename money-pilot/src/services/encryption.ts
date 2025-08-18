@@ -68,6 +68,15 @@ export const encryptFields = async (
   data: any,
   fieldsToEncrypt: string[]
 ): Promise<any> => {
+  // Check if encryption is enabled
+  const { getEncryptionEnabled } = await import("./settings");
+  const encryptionEnabled = await getEncryptionEnabled();
+
+  if (!encryptionEnabled) {
+    // If encryption is disabled, return data as-is
+    return data;
+  }
+
   const encryptedData = { ...data };
 
   for (const field of fieldsToEncrypt) {
@@ -87,6 +96,15 @@ export const decryptFields = async (
   data: any,
   fieldsToDecrypt: string[]
 ): Promise<any> => {
+  // Check if encryption is enabled
+  const { getEncryptionEnabled } = await import("./settings");
+  const encryptionEnabled = await getEncryptionEnabled();
+
+  if (!encryptionEnabled) {
+    // If encryption is disabled, return data as-is
+    return data;
+  }
+
   const decryptedData = { ...data };
 
   for (const field of fieldsToDecrypt) {
