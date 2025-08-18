@@ -49,10 +49,20 @@ export const decryptValue = async (encryptedValue: string): Promise<any> => {
     const key = await getEncryptionKey();
     const decrypted = CryptoJS.AES.decrypt(encryptedValue, key);
     const jsonString = decrypted.toString(CryptoJS.enc.Utf8);
+
+    // Check if decryption resulted in empty string
+    if (!jsonString || jsonString.trim() === "") {
+      console.warn(
+        "Decryption resulted in empty string, returning original value"
+      );
+      return encryptedValue; // Return original encrypted value as fallback
+    }
+
     return JSON.parse(jsonString);
   } catch (error) {
     console.error("Error decrypting value:", error);
-    throw new Error("Failed to decrypt value");
+    // Return the original encrypted value instead of throwing
+    return encryptedValue;
   }
 };
 
@@ -113,7 +123,18 @@ export const decryptFields = async (
     // Check if encrypted version exists
     if (data[encryptedField] !== undefined && data[encryptedField] !== null) {
       try {
-        decryptedData[field] = await decryptValue(data[encryptedField]);
+        const decryptedValue = await decryptValue(data[encryptedField]);
+
+        // If decryption failed and returned the original encrypted value,
+        // use the original field value instead
+        if (decryptedValue === data[encryptedField]) {
+          console.warn(
+            `Decryption failed for field ${field}, using original value`
+          );
+          decryptedData[field] = data[field];
+        } else {
+          decryptedData[field] = decryptedValue;
+        }
       } catch (error) {
         console.error(`Error decrypting field ${field}:`, error);
         // Keep original value if decryption fails
@@ -284,4 +305,14 @@ export const decryptRecurringTransactions = async (
   return await Promise.all(
     transactions.map((transaction) => decryptRecurringTransaction(transaction))
   );
+};
+
+// Reset encryption key (use this if you're having decryption issues)
+export const resetEncryptionKey = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(ENCRYPTION_KEY_STORAGE_KEY);
+    console.log("Encryption key reset successfully");
+  } catch (error) {
+    console.error("Error resetting encryption key:", error);
+  }
 };
