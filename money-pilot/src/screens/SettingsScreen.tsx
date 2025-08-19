@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
 import { useUser } from "../context/UserContext";
+import { PlaidLinkComponent } from "../components/PlaidLinkComponent";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -305,19 +306,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
             Data Sources
           </Text>
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#111827",
-              paddingVertical: 12,
-              paddingHorizontal: 14,
-              borderRadius: 12,
-              alignSelf: "flex-start",
+          <PlaidLinkComponent
+            onSuccess={() => {
+              console.log("Bank connected successfully");
             }}
-          >
-            <Text style={{ color: "white", fontWeight: "600" }}>
-              Connect Bank (Plaid)
-            </Text>
-          </TouchableOpacity>
+            onExit={() => {
+              console.log("Plaid link exited");
+            }}
+          />
           <Text style={{ marginTop: 8, color: "#6b7280" }}>
             Or keep it manual—works great from day one.
           </Text>
