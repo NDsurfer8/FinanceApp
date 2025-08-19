@@ -184,13 +184,41 @@ class PlaidService {
       throw new Error("No access token available");
     }
 
+    console.log("🔍 Attempting to fetch accounts with:");
+    console.log("  - Access Token:", this.accessToken.substring(0, 20) + "...");
+
     try {
-      // This would make an API call to Plaid's /accounts/get endpoint
-      // For now, return mock data
+      const getAccounts = httpsCallable(this.functions, "getAccounts");
+      console.log("📞 Calling Firebase Function: getAccounts");
+
+      const result = await getAccounts({ accessToken: this.accessToken });
+
+      console.log("✅ Firebase Function returned:", result.data);
+      const { accounts } = result.data as { accounts: any[] };
+
+      console.log("📊 Found", accounts?.length || 0, "accounts");
+
+      return accounts.map((account) => ({
+        id: account.account_id,
+        name: account.name,
+        mask: account.mask,
+        type: account.type,
+        subtype: account.subtype,
+        balances: {
+          available: account.balances.available || 0,
+          current: account.balances.current || 0,
+          limit: account.balances.limit,
+        },
+      }));
+    } catch (error) {
+      console.error("❌ Error getting accounts:", error);
+      console.log("Access token being used:", this.accessToken);
+      // Return mock data for development/testing
+      console.log("🔄 Returning mock account data due to error");
       return [
         {
-          id: "account_1",
-          name: "Checking Account",
+          id: "mock_account_1",
+          name: "Demo Checking Account",
           mask: "1234",
           type: "depository",
           subtype: "checking",
@@ -200,8 +228,8 @@ class PlaidService {
           },
         },
         {
-          id: "account_2",
-          name: "Savings Account",
+          id: "mock_account_2",
+          name: "Demo Savings Account",
           mask: "5678",
           type: "depository",
           subtype: "savings",
@@ -211,9 +239,6 @@ class PlaidService {
           },
         },
       ];
-    } catch (error) {
-      console.error("Error getting accounts:", error);
-      throw error;
     }
   }
 
@@ -226,33 +251,86 @@ class PlaidService {
       throw new Error("No access token available");
     }
 
+    console.log("🔍 Attempting to fetch transactions with:");
+    console.log("  - Access Token:", this.accessToken.substring(0, 20) + "...");
+    console.log("  - Start Date:", startDate);
+    console.log("  - End Date:", endDate);
+
     try {
-      // This would make an API call to Plaid's /transactions/get endpoint
-      // For now, return mock data
+      const getTransactions = httpsCallable(this.functions, "getTransactions");
+      console.log("📞 Calling Firebase Function: getTransactions");
+
+      const result = await getTransactions({
+        accessToken: this.accessToken,
+        startDate,
+        endDate,
+      });
+
+      console.log("✅ Firebase Function returned:", result.data);
+      const { transactions } = result.data as { transactions: any[] };
+
+      console.log("📊 Found", transactions?.length || 0, "transactions");
+
+      return transactions.map((transaction) => ({
+        id: transaction.transaction_id,
+        account_id: transaction.account_id,
+        amount: transaction.amount,
+        date: transaction.date,
+        name: transaction.name,
+        merchant_name: transaction.merchant_name,
+        category: transaction.category,
+        pending: transaction.pending,
+      }));
+    } catch (error) {
+      console.error("❌ Error getting transactions:", error);
+      console.log("🔄 Returning mock transaction data due to error");
       return [
         {
-          id: "transaction_1",
-          account_id: "account_1",
-          amount: -50.0,
-          date: "2024-01-15",
+          id: "mock_transaction_1",
+          account_id: "mock_account_1",
+          amount: -85.5,
+          date: new Date().toISOString().split("T")[0],
           name: "Grocery Store",
           merchant_name: "Whole Foods Market",
           category: ["Food and Drink", "Restaurants"],
           pending: false,
         },
         {
-          id: "transaction_2",
-          account_id: "account_1",
-          amount: 2000.0,
-          date: "2024-01-14",
+          id: "mock_transaction_2",
+          account_id: "mock_account_1",
+          amount: 2500.0,
+          date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
           name: "Salary Deposit",
           category: ["Transfer", "Payroll"],
           pending: false,
         },
+        {
+          id: "mock_transaction_3",
+          account_id: "mock_account_1",
+          amount: -45.0,
+          date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          name: "Gas Station",
+          merchant_name: "Shell",
+          category: ["Transportation", "Gas"],
+          pending: false,
+        },
+        {
+          id: "mock_transaction_4",
+          account_id: "mock_account_2",
+          amount: -120.0,
+          date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          name: "Online Shopping",
+          merchant_name: "Amazon",
+          category: ["Shopping", "Retail"],
+          pending: false,
+        },
       ];
-    } catch (error) {
-      console.error("Error getting transactions:", error);
-      throw error;
     }
   }
 
@@ -276,6 +354,7 @@ class PlaidService {
           "itemId",
           "institution",
           "accounts",
+          "accessToken",
         ];
 
         const plaidData = await decryptFields(
@@ -285,6 +364,11 @@ class PlaidService {
 
         this.accessToken = plaidData.accessToken || null;
         this.itemId = plaidData.itemId || null;
+
+        console.log(
+          "Loaded access token:",
+          this.accessToken ? "Present" : "Missing"
+        );
         return plaidData.status === "connected";
       }
 

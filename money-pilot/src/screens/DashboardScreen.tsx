@@ -165,6 +165,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       color: "#6366f1",
     },
     {
+      title: "Bank Data",
+      icon: "card-outline",
+      onPress: () => navigation.navigate("BankTransactions"),
+      color: "#8b5cf6",
+    },
+    {
       title: "Asset",
       icon: "trending-up",
       onPress: () => navigation.navigate("AddAssetDebt", { type: "asset" }),

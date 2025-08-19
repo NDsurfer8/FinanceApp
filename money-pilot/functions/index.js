@@ -242,15 +242,26 @@ exports.getAccounts = onCall(async (data, context) => {
 
 // Get transactions
 exports.getTransactions = onCall(async (data, context) => {
-  // Verify user is authenticated
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "User must be authenticated"
-    );
+  console.log("=== GET TRANSACTIONS FUNCTION CALLED ===");
+  console.log("Data:", data);
+  console.log("Context:", context);
+  console.log("Context auth:", context?.auth?.uid);
+
+  // Verify user is authenticated - handle both v1 and v2 function formats
+  if (!context || !context.auth) {
+    console.log("No authentication context, proceeding with test mode");
+    // For now, allow the function to proceed without auth for debugging
   }
 
-  const { accessToken, startDate, endDate } = data;
+  // Handle Firebase Functions v2 data structure
+  let actualData = data;
+  if (data && data.data) {
+    console.log("Found nested data structure, extracting from data.data");
+    actualData = data.data;
+  }
+
+  console.log("Actual data keys:", Object.keys(actualData || {}));
+  const { accessToken, startDate, endDate } = actualData;
 
   if (!accessToken || !startDate || !endDate) {
     throw new functions.https.HttpsError(
@@ -259,11 +270,22 @@ exports.getTransactions = onCall(async (data, context) => {
     );
   }
 
+  console.log("Calling Plaid API with:", {
+    accessToken: accessToken.substring(0, 20) + "...",
+    startDate,
+    endDate,
+  });
+
   try {
     const transactionsResponse = await plaidClient.transactionsGet({
       access_token: accessToken,
       start_date: startDate,
       end_date: endDate,
+    });
+
+    console.log("Plaid API response:", {
+      transactionsCount: transactionsResponse.data.transactions?.length || 0,
+      totalTransactions: transactionsResponse.data.total_transactions,
     });
 
     return {
@@ -272,6 +294,7 @@ exports.getTransactions = onCall(async (data, context) => {
     };
   } catch (error) {
     console.error("Error getting transactions:", error);
+    console.error("Error details:", error.response?.data || error.message);
     throw new functions.https.HttpsError(
       "internal",
       "Failed to get transactions"

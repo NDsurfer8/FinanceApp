@@ -19,3 +19,4 @@ export { HelpSupportScreen } from "./HelpSupportScreen";
 export { ForgotPasswordScreen } from "./ForgotPasswordScreen";
 export { RecurringTransactionsScreen } from "./RecurringTransactionsScreen";
 export { default as SubscriptionScreen } from "./SubscriptionScreen";
+export { BankTransactionsScreen } from "./BankTransactionsScreen";
