@@ -12,11 +12,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
-import {
-  getUserTransactions,
-  getUserAssets,
-  getUserDebts,
-} from "../services/userData";
 
 interface DashboardScreenProps {
   navigation: any;
@@ -26,14 +21,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
-  const {
-    transactions,
-    assets,
-    debts,
-    hasData,
-    getDataInstantly,
-    refreshInBackground,
-  } = useZeroLoading();
+  const { transactions, assets, debts, refreshInBackground } = useZeroLoading();
   const {
     getTransactionLimitInfo,
     getIncomeSourceLimitInfo,
@@ -353,7 +341,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   letterSpacing: -0.3,
                 }}
               >
-                This Month
+                Budget Snapshot
               </Text>
               <Text
                 style={{
@@ -524,7 +512,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             Net Worth
           </Text>
 
-          <View style={{ alignItems: "center", marginBottom: 24 }}>
+          <View style={{ alignItems: "center" }}>
             <Text
               style={{
                 fontSize: 36,
@@ -538,45 +526,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <Text style={{ fontSize: 14, color: "#6b7280" }}>
               {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
             </Text>
-          </View>
-
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: "#6b7280",
-                  marginBottom: 4,
-                  fontWeight: "500",
-                }}
-              >
-                Assets
-              </Text>
-              <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#16a34a" }}
-              >
-                {formatCurrency(totalAssets)}
-              </Text>
-            </View>
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: "#6b7280",
-                  marginBottom: 4,
-                  fontWeight: "500",
-                }}
-              >
-                Debts
-              </Text>
-              <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#dc2626" }}
-              >
-                {formatCurrency(totalDebts)}
-              </Text>
-            </View>
           </View>
         </View>
 

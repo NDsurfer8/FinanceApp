@@ -752,7 +752,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               <Text
                 style={{ fontSize: 18, fontWeight: "700", color: "#16a34a" }}
               >
-                Income Streams
+                Income
               </Text>
             </View>
             <TouchableOpacity onPress={handleAddIncome}>
