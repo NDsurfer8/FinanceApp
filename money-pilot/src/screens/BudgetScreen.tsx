@@ -888,6 +888,21 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       >
                         <Ionicons name="close" size={14} color="#dc2626" />
                       </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleDeleteTransaction(transaction)}
+                        style={{
+                          padding: 6,
+                          borderRadius: 6,
+                          backgroundColor: "#fee2e2",
+                          marginRight: 8,
+                        }}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={14}
+                          color="#dc2626"
+                        />
+                      </TouchableOpacity>
                     </>
                   ) : (
                     <>
@@ -899,25 +914,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                           style={{
                             fontSize: 16,
                             fontWeight: "700",
-                            color: "#16a34a",
+                            color: "#374151",
                           }}
                         >
                           {formatCurrency(transaction.amount)}
                         </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteTransaction(transaction)}
-                        style={{
-                          padding: 8,
-                          borderRadius: 8,
-                          backgroundColor: "#fee2e2",
-                        }}
-                      >
-                        <Ionicons
-                          name="trash-outline"
-                          size={16}
-                          color="#dc2626"
-                        />
                       </TouchableOpacity>
                     </>
                   )}
@@ -948,9 +949,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   Total Income
                 </Text>
                 <Text
-                  style={{ fontSize: 18, fontWeight: "800", color: "#374151" }}
+                  style={{ fontSize: 18, fontWeight: "800", color: "#16a34a" }}
                 >
-                  {formatCurrency(totalIncome)}
+                  ${totalIncome.toFixed(2)}
                 </Text>
               </View>
             </View>
@@ -1129,6 +1130,21 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       >
                         <Ionicons name="close" size={14} color="#dc2626" />
                       </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleDeleteTransaction(transaction)}
+                        style={{
+                          padding: 6,
+                          borderRadius: 6,
+                          backgroundColor: "#fee2e2",
+                          marginRight: 8,
+                        }}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={14}
+                          color="#dc2626"
+                        />
+                      </TouchableOpacity>
                     </>
                   ) : (
                     <>
@@ -1140,25 +1156,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                           style={{
                             fontSize: 16,
                             fontWeight: "700",
-                            color: "#dc2626",
+                            color: "#374151",
                           }}
                         >
                           {formatCurrency(transaction.amount)}
                         </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteTransaction(transaction)}
-                        style={{
-                          padding: 8,
-                          borderRadius: 8,
-                          backgroundColor: "#fee2e2",
-                        }}
-                      >
-                        <Ionicons
-                          name="trash-outline"
-                          size={16}
-                          color="#dc2626"
-                        />
                       </TouchableOpacity>
                     </>
                   )}
@@ -1189,9 +1191,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   Total Expenses
                 </Text>
                 <Text
-                  style={{ fontSize: 18, fontWeight: "800", color: "#374151" }}
+                  style={{ fontSize: 18, fontWeight: "800", color: "#dc2626" }}
                 >
-                  {formatCurrency(totalExpenses)}
+                  ${totalExpenses.toFixed(2)}
                 </Text>
               </View>
             </View>
