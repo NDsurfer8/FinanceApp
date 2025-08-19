@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSubscription } from "../hooks/useSubscription";
+import { usePaywall } from "../hooks/usePaywall";
 import { fontFamily } from "../config/fonts";
 
 interface PremiumFeatureProps {
@@ -20,6 +21,7 @@ export const PremiumFeature: React.FC<PremiumFeatureProps> = ({
 }) => {
   const navigation = useNavigation();
   const { isFeatureAvailable, hasPremiumAccess } = useSubscription();
+  const { presentPaywall } = usePaywall();
 
   const hasAccess = isFeatureAvailable(feature) || hasPremiumAccess();
 
@@ -45,10 +47,7 @@ export const PremiumFeature: React.FC<PremiumFeatureProps> = ({
         <Text style={styles.description}>
           This feature is available exclusively to Premium subscribers.
         </Text>
-        <TouchableOpacity
-          style={styles.upgradeButton}
-          onPress={() => navigation.navigate("Subscription" as never)}
-        >
+        <TouchableOpacity style={styles.upgradeButton} onPress={presentPaywall}>
           <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
         </TouchableOpacity>
       </View>

@@ -17,6 +17,7 @@ import revenueCatService, {
   PREMIUM_FEATURES,
 } from "../services/revenueCat";
 import { fontFamily } from "../config/fonts";
+import PurchasesUI from "react-native-purchases-ui";
 
 const SubscriptionScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -280,11 +281,56 @@ const SubscriptionScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Subscription Plans */}
+        {/* RevenueCat Paywall - Primary Method */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Choose Your Plan</Text>
-          {products.map(renderProduct)}
+          <Text style={styles.sectionTitle}>Premium Plans</Text>
+          <TouchableOpacity
+            style={styles.primaryPaywallButton}
+            onPress={async () => {
+              try {
+                await PurchasesUI.presentPaywall();
+                // Refresh subscription status after paywall is dismissed
+                const newStatus =
+                  await revenueCatService.checkSubscriptionStatus();
+                setSubscriptionStatus(newStatus);
+              } catch (error) {
+                console.error("Failed to present paywall:", error);
+              }
+            }}
+          >
+            <Ionicons name="card" size={20} color="#fff" />
+            <Text style={styles.primaryPaywallButtonText}>
+              View Premium Plans
+            </Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Legacy Subscription Plans (Fallback) */}
+        {products.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Alternative Plans</Text>
+            {products.map(renderProduct)}
+          </View>
+        )}
+
+        {/* RevenueCat Paywall Button */}
+        <TouchableOpacity
+          style={styles.paywallButton}
+          onPress={async () => {
+            try {
+              await PurchasesUI.presentPaywall();
+              // Refresh subscription status after paywall is dismissed
+              const newStatus =
+                await revenueCatService.checkSubscriptionStatus();
+              setSubscriptionStatus(newStatus);
+            } catch (error) {
+              console.error("Failed to present paywall:", error);
+            }
+          }}
+        >
+          <Ionicons name="card" size={16} color="#fff" />
+          <Text style={styles.paywallButtonText}>View Premium Plans</Text>
+        </TouchableOpacity>
 
         {/* Restore Purchases */}
         <TouchableOpacity
@@ -480,6 +526,38 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.medium,
     color: "#6366f1",
     marginLeft: 8,
+  },
+  paywallButton: {
+    backgroundColor: "#f59e0b",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  paywallButtonText: {
+    fontSize: 16,
+    fontFamily: fontFamily.semiBold,
+    color: "#fff",
+    marginLeft: 8,
+  },
+  primaryPaywallButton: {
+    backgroundColor: "#6366f1",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+  primaryPaywallButtonText: {
+    fontSize: 18,
+    fontFamily: fontFamily.bold,
+    color: "#fff",
+    marginLeft: 12,
   },
   termsText: {
     fontSize: 12,

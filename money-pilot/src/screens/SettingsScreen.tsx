@@ -14,6 +14,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
 import { useUser } from "../context/UserContext";
 import { PlaidLinkComponent } from "../components/PlaidLinkComponent";
+import { usePaywall } from "../hooks/usePaywall";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -27,6 +28,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { user } = useAuth();
   const { currentUser, forceRefresh } = useUser();
   const [photoKey, setPhotoKey] = useState(Date.now());
+  const { presentPaywall } = usePaywall();
 
   // Debug logging
   useEffect(() => {
@@ -347,7 +349,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               borderRadius: 12,
               alignSelf: "flex-start",
             }}
-            onPress={() => navigation?.navigate("Subscription")}
+            onPress={presentPaywall}
           >
             <Text style={{ color: "white", fontWeight: "700" }}>
               Start 7‑day Trial
