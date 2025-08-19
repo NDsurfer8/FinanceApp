@@ -137,25 +137,25 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   // Premium Feature: Quick Actions
   const quickActions = [
     {
-      title: "Add Transaction",
+      title: "Transaction",
       icon: "add-circle",
       onPress: () => navigation.navigate("AddTransaction"),
       color: "#6366f1",
     },
     {
-      title: "Add Asset",
+      title: "Asset",
       icon: "trending-up",
       onPress: () => navigation.navigate("AddAssetDebt", { type: "asset" }),
       color: "#10b981",
     },
     {
-      title: "Add Debt",
+      title: "Debt",
       icon: "card",
       onPress: () => navigation.navigate("AddAssetDebt", { type: "debt" }),
       color: "#ef4444",
     },
     {
-      title: "Set Goals",
+      title: "Goals",
       icon: "flag",
       onPress: () => navigation.navigate("Goals", { openAddModal: true }),
       color: "#f59e0b",
@@ -589,38 +589,49 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             Quick Actions
           </Text>
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
             {quickActions.map((action, index) => (
               <TouchableOpacity
                 key={`action-${action.title}-${index}`}
                 style={{
                   flex: 1,
-                  minWidth: "45%",
+                  minWidth: "48%",
                   backgroundColor: "#f8fafc",
-                  padding: 20,
+                  padding: 16,
                   borderRadius: 16,
                   alignItems: "center",
                   borderWidth: 1,
                   borderColor: "#e5e7eb",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 2,
+                  elevation: 1,
                 }}
                 onPress={action.onPress}
               >
                 <View
                   style={{
-                    backgroundColor: action.color + "20",
-                    padding: 12,
-                    borderRadius: 12,
-                    marginBottom: 12,
+                    backgroundColor: action.color + "15",
+                    padding: 10,
+                    borderRadius: 10,
+                    marginBottom: 8,
                   }}
                 >
                   <Ionicons
                     name={action.icon as any}
-                    size={24}
+                    size={20}
                     color={action.color}
                   />
                 </View>
                 <Text
-                  style={{ fontSize: 14, fontWeight: "600", color: "#374151" }}
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "600",
+                    color: "#374151",
+                    textAlign: "center",
+                    lineHeight: 16,
+                  }}
                 >
                   {action.title}
                 </Text>
