@@ -2,6 +2,8 @@ import { Alert } from "react-native";
 import { ref, set, get, remove } from "firebase/database";
 import { db } from "../services/firebase";
 import { encryptFields, decryptFields } from "./encryption";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { getAuth } from "firebase/auth";
 
 // Plaid configuration - you'll need to get these from your Plaid dashboard
 export const PLAID_CONFIG = {
@@ -52,6 +54,8 @@ class PlaidService {
   private accessToken: string | null = null;
   private itemId: string | null = null;
   private userId: string | null = null;
+  private functions = getFunctions();
+  private auth = getAuth();
 
   // Set user ID for Firebase operations
   setUserId(userId: string) {
@@ -59,21 +63,28 @@ class PlaidService {
   }
 
   // Initialize Plaid Link
-  async initializePlaidLink(): Promise<void> {
+  async initializePlaidLink(): Promise<string> {
     try {
       if (!this.userId) {
         throw new Error("User ID not set");
       }
 
+      // Ensure user is authenticated
+      const currentUser = this.auth.currentUser;
+      if (!currentUser) {
+        throw new Error("User not authenticated");
+      }
+
       console.log("Initializing Plaid Link for user:", this.userId);
 
-      // For now, we'll use a simulation approach
-      // In a full implementation, you would:
-      // 1. Call your backend API to create a link token
-      // 2. Use the link token with Plaid Link SDK
-      // 3. Handle the OAuth flow for bank connection
+      // Call Firebase Cloud Function to create link token
+      const createLinkToken = httpsCallable(this.functions, "createLinkToken");
+      const result = await createLinkToken();
 
-      // The simulation will work for testing the UI and Firebase integration
+      const { linkToken } = result.data as { linkToken: string };
+      console.log("Link token created:", linkToken);
+
+      return linkToken;
     } catch (error) {
       console.error("Error initializing Plaid Link:", error);
       throw error;
@@ -89,12 +100,37 @@ class PlaidService {
 
       console.log("Plaid link successful:", { publicToken, metadata });
 
+      // Ensure user is authenticated
+      const currentUser = this.auth.currentUser;
+      if (!currentUser) {
+        throw new Error("User not authenticated");
+      }
+
+      // Exchange public token for access token using Firebase Cloud Function
+      const exchangePublicToken = httpsCallable(
+        this.functions,
+        "exchangePublicToken"
+      );
+      const exchangeResult = await exchangePublicToken({ publicToken });
+
+      const { accessToken, itemId } = exchangeResult.data as {
+        accessToken: string;
+        itemId: string;
+      };
+
+      // Get accounts using the access token
+      const getAccounts = httpsCallable(this.functions, "getAccounts");
+      const accountsResult = await getAccounts({ accessToken });
+
+      const { accounts } = accountsResult.data as { accounts: any[] };
+
       // Store Plaid connection data in Firebase
       const plaidData = {
         publicToken,
-        itemId: metadata.item_id,
+        itemId,
+        accessToken,
         institution: metadata.institution || { name: "Unknown Bank" },
-        accounts: metadata.accounts || [],
+        accounts: accounts || [],
         connectedAt: Date.now(),
         status: "connected",
       };
@@ -103,6 +139,7 @@ class PlaidService {
       const fieldsToEncrypt = [
         "publicToken",
         "itemId",
+        "accessToken",
         "institution",
         "accounts",
       ];
@@ -117,8 +154,8 @@ class PlaidService {
       await set(plaidRef, encryptedPlaidData);
 
       // Store locally for immediate use
-      this.accessToken = "ACCESS_TOKEN_PLACEHOLDER"; // Will be replaced with real token
-      this.itemId = metadata.item_id;
+      this.accessToken = accessToken;
+      this.itemId = itemId;
 
       Alert.alert(
         "Success!",
