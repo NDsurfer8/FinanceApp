@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
   ScrollView,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -126,7 +127,11 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               <Ionicons name="arrow-back" size={24} color="#6b7280" />
             </TouchableOpacity>
             <View style={styles.logoContainer}>
-              <Ionicons name="wallet" size={50} color="#6366f1" />
+              <Image
+                source={require("../../assets/icon.png")}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>
@@ -379,6 +384,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
+  },
+  logoImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
   title: {
     fontSize: 28,

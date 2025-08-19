@@ -1,5 +1,13 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Dimensions, Animated } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  Animated,
+  Image,
+} from "react-native";
+import Constants from "expo-constants";
 
 interface SplashScreenProps {
   message?: string;
@@ -50,7 +58,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
       <View style={styles.content}>
         {/* App Logo/Icon */}
         <View style={styles.logoContainer}>
-          <Text style={styles.logo}>💰</Text>
+          <Image
+            source={require("../../assets/icon.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.appName}>VectorFi</Text>
         </View>
 
@@ -154,7 +166,9 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
 
         {/* Version Info */}
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>Version 1.0.0</Text>
+          <Text style={styles.versionText}>
+            Version {Constants?.expoConfig?.version ?? ""}
+          </Text>
         </View>
       </View>
     </View>
@@ -166,7 +180,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#6366f1",
+    backgroundColor: "#ffffff",
   },
   content: {
     alignItems: "center",
@@ -177,13 +191,14 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logo: {
-    fontSize: 80,
+    width: 80,
+    height: 80,
     marginBottom: 16,
   },
   appName: {
     fontSize: 32,
     fontWeight: "800",
-    color: "#ffffff",
+    color: "#111827",
     letterSpacing: -0.5,
   },
   bouncingContainer: {
@@ -207,7 +222,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: "#ffffff",
+    color: "#374151",
     fontWeight: "500",
     textAlign: "center",
   },
@@ -218,7 +233,7 @@ const styles = StyleSheet.create({
   },
   versionText: {
     fontSize: 14,
-    color: "#ffffff",
+    color: "#6b7280",
     opacity: 0.8,
   },
 });

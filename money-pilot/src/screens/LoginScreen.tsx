@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
   ScrollView,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { signIn, validateEmail, signInWithApple } from "../services/auth";
@@ -115,7 +116,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              <Ionicons name="wallet" size={60} color="#6366f1" />
+              <Image
+                source={require("../../assets/icon.png")}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.title}>VectorFi</Text>
             <Text style={styles.subtitle}>Take control of your finances</Text>
@@ -275,6 +280,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
+  },
+  logoImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   title: {
     fontSize: 32,
