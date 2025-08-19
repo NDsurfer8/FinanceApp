@@ -34,8 +34,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     getDataInstantly,
     refreshInBackground,
   } = useZeroLoading();
-  const { getTransactionLimitInfo, getIncomeSourceLimitInfo } =
-    useTransactionLimits();
+  const {
+    getTransactionLimitInfo,
+    getIncomeSourceLimitInfo,
+    getGoalLimitInfo,
+  } = useTransactionLimits();
   const [loading, setLoading] = useState(false);
 
   // Function to determine if name should be on a new line
@@ -140,6 +143,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   // Premium Feature: Quick Actions
   const transactionLimitInfo = getTransactionLimitInfo();
   const incomeLimitInfo = getIncomeSourceLimitInfo();
+  const goalLimitInfo = getGoalLimitInfo();
 
   const quickActions = [
     {
@@ -165,6 +169,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     },
     {
       title: "Goals",
+      subtitle: goalLimitInfo.isUnlimited
+        ? "Unlimited"
+        : `${goalLimitInfo.current}/${goalLimitInfo.limit}`,
       icon: "flag",
       onPress: () => navigation.navigate("Goals", { openAddModal: true }),
       color: "#f59e0b",

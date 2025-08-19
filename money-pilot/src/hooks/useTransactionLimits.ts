@@ -4,12 +4,13 @@ import { PREMIUM_FEATURES } from "../services/revenueCat";
 
 export const useTransactionLimits = () => {
   const { isFeatureAvailable } = useSubscription();
-  const { transactions, recurringTransactions } = useData();
+  const { transactions, recurringTransactions, goals } = useData();
 
   // Constants for free tier limits
   const FREE_TIER_LIMITS = {
     TRANSACTIONS: 5,
     INCOME_SOURCES: 1,
+    GOALS: 1,
   };
 
   // Check if user has unlimited transactions
@@ -20,6 +21,11 @@ export const useTransactionLimits = () => {
   // Check if user has unlimited income sources
   const hasUnlimitedIncomeSources = () => {
     return isFeatureAvailable(PREMIUM_FEATURES.UNLIMITED_INCOME_SOURCES);
+  };
+
+  // Check if user has unlimited goals
+  const hasUnlimitedGoals = () => {
+    return isFeatureAvailable(PREMIUM_FEATURES.GOAL_TRACKING);
   };
 
   // Get current transaction count
@@ -43,6 +49,11 @@ export const useTransactionLimits = () => {
     return uniqueSources.size;
   };
 
+  // Get current goals count
+  const getCurrentGoalsCount = () => {
+    return goals.length;
+  };
+
   // Check if user can add more transactions
   const canAddTransaction = () => {
     if (hasUnlimitedTransactions()) return true;
@@ -53,6 +64,12 @@ export const useTransactionLimits = () => {
   const canAddIncomeSource = () => {
     if (hasUnlimitedIncomeSources()) return true;
     return getCurrentIncomeSourcesCount() < FREE_TIER_LIMITS.INCOME_SOURCES;
+  };
+
+  // Check if user can add more goals
+  const canAddGoal = () => {
+    if (hasUnlimitedGoals()) return true;
+    return getCurrentGoalsCount() < FREE_TIER_LIMITS.GOALS;
   };
 
   // Get remaining transaction slots
@@ -71,6 +88,12 @@ export const useTransactionLimits = () => {
       0,
       FREE_TIER_LIMITS.INCOME_SOURCES - getCurrentIncomeSourcesCount()
     );
+  };
+
+  // Get remaining goal slots
+  const getRemainingGoalSlots = () => {
+    if (hasUnlimitedGoals()) return Infinity;
+    return Math.max(0, FREE_TIER_LIMITS.GOALS - getCurrentGoalsCount());
   };
 
   // Get limit information for display
@@ -110,6 +133,24 @@ export const useTransactionLimits = () => {
     };
   };
 
+  const getGoalLimitInfo = () => {
+    if (hasUnlimitedGoals()) {
+      return {
+        current: getCurrentGoalsCount(),
+        limit: "Unlimited",
+        remaining: "Unlimited",
+        isUnlimited: true,
+      };
+    }
+
+    return {
+      current: getCurrentGoalsCount(),
+      limit: FREE_TIER_LIMITS.GOALS,
+      remaining: getRemainingGoalSlots(),
+      isUnlimited: false,
+    };
+  };
+
   return {
     // Limits
     FREE_TIER_LIMITS,
@@ -117,19 +158,24 @@ export const useTransactionLimits = () => {
     // Capability checks
     hasUnlimitedTransactions,
     hasUnlimitedIncomeSources,
+    hasUnlimitedGoals,
     canAddTransaction,
     canAddIncomeSource,
+    canAddGoal,
 
     // Current counts
     getCurrentTransactionCount,
     getCurrentIncomeSourcesCount,
+    getCurrentGoalsCount,
 
     // Remaining slots
     getRemainingTransactionSlots,
     getRemainingIncomeSourceSlots,
+    getRemainingGoalSlots,
 
     // Limit info for UI
     getTransactionLimitInfo,
     getIncomeSourceLimitInfo,
+    getGoalLimitInfo,
   };
 };

@@ -13,6 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRoute } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
+import { useTransactionLimits } from "../hooks/useTransactionLimits";
+import { usePaywall } from "../hooks/usePaywall";
 import {
   saveGoal,
   updateGoal,
@@ -34,6 +36,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   const { user } = useAuth();
   const { goals, updateDataOptimistically, refreshInBackground } =
     useZeroLoading();
+  const { canAddGoal, getGoalLimitInfo } = useTransactionLimits();
+  const { presentPaywall } = usePaywall();
   const route = useRoute();
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -180,6 +184,22 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   const handleAddGoal = async () => {
     if (!user) {
       Alert.alert("Error", "You must be logged in to add goals");
+      return;
+    }
+
+    // Check goal limits
+    if (!canAddGoal()) {
+      const limitInfo = getGoalLimitInfo();
+      Alert.alert(
+        "Goal Limit Reached",
+        `You've reached your limit of ${limitInfo.limit} goal${
+          limitInfo.limit !== 1 ? "s" : ""
+        } on the free plan.\n\nUpgrade to Premium for unlimited goals!`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Upgrade to Premium", onPress: presentPaywall },
+        ]
+      );
       return;
     }
 
@@ -407,6 +427,43 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           >
             <Ionicons name="add" size={20} color="#fff" />
           </TouchableOpacity>
+        </View>
+
+        {/* Limit Indicator */}
+        <View
+          style={{
+            backgroundColor: "#fef3c7",
+            borderRadius: 12,
+            padding: 12,
+            marginBottom: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons name="information-circle" size={16} color="#d97706" />
+            <Text style={{ marginLeft: 8, color: "#d97706", fontSize: 14 }}>
+              {getGoalLimitInfo().isUnlimited
+                ? "Unlimited goals"
+                : `${getGoalLimitInfo().current}/${
+                    getGoalLimitInfo().limit
+                  } goals used`}
+            </Text>
+          </View>
+          {!getGoalLimitInfo().isUnlimited && (
+            <TouchableOpacity onPress={presentPaywall}>
+              <Text
+                style={{
+                  color: "#d97706",
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
+                Upgrade
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Goals Summary */}
