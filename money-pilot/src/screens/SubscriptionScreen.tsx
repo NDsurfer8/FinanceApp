@@ -24,9 +24,7 @@ const SubscriptionScreen: React.FC = () => {
   const { user } = useAuth();
   const [subscriptionStatus, setSubscriptionStatus] =
     useState<SubscriptionStatus | null>(null);
-  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [purchasing, setPurchasing] = useState<string | null>(null);
 
   useEffect(() => {
     initializeSubscription();
@@ -44,56 +42,14 @@ const SubscriptionScreen: React.FC = () => {
         await revenueCatService.setUser(user.uid);
       }
 
-      // Get subscription status and products
-      const [status, productList] = await Promise.all([
-        revenueCatService.checkSubscriptionStatus(),
-        revenueCatService.getSubscriptionProducts(),
-      ]);
-
+      // Get subscription status
+      const status = await revenueCatService.checkSubscriptionStatus();
       setSubscriptionStatus(status);
-      setProducts(productList);
     } catch (error) {
       console.error("Failed to initialize subscription:", error);
       Alert.alert("Error", "Failed to load subscription information");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handlePurchase = async (productId: string) => {
-    try {
-      setPurchasing(productId);
-
-      const product = products.find((p) => p.identifier === productId);
-      if (!product) {
-        throw new Error("Product not found");
-      }
-
-      const customerInfo = await revenueCatService.purchasePackage(product);
-
-      // Update subscription status
-      const newStatus = await revenueCatService.checkSubscriptionStatus();
-      setSubscriptionStatus(newStatus);
-
-      Alert.alert(
-        "Success!",
-        "Thank you for subscribing to VectorFi Premium!",
-        [{ text: "OK", onPress: () => navigation.goBack() }]
-      );
-    } catch (error: any) {
-      console.error("Purchase failed:", error);
-
-      if (error.userCancelled) {
-        // User cancelled the purchase
-        return;
-      }
-
-      Alert.alert(
-        "Purchase Failed",
-        error.message || "Something went wrong. Please try again."
-      );
-    } finally {
-      setPurchasing(null);
     }
   };
 
@@ -136,48 +92,6 @@ const SubscriptionScreen: React.FC = () => {
       </View>
     </View>
   );
-
-  const renderProduct = (product: any) => {
-    const isPurchasing = purchasing === product.identifier;
-    const isCurrentPlan = subscriptionStatus?.productId === product.identifier;
-
-    return (
-      <View
-        key={product.identifier}
-        style={[styles.productCard, isCurrentPlan && styles.currentPlanCard]}
-      >
-        <View style={styles.productHeader}>
-          <Text style={styles.productTitle}>{product.product.title}</Text>
-          <Text style={styles.productPrice}>{product.product.priceString}</Text>
-        </View>
-
-        <Text style={styles.productDescription}>
-          {product.product.description}
-        </Text>
-
-        {isCurrentPlan ? (
-          <View style={styles.currentPlanBadge}>
-            <Text style={styles.currentPlanText}>Current Plan</Text>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={[
-              styles.purchaseButton,
-              isPurchasing && styles.purchasingButton,
-            ]}
-            onPress={() => handlePurchase(product.identifier)}
-            disabled={isPurchasing}
-          >
-            {isPurchasing ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.purchaseButtonText}>Subscribe</Text>
-            )}
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  };
 
   if (loading) {
     return (
@@ -304,33 +218,6 @@ const SubscriptionScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
         </View>
-
-        {/* Legacy Subscription Plans (Fallback) */}
-        {products.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Alternative Plans</Text>
-            {products.map(renderProduct)}
-          </View>
-        )}
-
-        {/* RevenueCat Paywall Button */}
-        <TouchableOpacity
-          style={styles.paywallButton}
-          onPress={async () => {
-            try {
-              await PurchasesUI.presentPaywall();
-              // Refresh subscription status after paywall is dismissed
-              const newStatus =
-                await revenueCatService.checkSubscriptionStatus();
-              setSubscriptionStatus(newStatus);
-            } catch (error) {
-              console.error("Failed to present paywall:", error);
-            }
-          }}
-        >
-          <Ionicons name="card" size={16} color="#fff" />
-          <Text style={styles.paywallButtonText}>View Premium Plans</Text>
-        </TouchableOpacity>
 
         {/* Restore Purchases */}
         <TouchableOpacity
