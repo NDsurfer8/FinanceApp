@@ -10,7 +10,7 @@ export const PLAID_CONFIG = {
   countryCodes: ["US"],
   language: "en",
   // Replace with your actual Plaid public key from your Plaid dashboard
-  publicKey: "YOUR_PLAID_PUBLIC_KEY", // Get this from https://dashboard.plaid.com/team/keys
+  publicKey: "7a951d0a678269f8605176340bf071", // Copy your Sandbox public key here
 };
 
 export interface PlaidAccount {
@@ -67,10 +67,13 @@ class PlaidService {
 
       console.log("Initializing Plaid Link for user:", this.userId);
 
-      // In a real implementation, you would:
-      // 1. Call your backend to create a link token
-      // 2. Use that token to initialize Plaid Link
-      // For now, we'll simulate this process
+      // For now, we'll use a simulation approach
+      // In a full implementation, you would:
+      // 1. Call your backend API to create a link token
+      // 2. Use the link token with Plaid Link SDK
+      // 3. Handle the OAuth flow for bank connection
+
+      // The simulation will work for testing the UI and Firebase integration
     } catch (error) {
       console.error("Error initializing Plaid Link:", error);
       throw error;
