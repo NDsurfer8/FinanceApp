@@ -159,6 +159,11 @@ const SubscriptionScreen: React.FC = () => {
             "Track as many transactions as you need"
           )}
           {renderFeature(
+            PREMIUM_FEATURES.UNLIMITED_INCOME_SOURCES,
+            "Unlimited Income Sources",
+            "Add multiple income sources and streams"
+          )}
+          {renderFeature(
             PREMIUM_FEATURES.ADVANCED_ANALYTICS,
             "Advanced Analytics",
             "Detailed insights and financial reports"

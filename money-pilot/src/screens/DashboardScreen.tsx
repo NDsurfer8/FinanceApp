@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
+import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import {
   getUserTransactions,
   getUserAssets,
@@ -33,6 +34,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     getDataInstantly,
     refreshInBackground,
   } = useZeroLoading();
+  const { getTransactionLimitInfo, getIncomeSourceLimitInfo } =
+    useTransactionLimits();
   const [loading, setLoading] = useState(false);
 
   // Function to determine if name should be on a new line
@@ -135,9 +138,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const insights = getInsights();
 
   // Premium Feature: Quick Actions
+  const transactionLimitInfo = getTransactionLimitInfo();
+  const incomeLimitInfo = getIncomeSourceLimitInfo();
+
   const quickActions = [
     {
       title: "Transaction",
+      subtitle: transactionLimitInfo.isUnlimited
+        ? "Unlimited"
+        : `${transactionLimitInfo.current}/${transactionLimitInfo.limit}`,
       icon: "add-circle",
       onPress: () => navigation.navigate("AddTransaction"),
       color: "#6366f1",
@@ -635,6 +644,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 >
                   {action.title}
                 </Text>
+                {action.subtitle && (
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "500",
+                      color: "#6b7280",
+                      textAlign: "center",
+                      marginTop: 2,
+                    }}
+                  >
+                    {action.subtitle}
+                  </Text>
+                )}
               </TouchableOpacity>
             ))}
           </View>

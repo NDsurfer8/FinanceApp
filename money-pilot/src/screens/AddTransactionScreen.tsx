@@ -15,6 +15,8 @@ import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { saveTransaction } from "../services/userData";
 import { billReminderService } from "../services/billReminders";
+import { useTransactionLimits } from "../hooks/useTransactionLimits";
+import { usePaywall } from "../hooks/usePaywall";
 
 interface AddTransactionScreenProps {
   navigation: any;
@@ -29,6 +31,13 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const { transactions, updateDataOptimistically } = useZeroLoading();
   const [loading, setLoading] = useState(false);
   const { type: initialType, selectedMonth } = route.params || {};
+  const {
+    canAddTransaction,
+    canAddIncomeSource,
+    getTransactionLimitInfo,
+    getIncomeSourceLimitInfo,
+  } = useTransactionLimits();
+  const { presentPaywall } = usePaywall();
 
   // Use selectedMonth if provided, otherwise use today's date
   const getInitialDate = () => {
@@ -116,6 +125,37 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     if (!user) {
       Alert.alert("Error", "You must be logged in to save transactions");
       return;
+    }
+
+    // Check transaction limits
+    if (formData.type === "income") {
+      if (!canAddIncomeSource()) {
+        const limitInfo = getIncomeSourceLimitInfo();
+        Alert.alert(
+          "Income Source Limit Reached",
+          `You've reached your limit of ${limitInfo.limit} income source${
+            limitInfo.limit !== 1 ? "s" : ""
+          } on the free plan.\n\nUpgrade to Premium for unlimited income sources!`,
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Upgrade to Premium", onPress: presentPaywall },
+          ]
+        );
+        return;
+      }
+    } else {
+      if (!canAddTransaction()) {
+        const limitInfo = getTransactionLimitInfo();
+        Alert.alert(
+          "Transaction Limit Reached",
+          `You've reached your limit of ${limitInfo.limit} transactions on the free plan.\n\nUpgrade to Premium for unlimited transactions!`,
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Upgrade to Premium", onPress: presentPaywall },
+          ]
+        );
+        return;
+      }
     }
 
     try {
@@ -229,6 +269,81 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               {formData.type === "income" ? "Add Income" : "Add Expense"}
             </Text>
           </View>
+
+          {/* Limit Indicator */}
+          {formData.type === "income" ? (
+            <View
+              style={{
+                backgroundColor: "#fef3c7",
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons name="information-circle" size={16} color="#d97706" />
+                <Text style={{ marginLeft: 8, color: "#d97706", fontSize: 14 }}>
+                  {getIncomeSourceLimitInfo().isUnlimited
+                    ? "Unlimited income sources"
+                    : `${getIncomeSourceLimitInfo().current}/${
+                        getIncomeSourceLimitInfo().limit
+                      } income sources used`}
+                </Text>
+              </View>
+              {!getIncomeSourceLimitInfo().isUnlimited && (
+                <TouchableOpacity onPress={presentPaywall}>
+                  <Text
+                    style={{
+                      color: "#d97706",
+                      fontSize: 12,
+                      fontWeight: "600",
+                    }}
+                  >
+                    Upgrade
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            <View
+              style={{
+                backgroundColor: "#fef3c7",
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons name="information-circle" size={16} color="#d97706" />
+                <Text style={{ marginLeft: 8, color: "#d97706", fontSize: 14 }}>
+                  {getTransactionLimitInfo().isUnlimited
+                    ? "Unlimited transactions"
+                    : `${getTransactionLimitInfo().current}/${
+                        getTransactionLimitInfo().limit
+                      } transactions used`}
+                </Text>
+              </View>
+              {!getTransactionLimitInfo().isUnlimited && (
+                <TouchableOpacity onPress={presentPaywall}>
+                  <Text
+                    style={{
+                      color: "#d97706",
+                      fontSize: 12,
+                      fontWeight: "600",
+                    }}
+                  >
+                    Upgrade
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
 
           {/* Import CSV Button */}
           <TouchableOpacity

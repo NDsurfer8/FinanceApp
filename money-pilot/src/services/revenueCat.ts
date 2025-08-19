@@ -21,6 +21,7 @@ export const PRODUCT_IDS = {
 // Subscription Features
 export const PREMIUM_FEATURES = {
   UNLIMITED_TRANSACTIONS: "unlimited_transactions",
+  UNLIMITED_INCOME_SOURCES: "unlimited_income_sources",
   ADVANCED_ANALYTICS: "advanced_analytics",
   EXPORT_DATA: "export_data",
   CUSTOM_CATEGORIES: "custom_categories",
@@ -171,6 +172,7 @@ class RevenueCatService {
     if (customerInfo.entitlements.active["premium"]) {
       features.push(
         PREMIUM_FEATURES.UNLIMITED_TRANSACTIONS,
+        PREMIUM_FEATURES.UNLIMITED_INCOME_SOURCES,
         PREMIUM_FEATURES.ADVANCED_ANALYTICS,
         PREMIUM_FEATURES.EXPORT_DATA,
         PREMIUM_FEATURES.CUSTOM_CATEGORIES,
