@@ -14,6 +14,7 @@ import { UserProvider } from "../context/UserContext";
 import { DataProvider } from "../contexts/DataContext";
 import { DataPreloader } from "./DataPreloader";
 import { SplashScreen } from "./SplashScreen";
+import revenueCatService from "../services/revenueCat";
 import {
   DashboardScreen,
   BudgetScreen,
@@ -95,6 +96,14 @@ export const MainApp: React.FC = () => {
 
       setLoadingMessage("Setting up notifications...");
       setupNotifications();
+
+      setLoadingMessage("Initializing RevenueCat...");
+      try {
+        await revenueCatService.initialize();
+        console.log("RevenueCat initialized successfully in MainApp");
+      } catch (error) {
+        console.error("Failed to initialize RevenueCat in MainApp:", error);
+      }
 
       setIsLoading(false);
     } catch (error) {

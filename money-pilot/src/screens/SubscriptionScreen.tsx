@@ -34,7 +34,7 @@ const SubscriptionScreen: React.FC = () => {
     try {
       setLoading(true);
 
-      // Initialize RevenueCat
+      // Initialize RevenueCat first
       await revenueCatService.initialize();
 
       // Set user if logged in
@@ -47,7 +47,12 @@ const SubscriptionScreen: React.FC = () => {
       setSubscriptionStatus(status);
     } catch (error) {
       console.error("Failed to initialize subscription:", error);
-      Alert.alert("Error", "Failed to load subscription information");
+      // Don't show alert for initialization errors, just set default status
+      setSubscriptionStatus({
+        isPremium: false,
+        isActive: false,
+        features: [],
+      });
     } finally {
       setLoading(false);
     }
