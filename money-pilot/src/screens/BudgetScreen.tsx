@@ -305,12 +305,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   };
 
   // Calculate totals
-  const incomeTransactions = monthlyTransactions.filter(
-    (t) => t.type === "income"
-  );
-  const expenseTransactions = monthlyTransactions.filter(
-    (t) => t.type === "expense"
-  );
+  const incomeTransactions = monthlyTransactions
+    .filter((t) => t.type === "income")
+    .sort((a, b) => b.amount - a.amount); // Sort by amount, largest first
+  const expenseTransactions = monthlyTransactions
+    .filter((t) => t.type === "expense")
+    .sort((a, b) => b.amount - a.amount); // Sort by amount, largest first
 
   // Include projected transactions for future months
   const projectedIncomeTransactions = isFutureMonth
