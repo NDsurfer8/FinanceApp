@@ -12,6 +12,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
+import { useData } from "../contexts/DataContext";
 
 interface DashboardScreenProps {
   navigation: any;
@@ -22,6 +23,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { transactions, assets, debts, refreshInBackground } = useZeroLoading();
+  const { goals, budgetSettings } = useData();
   const {
     getTransactionLimitInfo,
     getIncomeSourceLimitInfo,
@@ -64,6 +66,25 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     .reduce((sum: number, t: any) => sum + t.amount, 0);
 
   const netIncome = monthlyIncome - monthlyExpenses;
+
+  // Calculate available amount (same as BudgetScreen)
+  const savingsPercent = budgetSettings?.savingsPercentage
+    ? parseFloat(budgetSettings.savingsPercentage)
+    : 0;
+  const debtPayoffPercent = budgetSettings?.debtPayoffPercentage
+    ? parseFloat(budgetSettings.debtPayoffPercentage)
+    : 0;
+  const savingsAmount = netIncome * (savingsPercent / 100);
+
+  // Calculate total goal contributions
+  const totalGoalContributions = goals.reduce((total, goal) => {
+    return total + goal.monthlyContribution;
+  }, 0);
+
+  const discretionaryIncome =
+    netIncome - savingsAmount - totalGoalContributions;
+  const debtPayoffAmount = discretionaryIncome * (debtPayoffPercent / 100);
+  const availableAmount = discretionaryIncome - debtPayoffAmount;
 
   // Calculate total assets and debts
   const totalAssets = assets.reduce(
@@ -201,18 +222,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const trendData = getTrendData();
 
   const formatCurrency = (amount: number) => {
-    if (amount >= 1000000000) {
-      const value = (amount / 1000000000).toFixed(2);
-      return `$${value.replace(/\.00$/, "")}B`;
-    } else if (amount >= 1000000) {
-      const value = (amount / 1000000).toFixed(2);
-      return `$${value.replace(/\.00$/, "")}M`;
-    } else if (amount >= 1000) {
-      const value = (amount / 1000).toFixed(2);
-      return `$${value.replace(/\.00$/, "")}K`;
-    } else {
-      return `$${amount.toLocaleString()}`;
-    }
+    return `$${amount.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
 
   return (
@@ -359,130 +372,132 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              gap: 16,
-            }}
-          >
-            <View style={{ alignItems: "center", flex: 1 }}>
+          <View style={{ gap: 20 }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
                   backgroundColor: "#dcfce7",
-                  padding: 18,
-                  borderRadius: 18,
-                  marginBottom: 16,
-                  width: 70,
-                  height: 70,
+                  padding: 12,
+                  borderRadius: 12,
+                  marginRight: 16,
+                  width: 50,
+                  height: 50,
                   justifyContent: "center",
                   alignItems: "center",
                 }}
               >
-                <Ionicons name="trending-up" size={26} color="#16a34a" />
+                <Ionicons name="trending-up" size={20} color="#16a34a" />
               </View>
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: "#6b7280",
-                  marginBottom: 6,
-                  fontWeight: "600",
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                }}
-              >
-                Income
-              </Text>
-              <Text
-                style={{
-                  fontSize: 22,
-                  fontWeight: "700",
-                  color: "#16a34a",
-                  letterSpacing: -0.3,
-                }}
-              >
-                {formatCurrency(monthlyIncome)}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: "#6b7280",
+                    marginBottom: 4,
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Income
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: "#16a34a",
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  {formatCurrency(monthlyIncome)}
+                </Text>
+              </View>
             </View>
-            <View style={{ alignItems: "center", flex: 1 }}>
+
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
                   backgroundColor: "#fee2e2",
-                  padding: 18,
-                  borderRadius: 18,
-                  marginBottom: 16,
-                  width: 70,
-                  height: 70,
+                  padding: 12,
+                  borderRadius: 12,
+                  marginRight: 16,
+                  width: 50,
+                  height: 50,
                   justifyContent: "center",
                   alignItems: "center",
                 }}
               >
-                <Ionicons name="trending-down" size={26} color="#dc2626" />
+                <Ionicons name="trending-down" size={20} color="#dc2626" />
               </View>
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: "#6b7280",
-                  marginBottom: 6,
-                  fontWeight: "600",
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                }}
-              >
-                Expenses
-              </Text>
-              <Text
-                style={{
-                  fontSize: 22,
-                  fontWeight: "700",
-                  color: "#dc2626",
-                  letterSpacing: -0.3,
-                }}
-              >
-                {formatCurrency(monthlyExpenses)}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: "#6b7280",
+                    marginBottom: 4,
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Expenses
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: "#dc2626",
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  {formatCurrency(monthlyExpenses)}
+                </Text>
+              </View>
             </View>
-            <View style={{ alignItems: "center", flex: 1 }}>
+
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  backgroundColor: netIncome >= 0 ? "#dbeafe" : "#fef3c7",
-                  padding: 18,
-                  borderRadius: 18,
-                  marginBottom: 16,
-                  width: 70,
-                  height: 70,
+                  backgroundColor: availableAmount >= 0 ? "#dbeafe" : "#fef3c7",
+                  padding: 12,
+                  borderRadius: 12,
+                  marginRight: 16,
+                  width: 50,
+                  height: 50,
                   justifyContent: "center",
                   alignItems: "center",
                 }}
               >
                 <Ionicons
-                  name={netIncome >= 0 ? "wallet" : "alert-circle"}
-                  size={26}
-                  color={netIncome >= 0 ? "#2563eb" : "#d97706"}
+                  name={availableAmount >= 0 ? "wallet" : "alert-circle"}
+                  size={20}
+                  color={availableAmount >= 0 ? "#2563eb" : "#d97706"}
                 />
               </View>
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: "#6b7280",
-                  marginBottom: 6,
-                  fontWeight: "600",
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                }}
-              >
-                Net
-              </Text>
-              <Text
-                style={{
-                  fontSize: 22,
-                  fontWeight: "700",
-                  color: netIncome >= 0 ? "#2563eb" : "#d97706",
-                  letterSpacing: -0.3,
-                }}
-              >
-                {formatCurrency(netIncome)}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: "#6b7280",
+                    marginBottom: 4,
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Available
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: availableAmount >= 0 ? "#2563eb" : "#d97706",
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  {formatCurrency(availableAmount)}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
