@@ -7,7 +7,7 @@ import { Platform } from "react-native";
 
 // RevenueCat API Keys
 const REVENUECAT_API_KEYS = {
-  ios: "sk_ubVkagGqzecTdTxnzjPYWhmUthWFr", // Replace with your iOS API key
+  ios: "appl_kRrkEWJYkLcgRfvkOovUpabriTI", // Replace with your iOS API key
   android: "goog_YOUR_ANDROID_API_KEY", // Replace with your Android API key
 };
 
