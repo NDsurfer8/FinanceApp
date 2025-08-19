@@ -34,6 +34,7 @@ import {
   HelpSupportScreen,
   ForgotPasswordScreen,
   RecurringTransactionsScreen,
+  SubscriptionScreen,
 } from "../screens";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -292,6 +293,10 @@ export const MainApp: React.FC = () => {
                 <Stack.Screen
                   name="RecurringTransactions"
                   component={RecurringTransactionsScreen}
+                />
+                <Stack.Screen
+                  name="Subscription"
+                  component={SubscriptionScreen}
                 />
               </Stack.Navigator>
             </NavigationContainer>

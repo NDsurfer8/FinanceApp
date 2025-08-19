@@ -347,6 +347,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               borderRadius: 12,
               alignSelf: "flex-start",
             }}
+            onPress={() => navigation?.navigate("Subscription")}
           >
             <Text style={{ color: "white", fontWeight: "700" }}>
               Start 7‑day Trial

@@ -5,3 +5,4 @@ export {
   CustomPieChart,
 } from "./BeautifulCharts";
 export { NotificationTest } from "./NotificationTest";
+export { PremiumFeature } from "./PremiumFeature";
