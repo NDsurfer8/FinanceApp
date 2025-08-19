@@ -1,6 +1,7 @@
 import { Alert } from "react-native";
 import { ref, set, get, remove } from "firebase/database";
 import { db } from "../services/firebase";
+import { encryptFields, decryptFields } from "./encryption";
 
 // Plaid configuration - you'll need to get these from your Plaid dashboard
 export const PLAID_CONFIG = {
@@ -95,9 +96,22 @@ class PlaidService {
         status: "connected",
       };
 
-      // Save to Firebase
+      // Encrypt sensitive Plaid data before saving to Firebase
+      const fieldsToEncrypt = [
+        "publicToken",
+        "itemId",
+        "institution",
+        "accounts",
+      ];
+
+      const encryptedPlaidData = await encryptFields(
+        plaidData,
+        fieldsToEncrypt
+      );
+
+      // Save encrypted data to Firebase
       const plaidRef = ref(db, `users/${this.userId}/plaid`);
-      await set(plaidRef, plaidData);
+      await set(plaidRef, encryptedPlaidData);
 
       // Store locally for immediate use
       this.accessToken = "ACCESS_TOKEN_PLACEHOLDER"; // Will be replaced with real token
@@ -214,7 +228,21 @@ class PlaidService {
       const snapshot = await get(plaidRef);
 
       if (snapshot.exists()) {
-        const plaidData = snapshot.val();
+        const encryptedPlaidData = snapshot.val();
+
+        // Decrypt the Plaid data
+        const fieldsToDecrypt = [
+          "publicToken",
+          "itemId",
+          "institution",
+          "accounts",
+        ];
+
+        const plaidData = await decryptFields(
+          encryptedPlaidData,
+          fieldsToDecrypt
+        );
+
         this.accessToken = plaidData.accessToken || null;
         this.itemId = plaidData.itemId || null;
         return plaidData.status === "connected";
