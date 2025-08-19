@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { plaidService } from "../services/plaid";
 import { fontFamily } from "../config/fonts";
 import { useAuth } from "../hooks/useAuth";
-import { PlaidLink } from "react-native-plaid-link-sdk";
+import { create, open, usePlaidEmitter } from "react-native-plaid-link-sdk";
 
 interface PlaidLinkComponentProps {
   onSuccess?: () => void;
@@ -17,8 +17,6 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [linkToken, setLinkToken] = useState<string | null>(null);
-  const [showPlaidLink, setShowPlaidLink] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -43,8 +41,18 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     try {
       // Get link token from Firebase Cloud Function
       const token = await plaidService.initializePlaidLink();
-      setLinkToken(token);
-      setShowPlaidLink(true);
+
+      // Create Plaid Link configuration
+      create({
+        token: token,
+      });
+
+      // Open Plaid Link with handlers
+      open({
+        onSuccess: handlePlaidSuccess,
+        onExit: handlePlaidExit,
+      });
+
       setIsLoading(false);
     } catch (error) {
       console.error("Error connecting bank:", error);
@@ -53,11 +61,13 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     }
   };
 
-  const handlePlaidSuccess = async (publicToken: string, metadata: any) => {
+  const handlePlaidSuccess = async (linkSuccess: any) => {
     try {
-      await plaidService.handlePlaidSuccess(publicToken, metadata);
+      await plaidService.handlePlaidSuccess(
+        linkSuccess.publicToken,
+        linkSuccess.metadata
+      );
       await checkConnectionStatus();
-      setShowPlaidLink(false);
       onSuccess?.();
     } catch (error) {
       console.error("Error handling Plaid success:", error);
@@ -65,15 +75,14 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     }
   };
 
-  const handlePlaidExit = (error: any, metadata: any) => {
-    setShowPlaidLink(false);
+  const handlePlaidExit = (linkExit: any) => {
     setIsLoading(false);
 
-    if (error) {
-      console.error("Plaid exit with error:", error);
+    if (linkExit.error) {
+      console.error("Plaid exit with error:", linkExit.error);
       Alert.alert("Error", "Failed to connect bank account");
     } else {
-      console.log("Plaid exit without error:", metadata);
+      console.log("Plaid exit without error:", linkExit.metadata);
     }
 
     onExit?.();
@@ -170,93 +179,6 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
             {isLoading ? "Connecting..." : "Connect Bank (Plaid)"}
           </Text>
         </TouchableOpacity>
-      )}
-
-      {/* Plaid Link Modal - Temporarily replaced with simple modal for testing */}
-      {showPlaidLink && linkToken && (
-        <Modal
-          visible={showPlaidLink}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setShowPlaidLink(false)}
-        >
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "rgba(0,0,0,0.5)",
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: "white",
-                padding: 20,
-                borderRadius: 10,
-                margin: 20,
-                maxWidth: 300,
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: fontFamily.bold,
-                  fontSize: 18,
-                  marginBottom: 10,
-                  textAlign: "center",
-                }}
-              >
-                Plaid Link Token Created!
-              </Text>
-              <Text
-                style={{
-                  fontFamily: fontFamily.regular,
-                  fontSize: 12,
-                  marginBottom: 15,
-                  textAlign: "center",
-                }}
-              >
-                Link Token: {linkToken.substring(0, 20)}...
-              </Text>
-              <Text
-                style={{
-                  fontFamily: fontFamily.regular,
-                  fontSize: 14,
-                  marginBottom: 20,
-                  textAlign: "center",
-                }}
-              >
-                The Plaid integration is working! The link token was
-                successfully created.
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowPlaidLink(false);
-                  // Simulate success for testing
-                  handlePlaidSuccess("test_public_token", {
-                    institution: { name: "Test Bank" },
-                    accounts: [],
-                  });
-                }}
-                style={{
-                  backgroundColor: "#6366f1",
-                  padding: 12,
-                  borderRadius: 8,
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: fontFamily.semiBold,
-                    color: "white",
-                    fontSize: 16,
-                  }}
-                >
-                  Simulate Success
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
       )}
     </View>
   );
