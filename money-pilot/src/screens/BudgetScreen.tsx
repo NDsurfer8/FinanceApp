@@ -747,16 +747,16 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="trending-up" size={20} color="#16a34a" />
+                <Ionicons name="trending-up" size={20} color="#374151" />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#16a34a" }}
+                style={{ fontSize: 18, fontWeight: "700", color: "#374151" }}
               >
                 Income
               </Text>
             </View>
             <TouchableOpacity onPress={handleAddIncome}>
-              <Ionicons name="add-circle" size={24} color="#16a34a" />
+              <Ionicons name="add-circle" size={24} color="#374151" />
             </TouchableOpacity>
           </View>
 
@@ -802,7 +802,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               ...(isFutureMonth
                 ? projectedTransactions.filter((t) => t.type === "income")
                 : []),
-            ].map((transaction) => (
+            ].map((transaction, index, array) => (
               <View
                 key={transaction.id}
                 style={{
@@ -811,7 +811,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   alignItems: "center",
                   marginBottom: 12,
                   paddingVertical: 8,
-                  borderBottomWidth: 1,
+                  borderBottomWidth: index === array.length - 1 ? 0 : 1,
                   borderBottomColor: "#f3f4f6",
                 }}
               >
@@ -926,29 +926,35 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             ))
           )}
 
-          <View
-            style={{
-              borderTopWidth: 2,
-              borderTopColor: "#16a34a",
-              paddingTop: 16,
-              marginTop: 8,
-            }}
-          >
+          {(incomeTransactions.length > 0 ||
+            projectedIncomeTransactions.length > 0) && (
             <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
+              style={{
+                borderTopWidth: 2,
+                borderTopColor: "#374151",
+                paddingTop: 16,
+                marginTop: 8,
+              }}
             >
-              <Text
-                style={{ fontSize: 18, fontWeight: "800", color: "#16a34a" }}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
               >
-                Total Income
-              </Text>
-              <Text
-                style={{ fontSize: 18, fontWeight: "800", color: "#16a34a" }}
-              >
-                {formatCurrency(totalIncome)}
-              </Text>
+                <Text
+                  style={{ fontSize: 18, fontWeight: "800", color: "#374151" }}
+                >
+                  Total Income
+                </Text>
+                <Text
+                  style={{ fontSize: 18, fontWeight: "800", color: "#374151" }}
+                >
+                  {formatCurrency(totalIncome)}
+                </Text>
+              </View>
             </View>
-          </View>
+          )}
         </View>
 
         {/* Expenses Section */}
@@ -982,16 +988,16 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="trending-down" size={20} color="#dc2626" />
+                <Ionicons name="trending-down" size={20} color="#374151" />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#dc2626" }}
+                style={{ fontSize: 18, fontWeight: "700", color: "#374151" }}
               >
                 Expenses
               </Text>
             </View>
             <TouchableOpacity onPress={handleAddExpense}>
-              <Ionicons name="add-circle" size={24} color="#dc2626" />
+              <Ionicons name="add-circle" size={24} color="#374151" />
             </TouchableOpacity>
           </View>
 
@@ -1037,7 +1043,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               ...(isFutureMonth
                 ? projectedTransactions.filter((t) => t.type === "expense")
                 : []),
-            ].map((transaction) => (
+            ].map((transaction, index, array) => (
               <View
                 key={transaction.id}
                 style={{
@@ -1046,7 +1052,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   alignItems: "center",
                   marginBottom: 12,
                   paddingVertical: 8,
-                  borderBottomWidth: 1,
+                  borderBottomWidth: index === array.length - 1 ? 0 : 1,
                   borderBottomColor: "#f3f4f6",
                 }}
               >
@@ -1161,29 +1167,35 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             ))
           )}
 
-          <View
-            style={{
-              borderTopWidth: 2,
-              borderTopColor: "#dc2626",
-              paddingTop: 16,
-              marginTop: 8,
-            }}
-          >
+          {(expenseTransactions.length > 0 ||
+            projectedExpenseTransactions.length > 0) && (
             <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
+              style={{
+                borderTopWidth: 2,
+                borderTopColor: "#374151",
+                paddingTop: 16,
+                marginTop: 8,
+              }}
             >
-              <Text
-                style={{ fontSize: 18, fontWeight: "800", color: "#dc2626" }}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
               >
-                Total Expenses
-              </Text>
-              <Text
-                style={{ fontSize: 18, fontWeight: "800", color: "#dc2626" }}
-              >
-                {formatCurrency(totalExpenses)}
-              </Text>
+                <Text
+                  style={{ fontSize: 18, fontWeight: "800", color: "#374151" }}
+                >
+                  Total Expenses
+                </Text>
+                <Text
+                  style={{ fontSize: 18, fontWeight: "800", color: "#374151" }}
+                >
+                  {formatCurrency(totalExpenses)}
+                </Text>
+              </View>
             </View>
-          </View>
+          )}
         </View>
 
         {/* Budget Summary */}
@@ -1408,21 +1420,46 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
           <View
             style={{
-              borderTopWidth: 2,
-              borderTopColor: "#f97316",
+              borderTopWidth: 1,
+              borderTopColor: "#374151",
               paddingTop: 20,
+              position: "relative",
             }}
           >
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 1,
+                backgroundColor: "#374151",
+              }}
+            />
+            <View
+              style={{
+                position: "absolute",
+                top: 2,
+                left: 0,
+                right: 0,
+                height: 1,
+                backgroundColor: "#374151",
+              }}
+            />
             <View
               style={{ flexDirection: "row", justifyContent: "space-between" }}
             >
               <Text
-                style={{ fontSize: 20, fontWeight: "800", color: "#16a34a" }}
+                style={{ fontSize: 20, fontWeight: "800", color: "#374151" }}
               >
                 $ Available
               </Text>
               <Text
-                style={{ fontSize: 20, fontWeight: "800", color: "#16a34a" }}
+                style={{
+                  fontSize: 20,
+                  fontWeight: "800",
+                  color: remainingBalance >= 0 ? "#16a34a" : "#dc2626",
+                }}
               >
                 {formatCurrency(remainingBalance)}
               </Text>
@@ -1432,15 +1469,18 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           {/* Save Settings Button */}
           <TouchableOpacity
             style={{
-              backgroundColor: "#6366f1",
-              borderRadius: 12,
-              padding: 16,
+              backgroundColor: "#f3f4f6",
+              borderRadius: 8,
+              padding: 12,
               alignItems: "center",
-              marginTop: 20,
+              marginTop: 40,
+              marginBottom: 20,
+              borderWidth: 1,
+              borderColor: "#e5e7eb",
             }}
             onPress={handleSaveBudgetSettings}
           >
-            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
+            <Text style={{ color: "#6b7280", fontSize: 14, fontWeight: "500" }}>
               Save Budget Settings
             </Text>
           </TouchableOpacity>
