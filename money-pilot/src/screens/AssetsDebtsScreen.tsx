@@ -9,6 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { fontFamily } from "../config/fonts";
 import { AssetsDebtsChart } from "../components/AssetsDebtsChart";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
@@ -126,47 +127,19 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         {/* Header */}
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
             marginBottom: 16,
           }}
         >
-          <Text style={{ fontSize: 24, fontWeight: "700", color: "#374151" }}>
+          <Text
+            style={{
+              fontFamily: fontFamily.bold,
+              fontSize: 28,
+              fontWeight: "700",
+              color: "#374151",
+            }}
+          >
             Assets & Debts
           </Text>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("AddAssetDebt", { type: "asset" })
-              }
-              style={{
-                backgroundColor: "#10b981",
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 6,
-              }}
-            >
-              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 12 }}>
-                + Asset
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("AddAssetDebt", { type: "debt" })
-              }
-              style={{
-                backgroundColor: "#ef4444",
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 6,
-              }}
-            >
-              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 12 }}>
-                + Debt
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Assets Section */}
@@ -182,7 +155,14 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             elevation: 2,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}>
+          <Text
+            style={{
+              fontFamily: fontFamily.semiBold,
+              fontSize: 18,
+              fontWeight: "600",
+              marginBottom: 12,
+            }}
+          >
             Assets
           </Text>
 
@@ -190,7 +170,13 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             <View style={{ alignItems: "center", padding: 20 }}>
               <Ionicons name="wallet-outline" size={32} color="#d1d5db" />
               <Text
-                style={{ color: "#6b7280", marginTop: 8, textAlign: "center" }}
+                style={{
+                  fontFamily: fontFamily.regular,
+                  color: "#6b7280",
+                  marginTop: 8,
+                  textAlign: "center",
+                  fontSize: 16,
+                }}
               >
                 No assets yet
               </Text>
@@ -209,9 +195,24 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                     borderBottomColor: "#f3f4f6",
                   }}
                 >
-                  <Text style={{ flex: 1 }}>{asset.name}</Text>
+                  <Text
+                    style={{
+                      fontFamily: fontFamily.medium,
+                      flex: 1,
+                      fontSize: 16,
+                    }}
+                  >
+                    {asset.name}
+                  </Text>
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Text style={{ fontWeight: "600", marginRight: 8 }}>
+                    <Text
+                      style={{
+                        fontFamily: fontFamily.semiBold,
+                        fontWeight: "600",
+                        marginRight: 8,
+                        fontSize: 16,
+                      }}
+                    >
                       ${asset.balance.toLocaleString()}
                     </Text>
                     <TouchableOpacity
@@ -239,8 +240,22 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ fontWeight: "600" }}>Total</Text>
-                <Text style={{ fontWeight: "700" }}>
+                <Text
+                  style={{
+                    fontFamily: fontFamily.semiBold,
+                    fontWeight: "600",
+                    fontSize: 16,
+                  }}
+                >
+                  Total
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: fontFamily.bold,
+                    fontWeight: "700",
+                    fontSize: 18,
+                  }}
+                >
                   ${assetTotal.toLocaleString()}
                 </Text>
               </View>
@@ -262,7 +277,14 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             marginTop: 16,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}>
+          <Text
+            style={{
+              fontFamily: fontFamily.semiBold,
+              fontSize: 18,
+              fontWeight: "600",
+              marginBottom: 12,
+            }}
+          >
             Debts
           </Text>
 
@@ -270,7 +292,13 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             <View style={{ alignItems: "center", padding: 20 }}>
               <Ionicons name="card-outline" size={32} color="#d1d5db" />
               <Text
-                style={{ color: "#6b7280", marginTop: 8, textAlign: "center" }}
+                style={{
+                  fontFamily: fontFamily.regular,
+                  color: "#6b7280",
+                  marginTop: 8,
+                  textAlign: "center",
+                  fontSize: 16,
+                }}
               >
                 No debts yet
               </Text>
@@ -293,11 +321,26 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                       alignItems: "center",
                     }}
                   >
-                    <Text style={{ flex: 1 }}>{debt.name}</Text>
+                    <Text
+                      style={{
+                        fontFamily: fontFamily.medium,
+                        flex: 1,
+                        fontSize: 16,
+                      }}
+                    >
+                      {debt.name}
+                    </Text>
                     <View
                       style={{ flexDirection: "row", alignItems: "center" }}
                     >
-                      <Text style={{ fontWeight: "600", marginRight: 8 }}>
+                      <Text
+                        style={{
+                          fontFamily: fontFamily.semiBold,
+                          fontWeight: "600",
+                          marginRight: 8,
+                          fontSize: 16,
+                        }}
+                      >
                         ${debt.balance.toLocaleString()}
                       </Text>
                       <TouchableOpacity
@@ -311,7 +354,13 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                       </TouchableOpacity>
                     </View>
                   </View>
-                  <Text style={{ color: "#6b7280", fontSize: 12 }}>
+                  <Text
+                    style={{
+                      fontFamily: fontFamily.regular,
+                      color: "#6b7280",
+                      fontSize: 14,
+                    }}
+                  >
                     {debt.rate}% APR • ${debt.payment}/mo
                   </Text>
                 </View>
@@ -329,13 +378,86 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ fontWeight: "600" }}>Total Debt</Text>
-                <Text style={{ fontWeight: "700" }}>
+                <Text
+                  style={{
+                    fontFamily: fontFamily.semiBold,
+                    fontWeight: "600",
+                    fontSize: 16,
+                  }}
+                >
+                  Total Debt
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: fontFamily.bold,
+                    fontWeight: "700",
+                    fontSize: 18,
+                  }}
+                >
                   ${totalDebt.toLocaleString()}
                 </Text>
               </View>
             </>
           )}
+        </View>
+
+        {/* Action Buttons */}
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 12,
+            marginTop: 16,
+            justifyContent: "center",
+          }}
+        >
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("AddAssetDebt", { type: "asset" })
+            }
+            style={{
+              backgroundColor: "#10b981",
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+              borderRadius: 12,
+              flex: 1,
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: fontFamily.semiBold,
+                color: "#fff",
+                fontWeight: "600",
+                fontSize: 16,
+              }}
+            >
+              + Add Asset
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("AddAssetDebt", { type: "debt" })
+            }
+            style={{
+              backgroundColor: "#ef4444",
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+              borderRadius: 12,
+              flex: 1,
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: fontFamily.semiBold,
+                color: "#fff",
+                fontWeight: "600",
+                fontSize: 16,
+              }}
+            >
+              + Add Debt
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Net Worth Chart */}
@@ -352,7 +474,14 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             marginTop: 16,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
+          <Text
+            style={{
+              fontFamily: fontFamily.semiBold,
+              fontSize: 18,
+              fontWeight: "600",
+              marginBottom: 8,
+            }}
+          >
             Financial Overview
           </Text>
           <AssetsDebtsChart assets={chartAssets} debts={chartDebts} />

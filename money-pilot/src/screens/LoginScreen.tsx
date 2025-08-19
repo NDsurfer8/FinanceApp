@@ -13,6 +13,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { fontFamily } from "../config/fonts";
 import { signIn, validateEmail, signInWithApple } from "../services/auth";
 import * as AppleAuthentication from "expo-apple-authentication";
 import Constants from "expo-constants";
@@ -287,6 +288,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
   },
   title: {
+    fontFamily: fontFamily.bold,
     fontSize: 32,
     fontWeight: "bold",
     color: "#1f2937",
@@ -316,6 +318,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 56,
+    fontFamily: fontFamily.regular,
     fontSize: 16,
     color: "#1f2937",
     paddingVertical: 0,
@@ -329,6 +332,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   forgotPasswordText: {
+    fontFamily: fontFamily.semiBold,
     color: "#6366f1",
     fontSize: 14,
     fontWeight: "600",
@@ -345,6 +349,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#a5b4fc",
   },
   loginButtonText: {
+    fontFamily: fontFamily.semiBold,
     color: "white",
     fontSize: 16,
     fontWeight: "600",
@@ -360,6 +365,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#e5e7eb",
   },
   dividerText: {
+    fontFamily: fontFamily.regular,
     marginHorizontal: 16,
     color: "#6b7280",
     fontSize: 14,

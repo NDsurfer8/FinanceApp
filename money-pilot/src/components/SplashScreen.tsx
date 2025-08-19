@@ -8,6 +8,7 @@ import {
   Image,
 } from "react-native";
 import Constants from "expo-constants";
+import { fontFamily } from "../config/fonts";
 
 interface SplashScreenProps {
   message?: string;
@@ -196,6 +197,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   appName: {
+    fontFamily: fontFamily.extraBold,
     fontSize: 32,
     fontWeight: "800",
     color: "#111827",
@@ -221,6 +223,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   loadingText: {
+    fontFamily: fontFamily.medium,
     fontSize: 16,
     color: "#374151",
     fontWeight: "500",
@@ -232,6 +235,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   versionText: {
+    fontFamily: fontFamily.regular,
     fontSize: 14,
     color: "#6b7280",
     opacity: 0.8,

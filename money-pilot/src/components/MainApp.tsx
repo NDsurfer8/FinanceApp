@@ -4,6 +4,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
+import * as Font from "expo-font";
+import { fontsToLoad } from "../config/fonts";
 import { BottomTabParamList } from "../types/finance";
 import { useAuth } from "../hooks/useAuth";
 import { notificationService } from "../services/notifications";
@@ -69,6 +71,9 @@ export const MainApp: React.FC = () => {
 
   const initializeApp = async () => {
     try {
+      setLoadingMessage("Loading fonts...");
+      await Font.loadAsync(fontsToLoad);
+
       setLoadingMessage("Checking authentication...");
 
       // Wait for auth to finish loading with timeout
