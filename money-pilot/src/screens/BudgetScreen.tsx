@@ -1101,13 +1101,13 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               >
                 <View
                   style={{
-                    backgroundColor: "#dbeafe",
+                    backgroundColor: colors.infoLight,
                     padding: 8,
                     borderRadius: 10,
                     marginRight: 12,
                   }}
                 >
-                  <Ionicons name="repeat" size={20} color="#1d4ed8" />
+                  <Ionicons name="repeat" size={20} color={colors.info} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text
@@ -1143,20 +1143,24 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   style={{
                     padding: 6,
                     borderRadius: 6,
-                    backgroundColor: isBankDataLoading ? "#e5e7eb" : "#dbeafe",
+                    backgroundColor: isBankDataLoading
+                      ? colors.border
+                      : colors.infoLight,
                     marginRight: 8,
                   }}
                 >
                   <Ionicons
                     name={isBankDataLoading ? "refresh" : "refresh-outline"}
                     size={14}
-                    color={isBankDataLoading ? "#9ca3af" : "#1d4ed8"}
+                    color={
+                      isBankDataLoading ? colors.textTertiary : colors.info
+                    }
                   />
                 </TouchableOpacity>
                 <Ionicons
                   name={showBankSuggestions ? "chevron-up" : "chevron-down"}
                   size={20}
-                  color="#1d4ed8"
+                  color={colors.info}
                 />
               </View>
             </TouchableOpacity>
@@ -1167,7 +1171,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 <View
                   style={{
                     borderTopWidth: 1,
-                    borderTopColor: "#e5e7eb",
+                    borderTopColor: colors.border,
                     paddingTop: 16,
                     marginBottom: 16,
                   }}
@@ -1175,7 +1179,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   <Text
                     style={{
                       fontSize: 14,
-                      color: "#6b7280",
+                      color: colors.textSecondary,
                       lineHeight: 20,
                       marginBottom: 8,
                     }}
@@ -1187,7 +1191,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     <Text
                       style={{
                         fontSize: 12,
-                        color: "#9ca3af",
+                        color: colors.textTertiary,
                         fontStyle: "italic",
                       }}
                     >
@@ -1206,11 +1210,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       alignItems: "center",
                       paddingVertical: 12,
                       paddingHorizontal: 16,
-                      backgroundColor: "#f8fafc",
+                      backgroundColor: colors.surfaceSecondary,
                       borderRadius: 12,
                       marginBottom: 8,
                       borderWidth: 1,
-                      borderColor: "#e5e7eb",
+                      borderColor: colors.border,
                     }}
                     onPress={() => handleAddRecurringSuggestion(suggestion)}
                   >
@@ -1219,7 +1223,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                         style={{
                           fontSize: 14,
                           fontWeight: "600",
-                          color: "#374151",
+                          color: colors.text,
                           marginBottom: 2,
                         }}
                       >
@@ -1231,7 +1235,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                         <Text
                           style={{
                             fontSize: 12,
-                            color: "#6b7280",
+                            color: colors.textSecondary,
                             marginRight: 8,
                           }}
                         >
@@ -1280,7 +1284,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       <Text
                         style={{
                           fontSize: 12,
-                          color: "#6b7280",
+                          color: colors.textSecondary,
                           marginTop: 2,
                         }}
                       >
@@ -1295,7 +1299,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     style={{
                       paddingVertical: 12,
                       alignItems: "center",
-                      backgroundColor: "#f3f4f6",
+                      backgroundColor: colors.surfaceSecondary,
                       borderRadius: 12,
                       marginTop: 8,
                     }}
@@ -1308,7 +1312,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   >
                     <Text
                       style={{
-                        color: "#6366f1",
+                        color: colors.primary,
                         fontSize: 14,
                         fontWeight: "600",
                       }}
