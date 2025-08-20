@@ -17,14 +17,11 @@ import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
-import { useSubscription } from "../contexts/SubscriptionContext";
-import { usePaywall } from "../hooks/usePaywall";
 import { useTheme } from "../contexts/ThemeContext";
 import {
   aiFinancialAdvisorService,
   FinancialSnapshot,
 } from "../services/aiFinancialAdvisor";
-import { PREMIUM_FEATURES } from "../services/revenueCat";
 import { VectraAvatar } from "../components/VectraAvatar";
 
 interface Message {
@@ -42,8 +39,6 @@ const CHAT_HISTORY_KEY = "ai_financial_advisor_chat_history";
 export const AIFinancialAdvisorScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
-  const { presentPaywall } = usePaywall();
-  const { subscriptionStatus } = useSubscription();
   const {
     transactions,
     assets,
@@ -60,11 +55,8 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const scrollViewRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
 
-  // Check if user has access to AI Financial Advisor feature specifically
-  const hasAIAccess =
-    subscriptionStatus?.features?.includes(
-      PREMIUM_FEATURES.AI_FINANCIAL_ADVISOR
-    ) || false;
+  // AI Financial Advisor is now free for testing
+  const hasAIAccess = true;
 
   // Load chat history from AsyncStorage
   const loadChatHistory = async () => {
@@ -191,18 +183,6 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
 
   const sendMessage = async () => {
     if (!inputText.trim() || isLoading) return;
-
-    if (!hasAIAccess) {
-      Alert.alert(
-        "Premium Feature",
-        "Vectra is a premium feature. Upgrade to get personalized financial advice and insights.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Upgrade", onPress: presentPaywall },
-        ]
-      );
-      return;
-    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -340,27 +320,6 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                 size={16}
                 color={colors.textSecondary}
               />
-            </TouchableOpacity>
-          )}
-          {!hasAIAccess && (
-            <TouchableOpacity
-              onPress={presentPaywall}
-              style={{
-                backgroundColor: colors.primary,
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 16,
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.buttonText,
-                  fontSize: 12,
-                  fontWeight: "600",
-                }}
-              >
-                Upgrade
-              </Text>
             </TouchableOpacity>
           )}
         </View>

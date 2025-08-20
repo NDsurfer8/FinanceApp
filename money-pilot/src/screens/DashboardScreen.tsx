@@ -13,9 +13,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { useData } from "../contexts/DataContext";
-import { useSubscription } from "../contexts/SubscriptionContext";
-import { usePaywall } from "../hooks/usePaywall";
-import { PREMIUM_FEATURES } from "../services/revenueCat";
+
 import { useTheme } from "../contexts/ThemeContext";
 
 interface DashboardScreenProps {
@@ -28,8 +26,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const { user } = useAuth();
   const { transactions, assets, debts, refreshInBackground } = useZeroLoading();
   const { goals, budgetSettings } = useData();
-  const { subscriptionStatus } = useSubscription();
-  const { presentPaywall } = usePaywall();
   const {
     getTransactionLimitInfo,
     getIncomeSourceLimitInfo,
@@ -37,12 +33,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   } = useTransactionLimits();
   const [loading, setLoading] = useState(false);
   const { colors } = useTheme();
-
-  // Check if user has access to AI Financial Advisor feature
-  const hasAIAccess =
-    subscriptionStatus?.features?.includes(
-      PREMIUM_FEATURES.AI_FINANCIAL_ADVISOR
-    ) || false;
 
   // Function to determine if name should be on a new line
   const shouldWrapName = (name: string) => {
@@ -179,21 +169,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     },
     {
       title: "AI Advisor",
-      subtitle: "Premium",
+      subtitle: "Free",
       icon: "chatbubble-ellipses",
-      onPress: hasAIAccess
-        ? () => navigation.navigate("AIFinancialAdvisor")
-        : () => {
-            Alert.alert(
-              "Premium Feature",
-              "Vectra AI Financial Advisor is a premium feature. Upgrade to get personalized financial advice and insights.",
-              [
-                { text: "Cancel", style: "cancel" },
-                { text: "Upgrade", onPress: presentPaywall },
-              ]
-            );
-          },
-      color: hasAIAccess ? "#06b6d4" : "#9ca3af",
+      onPress: () => navigation.navigate("AIFinancialAdvisor"),
+      color: "#06b6d4",
     },
     {
       title: "Asset",
