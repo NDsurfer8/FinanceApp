@@ -13,6 +13,8 @@ import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { useData } from "../contexts/DataContext";
+import { useSubscription } from "../contexts/SubscriptionContext";
+import { PREMIUM_FEATURES } from "../services/revenueCat";
 
 interface DashboardScreenProps {
   navigation: any;
@@ -24,12 +26,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const { user } = useAuth();
   const { transactions, assets, debts, refreshInBackground } = useZeroLoading();
   const { goals, budgetSettings } = useData();
+  const { subscriptionStatus } = useSubscription();
   const {
     getTransactionLimitInfo,
     getIncomeSourceLimitInfo,
     getGoalLimitInfo,
   } = useTransactionLimits();
   const [loading, setLoading] = useState(false);
+
+  // Check if user has access to AI Financial Advisor feature
+  const hasAIAccess =
+    subscriptionStatus?.features?.includes(
+      PREMIUM_FEATURES.AI_FINANCIAL_ADVISOR
+    ) || false;
 
   // Function to determine if name should be on a new line
   const shouldWrapName = (name: string) => {
@@ -191,6 +200,18 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       onPress: () => navigation.navigate("Goals", { openAddModal: true }),
       color: "#f59e0b",
     },
+    // Only show AI Advisor if user has access to the feature
+    ...(hasAIAccess
+      ? [
+          {
+            title: "AI Advisor",
+            subtitle: "Premium",
+            icon: "chatbubble-ellipses",
+            onPress: () => navigation.navigate("AIFinancialAdvisor"),
+            color: "#06b6d4",
+          },
+        ]
+      : []),
   ];
 
   // Premium Feature: Trend Analysis

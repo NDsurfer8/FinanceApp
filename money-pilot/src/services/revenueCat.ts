@@ -30,6 +30,7 @@ export const PREMIUM_FEATURES = {
   SHARED_FINANCE: "shared_finance",
   GOAL_TRACKING: "goal_tracking",
   BUDGET_PLANNING: "budget_planning",
+  AI_FINANCIAL_ADVISOR: "ai_financial_advisor",
 };
 
 export interface SubscriptionStatus {
@@ -244,7 +245,8 @@ class RevenueCatService {
         PREMIUM_FEATURES.NO_ADS,
         PREMIUM_FEATURES.SHARED_FINANCE,
         PREMIUM_FEATURES.GOAL_TRACKING,
-        PREMIUM_FEATURES.BUDGET_PLANNING
+        PREMIUM_FEATURES.BUDGET_PLANNING,
+        PREMIUM_FEATURES.AI_FINANCIAL_ADVISOR
       );
     }
 
