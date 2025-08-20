@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { useTheme } from "../contexts/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
@@ -21,6 +22,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = ({
   debts,
   title,
 }) => {
+  const { colors } = useTheme();
   const totalAssets = assets.reduce((sum, asset) => sum + asset.balance, 0);
   const totalDebts = debts.reduce((sum, debt) => sum + debt.balance, 0);
   const netWorth = totalAssets - totalDebts;
@@ -37,20 +39,30 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = ({
 
   return (
     <View style={styles.container}>
-      {title && <Text style={styles.title}>{title}</Text>}
+      {title && (
+        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+      )}
 
       <View style={styles.chartContainer}>
         {/* Net Worth Summary */}
         <View style={styles.summaryContainer}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Total Assets</Text>
+              <Text
+                style={[styles.summaryLabel, { color: colors.textSecondary }]}
+              >
+                Total Assets
+              </Text>
               <Text style={[styles.summaryValue, styles.assetColor]}>
                 ${totalAssets.toLocaleString()}
               </Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Total Debts</Text>
+              <Text
+                style={[styles.summaryLabel, { color: colors.textSecondary }]}
+              >
+                Total Debts
+              </Text>
               <Text style={[styles.summaryValue, styles.debtColor]}>
                 ${totalDebts.toLocaleString()}
               </Text>
@@ -58,7 +70,11 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = ({
           </View>
 
           <View style={styles.netWorthContainer}>
-            <Text style={styles.netWorthLabel}>Net Worth</Text>
+            <Text
+              style={[styles.netWorthLabel, { color: colors.textSecondary }]}
+            >
+              Net Worth
+            </Text>
             <Text
               style={[
                 styles.netWorthValue,
@@ -73,8 +89,10 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = ({
 
         {/* Debt-to-Asset Ratio */}
         <View style={styles.ratioContainer}>
-          <Text style={styles.ratioLabel}>Debt-to-Asset Ratio</Text>
-          <View style={styles.ratioBar}>
+          <Text style={[styles.ratioLabel, { color: colors.textSecondary }]}>
+            Debt-to-Asset Ratio
+          </Text>
+          <View style={[styles.ratioBar, { backgroundColor: colors.border }]}>
             <View
               style={[
                 styles.ratioFill,
@@ -90,8 +108,12 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = ({
               ]}
             />
           </View>
-          <Text style={styles.ratioValue}>{debtToAssetRatio.toFixed(1)}%</Text>
-          <Text style={styles.ratioDescription}>
+          <Text style={[styles.ratioValue, { color: colors.text }]}>
+            {debtToAssetRatio.toFixed(1)}%
+          </Text>
+          <Text
+            style={[styles.ratioDescription, { color: colors.textSecondary }]}
+          >
             {debtToAssetRatio > 50
               ? "High risk"
               : debtToAssetRatio > 30
@@ -103,19 +125,32 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = ({
         {/* Top Assets Breakdown */}
         {topAssets.length > 0 && (
           <View style={styles.breakdownContainer}>
-            <Text style={styles.breakdownTitle}>Top Assets</Text>
+            <Text style={[styles.breakdownTitle, { color: colors.text }]}>
+              Top Assets
+            </Text>
             {topAssets.map((asset, index) => {
               const percentage =
                 totalAssets > 0 ? (asset.balance / totalAssets) * 100 : 0;
               return (
                 <View key={index} style={styles.breakdownItem}>
                   <View style={styles.breakdownHeader}>
-                    <Text style={styles.breakdownName}>{asset.name}</Text>
-                    <Text style={styles.breakdownValue}>
+                    <Text
+                      style={[styles.breakdownName, { color: colors.text }]}
+                    >
+                      {asset.name}
+                    </Text>
+                    <Text
+                      style={[styles.breakdownValue, { color: colors.text }]}
+                    >
                       ${asset.balance.toLocaleString()}
                     </Text>
                   </View>
-                  <View style={styles.breakdownBar}>
+                  <View
+                    style={[
+                      styles.breakdownBar,
+                      { backgroundColor: colors.border },
+                    ]}
+                  >
                     <View
                       style={[
                         styles.breakdownFill,
@@ -126,7 +161,12 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = ({
                       ]}
                     />
                   </View>
-                  <Text style={styles.breakdownPercentage}>
+                  <Text
+                    style={[
+                      styles.breakdownPercentage,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
                     {percentage.toFixed(1)}%
                   </Text>
                 </View>
@@ -138,19 +178,32 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = ({
         {/* Top Debts Breakdown */}
         {topDebts.length > 0 && (
           <View style={styles.breakdownContainer}>
-            <Text style={styles.breakdownTitle}>Top Debts</Text>
+            <Text style={[styles.breakdownTitle, { color: colors.text }]}>
+              Top Debts
+            </Text>
             {topDebts.map((debt, index) => {
               const percentage =
                 totalDebts > 0 ? (debt.balance / totalDebts) * 100 : 0;
               return (
                 <View key={index} style={styles.breakdownItem}>
                   <View style={styles.breakdownHeader}>
-                    <Text style={styles.breakdownName}>{debt.name}</Text>
-                    <Text style={styles.breakdownValue}>
+                    <Text
+                      style={[styles.breakdownName, { color: colors.text }]}
+                    >
+                      {debt.name}
+                    </Text>
+                    <Text
+                      style={[styles.breakdownValue, { color: colors.text }]}
+                    >
                       ${debt.balance.toLocaleString()}
                     </Text>
                   </View>
-                  <View style={styles.breakdownBar}>
+                  <View
+                    style={[
+                      styles.breakdownBar,
+                      { backgroundColor: colors.border },
+                    ]}
+                  >
                     <View
                       style={[
                         styles.breakdownFill,
@@ -161,7 +214,12 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = ({
                       ]}
                     />
                   </View>
-                  <Text style={styles.breakdownPercentage}>
+                  <Text
+                    style={[
+                      styles.breakdownPercentage,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
                     {percentage.toFixed(1)}%
                   </Text>
                 </View>
@@ -176,7 +234,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#fff",
+    backgroundColor: "transparent", // Will be overridden by parent container
     borderRadius: 16,
     padding: 16,
   },

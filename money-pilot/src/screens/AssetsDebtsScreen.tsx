@@ -20,6 +20,7 @@ import {
   removeDebt,
 } from "../services/userData";
 import { useFocusEffect } from "@react-navigation/native";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface AssetsDebtsScreenProps {
   navigation: any;
@@ -34,6 +35,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   const { assets, debts, updateDataOptimistically, refreshInBackground } =
     useZeroLoading();
   const [loading, setLoading] = useState(false);
+  const { colors } = useTheme();
 
   // Background refresh when screen comes into focus
   useFocusEffect(
@@ -119,7 +121,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   }));
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
@@ -135,7 +137,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               fontFamily: fontFamily.bold,
               fontSize: 28,
               fontWeight: "700",
-              color: "#374151",
+              color: colors.text,
             }}
           >
             Assets & Debts
@@ -145,10 +147,10 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         {/* Assets Section */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 16,
             padding: 16,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.06,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
@@ -161,6 +163,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               fontSize: 18,
               fontWeight: "600",
               marginBottom: 12,
+              color: colors.text,
             }}
           >
             Assets
@@ -168,11 +171,15 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
 
           {assets.length === 0 ? (
             <View style={{ alignItems: "center", padding: 20 }}>
-              <Ionicons name="wallet-outline" size={32} color="#d1d5db" />
+              <Ionicons
+                name="wallet-outline"
+                size={32}
+                color={colors.textTertiary}
+              />
               <Text
                 style={{
                   fontFamily: fontFamily.regular,
-                  color: "#6b7280",
+                  color: colors.textSecondary,
                   marginTop: 8,
                   textAlign: "center",
                   fontSize: 16,
@@ -192,7 +199,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                     alignItems: "center",
                     paddingVertical: 10,
                     borderBottomWidth: i < assets.length - 1 ? 1 : 0,
-                    borderBottomColor: "#f3f4f6",
+                    borderBottomColor: colors.border,
                   }}
                 >
                   <Text
@@ -200,6 +207,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                       fontFamily: fontFamily.medium,
                       flex: 1,
                       fontSize: 16,
+                      color: colors.text,
                     }}
                   >
                     {asset.name}
@@ -211,6 +219,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                         fontWeight: "600",
                         marginRight: 8,
                         fontSize: 16,
+                        color: colors.text,
                       }}
                     >
                       ${asset.balance.toLocaleString()}
@@ -230,7 +239,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               <View
                 style={{
                   height: 1,
-                  backgroundColor: "#e5e7eb",
+                  backgroundColor: colors.border,
                   marginVertical: 8,
                 }}
               />
@@ -245,6 +254,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                     fontFamily: fontFamily.semiBold,
                     fontWeight: "600",
                     fontSize: 16,
+                    color: colors.text,
                   }}
                 >
                   Total
@@ -254,6 +264,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                     fontFamily: fontFamily.bold,
                     fontWeight: "700",
                     fontSize: 18,
+                    color: colors.text,
                   }}
                 >
                   ${assetTotal.toLocaleString()}
@@ -266,10 +277,10 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         {/* Debts Section */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 16,
             padding: 16,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.06,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
@@ -283,6 +294,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               fontSize: 18,
               fontWeight: "600",
               marginBottom: 12,
+              color: colors.text,
             }}
           >
             Debts
@@ -290,11 +302,15 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
 
           {debts.length === 0 ? (
             <View style={{ alignItems: "center", padding: 20 }}>
-              <Ionicons name="card-outline" size={32} color="#d1d5db" />
+              <Ionicons
+                name="card-outline"
+                size={32}
+                color={colors.textTertiary}
+              />
               <Text
                 style={{
                   fontFamily: fontFamily.regular,
-                  color: "#6b7280",
+                  color: colors.textSecondary,
                   marginTop: 8,
                   textAlign: "center",
                   fontSize: 16,
@@ -311,7 +327,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   style={{
                     paddingVertical: 10,
                     borderBottomWidth: i < debts.length - 1 ? 1 : 0,
-                    borderBottomColor: "#f3f4f6",
+                    borderBottomColor: colors.border,
                   }}
                 >
                   <View
@@ -326,6 +342,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                         fontFamily: fontFamily.medium,
                         flex: 1,
                         fontSize: 16,
+                        color: colors.text,
                       }}
                     >
                       {debt.name}
@@ -339,6 +356,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                           fontWeight: "600",
                           marginRight: 8,
                           fontSize: 16,
+                          color: colors.text,
                         }}
                       >
                         ${debt.balance.toLocaleString()}
@@ -357,7 +375,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   <Text
                     style={{
                       fontFamily: fontFamily.regular,
-                      color: "#6b7280",
+                      color: colors.textSecondary,
                       fontSize: 14,
                     }}
                   >
@@ -368,7 +386,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               <View
                 style={{
                   height: 1,
-                  backgroundColor: "#e5e7eb",
+                  backgroundColor: colors.border,
                   marginVertical: 8,
                 }}
               />
@@ -383,6 +401,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                     fontFamily: fontFamily.semiBold,
                     fontWeight: "600",
                     fontSize: 16,
+                    color: colors.text,
                   }}
                 >
                   Total Debt
@@ -392,6 +411,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                     fontFamily: fontFamily.bold,
                     fontWeight: "700",
                     fontSize: 18,
+                    color: colors.text,
                   }}
                 >
                   ${totalDebt.toLocaleString()}
@@ -463,10 +483,10 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         {/* Net Worth Chart */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 16,
             padding: 16,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.06,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
@@ -480,6 +500,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               fontSize: 18,
               fontWeight: "600",
               marginBottom: 8,
+              color: colors.text,
             }}
           >
             Financial Overview

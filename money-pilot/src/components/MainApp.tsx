@@ -13,6 +13,7 @@ import { billReminderService } from "../services/billReminders";
 import { UserProvider } from "../context/UserContext";
 import { DataProvider } from "../contexts/DataContext";
 import { SubscriptionProvider } from "../contexts/SubscriptionContext";
+import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { DataPreloader } from "./DataPreloader";
 import { SplashScreen } from "./SplashScreen";
 import revenueCatService from "../services/revenueCat";
@@ -272,72 +273,77 @@ export const MainApp: React.FC = () => {
 
   if (appState === "main") {
     return (
-      <UserProvider>
-        <DataProvider>
-          <SubscriptionProvider>
-            <DataPreloader>
-              <NavigationContainer>
-                <Stack.Navigator
-                  screenOptions={{
-                    headerShown: false,
-                  }}
-                >
-                  <Stack.Screen name="MainTabs" component={MainTabNavigator} />
-                  <Stack.Screen
-                    name="AddTransaction"
-                    component={AddTransactionScreen}
-                  />
-                  <Stack.Screen
-                    name="AddAssetDebt"
-                    component={AddAssetDebtScreen}
-                  />
-                  <Stack.Screen
-                    name="BalanceSheet"
-                    component={BalanceSheetScreen}
-                  />
-                  <Stack.Screen
-                    name="SharedFinance"
-                    component={SharedFinanceScreen}
-                  />
-                  <Stack.Screen
-                    name="EditProfile"
-                    component={EditProfileScreen}
-                  />
-                  <Stack.Screen
-                    name="NotificationSettings"
-                    component={NotificationSettingsScreen}
-                  />
-                  <Stack.Screen
-                    name="PrivacySecurity"
-                    component={PrivacySecurityScreen}
-                  />
-                  <Stack.Screen name="About" component={AboutScreen} />
-                  <Stack.Screen
-                    name="HelpSupport"
-                    component={HelpSupportScreen}
-                  />
-                  <Stack.Screen
-                    name="RecurringTransactions"
-                    component={RecurringTransactionsScreen}
-                  />
-                  <Stack.Screen
-                    name="Subscription"
-                    component={SubscriptionScreen}
-                  />
-                  <Stack.Screen
-                    name="BankTransactions"
-                    component={BankTransactionsScreen}
-                  />
-                  <Stack.Screen
-                    name="AIFinancialAdvisor"
-                    component={AIFinancialAdvisorScreen}
-                  />
-                </Stack.Navigator>
-              </NavigationContainer>
-            </DataPreloader>
-          </SubscriptionProvider>
-        </DataProvider>
-      </UserProvider>
+      <ThemeProvider>
+        <UserProvider>
+          <DataProvider>
+            <SubscriptionProvider>
+              <DataPreloader>
+                <NavigationContainer>
+                  <Stack.Navigator
+                    screenOptions={{
+                      headerShown: false,
+                    }}
+                  >
+                    <Stack.Screen
+                      name="MainTabs"
+                      component={MainTabNavigator}
+                    />
+                    <Stack.Screen
+                      name="AddTransaction"
+                      component={AddTransactionScreen}
+                    />
+                    <Stack.Screen
+                      name="AddAssetDebt"
+                      component={AddAssetDebtScreen}
+                    />
+                    <Stack.Screen
+                      name="BalanceSheet"
+                      component={BalanceSheetScreen}
+                    />
+                    <Stack.Screen
+                      name="SharedFinance"
+                      component={SharedFinanceScreen}
+                    />
+                    <Stack.Screen
+                      name="EditProfile"
+                      component={EditProfileScreen}
+                    />
+                    <Stack.Screen
+                      name="NotificationSettings"
+                      component={NotificationSettingsScreen}
+                    />
+                    <Stack.Screen
+                      name="PrivacySecurity"
+                      component={PrivacySecurityScreen}
+                    />
+                    <Stack.Screen name="About" component={AboutScreen} />
+                    <Stack.Screen
+                      name="HelpSupport"
+                      component={HelpSupportScreen}
+                    />
+                    <Stack.Screen
+                      name="RecurringTransactions"
+                      component={RecurringTransactionsScreen}
+                    />
+                    <Stack.Screen
+                      name="Subscription"
+                      component={SubscriptionScreen}
+                    />
+                    <Stack.Screen
+                      name="BankTransactions"
+                      component={BankTransactionsScreen}
+                    />
+                    <Stack.Screen
+                      name="AIFinancialAdvisor"
+                      component={AIFinancialAdvisorScreen}
+                    />
+                  </Stack.Navigator>
+                </NavigationContainer>
+              </DataPreloader>
+            </SubscriptionProvider>
+          </DataProvider>
+        </UserProvider>
+      </ThemeProvider>
     );
   }
 
@@ -346,6 +352,8 @@ export const MainApp: React.FC = () => {
 };
 
 const MainTabNavigator = () => {
+  const { colors } = useTheme();
+
   const handleLogout = async () => {
     try {
       const { signOutUser } = await import("../services/auth");
@@ -361,7 +369,12 @@ const MainTabNavigator = () => {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarActiveTintColor: "#0ea5e9",
+        tabBarActiveTintColor: colors.tabBarActive,
+        tabBarInactiveTintColor: colors.tabBarInactive,
+        tabBarStyle: {
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.border,
+        },
         tabBarIcon: ({ color, size }) => {
           const map: Record<
             keyof BottomTabParamList,

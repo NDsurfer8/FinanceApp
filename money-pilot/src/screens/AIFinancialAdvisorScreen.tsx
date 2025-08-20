@@ -19,6 +19,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
 import { useSubscription } from "../contexts/SubscriptionContext";
 import { usePaywall } from "../hooks/usePaywall";
+import { useTheme } from "../contexts/ThemeContext";
 import {
   aiFinancialAdvisorService,
   FinancialSnapshot,
@@ -57,6 +58,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
+  const { colors } = useTheme();
 
   // Check if user has access to AI Financial Advisor feature specifically
   const hasAIAccess =
@@ -265,23 +267,23 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   }, [messages]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
           padding: 16,
-          backgroundColor: "#fff",
+          backgroundColor: colors.surface,
           borderBottomWidth: 1,
-          borderBottomColor: "#e5e7eb",
+          borderBottomColor: colors.border,
         }}
       >
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={{ marginRight: 16 }}
         >
-          <Ionicons name="arrow-back" size={24} color="#374151" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -290,18 +292,20 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
               style={{
                 fontSize: 18,
                 fontWeight: "600",
-                color: "#1f2937",
+                color: colors.text,
                 marginLeft: 8,
               }}
             >
               Vectra
             </Text>
           </View>
-          <Text style={{ fontSize: 14, color: "#6b7280" }}>
+          <Text style={{ fontSize: 14, color: colors.textSecondary }}>
             Get personalized financial advice
           </Text>
           {messages.length > 1 && (
-            <Text style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>
+            <Text
+              style={{ fontSize: 12, color: colors.textTertiary, marginTop: 2 }}
+            >
               {messages.length - 1} messages stored
             </Text>
           )}
@@ -328,23 +332,33 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                 paddingHorizontal: 8,
                 paddingVertical: 4,
                 borderRadius: 12,
-                backgroundColor: "#f3f4f6",
+                backgroundColor: colors.surfaceSecondary,
               }}
             >
-              <Ionicons name="trash-outline" size={16} color="#6b7280" />
+              <Ionicons
+                name="trash-outline"
+                size={16}
+                color={colors.textSecondary}
+              />
             </TouchableOpacity>
           )}
           {!hasAIAccess && (
             <TouchableOpacity
               onPress={presentPaywall}
               style={{
-                backgroundColor: "#6366f1",
+                backgroundColor: colors.primary,
                 paddingHorizontal: 12,
                 paddingVertical: 6,
                 borderRadius: 16,
               }}
             >
-              <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>
+              <Text
+                style={{
+                  color: colors.buttonText,
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
                 Upgrade
               </Text>
             </TouchableOpacity>
@@ -357,8 +371,8 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <ActivityIndicator size="large" color="#6366f1" />
-          <Text style={{ marginTop: 16, color: "#6b7280" }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={{ marginTop: 16, color: colors.textSecondary }}>
             Loading chat history...
           </Text>
         </View>

@@ -16,6 +16,7 @@ import { useData } from "../contexts/DataContext";
 import { useSubscription } from "../contexts/SubscriptionContext";
 import { usePaywall } from "../hooks/usePaywall";
 import { PREMIUM_FEATURES } from "../services/revenueCat";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface DashboardScreenProps {
   navigation: any;
@@ -35,6 +36,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     getGoalLimitInfo,
   } = useTransactionLimits();
   const [loading, setLoading] = useState(false);
+  const { colors } = useTheme();
 
   // Check if user has access to AI Financial Advisor feature
   const hasAIAccess =
@@ -264,7 +266,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
@@ -284,7 +286,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               style={{
                 fontSize: 32,
                 fontWeight: "800",
-                color: "#1f2937",
+                color: colors.text,
                 letterSpacing: -0.5,
               }}
             >
@@ -295,7 +297,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Text
                   style={{
                     fontSize: 16,
-                    color: "#6b7280",
+                    color: colors.textSecondary,
                     fontWeight: "500",
                   }}
                 >
@@ -304,7 +306,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Text
                   style={{
                     fontSize: 16,
-                    color: "#6b7280",
+                    color: colors.textSecondary,
                     fontWeight: "500",
                     marginTop: 2,
                   }}
@@ -316,7 +318,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <Text
                 style={{
                   fontSize: 16,
-                  color: "#6b7280",
+                  color: colors.textSecondary,
                   marginTop: 6,
                   fontWeight: "500",
                 }}
@@ -352,11 +354,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         {/* Monthly Overview - Large Card */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 20,
             padding: 28,
             marginBottom: 24,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 16,
             shadowOffset: { width: 0, height: 6 },
@@ -372,20 +374,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           >
             <View
               style={{
-                backgroundColor: "#f3f4f6",
+                backgroundColor: colors.surfaceSecondary,
                 padding: 12,
                 borderRadius: 14,
                 marginRight: 16,
               }}
             >
-              <Ionicons name="calendar" size={22} color="#6366f1" />
+              <Ionicons name="calendar" size={22} color={colors.primary} />
             </View>
             <View>
               <Text
                 style={{
                   fontSize: 22,
                   fontWeight: "700",
-                  color: "#1f2937",
+                  color: colors.text,
                   letterSpacing: -0.3,
                 }}
               >
@@ -394,7 +396,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <Text
                 style={{
                   fontSize: 14,
-                  color: "#6b7280",
+                  color: colors.textSecondary,
                   marginTop: 2,
                   fontWeight: "500",
                 }}
@@ -427,7 +429,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Text
                   style={{
                     fontSize: 14,
-                    color: "#6b7280",
+                    color: colors.textSecondary,
                     marginBottom: 4,
                     fontWeight: "600",
                     textTransform: "uppercase",
@@ -540,11 +542,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         {/* Net Worth Card */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 20,
             padding: 24,
             marginBottom: 20,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
@@ -556,7 +558,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               fontSize: 20,
               fontWeight: "700",
               marginBottom: 20,
-              color: "#1f2937",
+              color: colors.text,
             }}
           >
             Net Worth
@@ -573,7 +575,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             >
               {formatCurrency(netWorth)}
             </Text>
-            <Text style={{ fontSize: 14, color: "#6b7280" }}>
+            <Text style={{ fontSize: 14, color: colors.textSecondary }}>
               {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
             </Text>
           </View>
@@ -582,11 +584,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         {/* Quick Actions */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 20,
             padding: 24,
             marginBottom: 20,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
@@ -598,7 +600,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               fontSize: 20,
               fontWeight: "700",
               marginBottom: 20,
-              color: "#1f2937",
+              color: colors.text,
             }}
           >
             Quick Actions
@@ -611,13 +613,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 style={{
                   flex: 1,
                   minWidth: "48%",
-                  backgroundColor: "#f8fafc",
+                  backgroundColor: colors.surfaceSecondary,
                   padding: 16,
                   borderRadius: 16,
                   alignItems: "center",
                   borderWidth: 1,
-                  borderColor: "#e5e7eb",
-                  shadowColor: "#000",
+                  borderColor: colors.border,
+                  shadowColor: colors.shadow,
                   shadowOffset: { width: 0, height: 1 },
                   shadowOpacity: 0.05,
                   shadowRadius: 2,
@@ -643,7 +645,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   style={{
                     fontSize: 13,
                     fontWeight: "600",
-                    color: "#374151",
+                    color: colors.text,
                     textAlign: "center",
                     lineHeight: 16,
                   }}
@@ -655,7 +657,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     style={{
                       fontSize: 11,
                       fontWeight: "500",
-                      color: "#6b7280",
+                      color: colors.textSecondary,
                       textAlign: "center",
                       marginTop: 2,
                     }}
@@ -672,11 +674,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         {insights.length > 0 && (
           <View
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: colors.surface,
               borderRadius: 20,
               padding: 24,
               marginBottom: 20,
-              shadowColor: "#000",
+              shadowColor: colors.shadow,
               shadowOpacity: 0.08,
               shadowRadius: 12,
               shadowOffset: { width: 0, height: 4 },
@@ -701,7 +703,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Ionicons name="bulb" size={20} color="#d97706" />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#1f2937" }}
+                style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
               >
                 Smart Insights
               </Text>
@@ -754,11 +756,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         {/* 6-Month Trend - Simplified */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 20,
             padding: 24,
             marginBottom: 20,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
@@ -770,7 +772,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               fontSize: 20,
               fontWeight: "700",
               marginBottom: 20,
-              color: "#1f2937",
+              color: colors.text,
             }}
           >
             6-Month Trend
@@ -785,13 +787,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 marginBottom: 12,
                 paddingVertical: 8,
                 borderBottomWidth: index < trendData.length - 1 ? 1 : 0,
-                borderBottomColor: "#f3f4f6",
+                borderBottomColor: colors.border,
               }}
             >
               <Text
                 style={{
                   fontSize: 14,
-                  color: "#6b7280",
+                  color: colors.textSecondary,
                   width: 40,
                   fontWeight: "500",
                 }}

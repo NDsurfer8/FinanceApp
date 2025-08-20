@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useSubscription } from "../contexts/SubscriptionContext";
 import { usePaywall } from "../hooks/usePaywall";
 import { fontFamily } from "../config/fonts";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface PremiumFeatureProps {
   feature: string;
@@ -22,6 +23,7 @@ export const PremiumFeature: React.FC<PremiumFeatureProps> = ({
   const navigation = useNavigation();
   const { isFeatureAvailable, hasPremiumAccess } = useSubscription();
   const { presentPaywall } = usePaywall();
+  const { colors } = useTheme();
 
   const hasAccess = isFeatureAvailable(feature) || hasPremiumAccess();
 
@@ -38,17 +40,36 @@ export const PremiumFeature: React.FC<PremiumFeatureProps> = ({
   }
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: colors.surface, shadowColor: colors.shadow },
+      ]}
+    >
       <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Ionicons name="star" size={24} color="#f59e0b" />
+        <View
+          style={[
+            styles.iconContainer,
+            { backgroundColor: colors.warningLight },
+          ]}
+        >
+          <Ionicons name="star" size={24} color={colors.warning} />
         </View>
-        <Text style={styles.title}>Premium Feature</Text>
-        <Text style={styles.description}>
+        <Text style={[styles.title, { color: colors.text }]}>
+          Premium Feature
+        </Text>
+        <Text style={[styles.description, { color: colors.textSecondary }]}>
           This feature is available exclusively to Premium subscribers.
         </Text>
-        <TouchableOpacity style={styles.upgradeButton} onPress={presentPaywall}>
-          <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
+        <TouchableOpacity
+          style={[styles.upgradeButton, { backgroundColor: colors.primary }]}
+          onPress={presentPaywall}
+        >
+          <Text
+            style={[styles.upgradeButtonText, { color: colors.buttonText }]}
+          >
+            Upgrade to Premium
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

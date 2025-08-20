@@ -14,6 +14,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useData } from "../contexts/DataContext";
+import { useTheme } from "../contexts/ThemeContext";
 import {
   saveTransaction,
   removeTransaction,
@@ -66,6 +67,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const [projectedTransactions, setProjectedTransactions] = useState<any[]>([]);
   const [isFutureMonth, setIsFutureMonth] = useState(false);
   const [showBankSuggestions, setShowBankSuggestions] = useState(false);
+  const { colors } = useTheme();
 
   useEffect(() => {
     if (user) {
@@ -682,7 +684,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
@@ -697,16 +699,28 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           }}
         >
           <View>
-            <Text style={{ fontSize: 28, fontWeight: "800", color: "#1f2937" }}>
+            <Text
+              style={{ fontSize: 28, fontWeight: "800", color: colors.text }}
+            >
               Budget
             </Text>
-            <Text style={{ fontSize: 16, color: "#6b7280", marginTop: 4 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                color: colors.textSecondary,
+                marginTop: 4,
+              }}
+            >
               Plan your finances
             </Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <TouchableOpacity onPress={() => handleMonthChange("prev")}>
-              <Ionicons name="chevron-back" size={24} color="#6b7280" />
+              <Ionicons
+                name="chevron-back"
+                size={24}
+                color={colors.textSecondary}
+              />
             </TouchableOpacity>
             <Text
               style={{
@@ -719,7 +733,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               {formatMonth(selectedMonth)}
             </Text>
             <TouchableOpacity onPress={() => handleMonthChange("next")}>
-              <Ionicons name="chevron-forward" size={24} color="#6b7280" />
+              <Ionicons
+                name="chevron-forward"
+                size={24}
+                color={colors.textSecondary}
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -730,11 +748,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         {insights.length > 0 && (
           <View
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: colors.surface,
               borderRadius: 20,
               padding: 24,
               marginBottom: 20,
-              shadowColor: "#000",
+              shadowColor: colors.shadow,
               shadowOpacity: 0.08,
               shadowRadius: 12,
               shadowOffset: { width: 0, height: 4 },
@@ -759,7 +777,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 <Ionicons name="bulb" size={20} color="#d97706" />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#1f2937" }}
+                style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
               >
                 Smart Insights
               </Text>
@@ -806,7 +824,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         {/* Income Section */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 20,
             padding: 24,
             marginBottom: 20,
@@ -1049,10 +1067,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         {isBankConnected && (
           <View
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: colors.surface,
               borderRadius: 20,
               marginBottom: 20,
-              shadowColor: "#000",
+              shadowColor: colors.shadow,
               shadowOpacity: 0.08,
               shadowRadius: 12,
               shadowOffset: { width: 0, height: 4 },
@@ -1088,7 +1106,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     style={{
                       fontSize: 18,
                       fontWeight: "700",
-                      color: "#1d4ed8",
+                      color: colors.primary,
                       marginBottom: 4,
                     }}
                   >
@@ -1097,7 +1115,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   <Text
                     style={{
                       fontSize: 14,
-                      color: "#6b7280",
+                      color: colors.textSecondary,
                     }}
                   >
                     {recurringSuggestions.length > 0
@@ -1299,11 +1317,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         {/* Expenses Section */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 20,
             padding: 24,
             marginBottom: 20,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
@@ -1541,10 +1559,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         {/* Budget Summary */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 20,
             padding: 24,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },

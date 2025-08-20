@@ -17,6 +17,7 @@ import { PlaidLinkComponent } from "../components/PlaidLinkComponent";
 import { usePaywall } from "../hooks/usePaywall";
 import { useSubscription } from "../contexts/SubscriptionContext";
 import { plaidService } from "../services/plaid";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -34,6 +35,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { subscriptionStatus, refreshSubscriptionStatus } = useSubscription();
   const [refreshingSubscription, setRefreshingSubscription] = useState(false);
   const [isBankConnected, setIsBankConnected] = useState(false);
+  const { isDark, toggleTheme, colors } = useTheme();
   const [connectedBankInfo, setConnectedBankInfo] = useState<{
     name: string;
     accounts: any[];
@@ -189,15 +191,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         {/* Enhanced User Profile */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 20,
             padding: 24,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.06,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
@@ -248,7 +250,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 style={{
                   fontSize: 24,
                   fontWeight: "700",
-                  color: "#1f2937",
+                  color: colors.text,
                   marginBottom: 4,
                   letterSpacing: -0.3,
                 }}
@@ -258,7 +260,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <Text
                 style={{
                   fontSize: 16,
-                  color: "#6b7280",
+                  color: colors.textSecondary,
                   marginBottom: 8,
                   fontWeight: "500",
                 }}
@@ -287,7 +289,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     Active
                   </Text>
                 </View>
-                <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
                   Member since{" "}
                   {currentUser?.metadata?.creationTime
                     ? new Date(
@@ -329,7 +331,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 style={{
                   fontSize: 20,
                   fontWeight: "700",
-                  color: "#1f2937",
+                  color: colors.text,
                   marginBottom: 4,
                 }}
               >
@@ -345,7 +347,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <Text
                 style={{
                   fontSize: 12,
-                  color: "#6b7280",
+                  color: colors.textSecondary,
                   fontWeight: "500",
                   textTransform: "uppercase",
                   letterSpacing: 0.5,
@@ -359,7 +361,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 style={{
                   fontSize: 20,
                   fontWeight: "700",
-                  color: subscriptionStatus?.isPremium ? "#f59e0b" : "#1f2937",
+                  color: subscriptionStatus?.isPremium
+                    ? colors.warning
+                    : colors.text,
                   marginBottom: 4,
                 }}
               >
@@ -368,7 +372,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <Text
                 style={{
                   fontSize: 12,
-                  color: "#6b7280",
+                  color: colors.textSecondary,
                   fontWeight: "500",
                   textTransform: "uppercase",
                   letterSpacing: 0.5,
@@ -382,7 +386,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 style={{
                   fontSize: 20,
                   fontWeight: "700",
-                  color: "#1f2937",
+                  color: colors.text,
                   marginBottom: 4,
                 }}
               >
@@ -391,7 +395,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <Text
                 style={{
                   fontSize: 12,
-                  color: "#6b7280",
+                  color: colors.textSecondary,
                   fontWeight: "500",
                   textTransform: "uppercase",
                   letterSpacing: 0.5,
@@ -406,10 +410,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         {/* Data Sources */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 16,
             padding: 16,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.06,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
@@ -417,7 +421,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             marginBottom: 12,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              marginBottom: 8,
+              color: colors.text,
+            }}
+          >
             Data Sources
           </Text>
           <PlaidLinkComponent
@@ -450,7 +461,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 connectedBankInfo.accounts.length > 0 && (
                   <Text
                     style={{
-                      color: "#6b7280",
+                      color: colors.textSecondary,
                       fontSize: 12,
                       marginTop: 8,
                     }}
@@ -462,7 +473,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 )}
             </View>
           ) : (
-            <Text style={{ marginTop: 8, color: "#6b7280" }}>
+            <Text style={{ marginTop: 8, color: colors.textSecondary }}>
               Or keep it manual—works great from day one.
             </Text>
           )}
@@ -471,10 +482,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         {/* Premium */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 16,
             padding: 16,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.06,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
@@ -482,7 +493,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             marginBottom: 12,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              marginBottom: 8,
+              color: colors.text,
+            }}
+          >
             Premium
           </Text>
 
@@ -507,12 +525,18 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   Premium Active
                 </Text>
               </View>
-              <Text style={{ color: "#6b7280", fontSize: 14 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
                 You have access to all premium features including unlimited
                 transactions, goals, and advanced analytics.
               </Text>
               {subscriptionStatus.expirationDate && (
-                <Text style={{ color: "#6b7280", fontSize: 12, marginTop: 4 }}>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: 12,
+                    marginTop: 4,
+                  }}
+                >
                   Expires:{" "}
                   {subscriptionStatus.expirationDate.toLocaleDateString()}
                 </Text>
@@ -550,7 +574,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </View>
           ) : (
             <View>
-              <Text style={{ color: "#6b7280", marginBottom: 8 }}>
+              <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>
                 Unlock auto-import, AI budgeting, and unlimited accounts.
               </Text>
               <TouchableOpacity
@@ -574,10 +598,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         {/* App Settings */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 16,
             padding: 16,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.06,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
@@ -585,76 +609,173 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             marginBottom: 12,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              marginBottom: 12,
+              color: colors.text,
+            }}
+          >
             App Settings
           </Text>
 
+          {/* Dark Mode Toggle */}
           <TouchableOpacity
-            style={styles.settingItem}
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
+            onPress={toggleTheme}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name={isDark ? "moon" : "sunny"}
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                Dark Mode
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  marginRight: 8,
+                  fontSize: 14,
+                }}
+              >
+                {isDark ? "On" : "Off"}
+              </Text>
+              <View
+                style={{
+                  width: 44,
+                  height: 24,
+                  borderRadius: 12,
+                  backgroundColor: isDark ? colors.primary : colors.border,
+                  padding: 2,
+                }}
+              >
+                <View
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    backgroundColor: "#fff",
+                    transform: [{ translateX: isDark ? 20 : 0 }],
+                  }}
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
             onPress={() => navigation?.navigate("NotificationSettings")}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons
                 name="notifications"
                 size={20}
-                color="#6b7280"
+                color={colors.textSecondary}
                 style={{ marginRight: 12 }}
               />
-              <Text style={styles.settingText}>Notifications</Text>
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                Notifications
+              </Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.settingItem}
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
             onPress={() => navigation?.navigate("PrivacySecurity")}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons
                 name="shield-checkmark"
                 size={20}
-                color="#6b7280"
+                color={colors.textSecondary}
                 style={{ marginRight: 12 }}
               />
-              <Text style={styles.settingText}>Privacy & Security</Text>
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                Privacy & Security
+              </Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.settingItem}
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
             onPress={() => navigation?.navigate("HelpSupport")}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons
                 name="help-circle"
                 size={20}
-                color="#6b7280"
+                color={colors.textSecondary}
                 style={{ marginRight: 12 }}
               />
-              <Text style={styles.settingText}>Help & Support</Text>
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                Help & Support
+              </Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.settingItem}
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
             onPress={() => navigation?.navigate("About")}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons
                 name="information-circle"
                 size={20}
-                color="#6b7280"
+                color={colors.textSecondary}
                 style={{ marginRight: 12 }}
               />
-              <Text style={styles.settingText}>About</Text>
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                About
+              </Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.settingItem}
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
             onPress={async () => {
               try {
                 await AsyncStorage.removeItem("hasSeenIntro");
@@ -672,22 +793,28 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <Ionicons
                 name="refresh"
                 size={20}
-                color="#6b7280"
+                color={colors.textSecondary}
                 style={{ marginRight: 12 }}
               />
-              <Text style={styles.settingText}>Reset Onboarding</Text>
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                Reset Onboarding
+              </Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
         </View>
 
         {/* Logout */}
         <TouchableOpacity
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 16,
             padding: 16,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.06,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
@@ -730,7 +857,7 @@ const styles = {
   },
   settingText: {
     fontSize: 16,
-    color: "#374151",
+    color: "#374151", // This will be overridden with theme colors
   },
   section: {
     marginBottom: 12,
