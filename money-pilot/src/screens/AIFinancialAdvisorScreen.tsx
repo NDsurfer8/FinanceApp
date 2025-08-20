@@ -499,9 +499,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{
-          backgroundColor: "#fff",
+          backgroundColor: colors.surface,
           borderTopWidth: 1,
-          borderTopColor: "#e5e7eb",
+          borderTopColor: colors.border,
           padding: 16,
         }}
       >
@@ -510,9 +510,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
             style={{
               flex: 1,
               borderWidth: 1,
-              borderColor: inputText.trim() ? "#6366f1" : "#d1d5db",
+              borderColor: inputText.trim() ? colors.primary : colors.border,
               borderRadius: 20,
-              backgroundColor: "#fff",
+              backgroundColor: colors.surfaceSecondary,
               marginRight: 8,
               minHeight: 40,
               maxHeight: 100,
@@ -523,13 +523,13 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                 paddingHorizontal: 16,
                 paddingVertical: 10,
                 fontSize: 16,
-                color: "#374151",
+                color: colors.text,
                 textAlignVertical: "center",
                 minHeight: 40,
                 maxHeight: 100,
               }}
               placeholder="Ask me about your finances..."
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.textSecondary}
               value={inputText}
               onChangeText={setInputText}
               multiline
@@ -545,13 +545,15 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
             disabled={!inputText.trim() || isLoading}
             style={{
               backgroundColor:
-                inputText.trim() && !isLoading ? "#6366f1" : "#f3f4f6",
+                inputText.trim() && !isLoading
+                  ? colors.primary
+                  : colors.surfaceSecondary,
               width: 40,
               height: 40,
               borderRadius: 20,
               justifyContent: "center",
               alignItems: "center",
-              shadowColor: "#000",
+              shadowColor: colors.shadow,
               shadowOpacity: 0.1,
               shadowRadius: 2,
               shadowOffset: { width: 0, height: 1 },
@@ -561,7 +563,11 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
             <Ionicons
               name="arrow-forward"
               size={18}
-              color={inputText.trim() && !isLoading ? "#fff" : "#9ca3af"}
+              color={
+                inputText.trim() && !isLoading
+                  ? colors.buttonText
+                  : colors.textSecondary
+              }
             />
           </TouchableOpacity>
         </View>
@@ -569,7 +575,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           <Text
             style={{
               fontSize: 12,
-              color: "#9ca3af",
+              color: colors.textSecondary,
               textAlign: "right",
               marginTop: 4,
               marginRight: 8,
