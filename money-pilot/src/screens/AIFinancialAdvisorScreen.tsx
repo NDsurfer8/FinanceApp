@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -482,7 +483,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
             }}
           >
             <Ionicons
-              name="send"
+              name="arrow-forward"
               size={18}
               color={inputText.trim() && !isLoading ? "#fff" : "#9ca3af"}
             />
