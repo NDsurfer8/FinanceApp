@@ -131,29 +131,35 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     if (formData.type === "income") {
       if (!canAddIncomeSource()) {
         const limitInfo = getIncomeSourceLimitInfo();
-        Alert.alert(
-          "Income Source Limit Reached",
-          `You've reached your limit of ${limitInfo.limit} income source${
-            limitInfo.limit !== 1 ? "s" : ""
-          } on the free plan.\n\nUpgrade to Premium for unlimited income sources!`,
-          [
-            { text: "Cancel", style: "cancel" },
-            { text: "Upgrade to Premium", onPress: presentPaywall },
-          ]
-        );
+        // Only show upgrade alert if not unlimited (i.e., not subscribed)
+        if (!limitInfo.isUnlimited) {
+          Alert.alert(
+            "Income Source Limit Reached",
+            `You've reached your limit of ${limitInfo.limit} income source${
+              limitInfo.limit !== 1 ? "s" : ""
+            } on the free plan.\n\nUpgrade to Premium for unlimited income sources!`,
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Upgrade to Premium", onPress: presentPaywall },
+            ]
+          );
+        }
         return;
       }
     } else {
       if (!canAddTransaction()) {
         const limitInfo = getTransactionLimitInfo();
-        Alert.alert(
-          "Transaction Limit Reached",
-          `You've reached your limit of ${limitInfo.limit} transactions on the free plan.\n\nUpgrade to Premium for unlimited transactions!`,
-          [
-            { text: "Cancel", style: "cancel" },
-            { text: "Upgrade to Premium", onPress: presentPaywall },
-          ]
-        );
+        // Only show upgrade alert if not unlimited (i.e., not subscribed)
+        if (!limitInfo.isUnlimited) {
+          Alert.alert(
+            "Transaction Limit Reached",
+            `You've reached your limit of ${limitInfo.limit} transactions on the free plan.\n\nUpgrade to Premium for unlimited transactions!`,
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Upgrade to Premium", onPress: presentPaywall },
+            ]
+          );
+        }
         return;
       }
     }
@@ -270,80 +276,86 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             </Text>
           </View>
 
-          {/* Limit Indicator */}
-          {formData.type === "income" ? (
-            <View
-              style={{
-                backgroundColor: "#fef3c7",
-                borderRadius: 12,
-                padding: 12,
-                marginBottom: 16,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Ionicons name="information-circle" size={16} color="#d97706" />
-                <Text style={{ marginLeft: 8, color: "#d97706", fontSize: 14 }}>
-                  {getIncomeSourceLimitInfo().isUnlimited
-                    ? "Unlimited income sources"
-                    : `${getIncomeSourceLimitInfo().current}/${
+          {/* Limit Indicator - Only show if not unlimited */}
+          {formData.type === "income"
+            ? !getIncomeSourceLimitInfo().isUnlimited && (
+                <View
+                  style={{
+                    backgroundColor: "#fef3c7",
+                    borderRadius: 12,
+                    padding: 12,
+                    marginBottom: 16,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Ionicons
+                      name="information-circle"
+                      size={16}
+                      color="#d97706"
+                    />
+                    <Text
+                      style={{ marginLeft: 8, color: "#d97706", fontSize: 14 }}
+                    >
+                      {`${getIncomeSourceLimitInfo().current}/${
                         getIncomeSourceLimitInfo().limit
                       } income sources used`}
-                </Text>
-              </View>
-              {!getIncomeSourceLimitInfo().isUnlimited && (
-                <TouchableOpacity onPress={presentPaywall}>
-                  <Text
-                    style={{
-                      color: "#d97706",
-                      fontSize: 12,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Upgrade
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          ) : (
-            <View
-              style={{
-                backgroundColor: "#fef3c7",
-                borderRadius: 12,
-                padding: 12,
-                marginBottom: 16,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Ionicons name="information-circle" size={16} color="#d97706" />
-                <Text style={{ marginLeft: 8, color: "#d97706", fontSize: 14 }}>
-                  {getTransactionLimitInfo().isUnlimited
-                    ? "Unlimited transactions"
-                    : `${getTransactionLimitInfo().current}/${
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={presentPaywall}>
+                    <Text
+                      style={{
+                        color: "#d97706",
+                        fontSize: 12,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Upgrade
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )
+            : !getTransactionLimitInfo().isUnlimited && (
+                <View
+                  style={{
+                    backgroundColor: "#fef3c7",
+                    borderRadius: 12,
+                    padding: 12,
+                    marginBottom: 16,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Ionicons
+                      name="information-circle"
+                      size={16}
+                      color="#d97706"
+                    />
+                    <Text
+                      style={{ marginLeft: 8, color: "#d97706", fontSize: 14 }}
+                    >
+                      {`${getTransactionLimitInfo().current}/${
                         getTransactionLimitInfo().limit
                       } transactions used`}
-                </Text>
-              </View>
-              {!getTransactionLimitInfo().isUnlimited && (
-                <TouchableOpacity onPress={presentPaywall}>
-                  <Text
-                    style={{
-                      color: "#d97706",
-                      fontSize: 12,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Upgrade
-                  </Text>
-                </TouchableOpacity>
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={presentPaywall}>
+                    <Text
+                      style={{
+                        color: "#d97706",
+                        fontSize: 12,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Upgrade
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               )}
-            </View>
-          )}
 
           {/* Import CSV Button */}
           <TouchableOpacity

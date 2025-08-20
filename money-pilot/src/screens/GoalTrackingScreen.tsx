@@ -190,16 +190,19 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     // Check goal limits
     if (!canAddGoal()) {
       const limitInfo = getGoalLimitInfo();
-      Alert.alert(
-        "Goal Limit Reached",
-        `You've reached your limit of ${limitInfo.limit} goal${
-          limitInfo.limit !== 1 ? "s" : ""
-        } on the free plan.\n\nUpgrade to Premium for unlimited goals!`,
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Upgrade to Premium", onPress: presentPaywall },
-        ]
-      );
+      // Only show upgrade alert if not unlimited (i.e., not subscribed)
+      if (!limitInfo.isUnlimited) {
+        Alert.alert(
+          "Goal Limit Reached",
+          `You've reached your limit of ${limitInfo.limit} goal${
+            limitInfo.limit !== 1 ? "s" : ""
+          } on the free plan.\n\nUpgrade to Premium for unlimited goals!`,
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Upgrade to Premium", onPress: presentPaywall },
+          ]
+        );
+      }
       return;
     }
 
@@ -429,29 +432,27 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Limit Indicator */}
-        <View
-          style={{
-            backgroundColor: "#fef3c7",
-            borderRadius: 12,
-            padding: 12,
-            marginBottom: 16,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons name="information-circle" size={16} color="#d97706" />
-            <Text style={{ marginLeft: 8, color: "#d97706", fontSize: 14 }}>
-              {getGoalLimitInfo().isUnlimited
-                ? "Unlimited goals"
-                : `${getGoalLimitInfo().current}/${
-                    getGoalLimitInfo().limit
-                  } goals used`}
-            </Text>
-          </View>
-          {!getGoalLimitInfo().isUnlimited && (
+        {/* Limit Indicator - Only show if not unlimited */}
+        {!getGoalLimitInfo().isUnlimited && (
+          <View
+            style={{
+              backgroundColor: "#fef3c7",
+              borderRadius: 12,
+              padding: 12,
+              marginBottom: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="information-circle" size={16} color="#d97706" />
+              <Text style={{ marginLeft: 8, color: "#d97706", fontSize: 14 }}>
+                {`${getGoalLimitInfo().current}/${
+                  getGoalLimitInfo().limit
+                } goals used`}
+              </Text>
+            </View>
             <TouchableOpacity onPress={presentPaywall}>
               <Text
                 style={{
@@ -463,8 +464,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 Upgrade
               </Text>
             </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        )}
 
         {/* Goals Summary */}
         {goals.length > 0 && (
