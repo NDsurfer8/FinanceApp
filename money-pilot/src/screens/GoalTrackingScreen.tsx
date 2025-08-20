@@ -1126,14 +1126,14 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           <View
             style={{
               flex: 1,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              backgroundColor: colors.modalOverlay,
               justifyContent: "center",
               alignItems: "center",
             }}
           >
             <View
               style={{
-                backgroundColor: "#fff",
+                backgroundColor: colors.modal,
                 borderRadius: 20,
                 width: "90%",
                 maxWidth: 400,
@@ -1146,7 +1146,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     fontSize: 20,
                     fontWeight: "700",
                     marginBottom: 20,
-                    color: "#1f2937",
+                    color: colors.text,
                   }}
                 >
                   Add New Goal
@@ -1160,30 +1160,43 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 {/* Goal Name */}
                 <View style={{ marginBottom: 16 }}>
                   <Text
-                    style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
                   >
                     Goal Name *
                   </Text>
                   <TextInput
                     style={{
                       borderWidth: 1,
-                      borderColor: "#d1d5db",
+                      borderColor: colors.border,
                       borderRadius: 8,
                       padding: 12,
                       fontSize: 16,
+                      backgroundColor: colors.surfaceSecondary,
+                      color: colors.text,
                     }}
                     value={newGoal.name}
                     onChangeText={(text) =>
                       setNewGoal({ ...newGoal, name: text })
                     }
                     placeholder="e.g., Emergency Fund"
+                    placeholderTextColor={colors.textSecondary}
                   />
                 </View>
 
                 {/* Category */}
                 <View style={{ marginBottom: 16 }}>
                   <Text
-                    style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
                   >
                     Category
                   </Text>
@@ -1202,7 +1215,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                           backgroundColor:
                             newGoal.category === category.key
                               ? category.color
-                              : "#f3f4f6",
+                              : colors.surfaceSecondary,
                           marginRight: 8,
                           minWidth: 80,
                           alignItems: "center",
@@ -1216,7 +1229,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                             color:
                               newGoal.category === category.key
                                 ? "#fff"
-                                : "#374151",
+                                : colors.text,
                             fontSize: 14,
                             fontWeight: "500",
                           }}
@@ -1231,17 +1244,24 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 {/* Target Amount */}
                 <View style={{ marginBottom: 16 }}>
                   <Text
-                    style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
                   >
                     Target Amount *
                   </Text>
                   <TextInput
                     style={{
                       borderWidth: 1,
-                      borderColor: "#d1d5db",
+                      borderColor: colors.border,
                       borderRadius: 8,
                       padding: 12,
                       fontSize: 16,
+                      backgroundColor: colors.surfaceSecondary,
+                      color: colors.text,
                     }}
                     value={newGoal.targetAmount}
                     onChangeText={(text) =>
@@ -1249,23 +1269,31 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     }
                     keyboardType="numeric"
                     placeholder="5000"
+                    placeholderTextColor={colors.textSecondary}
                   />
                 </View>
 
                 {/* Current Amount */}
                 <View style={{ marginBottom: 16 }}>
                   <Text
-                    style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
                   >
                     Current Amount
                   </Text>
                   <TextInput
                     style={{
                       borderWidth: 1,
-                      borderColor: "#d1d5db",
+                      borderColor: colors.border,
                       borderRadius: 8,
                       padding: 12,
                       fontSize: 16,
+                      backgroundColor: colors.surfaceSecondary,
+                      color: colors.text,
                     }}
                     value={newGoal.currentAmount}
                     onChangeText={(text) =>
@@ -1273,23 +1301,31 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     }
                     keyboardType="numeric"
                     placeholder="0"
+                    placeholderTextColor={colors.textSecondary}
                   />
                 </View>
 
                 {/* Monthly Contribution */}
                 <View style={{ marginBottom: 16 }}>
                   <Text
-                    style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
                   >
                     Monthly Contribution *
                   </Text>
                   <TextInput
                     style={{
                       borderWidth: 1,
-                      borderColor: "#d1d5db",
+                      borderColor: colors.border,
                       borderRadius: 8,
                       padding: 12,
                       fontSize: 16,
+                      backgroundColor: colors.surfaceSecondary,
+                      color: colors.text,
                     }}
                     value={newGoal.monthlyContribution}
                     onChangeText={(text) =>
@@ -1297,13 +1333,19 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     }
                     keyboardType="numeric"
                     placeholder="500"
+                    placeholderTextColor={colors.textSecondary}
                   />
                 </View>
 
                 {/* Priority */}
                 <View style={{ marginBottom: 16 }}>
                   <Text
-                    style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
                   >
                     Priority
                   </Text>
@@ -1318,7 +1360,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                           backgroundColor:
                             newGoal.priority === priority
                               ? priorityColors[priority]
-                              : "#f3f4f6",
+                              : colors.surfaceSecondary,
                           alignItems: "center",
                         }}
                         onPress={() =>
@@ -1333,7 +1375,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                             color:
                               newGoal.priority === priority
                                 ? "#fff"
-                                : "#374151",
+                                : colors.text,
                             fontWeight: "600",
                             textTransform: "capitalize",
                           }}
@@ -1348,23 +1390,31 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 {/* Target Date */}
                 <View style={{ marginBottom: 24 }}>
                   <Text
-                    style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
                   >
                     Target Date
                   </Text>
                   <TextInput
                     style={{
                       borderWidth: 1,
-                      borderColor: "#d1d5db",
+                      borderColor: colors.border,
                       borderRadius: 8,
                       padding: 12,
                       fontSize: 16,
+                      backgroundColor: colors.surfaceSecondary,
+                      color: colors.text,
                     }}
                     value={newGoal.targetDate}
                     onChangeText={(text) =>
                       setNewGoal({ ...newGoal, targetDate: text })
                     }
                     placeholder="YYYY-MM-DD"
+                    placeholderTextColor={colors.textSecondary}
                   />
                 </View>
 
@@ -1377,14 +1427,14 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       flex: 1,
                       padding: 12,
                       borderRadius: 8,
-                      backgroundColor: "#f3f4f6",
+                      backgroundColor: colors.surfaceSecondary,
                     }}
                     onPress={() => setShowAddModal(false)}
                   >
                     <Text
                       style={{
                         textAlign: "center",
-                        color: "#6b7280",
+                        color: colors.textSecondary,
                         fontWeight: "600",
                       }}
                     >
@@ -1396,14 +1446,14 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       flex: 1,
                       padding: 12,
                       borderRadius: 8,
-                      backgroundColor: "#6366f1",
+                      backgroundColor: colors.primary,
                     }}
                     onPress={handleAddGoal}
                   >
                     <Text
                       style={{
                         textAlign: "center",
-                        color: "#fff",
+                        color: colors.buttonText,
                         fontWeight: "600",
                       }}
                     >
