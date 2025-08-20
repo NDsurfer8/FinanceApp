@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../contexts/ThemeContext";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { saveTransaction } from "../services/userData";
 import { billReminderService } from "../services/billReminders";
@@ -28,6 +29,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   route,
 }) => {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const { transactions, updateDataOptimistically } = useZeroLoading();
   const [loading, setLoading] = useState(false);
   const { type: initialType, selectedMonth } = route.params || {};
@@ -264,7 +266,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -285,9 +287,11 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               onPress={() => navigation.goBack()}
               style={{ marginRight: 16 }}
             >
-              <Ionicons name="arrow-back" size={24} color="#374151" />
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={{ fontSize: 20, fontWeight: "600", color: "#374151" }}>
+            <Text
+              style={{ fontSize: 20, fontWeight: "600", color: colors.text }}
+            >
               {formData.type === "income" ? "Add Income" : "Add Expense"}
             </Text>
           </View>
@@ -297,7 +301,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             ? !getIncomeSourceLimitInfo().isUnlimited && (
                 <View
                   style={{
-                    backgroundColor: "#fef3c7",
+                    backgroundColor: colors.warningLight,
                     borderRadius: 12,
                     padding: 12,
                     marginBottom: 16,
@@ -310,10 +314,14 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     <Ionicons
                       name="information-circle"
                       size={16}
-                      color="#d97706"
+                      color={colors.warning}
                     />
                     <Text
-                      style={{ marginLeft: 8, color: "#d97706", fontSize: 14 }}
+                      style={{
+                        marginLeft: 8,
+                        color: colors.warning,
+                        fontSize: 14,
+                      }}
                     >
                       {`${getIncomeSourceLimitInfo().current}/${
                         getIncomeSourceLimitInfo().limit
@@ -323,7 +331,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   <TouchableOpacity onPress={presentPaywall}>
                     <Text
                       style={{
-                        color: "#d97706",
+                        color: colors.warning,
                         fontSize: 12,
                         fontWeight: "600",
                       }}
@@ -336,7 +344,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             : !getTransactionLimitInfo().isUnlimited && (
                 <View
                   style={{
-                    backgroundColor: "#fef3c7",
+                    backgroundColor: colors.warningLight,
                     borderRadius: 12,
                     padding: 12,
                     marginBottom: 16,
@@ -349,10 +357,14 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     <Ionicons
                       name="information-circle"
                       size={16}
-                      color="#d97706"
+                      color={colors.warning}
                     />
                     <Text
-                      style={{ marginLeft: 8, color: "#d97706", fontSize: 14 }}
+                      style={{
+                        marginLeft: 8,
+                        color: colors.warning,
+                        fontSize: 14,
+                      }}
                     >
                       {`${getTransactionLimitInfo().current}/${
                         getTransactionLimitInfo().limit
@@ -362,7 +374,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   <TouchableOpacity onPress={presentPaywall}>
                     <Text
                       style={{
-                        color: "#d97706",
+                        color: colors.warning,
                         fontSize: 12,
                         fontWeight: "600",
                       }}
@@ -376,7 +388,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           {/* Import CSV Button */}
           <TouchableOpacity
             style={{
-              backgroundColor: "#f3f4f6",
+              backgroundColor: colors.surfaceSecondary,
               borderRadius: 12,
               padding: 16,
               marginBottom: 16,
@@ -389,10 +401,16 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             <Ionicons
               name="document-text-outline"
               size={20}
-              color="#6b7280"
+              color={colors.textSecondary}
               style={{ marginRight: 8 }}
             />
-            <Text style={{ color: "#6b7280", fontSize: 16, fontWeight: "500" }}>
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: 16,
+                fontWeight: "500",
+              }}
+            >
               Import from CSV
             </Text>
           </TouchableOpacity>
@@ -400,10 +418,10 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           {/* Form */}
           <View
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: colors.surface,
               borderRadius: 16,
               padding: 16,
-              shadowColor: "#000",
+              shadowColor: colors.shadow,
               shadowOpacity: 0.06,
               shadowRadius: 8,
               shadowOffset: { width: 0, height: 4 },
@@ -413,7 +431,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             {/* Transaction Type */}
             <View style={{ marginBottom: 20 }}>
               <Text
-                style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  marginBottom: 12,
+                  color: colors.text,
+                }}
               >
                 Transaction Type
               </Text>
@@ -424,7 +447,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     padding: 12,
                     borderRadius: 8,
                     backgroundColor:
-                      formData.type === "expense" ? "#ef4444" : "#f3f4f6",
+                      formData.type === "expense"
+                        ? colors.error
+                        : colors.surfaceSecondary,
                     alignItems: "center",
                   }}
                   onPress={() =>
@@ -433,7 +458,10 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 >
                   <Text
                     style={{
-                      color: formData.type === "expense" ? "#fff" : "#6b7280",
+                      color:
+                        formData.type === "expense"
+                          ? colors.buttonText
+                          : colors.textSecondary,
                       fontWeight: "600",
                     }}
                   >
@@ -446,7 +474,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     padding: 12,
                     borderRadius: 8,
                     backgroundColor:
-                      formData.type === "income" ? "#10b981" : "#f3f4f6",
+                      formData.type === "income"
+                        ? colors.success
+                        : colors.surfaceSecondary,
                     alignItems: "center",
                   }}
                   onPress={() =>
@@ -455,7 +485,10 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 >
                   <Text
                     style={{
-                      color: formData.type === "income" ? "#fff" : "#6b7280",
+                      color:
+                        formData.type === "income"
+                          ? colors.buttonText
+                          : colors.textSecondary,
                       fontWeight: "600",
                     }}
                   >
@@ -468,19 +501,27 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             {/* Amount */}
             <View style={{ marginBottom: 16 }}>
               <Text
-                style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  marginBottom: 8,
+                  color: colors.text,
+                }}
               >
                 Amount
               </Text>
               <TextInput
                 style={{
                   borderWidth: 1,
-                  borderColor: "#d1d5db",
+                  borderColor: colors.border,
                   borderRadius: 8,
                   padding: 12,
                   fontSize: 16,
+                  backgroundColor: colors.surfaceSecondary,
+                  color: colors.text,
                 }}
                 placeholder="0.00"
+                placeholderTextColor={colors.textSecondary}
                 value={formData.amount}
                 onChangeText={(text) =>
                   setFormData({ ...formData, amount: text })
@@ -494,7 +535,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             {/* Category */}
             <View style={{ marginBottom: 16 }}>
               <Text
-                style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  marginBottom: 8,
+                  color: colors.text,
+                }}
               >
                 Category
               </Text>
@@ -511,7 +557,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                       paddingVertical: 8,
                       borderRadius: 20,
                       backgroundColor:
-                        formData.category === category ? "#6366f1" : "#f3f4f6",
+                        formData.category === category
+                          ? colors.primary
+                          : colors.surfaceSecondary,
                       marginRight: 8,
                       minWidth: 80,
                       alignItems: "center",
@@ -521,7 +569,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     <Text
                       style={{
                         color:
-                          formData.category === category ? "#fff" : "#374151",
+                          formData.category === category
+                            ? colors.buttonText
+                            : colors.text,
                         fontSize: 14,
                         fontWeight: "500",
                       }}
@@ -536,21 +586,29 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             {/* Description */}
             <View style={{ marginBottom: 16 }}>
               <Text
-                style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  marginBottom: 8,
+                  color: colors.text,
+                }}
               >
                 Description
               </Text>
               <TextInput
                 style={{
                   borderWidth: 1,
-                  borderColor: "#d1d5db",
+                  borderColor: colors.border,
                   borderRadius: 8,
                   padding: 12,
                   fontSize: 16,
                   minHeight: 80,
                   textAlignVertical: "top",
+                  backgroundColor: colors.surfaceSecondary,
+                  color: colors.text,
                 }}
                 placeholder="Enter description..."
+                placeholderTextColor={colors.textSecondary}
                 value={formData.description}
                 onChangeText={(text) =>
                   setFormData({ ...formData, description: text })
@@ -564,7 +622,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             {/* Date */}
             <View style={{ marginBottom: 16 }}>
               <Text
-                style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  marginBottom: 8,
+                  color: colors.text,
+                }}
               >
                 {formData.type === "expense"
                   ? "Due Date"
@@ -575,10 +638,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               <TextInput
                 style={{
                   borderWidth: 1,
-                  borderColor: "#d1d5db",
+                  borderColor: colors.border,
                   borderRadius: 8,
                   padding: 12,
                   fontSize: 16,
+                  backgroundColor: colors.surfaceSecondary,
+                  color: colors.text,
                 }}
                 placeholder={
                   formData.type === "expense"
@@ -587,6 +652,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     ? "Payment Date (YYYY-MM-DD)"
                     : "Date (YYYY-MM-DD)"
                 }
+                placeholderTextColor={colors.textSecondary}
                 value={formData.date}
                 onChangeText={(text) =>
                   setFormData({ ...formData, date: text })
@@ -606,9 +672,13 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   paddingVertical: 12,
                   paddingHorizontal: 16,
                   borderRadius: 8,
-                  backgroundColor: formData.isRecurring ? "#6366f1" : "#f8fafc",
+                  backgroundColor: formData.isRecurring
+                    ? colors.primary
+                    : colors.background,
                   borderWidth: 1,
-                  borderColor: formData.isRecurring ? "#6366f1" : "#e5e7eb",
+                  borderColor: formData.isRecurring
+                    ? colors.primary
+                    : colors.border,
                 }}
                 onPress={() =>
                   setFormData({
@@ -620,14 +690,20 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 <Ionicons
                   name="repeat"
                   size={18}
-                  color={formData.isRecurring ? "#fff" : "#6b7280"}
+                  color={
+                    formData.isRecurring
+                      ? colors.buttonText
+                      : colors.textSecondary
+                  }
                   style={{ marginRight: 8 }}
                 />
                 <Text
                   style={{
                     fontSize: 16,
                     fontWeight: "600",
-                    color: formData.isRecurring ? "#fff" : "#374151",
+                    color: formData.isRecurring
+                      ? colors.buttonText
+                      : colors.text,
                   }}
                 >
                   {formData.isRecurring
@@ -642,7 +718,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     marginTop: 16,
                     paddingTop: 16,
                     borderTopWidth: 1,
-                    borderTopColor: "#e5e7eb",
+                    borderTopColor: colors.border,
                   }}
                 >
                   {/* Frequency Dropdown */}
@@ -652,7 +728,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                         fontSize: 12,
                         fontWeight: "500",
                         marginBottom: 4,
-                        color: "#6b7280",
+                        color: colors.textSecondary,
                       }}
                     >
                       Frequency
@@ -669,8 +745,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                             borderRadius: 4,
                             backgroundColor:
                               formData.frequency === freq
-                                ? "#6366f1"
-                                : "#f3f4f6",
+                                ? colors.primary
+                                : colors.surfaceSecondary,
                           }}
                           onPress={() =>
                             setFormData({ ...formData, frequency: freq as any })
@@ -680,8 +756,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                             style={{
                               color:
                                 formData.frequency === freq
-                                  ? "#fff"
-                                  : "#374151",
+                                  ? colors.buttonText
+                                  : colors.text,
                               fontSize: 12,
                               fontWeight: "500",
                             }}
@@ -700,7 +776,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                         fontSize: 12,
                         fontWeight: "500",
                         marginBottom: 4,
-                        color: "#6b7280",
+                        color: colors.textSecondary,
                       }}
                     >
                       End Date (Optional)
@@ -708,12 +784,15 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     <TextInput
                       style={{
                         borderWidth: 1,
-                        borderColor: "#d1d5db",
+                        borderColor: colors.border,
                         borderRadius: 6,
                         padding: 8,
                         fontSize: 14,
+                        backgroundColor: colors.surfaceSecondary,
+                        color: colors.text,
                       }}
                       placeholder="YYYY-MM-DD (leave empty for no end date)"
+                      placeholderTextColor={colors.textSecondary}
                       value={formData.endDate}
                       onChangeText={(text) =>
                         setFormData({ ...formData, endDate: text })
@@ -730,7 +809,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           {/* Save Button */}
           <TouchableOpacity
             style={{
-              backgroundColor: "#6366f1",
+              backgroundColor: colors.primary,
               borderRadius: 12,
               padding: 16,
               alignItems: "center",
@@ -738,7 +817,13 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             }}
             onPress={handleSave}
           >
-            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
+            <Text
+              style={{
+                color: colors.buttonText,
+                fontSize: 16,
+                fontWeight: "600",
+              }}
+            >
               {formData.isRecurring ? "Create Recurring" : "Save"}{" "}
               {formData.type === "income" ? "Income" : "Expense"}
             </Text>

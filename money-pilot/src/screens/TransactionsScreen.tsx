@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../contexts/ThemeContext";
 import {
   getUserTransactions,
   removeTransaction,
@@ -25,6 +26,7 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [recurringTransactions, setRecurringTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -193,7 +195,7 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
         {/* Header */}
         <View
@@ -204,13 +206,13 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
             marginBottom: 16,
           }}
         >
-          <Text style={{ fontSize: 24, fontWeight: "700", color: "#374151" }}>
+          <Text style={{ fontSize: 24, fontWeight: "700", color: colors.text }}>
             Transactions
           </Text>
           <TouchableOpacity
             onPress={() => navigation.navigate("AddTransaction")}
             style={{
-              backgroundColor: "#6366f1",
+              backgroundColor: colors.primary,
               paddingHorizontal: 16,
               paddingVertical: 8,
               borderRadius: 8,
@@ -221,35 +223,50 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
             <Ionicons
               name="add"
               size={20}
-              color="#fff"
+              color={colors.buttonText}
               style={{ marginRight: 4 }}
             />
-            <Text style={{ color: "#fff", fontWeight: "600" }}>Add</Text>
+            <Text style={{ color: colors.buttonText, fontWeight: "600" }}>
+              Add
+            </Text>
           </TouchableOpacity>
         </View>
 
         {/* Quick Stats */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 16,
             padding: 16,
             marginBottom: 16,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.06,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
             elevation: 2,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              marginBottom: 12,
+              color: colors.text,
+            }}
+          >
             This Month
           </Text>
           <View style={{ flexDirection: "row", gap: 16 }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: "#6b7280", fontSize: 14 }}>Income</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+                Income
+              </Text>
               <Text
-                style={{ color: "#10b981", fontSize: 18, fontWeight: "600" }}
+                style={{
+                  color: colors.success,
+                  fontSize: 18,
+                  fontWeight: "600",
+                }}
               >
                 $
                 {transactions
@@ -259,9 +276,11 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
               </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: "#6b7280", fontSize: 14 }}>Expenses</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+                Expenses
+              </Text>
               <Text
-                style={{ color: "#ef4444", fontSize: 18, fontWeight: "600" }}
+                style={{ color: colors.error, fontSize: 18, fontWeight: "600" }}
               >
                 $
                 {transactions
@@ -276,36 +295,59 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
         {/* Transactions List */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 16,
             padding: 16,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.06,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
             elevation: 2,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              marginBottom: 12,
+              color: colors.text,
+            }}
+          >
             Recent Transactions
           </Text>
 
           {loading ? (
             <Text
-              style={{ color: "#6b7280", textAlign: "center", padding: 20 }}
+              style={{
+                color: colors.textSecondary,
+                textAlign: "center",
+                padding: 20,
+              }}
             >
               Loading transactions...
             </Text>
           ) : transactions.length === 0 ? (
             <View style={{ alignItems: "center", padding: 20 }}>
-              <Ionicons name="receipt-outline" size={48} color="#d1d5db" />
+              <Ionicons
+                name="receipt-outline"
+                size={48}
+                color={colors.textTertiary}
+              />
               <Text
-                style={{ color: "#6b7280", marginTop: 8, textAlign: "center" }}
+                style={{
+                  color: colors.textSecondary,
+                  marginTop: 8,
+                  textAlign: "center",
+                }}
               >
                 No transactions yet
               </Text>
               <Text
-                style={{ color: "#9ca3af", fontSize: 14, textAlign: "center" }}
+                style={{
+                  color: colors.textTertiary,
+                  fontSize: 14,
+                  textAlign: "center",
+                }}
               >
                 Add your first transaction to get started
               </Text>
@@ -322,24 +364,32 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
                     alignItems: "center",
                     paddingVertical: 12,
                     borderBottomWidth: 1,
-                    borderBottomColor: "#f3f4f6",
+                    borderBottomColor: colors.border,
                   }}
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 16, fontWeight: "500" }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "500",
+                        color: colors.text,
+                      }}
+                    >
                       {transaction.description}
                     </Text>
                     <View
                       style={{ flexDirection: "row", alignItems: "center" }}
                     >
-                      <Text style={{ color: "#6b7280", fontSize: 14 }}>
+                      <Text
+                        style={{ color: colors.textSecondary, fontSize: 14 }}
+                      >
                         {transaction.category} • {formatDate(transaction.date)}
                       </Text>
                       {isRecurringTransaction(transaction) && (
                         <Ionicons
                           name="repeat"
                           size={12}
-                          color="#6366f1"
+                          color={colors.primary}
                           style={{ marginLeft: 8 }}
                         />
                       )}
@@ -351,7 +401,9 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
                         fontWeight: "600",
                         fontSize: 16,
                         color:
-                          transaction.type === "income" ? "#10b981" : "#ef4444",
+                          transaction.type === "income"
+                            ? colors.success
+                            : colors.error,
                       }}
                     >
                       {transaction.type === "income" ? "+" : "-"}$
@@ -364,7 +416,7 @@ export const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
                       <Ionicons
                         name="trash-outline"
                         size={16}
-                        color="#ef4444"
+                        color={colors.error}
                       />
                     </TouchableOpacity>
                   </View>

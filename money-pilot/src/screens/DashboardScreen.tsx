@@ -694,13 +694,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             >
               <View
                 style={{
-                  backgroundColor: "#fef3c7",
+                  backgroundColor: colors.warningLight,
                   padding: 8,
                   borderRadius: 10,
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="bulb" size={20} color="#d97706" />
+                <Ionicons name="bulb" size={20} color={colors.warning} />
               </View>
               <Text
                 style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
@@ -726,10 +726,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     size={16}
                     color={
                       insight.type === "success"
-                        ? "#16a34a"
+                        ? colors.success
                         : insight.type === "warning"
-                        ? "#dc2626"
-                        : "#2563eb"
+                        ? colors.error
+                        : colors.primary
                     }
                     style={{ marginRight: 8 }}
                   />
@@ -737,14 +737,18 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     style={{
                       fontSize: 14,
                       fontWeight: "600",
-                      color: "#374151",
+                      color: colors.text,
                     }}
                   >
                     {insight.title}
                   </Text>
                 </View>
                 <Text
-                  style={{ fontSize: 13, color: "#6b7280", marginLeft: 24 }}
+                  style={{
+                    fontSize: 13,
+                    color: colors.textSecondary,
+                    marginLeft: 24,
+                  }}
                 >
                   {insight.message}
                 </Text>

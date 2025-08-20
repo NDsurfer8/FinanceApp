@@ -150,8 +150,8 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [theme, setThemeState] = useState<ThemeMode>("light");
-  const [isDark, setIsDark] = useState(false);
+  const [theme, setThemeState] = useState<ThemeMode>("dark");
+  const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
     loadTheme();
@@ -163,6 +163,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       if (savedTheme) {
         setThemeState(savedTheme as ThemeMode);
         setIsDark(savedTheme === "dark");
+      } else {
+        // Default to dark mode if no theme is saved
+        setThemeState("dark");
+        setIsDark(true);
+        await AsyncStorage.setItem("theme", "dark");
       }
     } catch (error) {
       console.error("Failed to load theme:", error);
