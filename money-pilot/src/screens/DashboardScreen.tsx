@@ -178,10 +178,22 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       color: "#6366f1",
     },
     {
-      title: "Bank Data",
-      icon: "card-outline",
-      onPress: () => navigation.navigate("BankTransactions"),
-      color: "#8b5cf6",
+      title: "AI Advisor",
+      subtitle: "Premium",
+      icon: "chatbubble-ellipses",
+      onPress: hasAIAccess
+        ? () => navigation.navigate("AIFinancialAdvisor")
+        : () => {
+            Alert.alert(
+              "Premium Feature",
+              "Vectra AI Financial Advisor is a premium feature. Upgrade to get personalized financial advice and insights.",
+              [
+                { text: "Cancel", style: "cancel" },
+                { text: "Upgrade", onPress: presentPaywall },
+              ]
+            );
+          },
+      color: hasAIAccess ? "#06b6d4" : "#9ca3af",
     },
     {
       title: "Asset",
@@ -205,22 +217,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       color: "#f59e0b",
     },
     {
-      title: "AI Advisor",
-      subtitle: "Premium",
-      icon: "chatbubble-ellipses",
-      onPress: hasAIAccess
-        ? () => navigation.navigate("AIFinancialAdvisor")
-        : () => {
-            Alert.alert(
-              "Premium Feature",
-              "Vectra AI Financial Advisor is a premium feature. Upgrade to get personalized financial advice and insights.",
-              [
-                { text: "Cancel", style: "cancel" },
-                { text: "Upgrade", onPress: presentPaywall },
-              ]
-            );
-          },
-      color: hasAIAccess ? "#06b6d4" : "#9ca3af",
+      title: "Bank Data",
+      icon: "card-outline",
+      onPress: () => navigation.navigate("BankTransactions"),
+      color: "#8b5cf6",
     },
   ];
 
