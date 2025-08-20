@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
+import { useTheme } from "../contexts/ThemeContext";
 import {
   getUserSharedGroups,
   getGroupAggregatedData,
@@ -43,6 +44,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { goals: userGoals, updateDataOptimistically } = useZeroLoading();
+  const { colors } = useTheme();
   const [groups, setGroups] = useState<SharedGroup[]>([]);
   const [invitations, setInvitations] = useState<SharedInvitation[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<SharedGroup | null>(null);
@@ -466,19 +468,21 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#f9fafb" }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <ActivityIndicator size="large" color="#6366f1" />
-          <Text style={{ marginTop: 16, color: "#6b7280" }}>Loading...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={{ marginTop: 16, color: colors.textSecondary }}>
+            Loading...
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f9fafb" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={{ flex: 1, padding: 20 }}>
         {/* Header */}
         <View style={{ marginBottom: 24 }}>
@@ -493,16 +497,18 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               onPress={() => navigation.goBack()}
               style={{ marginRight: 16 }}
             >
-              <Ionicons name="arrow-back" size={24} color="#374151" />
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={{ fontSize: 28, fontWeight: "800", color: "#1f2937" }}>
+            <Text
+              style={{ fontSize: 28, fontWeight: "800", color: colors.text }}
+            >
               Shared Finance
             </Text>
           </View>
           <Text
             style={{
               fontSize: 16,
-              color: "#6b7280",
+              color: colors.textSecondary,
               marginTop: 4,
               marginLeft: 40,
             }}
@@ -516,15 +522,21 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
           <TouchableOpacity
             style={{
               flex: 1,
-              backgroundColor: "#6366f1",
+              backgroundColor: colors.primary,
               padding: 16,
               borderRadius: 12,
               alignItems: "center",
             }}
             onPress={() => setShowCreateModal(true)}
           >
-            <Ionicons name="add" size={20} color="#fff" />
-            <Text style={{ color: "#fff", fontWeight: "600", marginTop: 4 }}>
+            <Ionicons name="add" size={20} color={colors.buttonText} />
+            <Text
+              style={{
+                color: colors.buttonText,
+                fontWeight: "600",
+                marginTop: 4,
+              }}
+            >
               Create Group
             </Text>
           </TouchableOpacity>
@@ -532,15 +544,21 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
           <TouchableOpacity
             style={{
               flex: 1,
-              backgroundColor: "#10b981",
+              backgroundColor: colors.success,
               padding: 16,
               borderRadius: 12,
               alignItems: "center",
             }}
             onPress={() => setShowInvitationsModal(true)}
           >
-            <Ionicons name="mail" size={20} color="#fff" />
-            <Text style={{ color: "#fff", fontWeight: "600", marginTop: 4 }}>
+            <Ionicons name="mail" size={20} color={colors.buttonText} />
+            <Text
+              style={{
+                color: colors.buttonText,
+                fontWeight: "600",
+                marginTop: 4,
+              }}
+            >
               Invitations ({invitations.length})
             </Text>
           </TouchableOpacity>
@@ -550,23 +568,23 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
         {groups.length === 0 ? (
           <View
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: colors.surface,
               borderRadius: 20,
               padding: 40,
               alignItems: "center",
-              shadowColor: "#000",
+              shadowColor: colors.shadow,
               shadowOpacity: 0.08,
               shadowRadius: 12,
               shadowOffset: { width: 0, height: 4 },
               elevation: 4,
             }}
           >
-            <Ionicons name="people" size={48} color="#d1d5db" />
+            <Ionicons name="people" size={48} color={colors.textTertiary} />
             <Text
               style={{
                 fontSize: 18,
                 fontWeight: "600",
-                color: "#374151",
+                color: colors.text,
                 marginTop: 16,
               }}
             >
@@ -575,7 +593,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
             <Text
               style={{
                 fontSize: 14,
-                color: "#6b7280",
+                color: colors.textSecondary,
                 textAlign: "center",
                 marginTop: 8,
                 marginBottom: 20,
@@ -585,14 +603,14 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
             </Text>
             <TouchableOpacity
               style={{
-                backgroundColor: "#6366f1",
+                backgroundColor: colors.primary,
                 paddingHorizontal: 24,
                 paddingVertical: 12,
                 borderRadius: 8,
               }}
               onPress={() => setShowCreateModal(true)}
             >
-              <Text style={{ color: "#fff", fontWeight: "600" }}>
+              <Text style={{ color: colors.buttonText, fontWeight: "600" }}>
                 Create Group
               </Text>
             </TouchableOpacity>
@@ -602,11 +620,11 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
             <TouchableOpacity
               key={group.id}
               style={{
-                backgroundColor: "#fff",
+                backgroundColor: colors.surface,
                 borderRadius: 20,
                 padding: 24,
                 marginBottom: 16,
-                shadowColor: "#000",
+                shadowColor: colors.shadow,
                 shadowOpacity: 0.08,
                 shadowRadius: 12,
                 shadowOffset: { width: 0, height: 4 },
@@ -640,13 +658,17 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     style={{
                       fontSize: 18,
                       fontWeight: "700",
-                      color: "#374151",
+                      color: colors.text,
                     }}
                   >
                     {group.name}
                   </Text>
                   <Text
-                    style={{ fontSize: 14, color: "#6b7280", marginTop: 2 }}
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
                   >
                     {group.type.charAt(0).toUpperCase() + group.type.slice(1)} •{" "}
                     {group.members.length} member
@@ -659,13 +681,21 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     setShowInviteModal(true);
                   }}
                 >
-                  <Ionicons name="person-add" size={20} color="#6366f1" />
+                  <Ionicons
+                    name="person-add"
+                    size={20}
+                    color={colors.primary}
+                  />
                 </TouchableOpacity>
               </View>
 
               {group.description && (
                 <Text
-                  style={{ fontSize: 14, color: "#6b7280", marginBottom: 16 }}
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                    marginBottom: 16,
+                  }}
                 >
                   {group.description}
                 </Text>
@@ -679,40 +709,42 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                 }}
               >
                 <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
                     Members
                   </Text>
                   <Text
                     style={{
                       fontSize: 16,
                       fontWeight: "700",
-                      color: "#374151",
+                      color: colors.text,
                     }}
                   >
                     {group.members.length}
                   </Text>
                 </View>
                 <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
                     Created
                   </Text>
                   <Text
                     style={{
                       fontSize: 16,
                       fontWeight: "700",
-                      color: "#374151",
+                      color: colors.text,
                     }}
                   >
                     {new Date(group.createdAt).toLocaleDateString()}
                   </Text>
                 </View>
                 <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontSize: 12, color: "#6b7280" }}>Type</Text>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                    Type
+                  </Text>
                   <Text
                     style={{
                       fontSize: 16,
                       fontWeight: "700",
-                      color: "#374151",
+                      color: colors.text,
                     }}
                   >
                     {group.type.charAt(0).toUpperCase() + group.type.slice(1)}
@@ -727,11 +759,11 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
         {selectedGroup && groupData && (
           <View
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: colors.surface,
               borderRadius: 20,
               padding: 24,
               marginTop: 16,
-              shadowColor: "#000",
+              shadowColor: colors.shadow,
               shadowOpacity: 0.08,
               shadowRadius: 12,
               shadowOffset: { width: 0, height: 4 },
@@ -747,7 +779,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               }}
             >
               <Text
-                style={{ fontSize: 20, fontWeight: "700", color: "#1f2937" }}
+                style={{ fontSize: 20, fontWeight: "700", color: colors.text }}
               >
                 {selectedGroup.name} Overview
               </Text>
@@ -756,10 +788,14 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                   onPress={() => loadGroupData(selectedGroup)}
                   style={{ marginRight: 12 }}
                 >
-                  <Ionicons name="refresh" size={20} color="#6366f1" />
+                  <Ionicons name="refresh" size={20} color={colors.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setSelectedGroup(null)}>
-                  <Ionicons name="close" size={24} color="#6b7280" />
+                  <Ionicons
+                    name="close"
+                    size={24}
+                    color={colors.textSecondary}
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -769,13 +805,14 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               {/* Net Worth Card - Hero Metric */}
               <View
                 style={{
-                  backgroundColor: "#fff",
+                  backgroundColor: colors.surface,
                   borderRadius: 16,
                   padding: 20,
                   marginBottom: 16,
                   borderWidth: 1,
-                  borderColor: "#e5e7eb",
-                  shadowColor: groupData.netWorth >= 0 ? "#16a34a" : "#dc2626",
+                  borderColor: colors.border,
+                  shadowColor:
+                    groupData.netWorth >= 0 ? colors.success : colors.error,
                   shadowOpacity: 0.08,
                   shadowRadius: 12,
                   shadowOffset: { width: 0, height: 4 },
@@ -792,7 +829,9 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                   <View
                     style={{
                       backgroundColor:
-                        groupData.netWorth >= 0 ? "#dcfce7" : "#fee2e2",
+                        groupData.netWorth >= 0
+                          ? colors.successLight
+                          : colors.errorLight,
                       width: 44,
                       height: 44,
                       borderRadius: 22,
@@ -808,14 +847,16 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                           : "trending-down"
                       }
                       size={22}
-                      color={groupData.netWorth >= 0 ? "#16a34a" : "#dc2626"}
+                      color={
+                        groupData.netWorth >= 0 ? colors.success : colors.error
+                      }
                     />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
                         fontSize: 14,
-                        color: "#6b7280",
+                        color: colors.textSecondary,
                         fontWeight: "600",
                         marginBottom: 4,
                       }}
@@ -826,7 +867,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       style={{
                         fontSize: 24,
                         fontWeight: "700",
-                        color: "#374151",
+                        color: colors.text,
                       }}
                     >
                       {formatCurrency(groupData.netWorth)}
@@ -839,14 +880,14 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     justifyContent: "space-between",
                     paddingTop: 16,
                     borderTopWidth: 1,
-                    borderTopColor: "#f3f4f6",
+                    borderTopColor: colors.border,
                   }}
                 >
                   <View style={{ alignItems: "center", flex: 1 }}>
                     <Text
                       style={{
                         fontSize: 12,
-                        color: "#6b7280",
+                        color: colors.textSecondary,
                         fontWeight: "500",
                         marginBottom: 6,
                       }}
@@ -857,7 +898,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       style={{
                         fontSize: 16,
                         fontWeight: "700",
-                        color: "#16a34a",
+                        color: colors.success,
                       }}
                     >
                       {formatCurrency(groupData.totalAssets)}
@@ -867,7 +908,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     <Text
                       style={{
                         fontSize: 12,
-                        color: "#6b7280",
+                        color: colors.textSecondary,
                         fontWeight: "500",
                         marginBottom: 6,
                       }}
@@ -878,7 +919,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       style={{
                         fontSize: 16,
                         fontWeight: "700",
-                        color: "#dc2626",
+                        color: colors.error,
                       }}
                     >
                       {formatCurrency(groupData.totalDebts)}
@@ -890,13 +931,13 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               {/* Monthly Cash Flow Card */}
               <View
                 style={{
-                  backgroundColor: "#fff",
+                  backgroundColor: colors.surface,
                   borderRadius: 16,
                   padding: 20,
                   marginBottom: 16,
                   borderWidth: 1,
-                  borderColor: "#e5e7eb",
-                  shadowColor: "#6366f1",
+                  borderColor: colors.border,
+                  shadowColor: colors.primary,
                   shadowOpacity: 0.08,
                   shadowRadius: 12,
                   shadowOffset: { width: 0, height: 4 },
@@ -912,7 +953,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                 >
                   <View
                     style={{
-                      backgroundColor: "#eef2ff",
+                      backgroundColor: colors.primaryLight,
                       width: 44,
                       height: 44,
                       borderRadius: 22,
@@ -921,13 +962,13 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       marginRight: 16,
                     }}
                   >
-                    <Ionicons name="cash" size={22} color="#6366f1" />
+                    <Ionicons name="cash" size={22} color={colors.primary} />
                   </View>
                   <Text
                     style={{
                       fontSize: 14,
                       fontWeight: "600",
-                      color: "#6b7280",
+                      color: colors.textSecondary,
                     }}
                   >
                     Monthly Cash Flow
@@ -944,7 +985,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     <Text
                       style={{
                         fontSize: 12,
-                        color: "#6b7280",
+                        color: colors.textSecondary,
                         fontWeight: "500",
                         marginBottom: 6,
                       }}
@@ -955,7 +996,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       style={{
                         fontSize: 18,
                         fontWeight: "700",
-                        color: "#16a34a",
+                        color: colors.success,
                       }}
                     >
                       {formatCurrency(groupData.totalIncome)}
@@ -965,7 +1006,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     <Text
                       style={{
                         fontSize: 12,
-                        color: "#6b7280",
+                        color: colors.textSecondary,
                         fontWeight: "500",
                         marginBottom: 6,
                       }}
@@ -976,7 +1017,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       style={{
                         fontSize: 18,
                         fontWeight: "700",
-                        color: "#dc2626",
+                        color: colors.error,
                       }}
                     >
                       {formatCurrency(groupData.totalExpenses)}
@@ -1227,7 +1268,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
         >
           <View
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: colors.surface,
               borderRadius: 20,
               width: "90%",
               maxWidth: 400,
@@ -1239,7 +1280,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                 fontSize: 20,
                 fontWeight: "700",
                 marginBottom: 20,
-                color: "#1f2937",
+                color: colors.text,
               }}
             >
               Create Shared Group
@@ -1249,7 +1290,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               style={{
                 fontSize: 14,
                 fontWeight: "500",
-                color: "#374151",
+                color: colors.text,
                 marginBottom: 8,
               }}
             >
@@ -1258,22 +1299,25 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
             <TextInput
               style={{
                 borderWidth: 1,
-                borderColor: "#d1d5db",
+                borderColor: colors.border,
                 borderRadius: 8,
                 padding: 12,
                 marginBottom: 16,
                 fontSize: 16,
+                backgroundColor: colors.surfaceSecondary,
+                color: colors.text,
               }}
               value={newGroup.name}
               onChangeText={(text) => setNewGroup({ ...newGroup, name: text })}
               placeholder="Enter group name"
+              placeholderTextColor={colors.textSecondary}
             />
 
             <Text
               style={{
                 fontSize: 14,
                 fontWeight: "500",
-                color: "#374151",
+                color: colors.text,
                 marginBottom: 8,
               }}
             >
@@ -1282,17 +1326,20 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
             <TextInput
               style={{
                 borderWidth: 1,
-                borderColor: "#d1d5db",
+                borderColor: colors.border,
                 borderRadius: 8,
                 padding: 12,
                 marginBottom: 16,
                 fontSize: 16,
+                backgroundColor: colors.surfaceSecondary,
+                color: colors.text,
               }}
               value={newGroup.description}
               onChangeText={(text) =>
                 setNewGroup({ ...newGroup, description: text })
               }
               placeholder="Enter description (optional)"
+              placeholderTextColor={colors.textSecondary}
               multiline
             />
 
@@ -1300,7 +1347,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               style={{
                 fontSize: 14,
                 fontWeight: "500",
-                color: "#374151",
+                color: colors.text,
                 marginBottom: 8,
               }}
             >
@@ -1318,11 +1365,11 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     borderColor:
                       newGroup.type === type
                         ? getGroupTypeColor(type)
-                        : "#d1d5db",
+                        : colors.border,
                     backgroundColor:
                       newGroup.type === type
                         ? `${getGroupTypeColor(type)}10`
-                        : "#fff",
+                        : colors.surface,
                     alignItems: "center",
                   }}
                   onPress={() =>
@@ -1336,7 +1383,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       color:
                         newGroup.type === type
                           ? getGroupTypeColor(type)
-                          : "#6b7280",
+                          : colors.textSecondary,
                     }}
                   >
                     {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -1351,14 +1398,14 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                   flex: 1,
                   padding: 12,
                   borderRadius: 8,
-                  backgroundColor: "#f3f4f6",
+                  backgroundColor: colors.surfaceSecondary,
                 }}
                 onPress={() => setShowCreateModal(false)}
               >
                 <Text
                   style={{
                     textAlign: "center",
-                    color: "#6b7280",
+                    color: colors.textSecondary,
                     fontWeight: "600",
                   }}
                 >
@@ -1370,14 +1417,14 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                   flex: 1,
                   padding: 12,
                   borderRadius: 8,
-                  backgroundColor: "#6366f1",
+                  backgroundColor: colors.primary,
                 }}
                 onPress={handleCreateGroup}
               >
                 <Text
                   style={{
                     textAlign: "center",
-                    color: "#fff",
+                    color: colors.buttonText,
                     fontWeight: "600",
                   }}
                 >
@@ -1406,7 +1453,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
         >
           <View
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: colors.surface,
               borderRadius: 20,
               width: "90%",
               maxWidth: 400,
@@ -1418,7 +1465,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                 fontSize: 20,
                 fontWeight: "700",
                 marginBottom: 20,
-                color: "#1f2937",
+                color: colors.text,
               }}
             >
               Invite Member
@@ -1428,7 +1475,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               style={{
                 fontSize: 14,
                 fontWeight: "500",
-                color: "#374151",
+                color: colors.text,
                 marginBottom: 8,
               }}
             >
@@ -1437,15 +1484,18 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
             <TextInput
               style={{
                 borderWidth: 1,
-                borderColor: "#d1d5db",
+                borderColor: colors.border,
                 borderRadius: 8,
                 padding: 12,
                 marginBottom: 16,
                 fontSize: 16,
+                backgroundColor: colors.surfaceSecondary,
+                color: colors.text,
               }}
               value={inviteEmail}
               onChangeText={setInviteEmail}
               placeholder="Enter email address"
+              placeholderTextColor={colors.textSecondary}
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -1454,7 +1504,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               style={{
                 fontSize: 14,
                 fontWeight: "500",
-                color: "#374151",
+                color: colors.text,
                 marginBottom: 8,
               }}
             >
@@ -1477,9 +1527,11 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     borderRadius: 8,
                     borderWidth: 1,
                     borderColor:
-                      inviteRole === role.key ? "#6366f1" : "#d1d5db",
+                      inviteRole === role.key ? colors.primary : colors.border,
                     backgroundColor:
-                      inviteRole === role.key ? "#6366f110" : "#fff",
+                      inviteRole === role.key
+                        ? colors.primaryLight
+                        : colors.surface,
                   }}
                   onPress={() => setInviteRole(role.key as any)}
                 >
@@ -1487,7 +1539,10 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     style={{
                       fontSize: 12,
                       fontWeight: "600",
-                      color: inviteRole === role.key ? "#6366f1" : "#6b7280",
+                      color:
+                        inviteRole === role.key
+                          ? colors.primary
+                          : colors.textSecondary,
                     }}
                   >
                     {role.label}

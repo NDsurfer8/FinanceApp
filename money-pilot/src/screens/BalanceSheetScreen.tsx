@@ -11,6 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../contexts/ThemeContext";
 import {
   getUserAssets,
   getUserDebts,
@@ -25,6 +26,7 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [assets, setAssets] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -146,18 +148,18 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <Text style={{ fontSize: 16, color: "#6b7280" }}>Loading...</Text>
+          <Text style={{ fontSize: 16, color: colors.textSecondary }}>Loading...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
@@ -176,15 +178,15 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               onPress={() => navigation.goBack()}
               style={{ marginRight: 16 }}
             >
-              <Ionicons name="arrow-back" size={24} color="#374151" />
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
             <View>
               <Text
-                style={{ fontSize: 28, fontWeight: "800", color: "#1f2937" }}
+                style={{ fontSize: 28, fontWeight: "800", color: colors.text }}
               >
                 Balance Sheet
               </Text>
-              <Text style={{ fontSize: 16, color: "#6b7280", marginTop: 4 }}>
+              <Text style={{ fontSize: 16, color: colors.textSecondary, marginTop: 4 }}>
                 Your financial position
               </Text>
             </View>
@@ -194,23 +196,23 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               navigation.navigate("AddAssetDebt", { type: "asset" })
             }
             style={{
-              backgroundColor: "#6366f1",
+              backgroundColor: colors.primary,
               padding: 12,
               borderRadius: 12,
             }}
           >
-            <Ionicons name="add" size={20} color="#fff" />
+            <Ionicons name="add" size={20} color={colors.buttonText} />
           </TouchableOpacity>
         </View>
 
         {/* Net Worth Summary */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 20,
             padding: 24,
             marginBottom: 20,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
@@ -222,7 +224,7 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               fontSize: 20,
               fontWeight: "700",
               marginBottom: 20,
-              color: "#1f2937",
+              color: colors.text,
             }}
           >
             Net Worth Summary
@@ -239,7 +241,7 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
             >
               {formatCurrency(netWorth)}
             </Text>
-            <Text style={{ fontSize: 14, color: "#6b7280" }}>
+            <Text style={{ fontSize: 14, color: colors.textSecondary }}>
               {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
             </Text>
           </View>
@@ -248,21 +250,21 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
             style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
             <View style={{ alignItems: "center", flex: 1 }}>
-              <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 4 }}>
+              <Text style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 4 }}>
                 Total Assets
               </Text>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#16a34a" }}
+                style={{ fontSize: 18, fontWeight: "700", color: colors.success }}
               >
                 {formatCurrency(totalAssets)}
               </Text>
             </View>
             <View style={{ alignItems: "center", flex: 1 }}>
-              <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 4 }}>
+              <Text style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 4 }}>
                 Total Liabilities
               </Text>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#dc2626" }}
+                style={{ fontSize: 18, fontWeight: "700", color: colors.error }}
               >
                 {formatCurrency(totalLiabilities)}
               </Text>
@@ -273,11 +275,11 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
         {/* Assets Section */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 20,
             padding: 24,
             marginBottom: 20,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
@@ -295,16 +297,16 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  backgroundColor: "#dcfce7",
+                  backgroundColor: colors.successLight,
                   padding: 8,
                   borderRadius: 10,
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="trending-up" size={20} color="#16a34a" />
+                <Ionicons name="trending-up" size={20} color={colors.success} />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#16a34a" }}
+                style={{ fontSize: 18, fontWeight: "700", color: colors.success }}
               >
                 Assets
               </Text>
@@ -314,13 +316,13 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                 navigation.navigate("AddAssetDebt", { type: "asset" })
               }
             >
-              <Ionicons name="add-circle" size={24} color="#16a34a" />
+              <Ionicons name="add-circle" size={24} color={colors.success} />
             </TouchableOpacity>
           </View>
 
           {assets.length === 0 ? (
             <Text
-              style={{ color: "#6b7280", textAlign: "center", padding: 20 }}
+              style={{ color: colors.textSecondary, textAlign: "center", padding: 20 }}
             >
               No assets added yet
             </Text>
@@ -335,27 +337,27 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                   marginBottom: 12,
                   paddingVertical: 8,
                   borderBottomWidth: 1,
-                  borderBottomColor: "#f3f4f6",
+                  borderBottomColor: colors.border,
                 }}
               >
                 <View style={{ flex: 1 }}>
                   <Text
                     style={{
                       fontSize: 16,
-                      color: "#374151",
+                      color: colors.text,
                       fontWeight: "500",
                     }}
                   >
                     {asset.name}
                   </Text>
                   <Text
-                    style={{ fontSize: 14, color: "#6b7280", marginTop: 2 }}
+                    style={{ fontSize: 14, color: colors.textSecondary, marginTop: 2 }}
                   >
                     {asset.type}
                   </Text>
                 </View>
                 <Text
-                  style={{ fontSize: 16, fontWeight: "700", color: "#16a34a" }}
+                  style={{ fontSize: 16, fontWeight: "700", color: colors.success }}
                 >
                   {formatCurrency(asset.balance)}
                 </Text>
@@ -367,11 +369,11 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
         {/* Liabilities Section */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 20,
             padding: 24,
             marginBottom: 20,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
@@ -389,16 +391,16 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  backgroundColor: "#fee2e2",
+                  backgroundColor: colors.errorLight,
                   padding: 8,
                   borderRadius: 10,
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="trending-down" size={20} color="#dc2626" />
+                <Ionicons name="trending-down" size={20} color={colors.error} />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#dc2626" }}
+                style={{ fontSize: 18, fontWeight: "700", color: colors.error }}
               >
                 Liabilities
               </Text>
@@ -408,13 +410,13 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                 navigation.navigate("AddAssetDebt", { type: "debt" })
               }
             >
-              <Ionicons name="add-circle" size={24} color="#dc2626" />
+              <Ionicons name="add-circle" size={24} color={colors.error} />
             </TouchableOpacity>
           </View>
 
           {debts.length === 0 ? (
             <Text
-              style={{ color: "#6b7280", textAlign: "center", padding: 20 }}
+              style={{ color: colors.textSecondary, textAlign: "center", padding: 20 }}
             >
               No debts added yet
             </Text>
@@ -429,27 +431,27 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                   marginBottom: 12,
                   paddingVertical: 8,
                   borderBottomWidth: 1,
-                  borderBottomColor: "#f3f4f6",
+                  borderBottomColor: colors.border,
                 }}
               >
                 <View style={{ flex: 1 }}>
                   <Text
                     style={{
                       fontSize: 16,
-                      color: "#374151",
+                      color: colors.text,
                       fontWeight: "500",
                     }}
                   >
                     {debt.name}
                   </Text>
                   <Text
-                    style={{ fontSize: 14, color: "#6b7280", marginTop: 2 }}
+                    style={{ fontSize: 14, color: colors.textSecondary, marginTop: 2 }}
                   >
                     {formatPercentage(debt.rate)} APR • ${debt.payment}/month
                   </Text>
                 </View>
                 <Text
-                  style={{ fontSize: 16, fontWeight: "700", color: "#dc2626" }}
+                  style={{ fontSize: 16, fontWeight: "700", color: colors.error }}
                 >
                   {formatCurrency(debt.balance)}
                 </Text>
@@ -461,10 +463,10 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
         {/* Financial Ratios Section */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 20,
             padding: 24,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
@@ -480,15 +482,15 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
           >
             <View
               style={{
-                backgroundColor: "#dbeafe",
+                backgroundColor: colors.infoLight,
                 padding: 8,
                 borderRadius: 10,
                 marginRight: 12,
               }}
             >
-              <Ionicons name="analytics" size={20} color="#2563eb" />
+              <Ionicons name="analytics" size={20} color={colors.info} />
             </View>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: "#2563eb" }}>
+            <Text style={{ fontSize: 18, fontWeight: "700", color: colors.info }}>
               Financial Ratios
             </Text>
           </View>
@@ -503,7 +505,7 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               }}
             >
               <Text
-                style={{ fontSize: 14, color: "#6b7280", fontWeight: "500" }}
+                style={{ fontSize: 14, color: colors.textSecondary, fontWeight: "500" }}
               >
                 Liquidity Ratio
               </Text>
@@ -517,10 +519,10 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                 {getRatioStatus(liquidityRatio, "liquidity")}
               </Text>
             </View>
-            <Text style={{ fontSize: 16, fontWeight: "700", color: "#374151" }}>
+            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>
               {formatRatio(liquidityRatio)}x
             </Text>
-            <Text style={{ fontSize: 12, color: "#6b7280" }}>
+            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               Current assets ÷ Current liabilities
             </Text>
           </View>
@@ -535,7 +537,7 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               }}
             >
               <Text
-                style={{ fontSize: 14, color: "#6b7280", fontWeight: "500" }}
+                style={{ fontSize: 14, color: colors.textSecondary, fontWeight: "500" }}
               >
                 Monthly Living Expenses Coverage
               </Text>
@@ -552,10 +554,10 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                 {getRatioStatus(monthlyLivingExpensesCoverage, "coverage")}
               </Text>
             </View>
-            <Text style={{ fontSize: 16, fontWeight: "700", color: "#374151" }}>
+            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>
               {formatRatio(monthlyLivingExpensesCoverage)}x
             </Text>
-            <Text style={{ fontSize: 12, color: "#6b7280" }}>
+            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               Current assets ÷ Total monthly expenses
             </Text>
           </View>
@@ -570,7 +572,7 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               }}
             >
               <Text
-                style={{ fontSize: 14, color: "#6b7280", fontWeight: "500" }}
+                style={{ fontSize: 14, color: colors.textSecondary, fontWeight: "500" }}
               >
                 Debt-Asset Ratio
               </Text>
@@ -584,10 +586,10 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                 {getRatioStatus(debtAssetRatio, "debtAsset")}
               </Text>
             </View>
-            <Text style={{ fontSize: 16, fontWeight: "700", color: "#374151" }}>
+            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>
               {formatPercentage(debtAssetRatio)}
             </Text>
-            <Text style={{ fontSize: 12, color: "#6b7280" }}>
+            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               Total liabilities ÷ Total assets
             </Text>
           </View>
@@ -602,7 +604,7 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               }}
             >
               <Text
-                style={{ fontSize: 14, color: "#6b7280", fontWeight: "500" }}
+                style={{ fontSize: 14, color: colors.textSecondary, fontWeight: "500" }}
               >
                 Debt Safety Ratio
               </Text>
@@ -616,10 +618,10 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                 {getRatioStatus(debtSafetyRatio, "debtSafety")}
               </Text>
             </View>
-            <Text style={{ fontSize: 16, fontWeight: "700", color: "#374151" }}>
+            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>
               {formatPercentage(debtSafetyRatio)}
             </Text>
-            <Text style={{ fontSize: 12, color: "#6b7280" }}>
+            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               Total monthly debt payments ÷ Total income
             </Text>
           </View>
