@@ -337,16 +337,22 @@ class PlaidService {
   // Check if bank is connected
   async isBankConnected(): Promise<boolean> {
     if (!this.userId) {
+      console.log("PlaidService: No user ID set");
       return false;
     }
 
     try {
+      console.log(
+        "PlaidService: Checking bank connection for user:",
+        this.userId
+      );
       // Check Firebase for existing connection
       const plaidRef = ref(db, `users/${this.userId}/plaid`);
       const snapshot = await get(plaidRef);
 
       if (snapshot.exists()) {
         const encryptedPlaidData = snapshot.val();
+        console.log("PlaidService: Found Plaid data in Firebase");
 
         // Decrypt the Plaid data
         const fieldsToDecrypt = [
@@ -366,15 +372,17 @@ class PlaidService {
         this.itemId = plaidData.itemId || null;
 
         console.log(
-          "Loaded access token:",
+          "PlaidService: Loaded access token:",
           this.accessToken ? "Present" : "Missing"
         );
+        console.log("PlaidService: Plaid status:", plaidData.status);
         return plaidData.status === "connected";
       }
 
+      console.log("PlaidService: No Plaid data found in Firebase");
       return false;
     } catch (error) {
-      console.error("Error checking bank connection:", error);
+      console.error("PlaidService: Error checking bank connection:", error);
       return false;
     }
   }

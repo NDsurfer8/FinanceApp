@@ -1010,7 +1010,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         </View>
 
         {/* Bank Recurring Suggestions Button */}
-        {isBankConnected && recurringSuggestions.length > 0 && (
+        {isBankConnected && (
           <View
             style={{
               backgroundColor: "#fff",
@@ -1064,7 +1064,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       color: "#6b7280",
                     }}
                   >
-                    {recurringSuggestions.length} suggestions found
+                    {recurringSuggestions.length > 0
+                      ? `${recurringSuggestions.length} suggestions found`
+                      : "No recurring patterns found"}
                   </Text>
                 </View>
               </View>

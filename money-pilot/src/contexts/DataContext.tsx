@@ -16,6 +16,7 @@ import {
 } from "../services/userData";
 import { plaidService } from "../services/plaid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import revenueCatService from "../services/revenueCat";
 
 interface DataContextType {
   // Data
@@ -260,6 +261,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Bank Data Methods
   const analyzeRecurringPatterns = useCallback((transactions: any[]) => {
+    console.log(
+      "DataContext: Analyzing recurring patterns for",
+      transactions.length,
+      "transactions"
+    );
     const patterns: { [key: string]: any[] } = {};
     const suggestions: any[] = [];
 
@@ -272,8 +278,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       patterns[key].push(transaction);
     });
 
+    console.log(
+      "DataContext: Found",
+      Object.keys(patterns).length,
+      "unique transaction patterns"
+    );
+
     // Find transactions that appear multiple times (potential recurring)
     Object.entries(patterns).forEach(([key, transactions]) => {
+      console.log(
+        "DataContext: Pattern",
+        key,
+        "has",
+        transactions.length,
+        "occurrences"
+      );
       if (transactions.length >= 2) {
         const firstTransaction = transactions[0];
         const sortedTransactions = transactions.sort(
@@ -282,6 +301,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         // Calculate frequency
         const frequency = calculateFrequency(sortedTransactions);
+        console.log("DataContext: Pattern", key, "frequency:", frequency);
 
         if (frequency) {
           suggestions.push({
@@ -299,6 +319,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
     });
 
+    console.log(
+      "DataContext: Generated",
+      suggestions.length,
+      "recurring suggestions"
+    );
     return suggestions.sort((a, b) => b.occurrences - a.occurrences);
   }, []);
 
@@ -405,10 +430,120 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         setIsBankDataLoading(true);
 
         const connected = await plaidService.isBankConnected();
+        console.log("DataContext: Bank connection status:", connected);
         setIsBankConnected(connected);
 
         if (!connected) {
+          console.log(
+            "DataContext: No bank connected, loading mock data for testing"
+          );
+          // For testing purposes, load mock bank data
+          const mockTransactions = [
+            {
+              id: "mock_1",
+              account_id: "mock_account_1",
+              amount: -85.5,
+              date: new Date().toISOString().split("T")[0],
+              name: "Grocery Store",
+              merchant_name: "Whole Foods Market",
+              category: ["Food and Drink", "Restaurants"],
+              pending: false,
+            },
+            {
+              id: "mock_2",
+              account_id: "mock_account_1",
+              amount: -85.5,
+              date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .split("T")[0],
+              name: "Grocery Store",
+              merchant_name: "Whole Foods Market",
+              category: ["Food and Drink", "Restaurants"],
+              pending: false,
+            },
+            {
+              id: "mock_3",
+              account_id: "mock_account_1",
+              amount: -85.5,
+              date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .split("T")[0],
+              name: "Grocery Store",
+              merchant_name: "Whole Foods Market",
+              category: ["Food and Drink", "Restaurants"],
+              pending: false,
+            },
+            {
+              id: "mock_4",
+              account_id: "mock_account_1",
+              amount: -85.5,
+              date: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .split("T")[0],
+              name: "Grocery Store",
+              merchant_name: "Whole Foods Market",
+              category: ["Food and Drink", "Restaurants"],
+              pending: false,
+            },
+            {
+              id: "mock_5",
+              account_id: "mock_account_1",
+              amount: -85.5,
+              date: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .split("T")[0],
+              name: "Grocery Store",
+              merchant_name: "Whole Foods Market",
+              category: ["Food and Drink", "Restaurants"],
+              pending: false,
+            },
+            {
+              id: "mock_6",
+              account_id: "mock_account_1",
+              amount: -45.0,
+              date: new Date().toISOString().split("T")[0],
+              name: "Coffee Shop",
+              merchant_name: "Starbucks",
+              category: ["Food and Drink", "Restaurants"],
+              pending: false,
+            },
+            {
+              id: "mock_7",
+              account_id: "mock_account_1",
+              amount: -45.0,
+              date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .split("T")[0],
+              name: "Coffee Shop",
+              merchant_name: "Starbucks",
+              category: ["Food and Drink", "Restaurants"],
+              pending: false,
+            },
+            {
+              id: "mock_8",
+              account_id: "mock_account_1",
+              amount: -45.0,
+              date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .split("T")[0],
+              name: "Coffee Shop",
+              merchant_name: "Starbucks",
+              category: ["Food and Drink", "Restaurants"],
+              pending: false,
+            },
+          ];
+
+          setBankTransactions(mockTransactions);
+          const suggestions = analyzeRecurringPatterns(mockTransactions);
+          setBankRecurringSuggestions(suggestions);
+          setBankDataLastUpdated(new Date());
+          setIsBankConnected(true); // Set to true for testing
           setIsBankDataLoading(false);
+          console.log(
+            "DataContext: Mock bank data loaded with",
+            suggestions.length,
+            "recurring suggestions"
+          );
           return;
         }
 
@@ -416,8 +551,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         if (!forceRefresh) {
           const cacheLoaded = await loadCachedBankData();
           if (cacheLoaded) {
-            setIsBankDataLoading(false);
-            return;
+            // Check if we have recurring suggestions in cache
+            if (bankRecurringSuggestions.length === 0) {
+              console.log(
+                "DataContext: Cache loaded but no recurring suggestions, forcing refresh"
+              );
+              // Force refresh to regenerate recurring suggestions
+              forceRefresh = true;
+            } else {
+              setIsBankDataLoading(false);
+              return;
+            }
           }
         }
 
@@ -538,8 +682,35 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   useEffect(() => {
     if (user) {
       loadAllData();
-      // Also load bank data
-      refreshBankData();
+
+      // Load bank data
+      const loadBankData = async () => {
+        try {
+          console.log("DataContext: Starting bank data loading...");
+          // Set user ID for PlaidService first
+          plaidService.setUserId(user.uid);
+          await refreshBankData();
+          console.log("DataContext: Bank data loading completed");
+        } catch (error) {
+          console.error("DataContext: Failed to load bank data:", error);
+        }
+      };
+      loadBankData();
+
+      // Load subscription status
+      const loadSubscriptionStatus = async () => {
+        try {
+          await revenueCatService.setUser(user.uid);
+          await revenueCatService.checkSubscriptionStatus();
+          console.log("Subscription status loaded in DataContext");
+        } catch (error) {
+          console.error(
+            "Failed to load subscription status in DataContext:",
+            error
+          );
+        }
+      };
+      loadSubscriptionStatus();
     } else {
       // Clear data when user logs out
       setTransactions([]);

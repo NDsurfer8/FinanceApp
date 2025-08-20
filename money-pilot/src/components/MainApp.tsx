@@ -15,6 +15,7 @@ import { DataProvider } from "../contexts/DataContext";
 import { DataPreloader } from "./DataPreloader";
 import { SplashScreen } from "./SplashScreen";
 import revenueCatService from "../services/revenueCat";
+import { plaidService } from "../services/plaid";
 import {
   DashboardScreen,
   BudgetScreen,
@@ -104,6 +105,18 @@ export const MainApp: React.FC = () => {
         console.log("RevenueCat initialized successfully in MainApp");
       } catch (error) {
         console.error("Failed to initialize RevenueCat in MainApp:", error);
+      }
+
+      // Set up user for services (actual data loading will be handled by DataPreloader)
+      if (user?.uid) {
+        setLoadingMessage("Setting up user services...");
+        try {
+          await revenueCatService.setUser(user.uid);
+          plaidService.setUserId(user.uid);
+          console.log("User services configured in MainApp");
+        } catch (error) {
+          console.error("Failed to configure user services in MainApp:", error);
+        }
       }
 
       setIsLoading(false);

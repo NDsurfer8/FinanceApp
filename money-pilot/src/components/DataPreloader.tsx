@@ -18,7 +18,11 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
     budgetSettings,
     recurringTransactions,
     refreshData,
+    refreshBankData,
+    isBankConnected,
+    bankTransactions,
   } = useData();
+
   const [isPreloading, setIsPreloading] = useState(true);
 
   // Check if we have any data loaded
@@ -30,27 +34,86 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
     budgetSettings !== null ||
     recurringTransactions.length > 0;
 
+  // Check if we have bank data loaded
+  const hasBankData = isBankConnected && bankTransactions.length > 0;
+
   useEffect(() => {
     const preloadData = async () => {
-      if (user && !hasData) {
+      console.log(
+        "DataPreloader: Starting preload, user:",
+        !!user,
+        "hasData:",
+        hasData,
+        "isBankConnected:",
+        isBankConnected
+      );
+
+      // Add a timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.log("DataPreloader: Timeout reached, forcing completion");
+        setIsPreloading(false);
+      }, 10000); // 10 seconds timeout
+
+      if (user) {
         console.log("Preloading all data for instant navigation...");
-        await refreshData();
+
+        try {
+          // Load main data if not already loaded
+          if (!hasData) {
+            console.log("DataPreloader: Loading main data...");
+            await refreshData();
+            console.log("DataPreloader: Main data loaded");
+          } else {
+            console.log("DataPreloader: Main data already available");
+          }
+
+          // Subscription status is loaded by DataContext when user changes
+
+          // Load bank data if connected
+          if (isBankConnected && !hasBankData) {
+            try {
+              console.log("DataPreloader: Loading bank data...");
+              await refreshBankData();
+              console.log("Bank data loaded in DataPreloader");
+            } catch (error) {
+              console.error("Failed to load bank data:", error);
+            }
+          } else {
+            console.log(
+              "DataPreloader: Bank data already available or not connected"
+            );
+          }
+        } catch (error) {
+          console.error("DataPreloader: Error during preload:", error);
+        }
+      } else {
+        console.log("DataPreloader: No user, skipping preload");
       }
+
+      clearTimeout(timeoutId);
+      console.log("DataPreloader: Setting isPreloading to false");
       setIsPreloading(false);
     };
 
     preloadData();
-  }, [user, hasData, refreshData]);
+  }, [
+    user,
+    hasData,
+    hasBankData,
+    refreshData,
+    refreshBankData,
+    isBankConnected,
+  ]);
 
-  // Show children immediately if we have data or no user
-  if (!user || hasData || !isPreloading) {
+  // Show children immediately if no user or if preloading is complete
+  if (!user || !isPreloading) {
     return <>{children}</>;
   }
 
   // Show minimal loading indicator only during initial preload
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Preparing your financial data...</Text>
+      <Text style={styles.text}>Loading your financial data...</Text>
     </View>
   );
 };
