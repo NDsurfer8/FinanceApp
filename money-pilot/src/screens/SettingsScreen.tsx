@@ -437,34 +437,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           />
           {isBankConnected ? (
             <View>
-              <View
-                style={{
-                  marginTop: 8,
-                  flexDirection: "row",
-                  alignItems: "center",
-                }}
-              >
-                <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
-                <Text
-                  style={{
-                    color: "#16a34a",
-                    fontSize: 14,
-                    fontWeight: "600",
-                    marginLeft: 6,
-                  }}
-                >
-                  {connectedBankInfo?.name || "Bank"} data executing your plan
-                  in real time
-                </Text>
-              </View>
               {connectedBankInfo?.accounts &&
                 connectedBankInfo.accounts.length > 0 && (
                   <Text
                     style={{
                       color: "#6b7280",
                       fontSize: 12,
-                      marginTop: 4,
-                      marginLeft: 22,
+                      marginTop: 8,
                     }}
                   >
                     {connectedBankInfo.accounts.length} account
