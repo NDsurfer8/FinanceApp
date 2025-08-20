@@ -14,6 +14,7 @@ import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { useData } from "../contexts/DataContext";
 import { useSubscription } from "../contexts/SubscriptionContext";
+import { usePaywall } from "../hooks/usePaywall";
 import { PREMIUM_FEATURES } from "../services/revenueCat";
 
 interface DashboardScreenProps {
@@ -27,6 +28,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const { transactions, assets, debts, refreshInBackground } = useZeroLoading();
   const { goals, budgetSettings } = useData();
   const { subscriptionStatus } = useSubscription();
+  const { presentPaywall } = usePaywall();
   const {
     getTransactionLimitInfo,
     getIncomeSourceLimitInfo,
@@ -200,18 +202,24 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       onPress: () => navigation.navigate("Goals", { openAddModal: true }),
       color: "#f59e0b",
     },
-    // Only show AI Advisor if user has access to the feature
-    ...(hasAIAccess
-      ? [
-          {
-            title: "AI Advisor",
-            subtitle: "Premium",
-            icon: "chatbubble-ellipses",
-            onPress: () => navigation.navigate("AIFinancialAdvisor"),
-            color: "#06b6d4",
+    {
+      title: "AI Advisor",
+      subtitle: "Premium",
+      icon: "chatbubble-ellipses",
+      onPress: hasAIAccess
+        ? () => navigation.navigate("AIFinancialAdvisor")
+        : () => {
+            Alert.alert(
+              "Premium Feature",
+              "Vectra AI Financial Advisor is a premium feature. Upgrade to get personalized financial advice and insights.",
+              [
+                { text: "Cancel", style: "cancel" },
+                { text: "Upgrade", onPress: presentPaywall },
+              ]
+            );
           },
-        ]
-      : []),
+      color: hasAIAccess ? "#06b6d4" : "#9ca3af",
+    },
   ];
 
   // Premium Feature: Trend Analysis
