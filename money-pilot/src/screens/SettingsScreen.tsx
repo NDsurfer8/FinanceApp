@@ -751,6 +751,31 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               styles.settingItem,
               { borderBottomColor: colors.borderLight },
             ]}
+            onPress={() => navigation?.navigate("FinancialPlans")}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="document-text"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                Financial Plans
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
             onPress={() => navigation?.navigate("About")}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>

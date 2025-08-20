@@ -132,6 +132,17 @@ export interface SharedGroupSettings {
   requireApprovalForJoining: boolean;
 }
 
+export interface FinancialPlan {
+  id?: string;
+  userId: string;
+  name: string;
+  description: string;
+  createdAt: number;
+  updatedAt: number;
+  planData: any;
+  csvData: string;
+}
+
 export interface SharedInvitation {
   id?: string;
   groupId: string;
@@ -713,6 +724,80 @@ export const updateBudgetSettings = async (
     console.log("Budget settings updated successfully");
   } catch (error) {
     console.error("Error updating budget settings:", error);
+    throw error;
+  }
+};
+
+// ===== FINANCIAL PLAN FUNCTIONS =====
+
+export const saveFinancialPlan = async (
+  plan: FinancialPlan
+): Promise<string> => {
+  try {
+    const { encryptFinancialPlan } = await import("./encryption");
+    const encryptedPlan = await encryptFinancialPlan(plan);
+
+    const plansRef = ref(db, `users/${plan.userId}/financialPlans`);
+    const newPlanRef = push(plansRef);
+    const planId = newPlanRef.key;
+
+    if (!planId) {
+      throw new Error("Failed to generate plan ID");
+    }
+
+    await set(newPlanRef, {
+      ...encryptedPlan,
+      id: planId,
+      createdAt: plan.createdAt,
+      updatedAt: plan.updatedAt,
+    });
+
+    console.log("Financial plan saved successfully");
+    return planId;
+  } catch (error) {
+    console.error("Error saving financial plan:", error);
+    throw error;
+  }
+};
+
+export const getFinancialPlans = async (
+  userId: string
+): Promise<FinancialPlan[]> => {
+  try {
+    const { decryptFinancialPlan } = await import("./encryption");
+    const plansRef = ref(db, `users/${userId}/financialPlans`);
+    const snapshot = await get(plansRef);
+
+    if (!snapshot.exists()) {
+      return [];
+    }
+
+    const plans: FinancialPlan[] = [];
+    snapshot.forEach((childSnapshot) => {
+      plans.push(childSnapshot.val());
+    });
+
+    const decryptedPlans = await Promise.all(
+      plans.map((plan) => decryptFinancialPlan(plan))
+    );
+
+    return decryptedPlans.sort((a, b) => b.createdAt - a.createdAt);
+  } catch (error) {
+    console.error("Error getting financial plans:", error);
+    throw error;
+  }
+};
+
+export const deleteFinancialPlan = async (
+  userId: string,
+  planId: string
+): Promise<void> => {
+  try {
+    const planRef = ref(db, `users/${userId}/financialPlans/${planId}`);
+    await remove(planRef);
+    console.log("Financial plan deleted successfully");
+  } catch (error) {
+    console.error("Error deleting financial plan:", error);
     throw error;
   }
 };

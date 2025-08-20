@@ -41,6 +41,7 @@ import {
   SubscriptionScreen,
   BankTransactionsScreen,
   AIFinancialAdvisorScreen,
+  FinancialPlansScreen,
 } from "../screens";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -336,6 +337,10 @@ export const MainApp: React.FC = () => {
                     <Stack.Screen
                       name="AIFinancialAdvisor"
                       component={AIFinancialAdvisorScreen}
+                    />
+                    <Stack.Screen
+                      name="FinancialPlans"
+                      component={FinancialPlansScreen}
                     />
                   </Stack.Navigator>
                 </NavigationContainer>

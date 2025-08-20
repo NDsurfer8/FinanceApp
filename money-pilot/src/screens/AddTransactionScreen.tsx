@@ -123,17 +123,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
   const categories = getCategories(formData.type);
 
-  const handleImportCSV = () => {
-    Alert.alert(
-      "Import CSV",
-      "This feature will allow you to import transactions from a CSV file. The CSV should have columns: date, description, amount, category, type (income/expense).",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Coming Soon", style: "default" },
-      ]
-    );
-  };
-
   const handleSave = async () => {
     if (!formData.description || !formData.amount || !formData.category) {
       Alert.alert("Error", "Please fill in all required fields");
@@ -384,36 +373,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   </TouchableOpacity>
                 </View>
               )}
-
-          {/* Import CSV Button */}
-          <TouchableOpacity
-            style={{
-              backgroundColor: colors.surfaceSecondary,
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 16,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onPress={handleImportCSV}
-          >
-            <Ionicons
-              name="document-text-outline"
-              size={20}
-              color={colors.textSecondary}
-              style={{ marginRight: 8 }}
-            />
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontSize: 16,
-                fontWeight: "500",
-              }}
-            >
-              Import from CSV
-            </Text>
-          </TouchableOpacity>
 
           {/* Form */}
           <View

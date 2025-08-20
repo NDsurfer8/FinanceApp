@@ -291,6 +291,60 @@ export const decryptGoals = async (goals: any[]): Promise<any[]> => {
   return await Promise.all(goals.map((goal) => decryptGoal(goal)));
 };
 
+// ===== FINANCIAL PLAN ENCRYPTION =====
+
+export const encryptFinancialPlan = async (plan: any): Promise<any> => {
+  try {
+    const key = await getEncryptionKey();
+    const planDataString = JSON.stringify(plan.planData);
+    const csvDataString = plan.csvData;
+
+    const encryptedPlanData = CryptoJS.AES.encrypt(
+      planDataString,
+      key
+    ).toString();
+    const encryptedCsvData = CryptoJS.AES.encrypt(
+      csvDataString,
+      key
+    ).toString();
+
+    return {
+      ...plan,
+      planData: encryptedPlanData,
+      csvData: encryptedCsvData,
+    };
+  } catch (error) {
+    console.error("Error encrypting financial plan:", error);
+    return plan;
+  }
+};
+
+export const decryptFinancialPlan = async (plan: any): Promise<any> => {
+  try {
+    const key = await getEncryptionKey();
+
+    if (typeof plan.planData === "string") {
+      const decryptedPlanData = CryptoJS.AES.decrypt(
+        plan.planData,
+        key
+      ).toString(CryptoJS.enc.Utf8);
+      plan.planData = JSON.parse(decryptedPlanData);
+    }
+
+    if (typeof plan.csvData === "string") {
+      const decryptedCsvData = CryptoJS.AES.decrypt(plan.csvData, key).toString(
+        CryptoJS.enc.Utf8
+      );
+      plan.csvData = decryptedCsvData;
+    }
+
+    return plan;
+  } catch (error) {
+    console.error("Error decrypting financial plan:", error);
+    return plan;
+  }
+};
+
 export const encryptRecurringTransactions = async (
   transactions: any[]
 ): Promise<any[]> => {

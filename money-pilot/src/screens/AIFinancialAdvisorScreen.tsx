@@ -22,6 +22,8 @@ import {
   aiFinancialAdvisorService,
   FinancialSnapshot,
 } from "../services/aiFinancialAdvisor";
+import { financialPlanGenerator } from "../services/financialPlanGenerator";
+import { saveFinancialPlan } from "../services/userData";
 import { VectraAvatar } from "../components/VectraAvatar";
 
 interface Message {
@@ -52,6 +54,10 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [pendingPlan, setPendingPlan] = useState<{
+    plan: any;
+    planName: string;
+  } | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
 
@@ -210,10 +216,131 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
 
     try {
       const snapshot = generateFinancialSnapshot();
-      const aiResponse = await aiFinancialAdvisorService.generateAIResponse(
-        userMessage.text,
-        snapshot
-      );
+
+      // Check if user is requesting a financial plan (enhanced triggers)
+      const lowerQuestion = userMessage.text.toLowerCase();
+      const isPlanRequest =
+        lowerQuestion.includes("create plan") ||
+        lowerQuestion.includes("generate plan") ||
+        lowerQuestion.includes("financial plan") ||
+        lowerQuestion.includes("export plan") ||
+        lowerQuestion.includes("spreadsheet") ||
+        lowerQuestion.includes("csv") ||
+        lowerQuestion.includes("make a plan") ||
+        lowerQuestion.includes("build a plan") ||
+        lowerQuestion.includes("plan for") ||
+        lowerQuestion.includes("help me plan") ||
+        lowerQuestion.includes("i need a plan") ||
+        lowerQuestion.includes("create a plan") ||
+        lowerQuestion.includes("generate a plan") ||
+        lowerQuestion.includes("financial planning") ||
+        lowerQuestion.includes("budget plan") ||
+        lowerQuestion.includes("savings plan") ||
+        lowerQuestion.includes("debt plan") ||
+        lowerQuestion.includes("investment plan") ||
+        lowerQuestion.includes("retirement plan") ||
+        lowerQuestion.includes("emergency fund plan") ||
+        lowerQuestion.includes("goal plan") ||
+        lowerQuestion.includes("money plan") ||
+        lowerQuestion.includes("finance plan");
+
+      let aiResponse;
+
+      if (isPlanRequest && user) {
+        // Generate financial plan (but don't save automatically)
+        try {
+          // Create a personalized plan name based on user's request
+          let planName = `Financial Plan - ${new Date().toLocaleDateString()}`;
+
+          // Customize plan name based on user's specific request
+          if (lowerQuestion.includes("budget")) {
+            planName = `Budget Plan - ${new Date().toLocaleDateString()}`;
+          } else if (
+            lowerQuestion.includes("debt") ||
+            lowerQuestion.includes("payoff")
+          ) {
+            planName = `Debt Payoff Plan - ${new Date().toLocaleDateString()}`;
+          } else if (
+            lowerQuestion.includes("savings") ||
+            lowerQuestion.includes("emergency")
+          ) {
+            planName = `Savings Plan - ${new Date().toLocaleDateString()}`;
+          } else if (
+            lowerQuestion.includes("investment") ||
+            lowerQuestion.includes("retirement")
+          ) {
+            planName = `Investment Plan - ${new Date().toLocaleDateString()}`;
+          } else if (lowerQuestion.includes("goal")) {
+            planName = `Goal Achievement Plan - ${new Date().toLocaleDateString()}`;
+          }
+
+          const plan = financialPlanGenerator.generateFinancialPlan(
+            snapshot,
+            planName,
+            user.uid
+          );
+
+          // Store the plan for potential saving
+          setPendingPlan({ plan, planName });
+
+          // Create personalized response with save button
+          let personalizedResponse = `📋 **${planName} Generated Successfully!**\n\n`;
+
+          // Add context about what the user asked for
+          if (lowerQuestion.includes("budget")) {
+            personalizedResponse += `**Based on your request for budget planning:**\n`;
+          } else if (
+            lowerQuestion.includes("debt") ||
+            lowerQuestion.includes("payoff")
+          ) {
+            personalizedResponse += `**Based on your request for debt management:**\n`;
+          } else if (
+            lowerQuestion.includes("savings") ||
+            lowerQuestion.includes("emergency")
+          ) {
+            personalizedResponse += `**Based on your request for savings planning:**\n`;
+          } else if (
+            lowerQuestion.includes("investment") ||
+            lowerQuestion.includes("retirement")
+          ) {
+            personalizedResponse += `**Based on your request for investment planning:**\n`;
+          } else if (lowerQuestion.includes("goal")) {
+            personalizedResponse += `**Based on your request for goal planning:**\n`;
+          } else {
+            personalizedResponse += `**Based on your financial situation:**\n`;
+          }
+
+          personalizedResponse += `**Generated**: ${new Date().toLocaleDateString()}\n\n**Plan Summary:**\n• **Monthly Budget**: $${plan.planData.monthlyBudget.income.toFixed(
+            2
+          )} income, $${plan.planData.monthlyBudget.expenses.toFixed(
+            2
+          )} expenses\n• **Debt Payoff**: $${plan.planData.debtPayoffPlan.totalDebt.toFixed(
+            2
+          )} total debt, estimated payoff: ${
+            plan.planData.debtPayoffPlan.estimatedPayoffDate
+          }\n• **Savings Plan**: Emergency fund target $${plan.planData.savingsPlan.emergencyFund.target.toFixed(
+            2
+          )}\n• **Goals**: ${
+            plan.planData.goalTimeline.goals.length
+          } active goals\n• **Recommendations**: ${
+            plan.planData.recommendations.length
+          } actionable items\n\n**Plan includes:**\n✅ Monthly budget breakdown\n✅ Debt payoff strategy (avalanche method)\n✅ Savings allocation plan\n✅ Goal timeline analysis\n✅ Personalized recommendations\n✅ Exportable CSV data\n\n**💾 Would you like to save this plan to your account?**`;
+
+          aiResponse = personalizedResponse;
+        } catch (planError) {
+          console.error("Error creating financial plan:", planError);
+          aiResponse = await aiFinancialAdvisorService.generateAIResponse(
+            userMessage.text,
+            snapshot
+          );
+        }
+      } else {
+        // Regular AI response
+        aiResponse = await aiFinancialAdvisorService.generateAIResponse(
+          userMessage.text,
+          snapshot
+        );
+      }
 
       const updatedMessages = newMessages.map((msg) =>
         msg.isLoading ? { ...msg, text: aiResponse, isLoading: false } : msg
@@ -249,6 +376,19 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, [messages]);
+
+  const savePlan = async () => {
+    if (!pendingPlan || !user) return;
+
+    try {
+      await saveFinancialPlan(pendingPlan.plan);
+      setPendingPlan(null);
+      Alert.alert("Success", "Plan saved to your account!");
+    } catch (error) {
+      console.error("Error saving plan:", error);
+      Alert.alert("Error", "Failed to save plan. Please try again.");
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -456,6 +596,85 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
             </View>
           ))}
         </ScrollView>
+      )}
+
+      {/* Save Plan Button */}
+      {pendingPlan && (
+        <View
+          style={{
+            backgroundColor: colors.card,
+            margin: 16,
+            padding: 16,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: colors.border,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              color: colors.text,
+              marginBottom: 8,
+            }}
+          >
+            💾 Save Plan: {pendingPlan.planName}
+          </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              color: colors.textSecondary,
+              marginBottom: 12,
+            }}
+          >
+            This plan includes budget breakdown, debt payoff strategy, savings
+            plan, goal timeline, and personalized recommendations.
+          </Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <TouchableOpacity
+              onPress={savePlan}
+              style={{
+                backgroundColor: colors.primary,
+                paddingHorizontal: 20,
+                paddingVertical: 10,
+                borderRadius: 8,
+                flex: 1,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.buttonText,
+                  fontSize: 16,
+                  fontWeight: "600",
+                  textAlign: "center",
+                }}
+              >
+                Save Plan
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setPendingPlan(null)}
+              style={{
+                backgroundColor: colors.surfaceSecondary,
+                paddingHorizontal: 20,
+                paddingVertical: 10,
+                borderRadius: 8,
+                flex: 1,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.text,
+                  fontSize: 16,
+                  fontWeight: "600",
+                  textAlign: "center",
+                }}
+              >
+                Dismiss
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       )}
 
       {/* Input */}

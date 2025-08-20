@@ -1,4 +1,13 @@
 import { Alert } from "react-native";
+import { financialPlanGenerator } from "./financialPlanGenerator";
+import { saveFinancialPlan, FinancialPlan } from "./userData";
+
+export interface AIResponse {
+  type: "text" | "plan_generated";
+  message: string;
+  plan?: FinancialPlan;
+  planName?: string;
+}
 
 export interface FinancialSnapshot {
   monthlyIncome: number;
@@ -462,6 +471,114 @@ class AIFinancialAdvisorService {
       }
     }
 
+    // Financial plan creation - enhanced with better triggers
+    if (
+      lowerQuestion.includes("create plan") ||
+      lowerQuestion.includes("generate plan") ||
+      lowerQuestion.includes("financial plan") ||
+      lowerQuestion.includes("export plan") ||
+      lowerQuestion.includes("spreadsheet") ||
+      lowerQuestion.includes("csv") ||
+      lowerQuestion.includes("make a plan") ||
+      lowerQuestion.includes("build a plan") ||
+      lowerQuestion.includes("plan for") ||
+      lowerQuestion.includes("help me plan") ||
+      lowerQuestion.includes("i need a plan") ||
+      lowerQuestion.includes("create a plan") ||
+      lowerQuestion.includes("generate a plan") ||
+      lowerQuestion.includes("financial planning") ||
+      lowerQuestion.includes("budget plan") ||
+      lowerQuestion.includes("savings plan") ||
+      lowerQuestion.includes("debt plan") ||
+      lowerQuestion.includes("investment plan") ||
+      lowerQuestion.includes("retirement plan") ||
+      lowerQuestion.includes("emergency fund plan") ||
+      lowerQuestion.includes("goal plan") ||
+      lowerQuestion.includes("money plan") ||
+      lowerQuestion.includes("finance plan")
+    ) {
+      try {
+        // Create a personalized plan name based on user's request
+        let planName = `Financial Plan - ${new Date().toLocaleDateString()}`;
+
+        // Customize plan name based on user's specific request
+        if (lowerQuestion.includes("budget")) {
+          planName = `Budget Plan - ${new Date().toLocaleDateString()}`;
+        } else if (
+          lowerQuestion.includes("debt") ||
+          lowerQuestion.includes("payoff")
+        ) {
+          planName = `Debt Payoff Plan - ${new Date().toLocaleDateString()}`;
+        } else if (
+          lowerQuestion.includes("savings") ||
+          lowerQuestion.includes("emergency")
+        ) {
+          planName = `Savings Plan - ${new Date().toLocaleDateString()}`;
+        } else if (
+          lowerQuestion.includes("investment") ||
+          lowerQuestion.includes("retirement")
+        ) {
+          planName = `Investment Plan - ${new Date().toLocaleDateString()}`;
+        } else if (lowerQuestion.includes("goal")) {
+          planName = `Goal Achievement Plan - ${new Date().toLocaleDateString()}`;
+        }
+
+        const plan = financialPlanGenerator.generateFinancialPlan(
+          snapshot,
+          planName,
+          "current-user"
+        );
+
+        // Create personalized response based on user's request
+        let personalizedResponse = `📋 **${planName} Generated Successfully!**\n\n`;
+
+        // Add context about what the user asked for
+        if (lowerQuestion.includes("budget")) {
+          personalizedResponse += `**Based on your request for budget planning:**\n`;
+        } else if (
+          lowerQuestion.includes("debt") ||
+          lowerQuestion.includes("payoff")
+        ) {
+          personalizedResponse += `**Based on your request for debt management:**\n`;
+        } else if (
+          lowerQuestion.includes("savings") ||
+          lowerQuestion.includes("emergency")
+        ) {
+          personalizedResponse += `**Based on your request for savings planning:**\n`;
+        } else if (
+          lowerQuestion.includes("investment") ||
+          lowerQuestion.includes("retirement")
+        ) {
+          personalizedResponse += `**Based on your request for investment planning:**\n`;
+        } else if (lowerQuestion.includes("goal")) {
+          personalizedResponse += `**Based on your request for goal planning:**\n`;
+        } else {
+          personalizedResponse += `**Based on your financial situation:**\n`;
+        }
+
+        personalizedResponse += `\n**Plan Summary:**\n• **Monthly Budget**: $${plan.planData.monthlyBudget.income.toFixed(
+          2
+        )} income, $${plan.planData.monthlyBudget.expenses.toFixed(
+          2
+        )} expenses\n• **Debt Payoff**: $${plan.planData.debtPayoffPlan.totalDebt.toFixed(
+          2
+        )} total debt, estimated payoff: ${
+          plan.planData.debtPayoffPlan.estimatedPayoffDate
+        }\n• **Savings Plan**: Emergency fund target $${plan.planData.savingsPlan.emergencyFund.target.toFixed(
+          2
+        )}\n• **Goals**: ${
+          plan.planData.goalTimeline.goals.length
+        } active goals\n• **Recommendations**: ${
+          plan.planData.recommendations.length
+        } actionable items\n\n**Plan includes:**\n✅ Monthly budget breakdown\n✅ Debt payoff strategy (avalanche method)\n✅ Savings allocation plan\n✅ Goal timeline analysis\n✅ Personalized recommendations\n✅ Exportable CSV data\n\n**To save this plan to your account, please use the app's plan management feature.**\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+
+        return personalizedResponse;
+      } catch (error) {
+        console.error("Error generating financial plan:", error);
+        return "I encountered an error while generating your financial plan. Please try again or contact support if the issue persists.";
+      }
+    }
+
     // Goal feasibility and timeline advice
     if (
       lowerQuestion.includes("feasible") ||
@@ -740,7 +857,7 @@ class AIFinancialAdvisorService {
       .map((action, index) => `${index + 1}. ${action}`)
       .join(
         "\n"
-      )}\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}\n\nAsk me about specific topics like budgeting, debt, goals, investments, net worth, or goal feasibility!`;
+      )}\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}\n\n**💡 Need a personalized plan?** Try asking:\n• "Create a budget plan"\n• "Help me plan for debt payoff"\n• "Make a savings plan"\n• "Generate an investment plan"\n• "Create a goal plan"\n• "I need a financial plan"\n\nOr ask about specific topics like budgeting, debt, goals, investments, net worth, or goal feasibility!`;
   }
 
   // Generate AI response using OpenAI or fallback to rule-based system
