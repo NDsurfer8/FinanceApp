@@ -293,6 +293,21 @@ export const forgotPassword = async (email: string): Promise<void> => {
 // Sign out
 export const signOutUser = async (): Promise<void> => {
   try {
+    // First, disconnect bank connection if connected
+    try {
+      const { plaidService } = await import("./plaid");
+      const isConnected = await plaidService.isBankConnected();
+      if (isConnected) {
+        console.log("Disconnecting bank before logout...");
+        await plaidService.disconnectBankSilently();
+        console.log("Bank disconnected successfully");
+      }
+    } catch (bankError) {
+      console.error("Error disconnecting bank during logout:", bankError);
+      // Continue with logout even if bank disconnection fails
+    }
+
+    // Then sign out from Firebase
     await signOut(auth);
   } catch (error) {
     console.error("Firebase auth error:", error);

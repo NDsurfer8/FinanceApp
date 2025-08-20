@@ -12,6 +12,7 @@ import { notificationService } from "../services/notifications";
 import { billReminderService } from "../services/billReminders";
 import { UserProvider } from "../context/UserContext";
 import { DataProvider } from "../contexts/DataContext";
+import { SubscriptionProvider } from "../contexts/SubscriptionContext";
 import { DataPreloader } from "./DataPreloader";
 import { SplashScreen } from "./SplashScreen";
 import revenueCatService from "../services/revenueCat";
@@ -272,62 +273,64 @@ export const MainApp: React.FC = () => {
     return (
       <UserProvider>
         <DataProvider>
-          <DataPreloader>
-            <NavigationContainer>
-              <Stack.Navigator
-                screenOptions={{
-                  headerShown: false,
-                }}
-              >
-                <Stack.Screen name="MainTabs" component={MainTabNavigator} />
-                <Stack.Screen
-                  name="AddTransaction"
-                  component={AddTransactionScreen}
-                />
-                <Stack.Screen
-                  name="AddAssetDebt"
-                  component={AddAssetDebtScreen}
-                />
-                <Stack.Screen
-                  name="BalanceSheet"
-                  component={BalanceSheetScreen}
-                />
-                <Stack.Screen
-                  name="SharedFinance"
-                  component={SharedFinanceScreen}
-                />
-                <Stack.Screen
-                  name="EditProfile"
-                  component={EditProfileScreen}
-                />
-                <Stack.Screen
-                  name="NotificationSettings"
-                  component={NotificationSettingsScreen}
-                />
-                <Stack.Screen
-                  name="PrivacySecurity"
-                  component={PrivacySecurityScreen}
-                />
-                <Stack.Screen name="About" component={AboutScreen} />
-                <Stack.Screen
-                  name="HelpSupport"
-                  component={HelpSupportScreen}
-                />
-                <Stack.Screen
-                  name="RecurringTransactions"
-                  component={RecurringTransactionsScreen}
-                />
-                <Stack.Screen
-                  name="Subscription"
-                  component={SubscriptionScreen}
-                />
-                <Stack.Screen
-                  name="BankTransactions"
-                  component={BankTransactionsScreen}
-                />
-              </Stack.Navigator>
-            </NavigationContainer>
-          </DataPreloader>
+          <SubscriptionProvider>
+            <DataPreloader>
+              <NavigationContainer>
+                <Stack.Navigator
+                  screenOptions={{
+                    headerShown: false,
+                  }}
+                >
+                  <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+                  <Stack.Screen
+                    name="AddTransaction"
+                    component={AddTransactionScreen}
+                  />
+                  <Stack.Screen
+                    name="AddAssetDebt"
+                    component={AddAssetDebtScreen}
+                  />
+                  <Stack.Screen
+                    name="BalanceSheet"
+                    component={BalanceSheetScreen}
+                  />
+                  <Stack.Screen
+                    name="SharedFinance"
+                    component={SharedFinanceScreen}
+                  />
+                  <Stack.Screen
+                    name="EditProfile"
+                    component={EditProfileScreen}
+                  />
+                  <Stack.Screen
+                    name="NotificationSettings"
+                    component={NotificationSettingsScreen}
+                  />
+                  <Stack.Screen
+                    name="PrivacySecurity"
+                    component={PrivacySecurityScreen}
+                  />
+                  <Stack.Screen name="About" component={AboutScreen} />
+                  <Stack.Screen
+                    name="HelpSupport"
+                    component={HelpSupportScreen}
+                  />
+                  <Stack.Screen
+                    name="RecurringTransactions"
+                    component={RecurringTransactionsScreen}
+                  />
+                  <Stack.Screen
+                    name="Subscription"
+                    component={SubscriptionScreen}
+                  />
+                  <Stack.Screen
+                    name="BankTransactions"
+                    component={BankTransactionsScreen}
+                  />
+                </Stack.Navigator>
+              </NavigationContainer>
+            </DataPreloader>
+          </SubscriptionProvider>
         </DataProvider>
       </UserProvider>
     );

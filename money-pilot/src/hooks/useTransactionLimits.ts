@@ -1,9 +1,8 @@
-import { useSubscription } from "./useSubscription";
+import { useSubscription } from "../contexts/SubscriptionContext";
 import { useData } from "../contexts/DataContext";
-import { PREMIUM_FEATURES } from "../services/revenueCat";
 
 export const useTransactionLimits = () => {
-  const { isFeatureAvailable } = useSubscription();
+  const { isFeatureAvailable, PREMIUM_FEATURES } = useSubscription();
   const { transactions, recurringTransactions, goals } = useData();
 
   // Constants for free tier limits

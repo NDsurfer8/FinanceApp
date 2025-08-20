@@ -15,7 +15,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useUser } from "../context/UserContext";
 import { PlaidLinkComponent } from "../components/PlaidLinkComponent";
 import { usePaywall } from "../hooks/usePaywall";
-import { useSubscription } from "../hooks/useSubscription";
+import { useSubscription } from "../contexts/SubscriptionContext";
 import { plaidService } from "../services/plaid";
 
 interface SettingsScreenProps {
@@ -96,13 +96,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   useFocusEffect(
     React.useCallback(() => {
       console.log("SettingsScreen: Screen focused, refreshing user data...");
+
       // Force refresh user data immediately when screen comes into focus
       forceRefresh();
-
-      // Also refresh after a short delay to catch any pending updates
-      setTimeout(() => {
-        forceRefresh();
-      }, 100);
 
       // Check bank connection status when screen comes into focus
       const checkBankConnection = async () => {
@@ -135,18 +131,30 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }, [forceRefresh])
   );
 
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: onLogout,
-      },
-    ]);
+  const handleLogout = async () => {
+    Alert.alert(
+      "Logout",
+      isBankConnected
+        ? "You will be logged out and your bank connection will be disconnected for security. You'll need to reconnect your bank when you log back in."
+        : "Are you sure you want to logout?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const { signOutUser } = await import("../services/auth");
+              await signOutUser();
+              onLogout?.();
+            } catch (error) {
+              console.error("Logout error:", error);
+              Alert.alert("Error", "Failed to logout. Please try again.");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleRefreshSubscription = async () => {
@@ -154,7 +162,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       setRefreshingSubscription(true);
       console.log("Manually refreshing subscription status...");
 
-      const newStatus = await refreshSubscriptionStatus();
+      // Use force refresh to get the latest data from RevenueCat servers
+      const newStatus = await refreshSubscriptionStatus(true);
       console.log("Manual refresh completed - new status:", newStatus);
 
       if (newStatus?.isPremium) {

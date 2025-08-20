@@ -440,6 +440,8 @@ class PlaidService {
         throw new Error("User ID not set");
       }
 
+      console.log("PlaidService: Disconnecting bank for user:", this.userId);
+
       // Remove from Firebase
       const plaidRef = ref(db, `users/${this.userId}/plaid`);
       await remove(plaidRef);
@@ -448,10 +450,37 @@ class PlaidService {
       this.accessToken = null;
       this.itemId = null;
 
-      Alert.alert("Success", "Bank account disconnected");
+      console.log("PlaidService: Bank disconnected successfully");
     } catch (error) {
-      console.error("Error disconnecting bank:", error);
-      Alert.alert("Error", "Failed to disconnect bank account");
+      console.error("PlaidService: Error disconnecting bank:", error);
+      throw error; // Re-throw to allow caller to handle
+    }
+  }
+
+  // Disconnect bank silently (for logout scenarios)
+  async disconnectBankSilently(): Promise<void> {
+    try {
+      if (!this.userId) {
+        return; // No user ID, nothing to disconnect
+      }
+
+      console.log(
+        "PlaidService: Silently disconnecting bank for user:",
+        this.userId
+      );
+
+      // Remove from Firebase
+      const plaidRef = ref(db, `users/${this.userId}/plaid`);
+      await remove(plaidRef);
+
+      // Clear local state
+      this.accessToken = null;
+      this.itemId = null;
+
+      console.log("PlaidService: Bank disconnected silently");
+    } catch (error) {
+      console.error("PlaidService: Error silently disconnecting bank:", error);
+      // Don't throw for silent disconnection
     }
   }
 }

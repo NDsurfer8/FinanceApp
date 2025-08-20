@@ -42,6 +42,9 @@ export interface SubscriptionStatus {
 
 class RevenueCatService {
   private static instance: RevenueCatService;
+  private customerInfoUpdateListeners: ((
+    customerInfo: CustomerInfo
+  ) => void)[] = [];
   private isInitialized = false;
 
   private constructor() {}
@@ -74,6 +77,9 @@ class RevenueCatService {
 
       this.isInitialized = true;
       console.log("RevenueCat initialized successfully");
+
+      // Set up customer info update listener
+      this.setupCustomerInfoUpdateListener();
     } catch (error) {
       console.error("Failed to initialize RevenueCat:", error);
       throw error;
@@ -118,10 +124,33 @@ class RevenueCatService {
   async restorePurchases(): Promise<CustomerInfo> {
     try {
       const customerInfo = await Purchases.restorePurchases();
-      console.log("Purchases restored:", customerInfo);
+      console.log("Purchases restored successfully");
       return customerInfo;
     } catch (error) {
       console.error("Failed to restore purchases:", error);
+      throw error;
+    }
+  }
+
+  // Handle purchase completion and ensure subscription status is updated
+  async handlePurchaseCompletion(): Promise<SubscriptionStatus> {
+    try {
+      console.log("RevenueCat: Handling purchase completion...");
+
+      // Force refresh customer info from servers
+      const customerInfo = await this.refreshCustomerInfo();
+
+      // Check subscription status with the fresh data
+      const subscriptionStatus = await this.checkSubscriptionStatus(true);
+
+      console.log(
+        "RevenueCat: Purchase completion handled, subscription status:",
+        subscriptionStatus
+      );
+
+      return subscriptionStatus;
+    } catch (error) {
+      console.error("Failed to handle purchase completion:", error);
       throw error;
     }
   }
@@ -136,9 +165,26 @@ class RevenueCatService {
     }
   }
 
-  async checkSubscriptionStatus(): Promise<SubscriptionStatus> {
+  // Force refresh customer info from RevenueCat servers
+  async refreshCustomerInfo(): Promise<CustomerInfo> {
     try {
-      const customerInfo = await this.getCustomerInfo();
+      console.log("RevenueCat: Forcing customer info refresh from servers");
+      const customerInfo = await Purchases.getCustomerInfo();
+      console.log("RevenueCat: Customer info refreshed successfully");
+      return customerInfo;
+    } catch (error) {
+      console.error("Failed to refresh customer info:", error);
+      throw error;
+    }
+  }
+
+  async checkSubscriptionStatus(
+    forceRefresh: boolean = false
+  ): Promise<SubscriptionStatus> {
+    try {
+      const customerInfo = forceRefresh
+        ? await this.refreshCustomerInfo()
+        : await this.getCustomerInfo();
 
       // Debug: Log all available entitlements
       console.log(
@@ -236,6 +282,48 @@ class RevenueCatService {
       console.error("Failed to handle subscription cancellation:", error);
       throw error;
     }
+  }
+
+  private setupCustomerInfoUpdateListener(): void {
+    try {
+      // Add listener for customer info updates
+      Purchases.addCustomerInfoUpdateListener((customerInfo) => {
+        console.log("RevenueCat: Customer info updated", {
+          entitlements: Object.keys(customerInfo.entitlements.active),
+          isPremium:
+            customerInfo.entitlements.active["premium"] ||
+            customerInfo.entitlements.active["premium_monthly"],
+        });
+
+        // Notify all listeners
+        this.customerInfoUpdateListeners.forEach((listener) => {
+          try {
+            listener(customerInfo);
+          } catch (error) {
+            console.error("Error in customer info update listener:", error);
+          }
+        });
+      });
+
+      console.log("RevenueCat: Customer info update listener set up");
+    } catch (error) {
+      console.error("Failed to set up customer info update listener:", error);
+    }
+  }
+
+  // Add a listener for customer info updates
+  addCustomerInfoUpdateListener(
+    listener: (customerInfo: CustomerInfo) => void
+  ): () => void {
+    this.customerInfoUpdateListeners.push(listener);
+
+    // Return a function to remove the listener
+    return () => {
+      const index = this.customerInfoUpdateListeners.indexOf(listener);
+      if (index > -1) {
+        this.customerInfoUpdateListeners.splice(index, 1);
+      }
+    };
   }
 }
 
