@@ -24,6 +24,7 @@ import {
   FinancialSnapshot,
 } from "../services/aiFinancialAdvisor";
 import { PREMIUM_FEATURES } from "../services/revenueCat";
+import { VectraAvatar } from "../components/VectraAvatar";
 
 interface Message {
   id: string;
@@ -283,9 +284,19 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           <Ionicons name="arrow-back" size={24} color="#374151" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: "600", color: "#1f2937" }}>
-            Vectra
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <VectraAvatar size={24} />
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "600",
+                color: "#1f2937",
+                marginLeft: 8,
+              }}
+            >
+              Vectra
+            </Text>
+          </View>
           <Text style={{ fontSize: 14, color: "#6b7280" }}>
             Get personalized financial advice
           </Text>
@@ -365,42 +376,93 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                 alignItems: message.isUser ? "flex-end" : "flex-start",
               }}
             >
-              <View
-                style={{
-                  maxWidth: "80%",
-                  padding: 12,
-                  borderRadius: 16,
-                  backgroundColor: message.isUser ? "#6366f1" : "#fff",
-                  borderWidth: message.isUser ? 0 : 1,
-                  borderColor: "#e5e7eb",
-                  shadowColor: "#000",
-                  shadowOpacity: 0.05,
-                  shadowRadius: 4,
-                  shadowOffset: { width: 0, height: 2 },
-                  elevation: 2,
-                }}
-              >
-                {message.isLoading ? (
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <ActivityIndicator size="small" color="#6366f1" />
-                    <Text
-                      style={{ marginLeft: 8, color: "#6b7280", fontSize: 14 }}
+              {message.isUser ? (
+                // User message
+                <View
+                  style={{
+                    maxWidth: "80%",
+                    padding: 12,
+                    borderRadius: 16,
+                    backgroundColor: "#6366f1",
+                    shadowColor: "#000",
+                    shadowOpacity: 0.05,
+                    shadowRadius: 4,
+                    shadowOffset: { width: 0, height: 2 },
+                    elevation: 2,
+                  }}
+                >
+                  {message.isLoading ? (
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
                     >
-                      Analyzing your finances...
+                      <ActivityIndicator size="small" color="#fff" />
+                      <Text
+                        style={{ marginLeft: 8, color: "#fff", fontSize: 14 }}
+                      >
+                        Analyzing your finances...
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text
+                      style={{
+                        color: "#fff",
+                        fontSize: 14,
+                        lineHeight: 20,
+                      }}
+                    >
+                      {message.text}
                     </Text>
+                  )}
+                </View>
+              ) : (
+                // Vectra message with avatar
+                <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
+                  <VectraAvatar size={24} />
+                  <View style={{ marginLeft: 8, maxWidth: "80%" }}>
+                    <View
+                      style={{
+                        padding: 12,
+                        borderRadius: 16,
+                        backgroundColor: "#fff",
+                        borderWidth: 1,
+                        borderColor: "#e5e7eb",
+                        shadowColor: "#000",
+                        shadowOpacity: 0.05,
+                        shadowRadius: 4,
+                        shadowOffset: { width: 0, height: 2 },
+                        elevation: 2,
+                      }}
+                    >
+                      {message.isLoading ? (
+                        <View
+                          style={{ flexDirection: "row", alignItems: "center" }}
+                        >
+                          <ActivityIndicator size="small" color="#6366f1" />
+                          <Text
+                            style={{
+                              marginLeft: 8,
+                              color: "#6b7280",
+                              fontSize: 14,
+                            }}
+                          >
+                            Analyzing your finances...
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text
+                          style={{
+                            color: "#374151",
+                            fontSize: 14,
+                            lineHeight: 20,
+                          }}
+                        >
+                          {message.text}
+                        </Text>
+                      )}
+                    </View>
                   </View>
-                ) : (
-                  <Text
-                    style={{
-                      color: message.isUser ? "#fff" : "#374151",
-                      fontSize: 14,
-                      lineHeight: 20,
-                    }}
-                  >
-                    {message.text}
-                  </Text>
-                )}
-              </View>
+                </View>
+              )}
               <Text
                 style={{
                   fontSize: 12,
