@@ -429,45 +429,78 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TextInput
+          <View
             style={{
               flex: 1,
               borderWidth: 1,
-              borderColor: "#d1d5db",
+              borderColor: inputText.trim() ? "#6366f1" : "#d1d5db",
               borderRadius: 20,
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-              fontSize: 16,
               backgroundColor: "#fff",
+              marginRight: 8,
+              minHeight: 40,
+              maxHeight: 100,
             }}
-            placeholder="Ask me about your finances..."
-            value={inputText}
-            onChangeText={setInputText}
-            multiline
-            maxLength={500}
-            editable={!isLoading}
-          />
+          >
+            <TextInput
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                fontSize: 16,
+                color: "#374151",
+                textAlignVertical: "center",
+                minHeight: 40,
+                maxHeight: 100,
+              }}
+              placeholder="Ask me about your finances..."
+              placeholderTextColor="#9ca3af"
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+              maxLength={500}
+              editable={!isLoading}
+              returnKeyType="send"
+              onSubmitEditing={sendMessage}
+              blurOnSubmit={false}
+            />
+          </View>
           <TouchableOpacity
             onPress={sendMessage}
             disabled={!inputText.trim() || isLoading}
             style={{
-              marginLeft: 8,
               backgroundColor:
-                inputText.trim() && !isLoading ? "#6366f1" : "#d1d5db",
+                inputText.trim() && !isLoading ? "#6366f1" : "#f3f4f6",
               width: 40,
               height: 40,
               borderRadius: 20,
               justifyContent: "center",
               alignItems: "center",
+              shadowColor: "#000",
+              shadowOpacity: 0.1,
+              shadowRadius: 2,
+              shadowOffset: { width: 0, height: 1 },
+              elevation: 2,
             }}
           >
             <Ionicons
               name="send"
-              size={20}
+              size={18}
               color={inputText.trim() && !isLoading ? "#fff" : "#9ca3af"}
             />
           </TouchableOpacity>
         </View>
+        {inputText.length > 0 && (
+          <Text
+            style={{
+              fontSize: 12,
+              color: "#9ca3af",
+              textAlign: "right",
+              marginTop: 4,
+              marginRight: 8,
+            }}
+          >
+            {inputText.length}/500
+          </Text>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
