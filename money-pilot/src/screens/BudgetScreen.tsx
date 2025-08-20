@@ -768,13 +768,13 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             >
               <View
                 style={{
-                  backgroundColor: "#fef3c7",
+                  backgroundColor: colors.warningLight,
                   padding: 8,
                   borderRadius: 10,
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="bulb" size={20} color="#d97706" />
+                <Ionicons name="bulb" size={20} color={colors.warning} />
               </View>
               <Text
                 style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
@@ -805,14 +805,18 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     style={{
                       fontSize: 14,
                       fontWeight: "600",
-                      color: "#374151",
+                      color: colors.text,
                     }}
                   >
                     {insight.title}
                   </Text>
                 </View>
                 <Text
-                  style={{ fontSize: 13, color: "#6b7280", marginLeft: 24 }}
+                  style={{
+                    fontSize: 13,
+                    color: colors.textSecondary,
+                    marginLeft: 24,
+                  }}
                 >
                   {insight.message}
                 </Text>
@@ -846,22 +850,22 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  backgroundColor: "#dcfce7",
+                  backgroundColor: colors.successLight,
                   padding: 8,
                   borderRadius: 10,
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="trending-up" size={20} color="#374151" />
+                <Ionicons name="trending-up" size={20} color={colors.text} />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#374151" }}
+                style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
               >
                 Income
               </Text>
             </View>
             <TouchableOpacity onPress={handleAddIncome}>
-              <Ionicons name="add-circle" size={24} color="#374151" />
+              <Ionicons name="add-circle" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
@@ -872,16 +876,16 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               style={{
                 padding: 20,
                 alignItems: "center",
-                backgroundColor: "#f8fafc",
+                backgroundColor: colors.surfaceSecondary,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: "#e5e7eb",
+                borderColor: colors.border,
                 borderStyle: "dashed",
               }}
             >
               <Text
                 style={{
-                  color: "#6b7280",
+                  color: colors.textSecondary,
                   textAlign: "center",
                   fontSize: 16,
                 }}
@@ -917,14 +921,14 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   marginBottom: 12,
                   paddingVertical: 8,
                   borderBottomWidth: index === array.length - 1 ? 0 : 1,
-                  borderBottomColor: "#f3f4f6",
+                  borderBottomColor: colors.border,
                 }}
               >
                 <View style={{ flex: 1 }}>
                   <Text
                     style={{
                       fontSize: 16,
-                      color: "#374151",
+                      color: colors.text,
                       fontWeight: "500",
                     }}
                   >
@@ -937,7 +941,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       marginTop: 2,
                     }}
                   >
-                    <Text style={{ fontSize: 14, color: "#6b7280" }}>
+                    <Text style={{ fontSize: 14, color: colors.textSecondary }}>
                       {transaction.category} • {formatDate(transaction.date)}
                     </Text>
                     {(isRecurringTransaction(transaction) ||
@@ -945,7 +949,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       <Ionicons
                         name="repeat"
                         size={12}
-                        color="#6366f1"
+                        color={colors.primary}
                         style={{ marginLeft: 8 }}
                       />
                     )}
@@ -1019,7 +1023,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                           style={{
                             fontSize: 16,
                             fontWeight: "700",
-                            color: "#374151",
+                            color: colors.text,
                           }}
                         >
                           {formatCurrency(transaction.amount)}
@@ -1037,7 +1041,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             <View
               style={{
                 borderTopWidth: 2,
-                borderTopColor: "#374151",
+                borderTopColor: colors.border,
                 paddingTop: 16,
                 marginTop: 8,
               }}
@@ -1049,7 +1053,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 }}
               >
                 <Text
-                  style={{ fontSize: 18, fontWeight: "800", color: "#374151" }}
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "800",
+                    color: colors.text,
+                  }}
                 >
                   Total Income
                 </Text>
@@ -1339,22 +1347,22 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  backgroundColor: "#fee2e2",
+                  backgroundColor: colors.errorLight,
                   padding: 8,
                   borderRadius: 10,
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="trending-down" size={20} color="#374151" />
+                <Ionicons name="trending-down" size={20} color={colors.text} />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#374151" }}
+                style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
               >
                 Expenses
               </Text>
             </View>
             <TouchableOpacity onPress={handleAddExpense}>
-              <Ionicons name="add-circle" size={24} color="#374151" />
+              <Ionicons name="add-circle" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
@@ -1365,16 +1373,16 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               style={{
                 padding: 20,
                 alignItems: "center",
-                backgroundColor: "#f8fafc",
+                backgroundColor: colors.surfaceSecondary,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: "#e5e7eb",
+                borderColor: colors.border,
                 borderStyle: "dashed",
               }}
             >
               <Text
                 style={{
-                  color: "#6b7280",
+                  color: colors.textSecondary,
                   textAlign: "center",
                   fontSize: 16,
                 }}
@@ -1410,14 +1418,14 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   marginBottom: 12,
                   paddingVertical: 8,
                   borderBottomWidth: index === array.length - 1 ? 0 : 1,
-                  borderBottomColor: "#f3f4f6",
+                  borderBottomColor: colors.border,
                 }}
               >
                 <View style={{ flex: 1 }}>
                   <Text
                     style={{
                       fontSize: 16,
-                      color: "#374151",
+                      color: colors.text,
                       fontWeight: "500",
                     }}
                   >
@@ -1430,7 +1438,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       marginTop: 2,
                     }}
                   >
-                    <Text style={{ fontSize: 14, color: "#6b7280" }}>
+                    <Text style={{ fontSize: 14, color: colors.textSecondary }}>
                       {transaction.category} • {formatDate(transaction.date)}
                     </Text>
                     {(isRecurringTransaction(transaction) ||
@@ -1438,7 +1446,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       <Ionicons
                         name="repeat"
                         size={12}
-                        color="#6366f1"
+                        color={colors.primary}
                         style={{ marginLeft: 8 }}
                       />
                     )}
@@ -1512,7 +1520,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                           style={{
                             fontSize: 16,
                             fontWeight: "700",
-                            color: "#374151",
+                            color: colors.text,
                           }}
                         >
                           {formatCurrency(transaction.amount)}
@@ -1530,7 +1538,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             <View
               style={{
                 borderTopWidth: 2,
-                borderTopColor: "#374151",
+                borderTopColor: colors.border,
                 paddingTop: 16,
                 marginTop: 8,
               }}
@@ -1542,7 +1550,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 }}
               >
                 <Text
-                  style={{ fontSize: 18, fontWeight: "800", color: "#374151" }}
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "800",
+                    color: colors.text,
+                  }}
                 >
                   Total Expenses
                 </Text>
@@ -1574,7 +1586,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               fontSize: 20,
               fontWeight: "700",
               marginBottom: 20,
-              color: "#1f2937",
+              color: colors.text,
             }}
           >
             Budget Summary
@@ -1589,7 +1601,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               }}
             >
               <Text
-                style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
+                style={{
+                  fontSize: 16,
+                  color: colors.textSecondary,
+                  fontWeight: "500",
+                }}
               >
                 Net Income
               </Text>
@@ -1616,7 +1632,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Text
-                  style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
+                  style={{
+                    fontSize: 16,
+                    color: colors.textSecondary,
+                    fontWeight: "500",
+                  }}
                 >
                   Savings (
                 </Text>
@@ -1638,7 +1658,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   placeholder="20"
                 />
                 <Text
-                  style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
+                  style={{
+                    fontSize: 16,
+                    color: colors.textSecondary,
+                    fontWeight: "500",
+                  }}
                 >
                   % of NI)
                 </Text>
@@ -1662,7 +1686,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 }}
               >
                 <Text
-                  style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
+                  style={{
+                    fontSize: 16,
+                    color: colors.textSecondary,
+                    fontWeight: "500",
+                  }}
                 >
                   {goal.name}
                 </Text>
@@ -1682,7 +1710,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 <Text
                   style={{
                     fontSize: 12,
-                    color: "#9ca3af",
+                    color: colors.textTertiary,
                     fontStyle: "italic",
                   }}
                 >
@@ -1690,7 +1718,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 </Text>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <Text
-                    style={{ fontSize: 12, color: "#9ca3af", marginRight: 4 }}
+                    style={{
+                      fontSize: 12,
+                      color: colors.textTertiary,
+                      marginRight: 4,
+                    }}
                   >
                     Progress:
                   </Text>
@@ -1718,7 +1750,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               }}
             >
               <Text
-                style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
+                style={{
+                  fontSize: 16,
+                  color: colors.textSecondary,
+                  fontWeight: "500",
+                }}
               >
                 Discretionary Income
               </Text>
@@ -1741,7 +1777,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Text
-                  style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
+                  style={{
+                    fontSize: 16,
+                    color: colors.textSecondary,
+                    fontWeight: "500",
+                  }}
                 >
                   Debt Payoff (
                 </Text>
@@ -1763,7 +1803,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   placeholder="75"
                 />
                 <Text
-                  style={{ fontSize: 16, color: "#6b7280", fontWeight: "500" }}
+                  style={{
+                    fontSize: 16,
+                    color: colors.textSecondary,
+                    fontWeight: "500",
+                  }}
                 >
                   % of DI)
                 </Text>
@@ -1779,7 +1823,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           <View
             style={{
               borderTopWidth: 1,
-              borderTopColor: "#374151",
+              borderTopColor: colors.border,
               paddingTop: 20,
               position: "relative",
             }}
@@ -1791,7 +1835,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 left: 0,
                 right: 0,
                 height: 1,
-                backgroundColor: "#374151",
+                backgroundColor: colors.border,
               }}
             />
             <View
@@ -1801,14 +1845,14 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 left: 0,
                 right: 0,
                 height: 1,
-                backgroundColor: "#374151",
+                backgroundColor: colors.border,
               }}
             />
             <View
               style={{ flexDirection: "row", justifyContent: "space-between" }}
             >
               <Text
-                style={{ fontSize: 20, fontWeight: "800", color: "#374151" }}
+                style={{ fontSize: 20, fontWeight: "800", color: colors.text }}
               >
                 $ Available
               </Text>
@@ -1827,18 +1871,24 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           {/* Save Settings Button */}
           <TouchableOpacity
             style={{
-              backgroundColor: "#f3f4f6",
+              backgroundColor: colors.surfaceSecondary,
               borderRadius: 8,
               padding: 12,
               alignItems: "center",
               marginTop: 40,
               marginBottom: 20,
               borderWidth: 1,
-              borderColor: "#e5e7eb",
+              borderColor: colors.border,
             }}
             onPress={handleSaveBudgetSettings}
           >
-            <Text style={{ color: "#6b7280", fontSize: 14, fontWeight: "500" }}>
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: 14,
+                fontWeight: "500",
+              }}
+            >
               Save Budget Settings
             </Text>
           </TouchableOpacity>
