@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
-import { useOptimizedData } from "../hooks/useOptimizedData";
+import { useData } from "../contexts/DataContext";
 import {
   saveTransaction,
   removeTransaction,
@@ -42,6 +42,18 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     refreshInBackground,
     refreshData,
   } = useZeroLoading();
+
+  // Bank data from global context
+  const {
+    bankTransactions,
+    bankRecurringSuggestions: recurringSuggestions,
+    isBankConnected,
+    bankDataLastUpdated,
+    isBankDataLoading,
+    refreshBankData,
+    isBankDataStale,
+  } = useData();
+
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [savingsPercentage, setSavingsPercentage] = useState("20");
   const [debtPayoffPercentage, setDebtPayoffPercentage] = useState("75");
@@ -62,6 +74,41 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     }
   }, [user, budgetSettings]);
 
+  // Get cache status for display
+  const getCacheStatus = () => {
+    if (!bankDataLastUpdated) return "No data";
+
+    const now = Date.now();
+    const ageMinutes = Math.round(
+      (now - bankDataLastUpdated.getTime()) / 1000 / 60
+    );
+
+    if (ageMinutes < 60) return `Fresh (${ageMinutes}m ago)`;
+    if (ageMinutes < 240) return `Recent (${Math.round(ageMinutes / 60)}h ago)`; // 4 hours
+    if (ageMinutes < 1440) return `Stale (${Math.round(ageMinutes / 60)}h ago)`; // 24 hours
+    return `Very stale (${Math.round(ageMinutes / 60 / 24)}d ago)`;
+  };
+
+  // Handle adding a recurring suggestion from bank data
+  const handleAddRecurringSuggestion = (suggestion: any) => {
+    navigation.navigate("AddTransaction", {
+      type: suggestion.type,
+      description: suggestion.name,
+      amount: suggestion.amount.toString(),
+      category: suggestion.category,
+      isRecurring: true,
+      frequency: suggestion.frequency,
+      fromBankSuggestion: true,
+    });
+  };
+
+  // Handle refresh button press with debouncing
+  const handleRefreshPress = () => {
+    if (!isBankDataLoading) {
+      refreshBankData(true);
+    }
+  };
+
   // Background refresh when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
@@ -72,6 +119,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         refreshData().catch((error: any) => {
           console.error("Background refresh failed:", error);
         });
+
+        // Load bank data with smart caching strategy
+        refreshBankData();
       }
     }, [user, refreshData])
   );
@@ -957,6 +1007,243 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             </View>
           )}
         </View>
+
+        {/* Bank Recurring Suggestions Section */}
+        {isBankConnected && recurringSuggestions.length > 0 && (
+          <View
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: 20,
+              padding: 24,
+              marginBottom: 20,
+              shadowColor: "#000",
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            }}
+          >
+            <View style={{ marginBottom: 20 }}>
+              {/* Title Row */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 12,
+                }}
+              >
+                <View
+                  style={{
+                    backgroundColor: "#dbeafe",
+                    padding: 8,
+                    borderRadius: 10,
+                    marginRight: 12,
+                  }}
+                >
+                  <Ionicons name="repeat" size={20} color="#1d4ed8" />
+                </View>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: "#1d4ed8",
+                    flex: 1,
+                  }}
+                >
+                  Bank Recurring Suggestions
+                </Text>
+              </View>
+
+              {/* Status Row */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: "#6b7280",
+                    backgroundColor: "#f3f4f6",
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 8,
+                  }}
+                >
+                  {recurringSuggestions.length} suggestions found
+                </Text>
+                <TouchableOpacity
+                  onPress={handleRefreshPress}
+                  disabled={isBankDataLoading}
+                  style={{
+                    padding: 6,
+                    borderRadius: 6,
+                    backgroundColor: isBankDataLoading ? "#e5e7eb" : "#dbeafe",
+                    flexDirection: "row",
+                    alignItems: "center",
+                  }}
+                >
+                  <Ionicons
+                    name={isBankDataLoading ? "refresh" : "refresh-outline"}
+                    size={14}
+                    color={isBankDataLoading ? "#9ca3af" : "#1d4ed8"}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: isBankDataLoading ? "#9ca3af" : "#1d4ed8",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {isBankDataLoading ? "Loading..." : "Refresh"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={{ marginBottom: 16 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#6b7280",
+                  lineHeight: 20,
+                }}
+              >
+                Based on your bank transactions, we found these recurring
+                payments. Tap to add them to your budget.
+              </Text>
+              {bankDataLastUpdated && (
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: "#9ca3af",
+                    marginTop: 4,
+                    fontStyle: "italic",
+                  }}
+                >
+                  {getCacheStatus()} • {bankTransactions.length} transactions
+                </Text>
+              )}
+            </View>
+
+            {recurringSuggestions.slice(0, 5).map((suggestion, index) => (
+              <TouchableOpacity
+                key={`${suggestion.name}_${suggestion.amount}_${index}`}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  backgroundColor: "#f8fafc",
+                  borderRadius: 12,
+                  marginBottom: 8,
+                  borderWidth: 1,
+                  borderColor: "#e5e7eb",
+                }}
+                onPress={() => handleAddRecurringSuggestion(suggestion)}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: "#374151",
+                      marginBottom: 2,
+                    }}
+                  >
+                    {suggestion.name}
+                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: "#6b7280",
+                        marginRight: 8,
+                      }}
+                    >
+                      {suggestion.frequency} • {suggestion.occurrences} times
+                    </Text>
+                    <View
+                      style={{
+                        backgroundColor:
+                          suggestion.type === "income" ? "#dcfce7" : "#fee2e2",
+                        paddingHorizontal: 6,
+                        paddingVertical: 2,
+                        borderRadius: 4,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: "600",
+                          color:
+                            suggestion.type === "income"
+                              ? "#16a34a"
+                              : "#dc2626",
+                        }}
+                      >
+                        {suggestion.type}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color:
+                        suggestion.type === "income" ? "#16a34a" : "#dc2626",
+                    }}
+                  >
+                    {formatCurrency(suggestion.amount)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: "#6b7280",
+                      marginTop: 2,
+                    }}
+                  >
+                    {suggestion.category}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+
+            {recurringSuggestions.length > 5 && (
+              <TouchableOpacity
+                style={{
+                  paddingVertical: 12,
+                  alignItems: "center",
+                  backgroundColor: "#f3f4f6",
+                  borderRadius: 12,
+                  marginTop: 8,
+                }}
+                onPress={() =>
+                  navigation.navigate("AddTransaction", {
+                    showBankSuggestions: true,
+                    suggestions: recurringSuggestions,
+                  })
+                }
+              >
+                <Text
+                  style={{
+                    color: "#6366f1",
+                    fontSize: 14,
+                    fontWeight: "600",
+                  }}
+                >
+                  View All {recurringSuggestions.length} Suggestions
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         {/* Expenses Section */}
         <View

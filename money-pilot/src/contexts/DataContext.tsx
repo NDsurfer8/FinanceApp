@@ -14,6 +14,8 @@ import {
   getUserBudgetSettings,
   getUserRecurringTransactions,
 } from "../services/userData";
+import { plaidService } from "../services/plaid";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface DataContextType {
   // Data
@@ -23,6 +25,13 @@ interface DataContextType {
   goals: any[];
   budgetSettings: any;
   recurringTransactions: any[];
+
+  // Bank Data
+  bankTransactions: any[];
+  bankRecurringSuggestions: any[];
+  isBankConnected: boolean;
+  bankDataLastUpdated: Date | null;
+  isBankDataLoading: boolean;
 
   // Loading states
   isLoading: boolean;
@@ -35,9 +44,11 @@ interface DataContextType {
   refreshGoals: () => Promise<void>;
   refreshBudgetSettings: () => Promise<void>;
   refreshRecurringTransactions: () => Promise<void>;
+  refreshBankData: (forceRefresh?: boolean) => Promise<void>;
 
   // Cache management
   isDataStale: () => boolean;
+  isBankDataStale: () => boolean;
 
   // Data setters for optimistic updates
   setTransactions: (transactions: any[]) => void;
@@ -78,6 +89,28 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [recurringTransactions, setRecurringTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // Bank Data State
+  const [bankTransactions, setBankTransactions] = useState<any[]>([]);
+  const [bankRecurringSuggestions, setBankRecurringSuggestions] = useState<
+    any[]
+  >([]);
+  const [isBankConnected, setIsBankConnected] = useState(false);
+  const [bankDataLastUpdated, setBankDataLastUpdated] = useState<Date | null>(
+    null
+  );
+  const [isBankDataLoading, setIsBankDataLoading] = useState(false);
+
+  // Bank Data Cache Keys
+  const BANK_DATA_CACHE_KEY = `bank_data_${user?.uid || "anonymous"}`;
+  const BANK_DATA_TIMESTAMP_KEY = `bank_data_timestamp_${
+    user?.uid || "anonymous"
+  }`;
+  const LAST_TRANSACTION_DATE_KEY = `last_transaction_date_${
+    user?.uid || "anonymous"
+  }`;
+  const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours for recurring analysis
+  const TRANSACTION_UPDATE_INTERVAL = 4 * 60 * 60 * 1000; // 4 hours for new transactions
 
   // Check if data is stale (older than 30 minutes instead of 5)
   const isDataStale = useCallback(() => {
@@ -225,6 +258,278 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   }, [user]);
 
+  // Bank Data Methods
+  const analyzeRecurringPatterns = useCallback((transactions: any[]) => {
+    const patterns: { [key: string]: any[] } = {};
+    const suggestions: any[] = [];
+
+    // Group transactions by merchant name and amount
+    transactions.forEach((transaction) => {
+      const key = `${transaction.name}_${Math.abs(transaction.amount)}`;
+      if (!patterns[key]) {
+        patterns[key] = [];
+      }
+      patterns[key].push(transaction);
+    });
+
+    // Find transactions that appear multiple times (potential recurring)
+    Object.entries(patterns).forEach(([key, transactions]) => {
+      if (transactions.length >= 2) {
+        const firstTransaction = transactions[0];
+        const sortedTransactions = transactions.sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+
+        // Calculate frequency
+        const frequency = calculateFrequency(sortedTransactions);
+
+        if (frequency) {
+          suggestions.push({
+            name: firstTransaction.name,
+            amount: Math.abs(firstTransaction.amount),
+            category: firstTransaction.category?.[0] || "Other",
+            frequency,
+            lastOccurrence: new Date(
+              sortedTransactions[sortedTransactions.length - 1].date
+            ),
+            occurrences: transactions.length,
+            type: firstTransaction.amount > 0 ? "income" : "expense",
+          });
+        }
+      }
+    });
+
+    return suggestions.sort((a, b) => b.occurrences - a.occurrences);
+  }, []);
+
+  const calculateFrequency = useCallback((transactions: any[]) => {
+    if (transactions.length < 2) return null;
+
+    const dates = transactions.map((t) => new Date(t.date).getTime());
+    const intervals = [];
+
+    for (let i = 1; i < dates.length; i++) {
+      intervals.push(dates[i] - dates[i - 1]);
+    }
+
+    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    const days = avgInterval / (1000 * 60 * 60 * 24);
+
+    // Determine frequency based on average interval
+    if (days >= 25 && days <= 35) return "monthly";
+    if (days >= 13 && days <= 15) return "biweekly";
+    if (days >= 6 && days <= 8) return "weekly";
+    if (days >= 85 && days <= 95) return "quarterly";
+    if (days >= 360 && days <= 370) return "yearly";
+
+    return null;
+  }, []);
+
+  const loadCachedBankData = useCallback(async () => {
+    try {
+      const cachedData = await AsyncStorage.getItem(BANK_DATA_CACHE_KEY);
+      const cachedTimestamp = await AsyncStorage.getItem(
+        BANK_DATA_TIMESTAMP_KEY
+      );
+
+      if (cachedData && cachedTimestamp) {
+        const timestamp = parseInt(cachedTimestamp);
+        const now = Date.now();
+
+        // Check if cache is still valid (less than 24 hours old for recurring analysis)
+        if (now - timestamp < CACHE_DURATION) {
+          const parsedData = JSON.parse(cachedData);
+          setBankTransactions(parsedData.transactions);
+          setBankRecurringSuggestions(parsedData.suggestions);
+          setBankDataLastUpdated(new Date(timestamp));
+          console.log(
+            "Loaded cached bank data, age:",
+            Math.round((now - timestamp) / 1000 / 60),
+            "minutes"
+          );
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error("Failed to load cached bank data:", error);
+      return false;
+    }
+  }, []);
+
+  const saveBankDataToCache = useCallback(
+    async (transactions: any[], suggestions: any[]) => {
+      try {
+        const cacheData = {
+          transactions,
+          suggestions,
+          timestamp: Date.now(),
+        };
+
+        await AsyncStorage.setItem(
+          BANK_DATA_CACHE_KEY,
+          JSON.stringify(cacheData)
+        );
+        await AsyncStorage.setItem(
+          BANK_DATA_TIMESTAMP_KEY,
+          Date.now().toString()
+        );
+
+        // Store the latest transaction date for incremental updates
+        if (transactions.length > 0) {
+          const latestDate = transactions
+            .map((t) => new Date(t.date))
+            .sort((a, b) => b.getTime() - a.getTime())[0]
+            .toISOString()
+            .split("T")[0];
+          await AsyncStorage.setItem(LAST_TRANSACTION_DATE_KEY, latestDate);
+        }
+
+        console.log("Saved bank data to cache");
+      } catch (error) {
+        console.error("Failed to save bank data to cache:", error);
+      }
+    },
+    []
+  );
+
+  const refreshBankData = useCallback(
+    async (forceRefresh = false) => {
+      try {
+        // Don't load if already loading
+        if (isBankDataLoading && !forceRefresh) {
+          console.log("Bank data already loading, skipping...");
+          return;
+        }
+
+        setIsBankDataLoading(true);
+
+        const connected = await plaidService.isBankConnected();
+        setIsBankConnected(connected);
+
+        if (!connected) {
+          setIsBankDataLoading(false);
+          return;
+        }
+
+        // Try to load from cache first (unless forcing refresh)
+        if (!forceRefresh) {
+          const cacheLoaded = await loadCachedBankData();
+          if (cacheLoaded) {
+            setIsBankDataLoading(false);
+            return;
+          }
+        }
+
+        // Determine what data to fetch based on cache status
+        const now = Date.now();
+        const lastFetch = bankDataLastUpdated?.getTime() || 0;
+        const timeSinceLastFetch = now - lastFetch;
+
+        let startDate: string;
+        let endDate = new Date().toISOString().split("T")[0];
+        let fetchStrategy: "full" | "incremental" | "recurring-only";
+
+        if (forceRefresh || lastFetch === 0) {
+          // First time or force refresh: get 3 months of data for recurring analysis
+          console.log(
+            "🔄 Full refresh: Fetching 3 months of data for recurring analysis..."
+          );
+          startDate = new Date(Date.now() - 3 * 30 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0];
+          fetchStrategy = "full";
+        } else if (timeSinceLastFetch > TRANSACTION_UPDATE_INTERVAL) {
+          // Check for new transactions (last 4 hours)
+          console.log(
+            "📈 Incremental update: Checking for new transactions..."
+          );
+          const lastTransactionDate = await AsyncStorage.getItem(
+            LAST_TRANSACTION_DATE_KEY
+          );
+          startDate =
+            lastTransactionDate ||
+            new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split("T")[0]; // Fallback to 7 days
+          fetchStrategy = "incremental";
+        } else {
+          // Cache is fresh, no need to fetch
+          console.log("✅ Cache is fresh, no API call needed");
+          setIsBankDataLoading(false);
+          return;
+        }
+
+        const transactions = await plaidService.getTransactions(
+          startDate,
+          endDate
+        );
+
+        if (fetchStrategy === "incremental" && transactions.length === 0) {
+          console.log("✅ No new transactions found, keeping existing cache");
+          setIsBankDataLoading(false);
+          return;
+        }
+
+        let allTransactions = transactions;
+
+        // For incremental updates, merge with existing cached data
+        if (fetchStrategy === "incremental" && lastFetch > 0) {
+          const cachedData = await AsyncStorage.getItem(BANK_DATA_CACHE_KEY);
+          if (cachedData) {
+            const parsedData = JSON.parse(cachedData);
+            const existingTransactions = parsedData.transactions || [];
+
+            // Merge and deduplicate transactions
+            const transactionMap = new Map();
+            [...existingTransactions, ...transactions].forEach((t) => {
+              const key = `${t.name}_${t.amount}_${t.date}`;
+              transactionMap.set(key, t);
+            });
+
+            allTransactions = Array.from(transactionMap.values());
+            console.log(
+              `🔄 Merged ${existingTransactions.length} existing + ${transactions.length} new = ${allTransactions.length} total transactions`
+            );
+          }
+        }
+
+        setBankTransactions(allTransactions);
+
+        // Analyze recurring patterns (only for full refresh or if we have significant new data)
+        const suggestions = analyzeRecurringPatterns(allTransactions);
+        setBankRecurringSuggestions(suggestions);
+        setBankDataLastUpdated(new Date());
+
+        // Save to cache
+        await saveBankDataToCache(allTransactions, suggestions);
+
+        console.log(
+          `✅ ${
+            fetchStrategy === "full" ? "Full refresh" : "Incremental update"
+          } complete: ${suggestions.length} recurring suggestions found`
+        );
+      } catch (error) {
+        console.error("Failed to load bank data:", error);
+        setIsBankConnected(false);
+      } finally {
+        setIsBankDataLoading(false);
+      }
+    },
+    [
+      isBankDataLoading,
+      loadCachedBankData,
+      saveBankDataToCache,
+      analyzeRecurringPatterns,
+    ]
+  );
+
+  const isBankDataStale = useCallback(() => {
+    if (!bankDataLastUpdated) return true;
+    const now = Date.now();
+    return now - bankDataLastUpdated.getTime() > TRANSACTION_UPDATE_INTERVAL;
+  }, [bankDataLastUpdated]);
+
   const refreshData = useCallback(async () => {
     await loadAllData();
   }, [loadAllData]);
@@ -233,6 +538,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   useEffect(() => {
     if (user) {
       loadAllData();
+      // Also load bank data
+      refreshBankData();
     } else {
       // Clear data when user logs out
       setTransactions([]);
@@ -242,6 +549,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setBudgetSettings(null);
       setRecurringTransactions([]);
       setLastUpdated(null);
+
+      // Clear bank data
+      setBankTransactions([]);
+      setBankRecurringSuggestions([]);
+      setIsBankConnected(false);
+      setBankDataLastUpdated(null);
     }
   }, [user, loadAllData]);
 
@@ -252,6 +565,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     goals,
     budgetSettings,
     recurringTransactions,
+    bankTransactions,
+    bankRecurringSuggestions,
+    isBankConnected,
+    bankDataLastUpdated,
+    isBankDataLoading,
     isLoading,
     lastUpdated,
     refreshData,
@@ -260,7 +578,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     refreshGoals,
     refreshBudgetSettings,
     refreshRecurringTransactions,
+    refreshBankData,
     isDataStale,
+    isBankDataStale,
     setTransactions,
     setBudgetSettings,
     setGoals,
