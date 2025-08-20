@@ -17,7 +17,6 @@ import { saveTransaction } from "../services/userData";
 import { billReminderService } from "../services/billReminders";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
-import { plaidService } from "../services/plaid";
 
 interface AddTransactionScreenProps {
   navigation: any;
@@ -64,17 +63,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       | "yearly",
     endDate: "",
   });
-  const [bankSuggestions, setBankSuggestions] = useState<any[]>([]);
-  const [showBankSuggestions, setShowBankSuggestions] = useState(false);
-  const [isBankConnected, setIsBankConnected] = useState(false);
 
   // Handle route params for bank suggestions
   React.useEffect(() => {
-    if (route.params?.showBankSuggestions && route.params?.suggestions) {
-      setBankSuggestions(route.params.suggestions);
-      setShowBankSuggestions(true);
-    }
-
     // Handle pre-filled data from bank suggestions
     if (route.params?.fromBankSuggestion) {
       setFormData((prev) => ({
@@ -88,115 +79,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       }));
     }
   }, [route.params]);
-
-  // Check bank connection status and load suggestions
-  React.useEffect(() => {
-    const checkBankConnection = async () => {
-      try {
-        const connected = await plaidService.isBankConnected();
-        setIsBankConnected(connected);
-
-        if (connected && bankSuggestions.length === 0) {
-          // Load bank suggestions if not already provided
-          await loadBankSuggestions();
-        }
-      } catch (error) {
-        console.error("Failed to check bank connection:", error);
-        setIsBankConnected(false);
-      }
-    };
-
-    checkBankConnection();
-  }, []);
-
-  // Load bank suggestions
-  const loadBankSuggestions = async () => {
-    try {
-      // Get transactions from the last 6 months to analyze patterns
-      const endDate = new Date().toISOString().split("T")[0];
-      const startDate = new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0];
-      const transactions = await plaidService.getTransactions(
-        startDate,
-        endDate
-      );
-
-      // Analyze recurring patterns
-      const suggestions = analyzeRecurringPatterns(transactions);
-      setBankSuggestions(suggestions);
-    } catch (error) {
-      console.error("Failed to load bank suggestions:", error);
-    }
-  };
-
-  // Analyze bank transactions to find recurring patterns
-  const analyzeRecurringPatterns = (transactions: any[]) => {
-    const patterns: { [key: string]: any[] } = {};
-    const suggestions: any[] = [];
-
-    // Group transactions by merchant name and amount
-    transactions.forEach((transaction) => {
-      const key = `${transaction.name}_${Math.abs(transaction.amount)}`;
-      if (!patterns[key]) {
-        patterns[key] = [];
-      }
-      patterns[key].push(transaction);
-    });
-
-    // Find transactions that appear multiple times (potential recurring)
-    Object.entries(patterns).forEach(([key, transactions]) => {
-      if (transactions.length >= 2) {
-        const firstTransaction = transactions[0];
-        const sortedTransactions = transactions.sort(
-          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-        );
-
-        // Calculate frequency
-        const frequency = calculateFrequency(sortedTransactions);
-
-        if (frequency) {
-          suggestions.push({
-            name: firstTransaction.name,
-            amount: Math.abs(firstTransaction.amount),
-            category: firstTransaction.category?.[0] || "Other",
-            frequency,
-            lastOccurrence: new Date(
-              sortedTransactions[sortedTransactions.length - 1].date
-            ),
-            occurrences: transactions.length,
-            type: firstTransaction.amount > 0 ? "income" : "expense",
-          });
-        }
-      }
-    });
-
-    return suggestions.sort((a, b) => b.occurrences - a.occurrences);
-  };
-
-  // Calculate frequency based on transaction dates
-  const calculateFrequency = (transactions: any[]) => {
-    if (transactions.length < 2) return null;
-
-    const dates = transactions.map((t) => new Date(t.date).getTime());
-    const intervals = [];
-
-    for (let i = 1; i < dates.length; i++) {
-      intervals.push(dates[i] - dates[i - 1]);
-    }
-
-    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-    const days = avgInterval / (1000 * 60 * 60 * 24);
-
-    // Determine frequency based on average interval
-    if (days >= 25 && days <= 35) return "monthly";
-    if (days >= 13 && days <= 15) return "biweekly";
-    if (days >= 6 && days <= 8) return "weekly";
-    if (days >= 85 && days <= 95) return "quarterly";
-    if (days >= 350 && days <= 380) return "yearly";
-
-    return null;
-  };
 
   const getCategories = (type: string) => {
     if (type === "income") {
@@ -515,277 +397,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             </Text>
           </TouchableOpacity>
 
-          {/* Bank Suggestions Section */}
-          {isBankConnected && (
-            <View
-              style={{
-                backgroundColor: "#fff",
-                borderRadius: 16,
-                padding: 16,
-                marginBottom: 16,
-                shadowColor: "#000",
-                shadowOpacity: 0.06,
-                shadowRadius: 8,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 2,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 12,
-                }}
-              >
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Ionicons name="repeat" size={20} color="#1d4ed8" />
-                  <Text
-                    style={{ fontSize: 16, fontWeight: "600", marginLeft: 8 }}
-                  >
-                    Bank Recurring Suggestions
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => setShowBankSuggestions(!showBankSuggestions)}
-                >
-                  <Ionicons
-                    name={showBankSuggestions ? "chevron-up" : "chevron-down"}
-                    size={20}
-                    color="#6b7280"
-                  />
-                </TouchableOpacity>
-              </View>
-
-              {showBankSuggestions && (
-                <View>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: "#6b7280",
-                      marginBottom: 12,
-                      lineHeight: 20,
-                    }}
-                  >
-                    Tap on a suggestion to pre-fill the form with bank data.
-                  </Text>
-
-                  {bankSuggestions.length > 0 ? (
-                    bankSuggestions.map((suggestion, index) => (
-                      <TouchableOpacity
-                        key={`${suggestion.name}_${suggestion.amount}_${index}`}
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          paddingVertical: 12,
-                          paddingHorizontal: 16,
-                          backgroundColor: "#f8fafc",
-                          borderRadius: 12,
-                          marginBottom: 8,
-                          borderWidth: 1,
-                          borderColor: "#e5e7eb",
-                        }}
-                        onPress={() => {
-                          setFormData({
-                            ...formData,
-                            description: suggestion.name,
-                            amount: suggestion.amount.toString(),
-                            category: suggestion.category,
-                            type: suggestion.type,
-                            isRecurring: true,
-                            frequency: suggestion.frequency,
-                          });
-                          setShowBankSuggestions(false);
-                        }}
-                      >
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              fontSize: 14,
-                              fontWeight: "600",
-                              color: "#374151",
-                              marginBottom: 2,
-                            }}
-                          >
-                            {suggestion.name}
-                          </Text>
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                            }}
-                          >
-                            <Text
-                              style={{
-                                fontSize: 12,
-                                color: "#6b7280",
-                                marginRight: 8,
-                              }}
-                            >
-                              {suggestion.frequency} • {suggestion.occurrences}{" "}
-                              times
-                            </Text>
-                            <View
-                              style={{
-                                backgroundColor:
-                                  suggestion.type === "income"
-                                    ? "#dcfce7"
-                                    : "#fee2e2",
-                                paddingHorizontal: 6,
-                                paddingVertical: 2,
-                                borderRadius: 4,
-                              }}
-                            >
-                              <Text
-                                style={{
-                                  fontSize: 10,
-                                  fontWeight: "600",
-                                  color:
-                                    suggestion.type === "income"
-                                      ? "#16a34a"
-                                      : "#dc2626",
-                                }}
-                              >
-                                {suggestion.type}
-                              </Text>
-                            </View>
-                          </View>
-                        </View>
-                        <View style={{ alignItems: "flex-end" }}>
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              fontWeight: "700",
-                              color:
-                                suggestion.type === "income"
-                                  ? "#16a34a"
-                                  : "#dc2626",
-                            }}
-                          >
-                            ${suggestion.amount.toFixed(2)}
-                          </Text>
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              color: "#6b7280",
-                              marginTop: 2,
-                            }}
-                          >
-                            {suggestion.category}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))
-                  ) : (
-                    <View
-                      style={{
-                        padding: 16,
-                        alignItems: "center",
-                        backgroundColor: "#f8fafc",
-                        borderRadius: 12,
-                        borderWidth: 1,
-                        borderColor: "#e5e7eb",
-                        borderStyle: "dashed",
-                      }}
-                    >
-                      <Ionicons
-                        name="information-circle"
-                        size={24}
-                        color="#6b7280"
-                      />
-                      <Text
-                        style={{
-                          color: "#6b7280",
-                          textAlign: "center",
-                          fontSize: 14,
-                          marginTop: 8,
-                        }}
-                      >
-                        No recurring patterns found in your bank data yet.
-                      </Text>
-                      <Text
-                        style={{
-                          color: "#6b7280",
-                          textAlign: "center",
-                          fontSize: 12,
-                          marginTop: 4,
-                        }}
-                      >
-                        More transactions will help us identify patterns.
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Type Selector */}
-          <View
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 16,
-              shadowColor: "#000",
-              shadowOpacity: 0.06,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 2,
-            }}
-          >
-            <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}>
-              Transaction Type
-            </Text>
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderRadius: 8,
-                  backgroundColor:
-                    formData.type === "expense" ? "#ef4444" : "#f3f4f6",
-                  alignItems: "center",
-                }}
-                onPress={() =>
-                  setFormData({ ...formData, type: "expense", category: "" })
-                }
-              >
-                <Text
-                  style={{
-                    color: formData.type === "expense" ? "#fff" : "#6b7280",
-                    fontWeight: "600",
-                  }}
-                >
-                  Expense
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderRadius: 8,
-                  backgroundColor:
-                    formData.type === "income" ? "#10b981" : "#f3f4f6",
-                  alignItems: "center",
-                }}
-                onPress={() =>
-                  setFormData({ ...formData, type: "income", category: "" })
-                }
-              >
-                <Text
-                  style={{
-                    color: formData.type === "income" ? "#fff" : "#6b7280",
-                    fontWeight: "600",
-                  }}
-                >
-                  Income
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
           {/* Form */}
           <View
             style={{
@@ -799,134 +410,59 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               elevation: 2,
             }}
           >
-            {/* Recurring Option */}
+            {/* Transaction Type */}
             <View style={{ marginBottom: 20 }}>
-              <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingVertical: 12,
-                  paddingHorizontal: 16,
-                  borderRadius: 8,
-                  backgroundColor: formData.isRecurring ? "#6366f1" : "#f8fafc",
-                  borderWidth: 1,
-                  borderColor: formData.isRecurring ? "#6366f1" : "#e5e7eb",
-                }}
-                onPress={() =>
-                  setFormData({
-                    ...formData,
-                    isRecurring: !formData.isRecurring,
-                  })
-                }
+              <Text
+                style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}
               >
-                <Ionicons
-                  name="repeat"
-                  size={18}
-                  color={formData.isRecurring ? "#fff" : "#6b7280"}
-                  style={{ marginRight: 8 }}
-                />
-                <Text
+                Transaction Type
+              </Text>
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <TouchableOpacity
                   style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    color: formData.isRecurring ? "#fff" : "#374151",
+                    flex: 1,
+                    padding: 12,
+                    borderRadius: 8,
+                    backgroundColor:
+                      formData.type === "expense" ? "#ef4444" : "#f3f4f6",
+                    alignItems: "center",
                   }}
+                  onPress={() =>
+                    setFormData({ ...formData, type: "expense", category: "" })
+                  }
                 >
-                  {formData.isRecurring
-                    ? "Recurring Transaction"
-                    : "Make Recurring"}
-                </Text>
-              </TouchableOpacity>
-
-              {formData.isRecurring && (
-                <View
+                  <Text
+                    style={{
+                      color: formData.type === "expense" ? "#fff" : "#6b7280",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Expense
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={{
-                    marginTop: 16,
-                    paddingTop: 16,
-                    borderTopWidth: 1,
-                    borderTopColor: "#e5e7eb",
+                    flex: 1,
+                    padding: 12,
+                    borderRadius: 8,
+                    backgroundColor:
+                      formData.type === "income" ? "#10b981" : "#f3f4f6",
+                    alignItems: "center",
                   }}
+                  onPress={() =>
+                    setFormData({ ...formData, type: "income", category: "" })
+                  }
                 >
-                  {/* Frequency Dropdown */}
-                  <View style={{ marginBottom: 16 }}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "500",
-                        marginBottom: 4,
-                        color: "#6b7280",
-                      }}
-                    >
-                      Frequency
-                    </Text>
-                    <View
-                      style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}
-                    >
-                      {["monthly"].map((freq) => (
-                        <TouchableOpacity
-                          key={freq}
-                          style={{
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 4,
-                            backgroundColor:
-                              formData.frequency === freq
-                                ? "#6366f1"
-                                : "#f3f4f6",
-                          }}
-                          onPress={() =>
-                            setFormData({ ...formData, frequency: freq as any })
-                          }
-                        >
-                          <Text
-                            style={{
-                              color:
-                                formData.frequency === freq
-                                  ? "#fff"
-                                  : "#374151",
-                              fontSize: 12,
-                              fontWeight: "500",
-                            }}
-                          >
-                            {freq.charAt(0).toUpperCase() + freq.slice(1)}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* End Date (Optional) */}
-                  <View style={{ marginBottom: 16 }}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "500",
-                        marginBottom: 4,
-                        color: "#6b7280",
-                      }}
-                    >
-                      End Date (Optional)
-                    </Text>
-                    <TextInput
-                      style={{
-                        borderWidth: 1,
-                        borderColor: "#d1d5db",
-                        borderRadius: 6,
-                        padding: 8,
-                        fontSize: 14,
-                      }}
-                      placeholder="YYYY-MM-DD (leave empty for no end date)"
-                      value={formData.endDate}
-                      onChangeText={(text) =>
-                        setFormData({ ...formData, endDate: text })
-                      }
-                      autoCorrect={false}
-                      returnKeyType="done"
-                    />
-                  </View>
-                </View>
-              )}
+                  <Text
+                    style={{
+                      color: formData.type === "income" ? "#fff" : "#6b7280",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Income
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Amount */}
@@ -1058,6 +594,136 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 autoCorrect={false}
                 returnKeyType="done"
               />
+            </View>
+
+            {/* Recurring Option */}
+            <View style={{ marginBottom: 20 }}>
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderRadius: 8,
+                  backgroundColor: formData.isRecurring ? "#6366f1" : "#f8fafc",
+                  borderWidth: 1,
+                  borderColor: formData.isRecurring ? "#6366f1" : "#e5e7eb",
+                }}
+                onPress={() =>
+                  setFormData({
+                    ...formData,
+                    isRecurring: !formData.isRecurring,
+                  })
+                }
+              >
+                <Ionicons
+                  name="repeat"
+                  size={18}
+                  color={formData.isRecurring ? "#fff" : "#6b7280"}
+                  style={{ marginRight: 8 }}
+                />
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: formData.isRecurring ? "#fff" : "#374151",
+                  }}
+                >
+                  {formData.isRecurring
+                    ? "Recurring Transaction"
+                    : "Make Recurring"}
+                </Text>
+              </TouchableOpacity>
+
+              {formData.isRecurring && (
+                <View
+                  style={{
+                    marginTop: 16,
+                    paddingTop: 16,
+                    borderTopWidth: 1,
+                    borderTopColor: "#e5e7eb",
+                  }}
+                >
+                  {/* Frequency Dropdown */}
+                  <View style={{ marginBottom: 16 }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "500",
+                        marginBottom: 4,
+                        color: "#6b7280",
+                      }}
+                    >
+                      Frequency
+                    </Text>
+                    <View
+                      style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}
+                    >
+                      {["monthly"].map((freq) => (
+                        <TouchableOpacity
+                          key={freq}
+                          style={{
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 4,
+                            backgroundColor:
+                              formData.frequency === freq
+                                ? "#6366f1"
+                                : "#f3f4f6",
+                          }}
+                          onPress={() =>
+                            setFormData({ ...formData, frequency: freq as any })
+                          }
+                        >
+                          <Text
+                            style={{
+                              color:
+                                formData.frequency === freq
+                                  ? "#fff"
+                                  : "#374151",
+                              fontSize: 12,
+                              fontWeight: "500",
+                            }}
+                          >
+                            {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  {/* End Date (Optional) */}
+                  <View style={{ marginBottom: 16 }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "500",
+                        marginBottom: 4,
+                        color: "#6b7280",
+                      }}
+                    >
+                      End Date (Optional)
+                    </Text>
+                    <TextInput
+                      style={{
+                        borderWidth: 1,
+                        borderColor: "#d1d5db",
+                        borderRadius: 6,
+                        padding: 8,
+                        fontSize: 14,
+                      }}
+                      placeholder="YYYY-MM-DD (leave empty for no end date)"
+                      value={formData.endDate}
+                      onChangeText={(text) =>
+                        setFormData({ ...formData, endDate: text })
+                      }
+                      autoCorrect={false}
+                      returnKeyType="done"
+                    />
+                  </View>
+                </View>
+              )}
             </View>
           </View>
 
