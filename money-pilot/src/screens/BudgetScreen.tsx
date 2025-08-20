@@ -19,6 +19,7 @@ import {
   removeTransaction,
   updateTransaction,
   saveBudgetSettings,
+  updateBudgetSettings,
   getUserRecurringTransactions,
   skipRecurringTransactionForMonth,
 } from "../services/userData";
@@ -52,6 +53,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     isBankDataLoading,
     refreshBankData,
     isBankDataStale,
+    refreshBudgetSettings,
   } = useData();
 
   const [selectedMonth, setSelectedMonth] = useState(new Date());
@@ -67,10 +69,22 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
   useEffect(() => {
     if (user) {
+      console.log("BudgetScreen: useEffect triggered - user:", user.uid);
+      console.log("BudgetScreen: Current budgetSettings:", budgetSettings);
+
       // Set the percentages from saved settings or defaults
       if (budgetSettings) {
+        console.log("BudgetScreen: Setting values from saved budget settings");
         setSavingsPercentage(budgetSettings.savingsPercentage.toString());
         setDebtPayoffPercentage(budgetSettings.debtPayoffPercentage.toString());
+        console.log(
+          "BudgetScreen: Set savings to:",
+          budgetSettings.savingsPercentage,
+          "debt to:",
+          budgetSettings.debtPayoffPercentage
+        );
+      } else {
+        console.log("BudgetScreen: No budget settings found, using defaults");
       }
     }
   }, [user, budgetSettings]);
@@ -515,18 +529,34 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         updatedAt: Date.now(),
       };
 
+      console.log("BudgetScreen: New settings object:", newSettings);
+
+      // Optimistic update - update UI immediately
+      updateDataOptimistically({ budgetSettings: newSettings });
+      console.log("BudgetScreen: Optimistic update applied");
+
       if (budgetSettings?.id) {
         // Update existing settings
-        // await updateBudgetSettings({ // This line is removed as per the new_code
-        //   ...newSettings,
-        //   id: budgetSettings.id,
-        // });
+        console.log(
+          "BudgetScreen: Updating existing budget settings with ID:",
+          budgetSettings.id
+        );
+        await updateBudgetSettings({
+          ...newSettings,
+          id: budgetSettings.id,
+        });
+        console.log("BudgetScreen: Budget settings updated successfully");
       } else {
         // Create new settings
+        console.log("BudgetScreen: Creating new budget settings");
         await saveBudgetSettings(newSettings);
+        console.log("BudgetScreen: Budget settings created successfully");
       }
 
-      await refreshInBackground(); // Reload to get updated settings
+      // Refresh data to ensure consistency
+      console.log("BudgetScreen: Refreshing budget settings from server...");
+      await refreshBudgetSettings();
+      console.log("BudgetScreen: Budget settings refreshed from server");
 
       // Refresh bill reminders when budget settings change
       if (user) {
@@ -535,8 +565,14 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
       Alert.alert("Success", "Budget settings saved successfully!");
     } catch (error) {
-      console.error("Error saving budget settings:", error);
+      console.error("BudgetScreen: Error saving budget settings:", error);
       Alert.alert("Error", "Failed to save budget settings");
+
+      // Revert optimistic update on error
+      if (budgetSettings) {
+        console.log("BudgetScreen: Reverting optimistic update due to error");
+        updateDataOptimistically({ budgetSettings });
+      }
     }
   };
 
