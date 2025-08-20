@@ -446,7 +446,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
         {!getGoalLimitInfo().isUnlimited && (
           <View
             style={{
-              backgroundColor: "#fef3c7",
+              backgroundColor: colors.warningLight,
               borderRadius: 12,
               padding: 12,
               marginBottom: 16,
@@ -456,8 +456,14 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons name="information-circle" size={16} color="#d97706" />
-              <Text style={{ marginLeft: 8, color: "#d97706", fontSize: 14 }}>
+              <Ionicons
+                name="information-circle"
+                size={16}
+                color={colors.warning}
+              />
+              <Text
+                style={{ marginLeft: 8, color: colors.warning, fontSize: 14 }}
+              >
                 {`${getGoalLimitInfo().current}/${
                   getGoalLimitInfo().limit
                 } goals used`}
@@ -466,7 +472,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
             <TouchableOpacity onPress={presentPaywall}>
               <Text
                 style={{
-                  color: "#d97706",
+                  color: colors.warning,
                   fontSize: 12,
                   fontWeight: "600",
                 }}
@@ -508,24 +514,40 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
             >
               <View style={{ alignItems: "center", flex: 1 }}>
                 <Text
-                  style={{ fontSize: 14, color: "#6b7280", marginBottom: 4 }}
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                    marginBottom: 4,
+                  }}
                 >
                   Total Goals
                 </Text>
                 <Text
-                  style={{ fontSize: 18, fontWeight: "700", color: "#374151" }}
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: colors.text,
+                  }}
                 >
                   {goals.length}
                 </Text>
               </View>
               <View style={{ alignItems: "center", flex: 1 }}>
                 <Text
-                  style={{ fontSize: 14, color: "#6b7280", marginBottom: 4 }}
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                    marginBottom: 4,
+                  }}
                 >
                   Total Target
                 </Text>
                 <Text
-                  style={{ fontSize: 18, fontWeight: "700", color: "#16a34a" }}
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: colors.success,
+                  }}
                 >
                   {formatCurrency(
                     goals.reduce((sum, goal) => sum + goal.targetAmount, 0)
@@ -534,12 +556,20 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
               </View>
               <View style={{ alignItems: "center", flex: 1 }}>
                 <Text
-                  style={{ fontSize: 14, color: "#6b7280", marginBottom: 4 }}
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                    marginBottom: 4,
+                  }}
                 >
                   Total Saved
                 </Text>
                 <Text
-                  style={{ fontSize: 18, fontWeight: "700", color: "#d97706" }}
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: colors.warning,
+                  }}
                 >
                   {formatCurrency(
                     goals.reduce((sum, goal) => sum + goal.currentAmount, 0)
@@ -663,12 +693,14 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         style={{
                           fontSize: 18,
                           fontWeight: "700",
-                          color: "#374151",
+                          color: colors.text,
                         }}
                       >
                         {goal.name}
                       </Text>
-                      <Text style={{ fontSize: 14, color: "#6b7280" }}>
+                      <Text
+                        style={{ fontSize: 14, color: colors.textSecondary }}
+                      >
                         {category?.label}
                       </Text>
                     </View>
@@ -707,7 +739,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       <Ionicons
                         name="trash-outline"
                         size={20}
-                        color="#dc2626"
+                        color={colors.error}
                       />
                     </TouchableOpacity>
                   </View>
@@ -718,7 +750,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   <View
                     style={{
                       height: 8,
-                      backgroundColor: "#f3f4f6",
+                      backgroundColor: colors.surfaceSecondary,
                       borderRadius: 4,
                       overflow: "hidden",
                     }}
@@ -746,11 +778,15 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     {formatCurrency(goal.currentAmount)}
                   </Text>
                   <Text
-                    style={{ fontSize: 14, color: "#6b7280", marginBottom: 8 }}
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginBottom: 8,
+                    }}
                   >
                     {getProgressStatus(progress)}
                   </Text>
-                  <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
                     {progress.toFixed(1)}% of{" "}
                     {formatCurrency(goal.targetAmount)}
                   </Text>
@@ -768,7 +804,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     <Text
                       style={{
                         fontSize: 14,
-                        color: "#6b7280",
+                        color: colors.textSecondary,
                         marginBottom: 4,
                       }}
                     >
@@ -783,10 +819,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                           style={{
                             fontSize: 16,
                             fontWeight: "700",
-                            color: "#374151",
+                            color: colors.text,
                             textAlign: "center",
                             borderBottomWidth: 1,
-                            borderBottomColor: "#374151",
+                            borderBottomColor: colors.text,
                             paddingHorizontal: 4,
                             minWidth: 80,
                           }}
@@ -800,14 +836,14 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                           style={{
                             padding: 4,
                             borderRadius: 4,
-                            backgroundColor: "#dcfce7",
+                            backgroundColor: colors.successLight,
                             marginLeft: 4,
                           }}
                         >
                           <Ionicons
                             name="checkmark"
                             size={12}
-                            color="#16a34a"
+                            color={colors.success}
                           />
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -815,11 +851,15 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                           style={{
                             padding: 4,
                             borderRadius: 4,
-                            backgroundColor: "#fee2e2",
+                            backgroundColor: colors.errorLight,
                             marginLeft: 2,
                           }}
                         >
-                          <Ionicons name="close" size={12} color="#dc2626" />
+                          <Ionicons
+                            name="close"
+                            size={12}
+                            color={colors.error}
+                          />
                         </TouchableOpacity>
                       </View>
                     ) : (
@@ -837,7 +877,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                           style={{
                             fontSize: 16,
                             fontWeight: "700",
-                            color: "#374151",
+                            color: colors.text,
                           }}
                         >
                           {formatCurrency(goal.targetAmount)}
@@ -849,7 +889,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     <Text
                       style={{
                         fontSize: 14,
-                        color: "#6b7280",
+                        color: colors.textSecondary,
                         marginBottom: 4,
                       }}
                     >
@@ -864,10 +904,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                           style={{
                             fontSize: 16,
                             fontWeight: "700",
-                            color: "#16a34a",
+                            color: colors.success,
                             textAlign: "center",
                             borderBottomWidth: 1,
-                            borderBottomColor: "#16a34a",
+                            borderBottomColor: colors.success,
                             paddingHorizontal: 4,
                             minWidth: 80,
                           }}
@@ -900,7 +940,11 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                             marginLeft: 2,
                           }}
                         >
-                          <Ionicons name="close" size={12} color="#dc2626" />
+                          <Ionicons
+                            name="close"
+                            size={12}
+                            color={colors.error}
+                          />
                         </TouchableOpacity>
                       </View>
                     ) : (
@@ -918,7 +962,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                           style={{
                             fontSize: 16,
                             fontWeight: "700",
-                            color: "#16a34a",
+                            color: colors.success,
                           }}
                         >
                           {formatCurrency(goal.monthlyContribution)}
@@ -930,7 +974,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     <Text
                       style={{
                         fontSize: 14,
-                        color: "#6b7280",
+                        color: colors.textSecondary,
                         marginBottom: 4,
                       }}
                     >
@@ -940,7 +984,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       style={{
                         fontSize: 16,
                         fontWeight: "700",
-                        color: "#d97706",
+                        color: colors.warning,
                       }}
                     >
                       {calculateTimeRemaining(goal)}
@@ -953,7 +997,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   <Text
                     style={{
                       fontSize: 12,
-                      color: "#6b7280",
+                      color: colors.textSecondary,
                       marginBottom: 2,
                     }}
                   >
@@ -968,10 +1012,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         style={{
                           fontSize: 14,
                           fontWeight: "600",
-                          color: "#8b5cf6",
+                          color: colors.primary,
                           textAlign: "center",
                           borderBottomWidth: 1,
-                          borderBottomColor: "#8b5cf6",
+                          borderBottomColor: colors.primary,
                           paddingHorizontal: 4,
                           minWidth: 100,
                         }}
@@ -985,22 +1029,26 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         style={{
                           padding: 4,
                           borderRadius: 4,
-                          backgroundColor: "#dcfce7",
+                          backgroundColor: colors.successLight,
                           marginLeft: 4,
                         }}
                       >
-                        <Ionicons name="checkmark" size={12} color="#16a34a" />
+                        <Ionicons
+                          name="checkmark"
+                          size={12}
+                          color={colors.success}
+                        />
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={handleCancelEdit}
                         style={{
                           padding: 4,
                           borderRadius: 4,
-                          backgroundColor: "#fee2e2",
+                          backgroundColor: colors.errorLight,
                           marginLeft: 2,
                         }}
                       >
-                        <Ionicons name="close" size={12} color="#dc2626" />
+                        <Ionicons name="close" size={12} color={colors.error} />
                       </TouchableOpacity>
                     </View>
                   ) : (
@@ -1018,7 +1066,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         style={{
                           fontSize: 14,
                           fontWeight: "600",
-                          color: "#8b5cf6",
+                          color: colors.primary,
                         }}
                       >
                         {goal.targetDate
@@ -1032,7 +1080,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 {/* Quick Update Button */}
                 <TouchableOpacity
                   style={{
-                    backgroundColor: "#f3f4f6",
+                    backgroundColor: colors.surfaceSecondary,
                     padding: 12,
                     borderRadius: 12,
                     marginTop: 16,
@@ -1059,7 +1107,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     );
                   }}
                 >
-                  <Text style={{ color: "#374151", fontWeight: "600" }}>
+                  <Text style={{ color: colors.text, fontWeight: "600" }}>
                     Update Goal
                   </Text>
                 </TouchableOpacity>
