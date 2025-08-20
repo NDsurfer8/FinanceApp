@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../contexts/ThemeContext";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { saveAsset, saveDebt } from "../services/userData";
 
@@ -25,6 +26,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
   route,
 }) => {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const { assets, debts, updateDataOptimistically, refreshInBackground } =
     useZeroLoading();
   const { type } = route.params; // "asset" or "debt"
@@ -121,7 +123,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -142,9 +144,9 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
               onPress={() => navigation.goBack()}
               style={{ marginRight: 16 }}
             >
-              <Ionicons name="arrow-back" size={24} color="#374151" />
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={{ fontSize: 20, fontWeight: "600", color: "#374151" }}>
+            <Text style={{ fontSize: 20, fontWeight: "600", color: colors.text }}>
               Add {type === "asset" ? "Asset" : "Debt"}
             </Text>
           </View>
@@ -152,10 +154,10 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           {/* Form */}
           <View
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: colors.surface,
               borderRadius: 16,
               padding: 16,
-              shadowColor: "#000",
+              shadowColor: colors.shadow,
               shadowOpacity: 0.06,
               shadowRadius: 8,
               shadowOffset: { width: 0, height: 4 },
@@ -165,23 +167,26 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             {/* Name */}
             <View style={{ marginBottom: 16 }}>
               <Text
-                style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                style={{ fontSize: 14, fontWeight: "600", marginBottom: 8, color: colors.text }}
               >
                 Name *
               </Text>
               <TextInput
                 style={{
                   borderWidth: 1,
-                  borderColor: "#d1d5db",
+                  borderColor: colors.border,
                   borderRadius: 8,
                   padding: 12,
                   fontSize: 16,
+                  backgroundColor: colors.surfaceSecondary,
+                  color: colors.text,
                 }}
                 placeholder={
                   type === "asset"
                     ? "e.g., Savings Account"
                     : "e.g., Credit Card"
                 }
+                placeholderTextColor={colors.textSecondary}
                 value={formData.name}
                 onChangeText={(text) =>
                   setFormData({ ...formData, name: text })
@@ -194,19 +199,22 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             {/* Balance */}
             <View style={{ marginBottom: 16 }}>
               <Text
-                style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                style={{ fontSize: 14, fontWeight: "600", marginBottom: 8, color: colors.text }}
               >
                 {type === "asset" ? "Current Balance" : "Outstanding Balance"} *
               </Text>
               <TextInput
                 style={{
                   borderWidth: 1,
-                  borderColor: "#d1d5db",
+                  borderColor: colors.border,
                   borderRadius: 8,
                   padding: 12,
                   fontSize: 16,
+                  backgroundColor: colors.surfaceSecondary,
+                  color: colors.text,
                 }}
                 placeholder="0.00"
+                placeholderTextColor={colors.textSecondary}
                 value={formData.balance}
                 onChangeText={(text) =>
                   setFormData({ ...formData, balance: text })
@@ -221,19 +229,22 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             {type === "debt" && (
               <View style={{ marginBottom: 16 }}>
                 <Text
-                  style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                  style={{ fontSize: 14, fontWeight: "600", marginBottom: 8, color: colors.text }}
                 >
                   APR (%) *
                 </Text>
                 <TextInput
                   style={{
                     borderWidth: 1,
-                    borderColor: "#d1d5db",
+                    borderColor: colors.border,
                     borderRadius: 8,
                     padding: 12,
                     fontSize: 16,
+                    backgroundColor: colors.surfaceSecondary,
+                    color: colors.text,
                   }}
                   placeholder="0.00"
+                  placeholderTextColor={colors.textSecondary}
                   value={formData.rate}
                   onChangeText={(text) =>
                     setFormData({ ...formData, rate: text })
@@ -249,19 +260,22 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             {type === "debt" && (
               <View style={{ marginBottom: 16 }}>
                 <Text
-                  style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                  style={{ fontSize: 14, fontWeight: "600", marginBottom: 8, color: colors.text }}
                 >
                   Monthly Payment *
                 </Text>
                 <TextInput
                   style={{
                     borderWidth: 1,
-                    borderColor: "#d1d5db",
+                    borderColor: colors.border,
                     borderRadius: 8,
                     padding: 12,
                     fontSize: 16,
+                    backgroundColor: colors.surfaceSecondary,
+                    color: colors.text,
                   }}
                   placeholder="0.00"
+                  placeholderTextColor={colors.textSecondary}
                   value={formData.payment}
                   onChangeText={(text) =>
                     setFormData({ ...formData, payment: text })
@@ -277,7 +291,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           {/* Save Button */}
           <TouchableOpacity
             style={{
-              backgroundColor: type === "asset" ? "#10b981" : "#ef4444",
+              backgroundColor: type === "asset" ? colors.success : colors.error,
               borderRadius: 12,
               padding: 16,
               alignItems: "center",
@@ -285,7 +299,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             }}
             onPress={handleSave}
           >
-            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
+            <Text style={{ color: colors.buttonText, fontSize: 16, fontWeight: "600" }}>
               Save {type === "asset" ? "Asset" : "Debt"}
             </Text>
           </TouchableOpacity>
