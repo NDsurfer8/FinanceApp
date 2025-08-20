@@ -78,7 +78,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
         setMessages([
           {
             id: "1",
-            text: "Hi! I'm your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions. What would you like to know about your finances?",
+            text: "Hi! I'm Vectra, your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions. What would you like to know about your finances?",
             isUser: false,
             timestamp: new Date(),
           },
@@ -90,7 +90,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       setMessages([
         {
           id: "1",
-          text: "Hi! I'm your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions. What would you like to know about your finances?",
+          text: "Hi! I'm Vectra, your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions. What would you like to know about your finances?",
           isUser: false,
           timestamp: new Date(),
         },
@@ -121,7 +121,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       setMessages([
         {
           id: "1",
-          text: "Hi! I'm your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions. What would you like to know about your finances?",
+          text: "Hi! I'm Vectra, your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions. What would you like to know about your finances?",
           isUser: false,
           timestamp: new Date(),
         },
@@ -192,7 +192,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     if (!hasAIAccess) {
       Alert.alert(
         "Premium Feature",
-        "AI Financial Advisor is a premium feature. Upgrade to get personalized financial advice and insights.",
+        "Vectra is a premium feature. Upgrade to get personalized financial advice and insights.",
         [
           { text: "Cancel", style: "cancel" },
           { text: "Upgrade", onPress: presentPaywall },
@@ -284,7 +284,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: "600", color: "#1f2937" }}>
-            AI Financial Advisor
+            Vectra
           </Text>
           <Text style={{ fontSize: 14, color: "#6b7280" }}>
             Get personalized financial advice
