@@ -140,9 +140,24 @@ class RevenueCatService {
     try {
       const customerInfo = await this.getCustomerInfo();
 
+      // Debug: Log all available entitlements
+      console.log(
+        "Available entitlements:",
+        Object.keys(customerInfo.entitlements.active)
+      );
+      console.log("Active entitlements:", customerInfo.entitlements.active);
+
+      // Check for both possible entitlement names
       const isPremium =
-        customerInfo.entitlements.active["premium"] !== undefined;
-      const premiumEntitlement = customerInfo.entitlements.active["premium"];
+        customerInfo.entitlements.active["premium"] !== undefined ||
+        customerInfo.entitlements.active["premium_monthly"] !== undefined;
+
+      const premiumEntitlement =
+        customerInfo.entitlements.active["premium"] ||
+        customerInfo.entitlements.active["premium_monthly"];
+
+      console.log("Premium entitlement found:", premiumEntitlement);
+      console.log("Is premium:", isPremium);
 
       const subscriptionStatus: SubscriptionStatus = {
         isPremium,
@@ -168,8 +183,11 @@ class RevenueCatService {
   private getFeaturesForSubscription(customerInfo: CustomerInfo): string[] {
     const features: string[] = [];
 
-    // Check for premium entitlement
-    if (customerInfo.entitlements.active["premium"]) {
+    // Check for premium entitlement (both possible names)
+    if (
+      customerInfo.entitlements.active["premium"] ||
+      customerInfo.entitlements.active["premium_monthly"]
+    ) {
       features.push(
         PREMIUM_FEATURES.UNLIMITED_TRANSACTIONS,
         PREMIUM_FEATURES.UNLIMITED_INCOME_SOURCES,
