@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../contexts/ThemeContext";
 import { plaidService } from "../services/plaid";
 import { PlaidAccount, PlaidTransaction } from "../services/plaid";
 
@@ -21,6 +22,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [accounts, setAccounts] = useState<PlaidAccount[]>([]);
   const [transactions, setTransactions] = useState<PlaidTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -155,7 +157,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
@@ -167,12 +169,11 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
         <View
           style={{
             flexDirection: "row",
-            justifyContent: "space-between",
             alignItems: "flex-start",
             marginBottom: 20,
           }}
         >
-          <View style={{ flex: 1, marginRight: 12 }}>
+          <View style={{ flex: 1 }}>
             <View
               style={{
                 flexDirection: "row",
@@ -183,19 +184,19 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
                 style={{
-                  backgroundColor: "#f3f4f6",
+                  backgroundColor: colors.surfaceSecondary,
                   padding: 10,
                   borderRadius: 10,
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="arrow-back" size={18} color="#374151" />
+                <Ionicons name="arrow-back" size={18} color={colors.text} />
               </TouchableOpacity>
               <Text
                 style={{
                   fontSize: 24,
                   fontWeight: "800",
-                  color: "#1f2937",
+                  color: colors.text,
                   letterSpacing: -0.5,
                   flex: 1,
                 }}
@@ -207,7 +208,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
             <Text
               style={{
                 fontSize: 14,
-                color: "#6b7280",
+                color: colors.textSecondary,
                 marginLeft: 46,
                 fontWeight: "500",
               }}
@@ -218,7 +219,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
             <Text
               style={{
                 fontSize: 11,
-                color: isUsingRealData ? "#10b981" : "#f59e0b",
+                color: isUsingRealData ? colors.success : colors.warning,
                 marginLeft: 46,
                 marginTop: 2,
                 fontWeight: "500",
@@ -231,27 +232,16 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                 : "Demo mode - showing sample data"}
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Settings")}
-            style={{
-              backgroundColor: "#6366f1",
-              padding: 10,
-              borderRadius: 10,
-              marginTop: 2,
-            }}
-          >
-            <Ionicons name="settings-outline" size={18} color="#fff" />
-          </TouchableOpacity>
         </View>
 
         {/* Total Balance Card */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 16,
             padding: 20,
             marginBottom: 16,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
@@ -262,7 +252,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
             style={{
               fontSize: 14,
               fontWeight: "600",
-              color: "#6b7280",
+              color: colors.textSecondary,
               marginBottom: 6,
             }}
           >
@@ -272,7 +262,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
             style={{
               fontSize: 28,
               fontWeight: "800",
-              color: totalBalance >= 0 ? "#16a34a" : "#dc2626",
+              color: totalBalance >= 0 ? colors.success : colors.error,
               letterSpacing: -0.5,
             }}
           >
@@ -281,7 +271,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
           <Text
             style={{
               fontSize: 12,
-              color: "#6b7280",
+              color: colors.textSecondary,
               marginTop: 2,
             }}
           >
@@ -293,11 +283,11 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
         {accounts.length > 1 && (
           <View
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: colors.surface,
               borderRadius: 16,
               padding: 16,
               marginBottom: 16,
-              shadowColor: "#000",
+              shadowColor: colors.shadow,
               shadowOpacity: 0.08,
               shadowRadius: 12,
               shadowOffset: { width: 0, height: 4 },
@@ -308,7 +298,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
               style={{
                 fontSize: 16,
                 fontWeight: "600",
-                color: "#374151",
+                color: colors.text,
                 marginBottom: 12,
               }}
             >
@@ -326,14 +316,14 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   paddingVertical: 8,
                   borderRadius: 20,
                   backgroundColor:
-                    selectedAccount === null ? "#6366f1" : "#f3f4f6",
+                    selectedAccount === null ? colors.primary : colors.surfaceSecondary,
                 }}
               >
                 <Text
                   style={{
                     fontSize: 13,
                     fontWeight: "600",
-                    color: selectedAccount === null ? "#fff" : "#374151",
+                    color: selectedAccount === null ? colors.buttonText : colors.text,
                   }}
                 >
                   All Accounts
@@ -348,7 +338,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     paddingVertical: 8,
                     borderRadius: 20,
                     backgroundColor:
-                      selectedAccount === account.id ? "#6366f1" : "#f3f4f6",
+                      selectedAccount === account.id ? colors.primary : colors.surfaceSecondary,
                   }}
                 >
                   <Text
@@ -356,7 +346,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       fontSize: 13,
                       fontWeight: "600",
                       color:
-                        selectedAccount === account.id ? "#fff" : "#374151",
+                        selectedAccount === account.id ? colors.buttonText : colors.text,
                     }}
                     numberOfLines={1}
                   >
@@ -371,11 +361,11 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
         {/* Account Balances */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 16,
             padding: 20,
             marginBottom: 16,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
@@ -387,7 +377,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
               fontSize: 18,
               fontWeight: "700",
               marginBottom: 16,
-              color: "#1f2937",
+              color: colors.text,
             }}
           >
             Account Balances
@@ -402,7 +392,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                 paddingVertical: 12,
                 borderBottomWidth:
                   account.id === accounts[accounts.length - 1].id ? 0 : 1,
-                borderBottomColor: "#f3f4f6",
+                borderBottomColor: colors.border,
               }}
             >
               <View style={{ flex: 1, marginRight: 12 }}>
@@ -410,7 +400,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   style={{
                     fontSize: 15,
                     fontWeight: "600",
-                    color: "#374151",
+                    color: colors.text,
                   }}
                   numberOfLines={1}
                 >
@@ -419,7 +409,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                 <Text
                   style={{
                     fontSize: 13,
-                    color: "#6b7280",
+                    color: colors.textSecondary,
                     marginTop: 2,
                   }}
                   numberOfLines={1}
@@ -433,7 +423,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     fontSize: 16,
                     fontWeight: "700",
                     color:
-                      account.balances.current >= 0 ? "#16a34a" : "#dc2626",
+                      account.balances.current >= 0 ? colors.success : colors.error,
                   }}
                 >
                   {formatCurrency(account.balances.current)}
@@ -441,7 +431,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                 <Text
                   style={{
                     fontSize: 11,
-                    color: "#6b7280",
+                    color: colors.textSecondary,
                     marginTop: 2,
                   }}
                 >
@@ -455,10 +445,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
         {/* Recent Transactions */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 16,
             padding: 20,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
@@ -477,7 +467,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
               style={{
                 fontSize: 18,
                 fontWeight: "700",
-                color: "#1f2937",
+                color: colors.text,
               }}
             >
               Recent Transactions
@@ -485,7 +475,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
             <Text
               style={{
                 fontSize: 13,
-                color: "#6b7280",
+                color: colors.textSecondary,
               }}
             >
               {filteredTransactions.length} transactions
@@ -494,11 +484,11 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
 
           {filteredTransactions.length === 0 ? (
             <View style={{ alignItems: "center", paddingVertical: 32 }}>
-              <Ionicons name="card-outline" size={40} color="#d1d5db" />
+              <Ionicons name="card-outline" size={40} color={colors.textTertiary} />
               <Text
                 style={{
                   fontSize: 15,
-                  color: "#6b7280",
+                  color: colors.textSecondary,
                   marginTop: 12,
                   textAlign: "center",
                 }}
@@ -508,7 +498,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
               <Text
                 style={{
                   fontSize: 13,
-                  color: "#9ca3af",
+                  color: colors.textTertiary,
                   marginTop: 4,
                   textAlign: "center",
                 }}
@@ -529,7 +519,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     filteredTransactions[filteredTransactions.length - 1].id
                       ? 0
                       : 1,
-                  borderBottomColor: "#f3f4f6",
+                  borderBottomColor: colors.border,
                 }}
               >
                 <View
@@ -552,7 +542,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     style={{
                       fontSize: 15,
                       fontWeight: "600",
-                      color: "#374151",
+                      color: colors.text,
                     }}
                     numberOfLines={1}
                   >
@@ -561,7 +551,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   <Text
                     style={{
                       fontSize: 13,
-                      color: "#6b7280",
+                      color: colors.textSecondary,
                       marginTop: 2,
                     }}
                     numberOfLines={1}
@@ -579,7 +569,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     style={{
                       fontSize: 15,
                       fontWeight: "700",
-                      color: transaction.amount >= 0 ? "#16a34a" : "#dc2626",
+                      color: transaction.amount >= 0 ? colors.success : colors.error,
                     }}
                   >
                     {transaction.amount >= 0 ? "+" : "-"}
@@ -589,7 +579,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     <Text
                       style={{
                         fontSize: 11,
-                        color: "#f59e0b",
+                        color: colors.warning,
                         marginTop: 2,
                         fontWeight: "500",
                       }}
