@@ -23,6 +23,18 @@ export interface AIAnalysisResult {
   financialHealth: "excellent" | "good" | "fair" | "poor";
 }
 
+// OpenAI API Configuration
+const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY || "";
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
+
+interface OpenAIResponse {
+  choices: Array<{
+    message: {
+      content: string;
+    };
+  }>;
+}
+
 class AIFinancialAdvisorService {
   private static instance: AIFinancialAdvisorService;
 
@@ -31,6 +43,56 @@ class AIFinancialAdvisorService {
       AIFinancialAdvisorService.instance = new AIFinancialAdvisorService();
     }
     return AIFinancialAdvisorService.instance;
+  }
+
+  // Check if OpenAI is configured
+  private isOpenAIConfigured(): boolean {
+    return !!OPENAI_API_KEY;
+  }
+
+  // Call OpenAI API
+  private async callOpenAI(prompt: string): Promise<string> {
+    if (!this.isOpenAIConfigured()) {
+      throw new Error("OpenAI API key not configured");
+    }
+
+    try {
+      const response = await fetch(OPENAI_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4",
+          messages: [
+            {
+              role: "system",
+              content: `You are an expert financial advisor with deep knowledge of personal finance, budgeting, debt management, investing, and financial planning. You provide personalized, actionable advice based on the user's financial data. Always be encouraging but realistic, and prioritize financial safety and long-term stability. Use emojis sparingly and focus on clear, practical advice.`,
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          max_tokens: 1000,
+          temperature: 0.7,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data: OpenAIResponse = await response.json();
+      return (
+        data.choices[0]?.message?.content ||
+        "I apologize, but I was unable to generate a response."
+      );
+    } catch (error) {
+      console.error("OpenAI API call failed:", error);
+      throw error;
+    }
   }
 
   // Analyze financial health and provide recommendations
@@ -199,7 +261,7 @@ class AIFinancialAdvisorService {
           }%\n\n**Recommendations:**\n1. Continue current payoff strategy\n2. Consider accelerating payoff\n3. Build emergency fund\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
         }
       } else {
-        return `🎉 **Debt-Free**: Congratulations! You're debt-free, which gives you excellent financial flexibility.\n\n**Recommendations:**\n1. Build emergency fund (3-6 months)\n2. Increase savings rate\n3. Start investing for long-term goals\n4. Consider real estate investments\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+        return "🎉 **Debt-Free**: Congratulations! You're debt-free, which gives you excellent financial flexibility.\n\n**Recommendations:**\n1. Build emergency fund (3-6 months)\n2. Increase savings rate\n3. Start investing for long-term goals\n4. Consider real estate investments\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}";
       }
     }
 
@@ -300,8 +362,8 @@ class AIFinancialAdvisorService {
       lowerQuestion.includes("retirement")
     ) {
       if (
-        snapshot.financialHealth === "poor" ||
-        snapshot.financialHealth === "fair"
+        analysis.financialHealth === "poor" ||
+        analysis.financialHealth === "fair"
       ) {
         return `⚠️ **Investment Readiness**: Before investing, focus on:\n\n1. **Emergency Fund** - Build 3-6 months of expenses\n2. **Debt Payoff** - Pay off high-interest debt first\n3. **Basic Budget** - Ensure positive cash flow\n\n**Current Status**:\n• Emergency Fund: ${(
           (snapshot.totalSavings / (snapshot.monthlyExpenses * 6)) *
@@ -342,23 +404,69 @@ class AIFinancialAdvisorService {
       )}\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}\n\nAsk me about specific topics like budgeting, debt, goals, or investments!`;
   }
 
-  // Future: Integrate with real AI APIs
+  // Generate AI response using OpenAI or fallback to rule-based system
   async generateAIResponse(
     userQuestion: string,
     snapshot: FinancialSnapshot
   ): Promise<string> {
-    // For now, use our rule-based system
-    // In the future, this could integrate with OpenAI, Claude, or other AI services
+    try {
+      // Try OpenAI first if configured
+      if (this.isOpenAIConfigured()) {
+        const prompt = this.buildOpenAIPrompt(userQuestion, snapshot);
+        const aiResponse = await this.callOpenAI(prompt);
+        return aiResponse;
+      }
+    } catch (error) {
+      console.error(
+        "OpenAI API call failed, falling back to rule-based system:",
+        error
+      );
+    }
 
+    // Fallback to rule-based system
     try {
       // Simulate AI processing delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
       return this.generatePersonalizedAdvice(userQuestion, snapshot);
     } catch (error) {
       console.error("AI response generation error:", error);
       return "I'm having trouble analyzing your finances right now. Please try again in a moment.";
     }
+  }
+
+  // Build OpenAI prompt with financial context
+  private buildOpenAIPrompt(
+    userQuestion: string,
+    snapshot: FinancialSnapshot
+  ): string {
+    const analysis = this.analyzeFinancialHealth(snapshot);
+
+    return `As a financial advisor, analyze this user's financial situation and answer their question: "${userQuestion}"
+
+**User's Financial Data:**
+- Monthly Income: $${snapshot.monthlyIncome.toFixed(2)}
+- Monthly Expenses: $${snapshot.monthlyExpenses.toFixed(2)}
+- Net Income: $${snapshot.netIncome.toFixed(2)}
+- Savings Rate: ${snapshot.savingsRate}%
+- Debt Payoff Rate: ${snapshot.debtPayoffRate}%
+- Total Debt: $${snapshot.totalDebt.toFixed(2)}
+- Emergency Fund: $${snapshot.totalSavings.toFixed(2)}
+- Number of Financial Goals: ${snapshot.goals.length}
+- Recurring Expenses: ${snapshot.recurringExpenses.length}
+
+**Financial Health Assessment:**
+- Overall Health: ${analysis.financialHealth.toUpperCase()}
+- Risk Level: ${analysis.riskLevel.toUpperCase()}
+- Priority Actions: ${analysis.priorityActions.join(", ")}
+
+**Provide:**
+1. Direct answer to their question
+2. Specific, actionable advice based on their data
+3. Relevant financial ratios and calculations
+4. Next steps they should take
+5. Encouragement while being realistic
+
+Keep your response conversational, helpful, and focused on their specific situation. Use bullet points and clear formatting for readability.`;
   }
 }
 
