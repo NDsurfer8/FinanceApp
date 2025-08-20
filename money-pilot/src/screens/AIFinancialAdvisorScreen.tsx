@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
 import { useSubscription } from "../contexts/SubscriptionContext";
@@ -31,6 +32,10 @@ interface Message {
   isLoading?: boolean;
 }
 
+// Chat history configuration
+const MAX_MESSAGES = 50; // Keep last 50 messages
+const CHAT_HISTORY_KEY = "ai_financial_advisor_chat_history";
+
 export const AIFinancialAdvisorScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
@@ -45,16 +50,10 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     recurringTransactions,
   } = useData();
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Hi! I'm your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions. What would you like to know about your finances?",
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Check if user has access to AI Financial Advisor feature specifically
@@ -62,6 +61,74 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     subscriptionStatus?.features?.includes(
       PREMIUM_FEATURES.AI_FINANCIAL_ADVISOR
     ) || false;
+
+  // Load chat history from AsyncStorage
+  const loadChatHistory = async () => {
+    try {
+      const savedMessages = await AsyncStorage.getItem(CHAT_HISTORY_KEY);
+      if (savedMessages) {
+        const parsedMessages = JSON.parse(savedMessages).map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        }));
+        setMessages(parsedMessages);
+      } else {
+        // Initialize with welcome message if no history exists
+        setMessages([
+          {
+            id: "1",
+            text: "Hi! I'm your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions. What would you like to know about your finances?",
+            isUser: false,
+            timestamp: new Date(),
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error loading chat history:", error);
+      // Fallback to welcome message
+      setMessages([
+        {
+          id: "1",
+          text: "Hi! I'm your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions. What would you like to know about your finances?",
+          isUser: false,
+          timestamp: new Date(),
+        },
+      ]);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  // Save chat history to AsyncStorage
+  const saveChatHistory = async (messagesToSave: Message[]) => {
+    try {
+      // Keep only the last MAX_MESSAGES messages
+      const messagesToKeep = messagesToSave.slice(-MAX_MESSAGES);
+      await AsyncStorage.setItem(
+        CHAT_HISTORY_KEY,
+        JSON.stringify(messagesToKeep)
+      );
+    } catch (error) {
+      console.error("Error saving chat history:", error);
+    }
+  };
+
+  // Clear chat history
+  const clearChatHistory = async () => {
+    try {
+      await AsyncStorage.removeItem(CHAT_HISTORY_KEY);
+      setMessages([
+        {
+          id: "1",
+          text: "Hi! I'm your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions. What would you like to know about your finances?",
+          isUser: false,
+          timestamp: new Date(),
+        },
+      ]);
+    } catch (error) {
+      console.error("Error clearing chat history:", error);
+    }
+  };
 
   // Generate financial snapshot for AI analysis
   const generateFinancialSnapshot = (): FinancialSnapshot => {
@@ -148,7 +215,8 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       isLoading: true,
     };
 
-    setMessages((prev) => [...prev, userMessage, loadingMessage]);
+    const newMessages = [...messages, userMessage, loadingMessage];
+    setMessages(newMessages);
     setInputText("");
     setIsLoading(true);
 
@@ -159,28 +227,33 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
         snapshot
       );
 
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.isLoading ? { ...msg, text: aiResponse, isLoading: false } : msg
-        )
+      const updatedMessages = newMessages.map((msg) =>
+        msg.isLoading ? { ...msg, text: aiResponse, isLoading: false } : msg
       );
+      setMessages(updatedMessages);
+      saveChatHistory(updatedMessages);
     } catch (error) {
       console.error("Error generating AI response:", error);
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.isLoading
-            ? {
-                ...msg,
-                text: "Sorry, I'm having trouble processing your request. Please try again.",
-                isLoading: false,
-              }
-            : msg
-        )
+      const errorMessages = newMessages.map((msg) =>
+        msg.isLoading
+          ? {
+              ...msg,
+              text: "Sorry, I'm having trouble processing your request. Please try again.",
+              isLoading: false,
+            }
+          : msg
       );
+      setMessages(errorMessages);
+      saveChatHistory(errorMessages);
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Load chat history on component mount
+  useEffect(() => {
+    loadChatHistory();
+  }, []);
 
   useEffect(() => {
     // Scroll to bottom when new messages are added
@@ -215,90 +288,135 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           <Text style={{ fontSize: 14, color: "#6b7280" }}>
             Get personalized financial advice
           </Text>
-        </View>
-        {!hasAIAccess && (
-          <TouchableOpacity
-            onPress={presentPaywall}
-            style={{
-              backgroundColor: "#6366f1",
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 16,
-            }}
-          >
-            <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>
-              Upgrade
+          {messages.length > 1 && (
+            <Text style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>
+              {messages.length - 1} messages stored
             </Text>
-          </TouchableOpacity>
-        )}
+          )}
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {messages.length > 1 && (
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert(
+                  "Clear Chat History",
+                  "Are you sure you want to clear all chat history? This action cannot be undone.",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Clear",
+                      style: "destructive",
+                      onPress: clearChatHistory,
+                    },
+                  ]
+                );
+              }}
+              style={{
+                marginRight: 12,
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 12,
+                backgroundColor: "#f3f4f6",
+              }}
+            >
+              <Ionicons name="trash-outline" size={16} color="#6b7280" />
+            </TouchableOpacity>
+          )}
+          {!hasAIAccess && (
+            <TouchableOpacity
+              onPress={presentPaywall}
+              style={{
+                backgroundColor: "#6366f1",
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 16,
+              }}
+            >
+              <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>
+                Upgrade
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Messages */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={{ flex: 1, padding: 16 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {messages.map((message) => (
-          <View
-            key={message.id}
-            style={{
-              marginBottom: 16,
-              alignItems: message.isUser ? "flex-end" : "flex-start",
-            }}
-          >
+      {isLoadingHistory ? (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ActivityIndicator size="large" color="#6366f1" />
+          <Text style={{ marginTop: 16, color: "#6b7280" }}>
+            Loading chat history...
+          </Text>
+        </View>
+      ) : (
+        <ScrollView
+          ref={scrollViewRef}
+          style={{ flex: 1, padding: 16 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {messages.map((message) => (
             <View
+              key={message.id}
               style={{
-                maxWidth: "80%",
-                padding: 12,
-                borderRadius: 16,
-                backgroundColor: message.isUser ? "#6366f1" : "#fff",
-                borderWidth: message.isUser ? 0 : 1,
-                borderColor: "#e5e7eb",
-                shadowColor: "#000",
-                shadowOpacity: 0.05,
-                shadowRadius: 4,
-                shadowOffset: { width: 0, height: 2 },
-                elevation: 2,
+                marginBottom: 16,
+                alignItems: message.isUser ? "flex-end" : "flex-start",
               }}
             >
-              {message.isLoading ? (
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <ActivityIndicator size="small" color="#6366f1" />
+              <View
+                style={{
+                  maxWidth: "80%",
+                  padding: 12,
+                  borderRadius: 16,
+                  backgroundColor: message.isUser ? "#6366f1" : "#fff",
+                  borderWidth: message.isUser ? 0 : 1,
+                  borderColor: "#e5e7eb",
+                  shadowColor: "#000",
+                  shadowOpacity: 0.05,
+                  shadowRadius: 4,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 2,
+                }}
+              >
+                {message.isLoading ? (
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <ActivityIndicator size="small" color="#6366f1" />
+                    <Text
+                      style={{ marginLeft: 8, color: "#6b7280", fontSize: 14 }}
+                    >
+                      Analyzing your finances...
+                    </Text>
+                  </View>
+                ) : (
                   <Text
-                    style={{ marginLeft: 8, color: "#6b7280", fontSize: 14 }}
+                    style={{
+                      color: message.isUser ? "#fff" : "#374151",
+                      fontSize: 14,
+                      lineHeight: 20,
+                    }}
                   >
-                    Analyzing your finances...
+                    {message.text}
                   </Text>
-                </View>
-              ) : (
-                <Text
-                  style={{
-                    color: message.isUser ? "#fff" : "#374151",
-                    fontSize: 14,
-                    lineHeight: 20,
-                  }}
-                >
-                  {message.text}
-                </Text>
-              )}
+                )}
+              </View>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: "#9ca3af",
+                  marginTop: 4,
+                  marginHorizontal: 4,
+                }}
+              >
+                {message.timestamp.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </Text>
             </View>
-            <Text
-              style={{
-                fontSize: 12,
-                color: "#9ca3af",
-                marginTop: 4,
-                marginHorizontal: 4,
-              }}
-            >
-              {message.timestamp.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </Text>
-          </View>
-        ))}
-      </ScrollView>
+          ))}
+        </ScrollView>
+      )}
 
       {/* Input */}
       <KeyboardAvoidingView
