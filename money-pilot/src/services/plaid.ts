@@ -379,6 +379,52 @@ class PlaidService {
     }
   }
 
+  // Get connected bank information
+  async getConnectedBankInfo(): Promise<{
+    name: string;
+    accounts: PlaidAccount[];
+  } | null> {
+    if (!this.userId) {
+      return null;
+    }
+
+    try {
+      // Check Firebase for existing connection
+      const plaidRef = ref(db, `users/${this.userId}/plaid`);
+      const snapshot = await get(plaidRef);
+
+      if (snapshot.exists()) {
+        const encryptedPlaidData = snapshot.val();
+
+        // Decrypt the Plaid data
+        const fieldsToDecrypt = [
+          "publicToken",
+          "itemId",
+          "institution",
+          "accounts",
+          "accessToken",
+        ];
+
+        const plaidData = await decryptFields(
+          encryptedPlaidData,
+          fieldsToDecrypt
+        );
+
+        if (plaidData.status === "connected" && plaidData.institution) {
+          return {
+            name: plaidData.institution.name || "Unknown Bank",
+            accounts: plaidData.accounts || [],
+          };
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error getting connected bank info:", error);
+      return null;
+    }
+  }
+
   // Disconnect bank
   async disconnectBank(): Promise<void> {
     try {

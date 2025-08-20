@@ -15,6 +15,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useUser } from "../context/UserContext";
 import { PlaidLinkComponent } from "../components/PlaidLinkComponent";
 import { usePaywall } from "../hooks/usePaywall";
+import { useSubscription } from "../hooks/useSubscription";
+import { plaidService } from "../services/plaid";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -29,6 +31,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { currentUser, forceRefresh } = useUser();
   const [photoKey, setPhotoKey] = useState(Date.now());
   const { presentPaywall } = usePaywall();
+  const { subscriptionStatus, refreshSubscriptionStatus } = useSubscription();
+  const [refreshingSubscription, setRefreshingSubscription] = useState(false);
+  const [isBankConnected, setIsBankConnected] = useState(false);
+  const [connectedBankInfo, setConnectedBankInfo] = useState<{
+    name: string;
+    accounts: any[];
+  } | null>(null);
 
   // Debug logging
   useEffect(() => {
@@ -39,6 +48,41 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       contextUserDisplayName: currentUser?.displayName,
     });
   }, [user, currentUser]);
+
+  // Debug subscription status
+  useEffect(() => {
+    console.log("SettingsScreen: Subscription status updated", {
+      isPremium: subscriptionStatus?.isPremium,
+      isActive: subscriptionStatus?.isActive,
+      features: subscriptionStatus?.features,
+      expirationDate: subscriptionStatus?.expirationDate,
+    });
+  }, [subscriptionStatus]);
+
+  // Check bank connection status
+  useEffect(() => {
+    const checkBankConnection = async () => {
+      try {
+        const connected = await plaidService.isBankConnected();
+        setIsBankConnected(connected);
+        console.log("SettingsScreen: Bank connection status:", connected);
+
+        if (connected) {
+          const bankInfo = await plaidService.getConnectedBankInfo();
+          setConnectedBankInfo(bankInfo);
+          console.log("SettingsScreen: Connected bank info:", bankInfo);
+        } else {
+          setConnectedBankInfo(null);
+        }
+      } catch (error) {
+        console.error("Failed to check bank connection:", error);
+        setIsBankConnected(false);
+        setConnectedBankInfo(null);
+      }
+    };
+
+    checkBankConnection();
+  }, []);
 
   // Force re-render when photo URL changes
   useEffect(() => {
@@ -59,6 +103,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       setTimeout(() => {
         forceRefresh();
       }, 100);
+
+      // Check bank connection status when screen comes into focus
+      const checkBankConnection = async () => {
+        try {
+          const connected = await plaidService.isBankConnected();
+          setIsBankConnected(connected);
+          console.log(
+            "SettingsScreen: Bank connection status on focus:",
+            connected
+          );
+
+          if (connected) {
+            const bankInfo = await plaidService.getConnectedBankInfo();
+            setConnectedBankInfo(bankInfo);
+            console.log(
+              "SettingsScreen: Connected bank info on focus:",
+              bankInfo
+            );
+          } else {
+            setConnectedBankInfo(null);
+          }
+        } catch (error) {
+          console.error("Failed to check bank connection on focus:", error);
+          setIsBankConnected(false);
+          setConnectedBankInfo(null);
+        }
+      };
+
+      checkBankConnection();
     }, [forceRefresh])
   );
 
@@ -74,6 +147,36 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         onPress: onLogout,
       },
     ]);
+  };
+
+  const handleRefreshSubscription = async () => {
+    try {
+      setRefreshingSubscription(true);
+      console.log("Manually refreshing subscription status...");
+
+      const newStatus = await refreshSubscriptionStatus();
+      console.log("Manual refresh completed - new status:", newStatus);
+
+      if (newStatus?.isPremium) {
+        Alert.alert(
+          "Subscription Updated!",
+          "Your premium subscription is now active. You can now use all premium features!"
+        );
+      } else {
+        Alert.alert(
+          "No Active Subscription",
+          "No active premium subscription found. If you recently purchased, try again in a moment."
+        );
+      }
+    } catch (error) {
+      console.error("Failed to refresh subscription:", error);
+      Alert.alert(
+        "Error",
+        "Failed to refresh subscription status. Please try again."
+      );
+    } finally {
+      setRefreshingSubscription(false);
+    }
   };
 
   return (
@@ -247,11 +350,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 style={{
                   fontSize: 20,
                   fontWeight: "700",
-                  color: "#1f2937",
+                  color: subscriptionStatus?.isPremium ? "#f59e0b" : "#1f2937",
                   marginBottom: 4,
                 }}
               >
-                Free
+                {subscriptionStatus?.isPremium ? "Premium" : "Free"}
               </Text>
               <Text
                 style={{
@@ -309,16 +412,72 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             Data Sources
           </Text>
           <PlaidLinkComponent
-            onSuccess={() => {
+            onSuccess={async () => {
               console.log("Bank connected successfully");
+              setIsBankConnected(true);
+
+              // Get the bank information after successful connection
+              try {
+                const bankInfo = await plaidService.getConnectedBankInfo();
+                setConnectedBankInfo(bankInfo);
+                console.log(
+                  "SettingsScreen: Bank info after connection:",
+                  bankInfo
+                );
+              } catch (error) {
+                console.error(
+                  "Failed to get bank info after connection:",
+                  error
+                );
+              }
             }}
             onExit={() => {
               console.log("Plaid link exited");
             }}
           />
-          <Text style={{ marginTop: 8, color: "#6b7280" }}>
-            Or keep it manual—works great from day one.
-          </Text>
+          {isBankConnected ? (
+            <View>
+              <View
+                style={{
+                  marginTop: 8,
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
+                <Text
+                  style={{
+                    color: "#16a34a",
+                    fontSize: 14,
+                    fontWeight: "600",
+                    marginLeft: 6,
+                  }}
+                >
+                  {connectedBankInfo?.name || "Bank"} data executing your plan
+                  in real time
+                </Text>
+              </View>
+              {connectedBankInfo?.accounts &&
+                connectedBankInfo.accounts.length > 0 && (
+                  <Text
+                    style={{
+                      color: "#6b7280",
+                      fontSize: 12,
+                      marginTop: 4,
+                      marginLeft: 22,
+                    }}
+                  >
+                    {connectedBankInfo.accounts.length} account
+                    {connectedBankInfo.accounts.length !== 1 ? "s" : ""}{" "}
+                    connected
+                  </Text>
+                )}
+            </View>
+          ) : (
+            <Text style={{ marginTop: 8, color: "#6b7280" }}>
+              Or keep it manual—works great from day one.
+            </Text>
+          )}
         </View>
 
         {/* Premium */}
@@ -338,23 +497,90 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
             Premium
           </Text>
-          <Text style={{ color: "#6b7280", marginBottom: 8 }}>
-            Unlock auto-import, AI budgeting, and unlimited accounts.
-          </Text>
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#0ea5e9",
-              paddingVertical: 12,
-              paddingHorizontal: 14,
-              borderRadius: 12,
-              alignSelf: "flex-start",
-            }}
-            onPress={presentPaywall}
-          >
-            <Text style={{ color: "white", fontWeight: "700" }}>
-              Start 7‑day Trial
-            </Text>
-          </TouchableOpacity>
+
+          {subscriptionStatus?.isPremium ? (
+            <View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+              >
+                <Ionicons name="star" size={16} color="#f59e0b" />
+                <Text
+                  style={{
+                    color: "#16a34a",
+                    fontSize: 14,
+                    fontWeight: "600",
+                    marginLeft: 6,
+                  }}
+                >
+                  Premium Active
+                </Text>
+              </View>
+              <Text style={{ color: "#6b7280", fontSize: 14 }}>
+                You have access to all premium features including unlimited
+                transactions, goals, and advanced analytics.
+              </Text>
+              {subscriptionStatus.expirationDate && (
+                <Text style={{ color: "#6b7280", fontSize: 12, marginTop: 4 }}>
+                  Expires:{" "}
+                  {subscriptionStatus.expirationDate.toLocaleDateString()}
+                </Text>
+              )}
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#f3f4f6",
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  borderRadius: 8,
+                  alignSelf: "flex-start",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginTop: 8,
+                }}
+                onPress={handleRefreshSubscription}
+                disabled={refreshingSubscription}
+              >
+                <Ionicons
+                  name="refresh"
+                  size={14}
+                  color={refreshingSubscription ? "#9ca3af" : "#6b7280"}
+                />
+                <Text
+                  style={{
+                    color: refreshingSubscription ? "#9ca3af" : "#6b7280",
+                    fontWeight: "600",
+                    marginLeft: 6,
+                    fontSize: 12,
+                  }}
+                >
+                  {refreshingSubscription ? "Refreshing..." : "Refresh Status"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View>
+              <Text style={{ color: "#6b7280", marginBottom: 8 }}>
+                Unlock auto-import, AI budgeting, and unlimited accounts.
+              </Text>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#0ea5e9",
+                  paddingVertical: 12,
+                  paddingHorizontal: 14,
+                  borderRadius: 12,
+                  alignSelf: "flex-start",
+                }}
+                onPress={presentPaywall}
+              >
+                <Text style={{ color: "white", fontWeight: "700" }}>
+                  Start 7‑day Trial
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* App Settings */}
