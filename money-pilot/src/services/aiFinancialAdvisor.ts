@@ -352,7 +352,8 @@ class AIFinancialAdvisorService {
     if (
       lowerQuestion.includes("goal") ||
       lowerQuestion.includes("save") ||
-      lowerQuestion.includes("plan")
+      lowerQuestion.includes("plan") ||
+      lowerQuestion.includes("target")
     ) {
       if (snapshot.goals.length === 0) {
         return `🎯 **No Financial Goals Set**: Setting specific goals helps you stay motivated and track progress.\n\n**Recommended Goals:**\n1. Emergency fund (3-6 months)\n2. Debt payoff\n3. Down payment for house\n4. Retirement savings\n5. Vacation fund\n\n**Goal Setting Tips:**\n• Make them specific and measurable\n• Set realistic timelines\n• Track progress regularly\n• Celebrate milestones\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
@@ -365,15 +366,194 @@ class AIFinancialAdvisorService {
           (sum, goal) => sum + goal.currentAmount,
           0
         );
-        const progress = (totalSaved / totalGoalAmount) * 100;
+        const totalMonthlyContributions = snapshot.goals.reduce(
+          (sum, goal) => sum + goal.monthlyContribution,
+          0
+        );
+        const overallProgress = (totalSaved / totalGoalAmount) * 100;
 
-        return `🎯 **Goal Progress**: You have ${
+        // Analyze goal feasibility
+        const totalMonthlyIncome = snapshot.monthlyIncome;
+        const totalMonthlyExpenses = snapshot.monthlyExpenses;
+        const availableForGoals =
+          totalMonthlyIncome -
+          totalMonthlyExpenses -
+          (totalMonthlyIncome * snapshot.savingsRate) / 100;
+        const goalAffordability =
+          availableForGoals >= totalMonthlyContributions;
+
+        // Find goals that might need adjustment
+        const goalsNeedingAttention = snapshot.goals.filter((goal) => {
+          const progress = (goal.currentAmount / goal.targetAmount) * 100;
+          const monthsToTarget = goal.targetDate
+            ? Math.max(
+                0,
+                Math.ceil(
+                  (new Date(goal.targetDate).getTime() - new Date().getTime()) /
+                    (1000 * 60 * 60 * 24 * 30)
+                )
+              )
+            : 0;
+          const monthlyNeeded =
+            monthsToTarget > 0
+              ? (goal.targetAmount - goal.currentAmount) / monthsToTarget
+              : goal.monthlyContribution;
+
+          return (
+            progress < 25 || monthlyNeeded > goal.monthlyContribution * 1.5
+          );
+        });
+
+        let response = `🎯 **Goal Progress Analysis**: You have ${
           snapshot.goals.length
-        } financial goals.\n\n**Overall Progress**: ${progress.toFixed(
+        } financial goals.\n\n**Overall Progress**: ${overallProgress.toFixed(
           1
-        )}%\n**Saved**: $${totalSaved.toFixed(2)} of $${totalGoalAmount.toFixed(
+        )}%\n**Total Saved**: $${totalSaved.toFixed(
           2
-        )}\n\n**Recommendations:**\n1. Review goal priorities\n2. Increase contributions if possible\n3. Consider goal timeline adjustments\n4. Celebrate progress made\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+        )} of $${totalGoalAmount.toFixed(
+          2
+        )}\n**Monthly Contributions**: $${totalMonthlyContributions.toFixed(
+          2
+        )}\n**Available for Goals**: $${availableForGoals.toFixed(
+          2
+        )}/month\n\n`;
+
+        if (!goalAffordability) {
+          response += `⚠️ **Goal Affordability Alert**: Your monthly goal contributions ($${totalMonthlyContributions.toFixed(
+            2
+          )}) exceed what's available ($${availableForGoals.toFixed(
+            2
+          )}).\n\n**Recommendations:**\n1. Reduce goal contributions temporarily\n2. Increase income through side hustles\n3. Prioritize high-priority goals\n4. Extend goal timelines\n\n`;
+        } else {
+          response += `✅ **Goals are Affordable**: Your monthly contributions are within your budget.\n\n`;
+        }
+
+        if (goalsNeedingAttention.length > 0) {
+          response += `📋 **Goals Needing Attention:**\n${goalsNeedingAttention
+            .map((goal) => {
+              const progress = (goal.currentAmount / goal.targetAmount) * 100;
+              const monthsToTarget = goal.targetDate
+                ? Math.max(
+                    0,
+                    Math.ceil(
+                      (new Date(goal.targetDate).getTime() -
+                        new Date().getTime()) /
+                        (1000 * 60 * 60 * 24 * 30)
+                    )
+                  )
+                : 0;
+              const monthlyNeeded =
+                monthsToTarget > 0
+                  ? (goal.targetAmount - goal.currentAmount) / monthsToTarget
+                  : goal.monthlyContribution;
+
+              return `• ${goal.name}: ${progress.toFixed(
+                1
+              )}% complete, needs $${monthlyNeeded.toFixed(
+                2
+              )}/month to reach target`;
+            })
+            .join("\n")}\n\n`;
+        }
+
+        response += `**General Recommendations:**\n1. Review goal priorities regularly\n2. Increase contributions if possible\n3. Consider goal timeline adjustments\n4. Celebrate progress made\n5. Focus on one goal at a time if struggling\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+
+        return response;
+      }
+    }
+
+    // Goal feasibility and timeline advice
+    if (
+      lowerQuestion.includes("feasible") ||
+      lowerQuestion.includes("realistic") ||
+      lowerQuestion.includes("timeline") ||
+      lowerQuestion.includes("achievable") ||
+      lowerQuestion.includes("realistic expectations")
+    ) {
+      if (snapshot.goals.length === 0) {
+        return `🎯 **No Goals to Analyze**: You haven't set any financial goals yet.\n\n**Setting Realistic Goals:**\n1. Start with emergency fund (3-6 months of expenses)\n2. Consider your current income and expenses\n3. Set achievable timelines\n4. Break large goals into smaller milestones\n5. Review and adjust regularly\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+      } else {
+        const totalMonthlyContributions = snapshot.goals.reduce(
+          (sum, goal) => sum + goal.monthlyContribution,
+          0
+        );
+        const availableForGoals =
+          snapshot.monthlyIncome -
+          snapshot.monthlyExpenses -
+          (snapshot.monthlyIncome * snapshot.savingsRate) / 100;
+
+        // Analyze each goal's feasibility
+        const goalAnalysis = snapshot.goals.map((goal) => {
+          const progress = (goal.currentAmount / goal.targetAmount) * 100;
+          const monthsToTarget = goal.targetDate
+            ? Math.max(
+                0,
+                Math.ceil(
+                  (new Date(goal.targetDate).getTime() - new Date().getTime()) /
+                    (1000 * 60 * 60 * 24 * 30)
+                )
+              )
+            : 0;
+          const monthlyNeeded =
+            monthsToTarget > 0
+              ? (goal.targetAmount - goal.currentAmount) / monthsToTarget
+              : goal.monthlyContribution;
+          const isOnTrack = monthlyNeeded <= goal.monthlyContribution * 1.2; // Allow 20% buffer
+
+          return {
+            goal,
+            progress,
+            monthsToTarget,
+            monthlyNeeded,
+            isOnTrack,
+            feasibility: isOnTrack ? "On Track" : "Needs Adjustment",
+          };
+        });
+
+        const onTrackGoals = goalAnalysis.filter((g) => g.isOnTrack);
+        const needsAdjustment = goalAnalysis.filter((g) => !g.isOnTrack);
+
+        let response = `📊 **Goal Feasibility Analysis**:\n\n**Monthly Budget for Goals**: $${availableForGoals.toFixed(
+          2
+        )}\n**Current Monthly Contributions**: $${totalMonthlyContributions.toFixed(
+          2
+        )}\n**Affordability**: ${
+          availableForGoals >= totalMonthlyContributions
+            ? "✅ Affordable"
+            : "⚠️ Over Budget"
+        }\n\n`;
+
+        if (onTrackGoals.length > 0) {
+          response += `✅ **Goals On Track (${
+            onTrackGoals.length
+          }):**\n${onTrackGoals
+            .map(
+              (g) =>
+                `• ${g.goal.name}: ${g.progress.toFixed(
+                  1
+                )}% complete, $${g.goal.monthlyContribution.toFixed(2)}/month`
+            )
+            .join("\n")}\n\n`;
+        }
+
+        if (needsAdjustment.length > 0) {
+          response += `⚠️ **Goals Needing Adjustment (${
+            needsAdjustment.length
+          }):**\n${needsAdjustment
+            .map(
+              (g) =>
+                `• ${g.goal.name}: ${g.progress.toFixed(
+                  1
+                )}% complete, needs $${g.monthlyNeeded.toFixed(
+                  2
+                )}/month (currently $${g.goal.monthlyContribution.toFixed(2)})`
+            )
+            .join("\n")}\n\n`;
+        }
+
+        response += `**Recommendations:**\n1. Prioritize goals by importance and timeline\n2. Increase contributions to struggling goals\n3. Extend timelines for unrealistic targets\n4. Consider reducing goal count if overextended\n5. Focus on one major goal at a time\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+
+        return response;
       }
     }
 
@@ -514,6 +694,22 @@ class AIFinancialAdvisorService {
         ? (totalMonthlyDebtPayments / snapshot.monthlyIncome) * 100
         : 0;
 
+    // Calculate goal metrics
+    const totalGoalAmount = snapshot.goals.reduce(
+      (sum, goal) => sum + goal.targetAmount,
+      0
+    );
+    const totalGoalSaved = snapshot.goals.reduce(
+      (sum, goal) => sum + goal.currentAmount,
+      0
+    );
+    const totalGoalContributions = snapshot.goals.reduce(
+      (sum, goal) => sum + goal.monthlyContribution,
+      0
+    );
+    const overallGoalProgress =
+      totalGoalAmount > 0 ? (totalGoalSaved / totalGoalAmount) * 100 : 0;
+
     return `📊 **Financial Overview**:\n\n**Monthly Income**: $${snapshot.monthlyIncome.toFixed(
       2
     )}\n**Monthly Expenses**: $${snapshot.monthlyExpenses.toFixed(
@@ -534,11 +730,17 @@ class AIFinancialAdvisorService {
       1
     )}%\n**Emergency Fund**: $${snapshot.totalSavings.toFixed(
       2
-    )}\n\n**Top Recommendations:**\n${analysis.priorityActions
+    )}\n**Financial Goals**: ${
+      snapshot.goals.length
+    } goals, ${overallGoalProgress.toFixed(
+      1
+    )}% complete, $${totalGoalContributions.toFixed(
+      2
+    )}/month\n\n**Top Recommendations:**\n${analysis.priorityActions
       .map((action, index) => `${index + 1}. ${action}`)
       .join(
         "\n"
-      )}\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}\n\nAsk me about specific topics like budgeting, debt, goals, investments, or net worth!`;
+      )}\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}\n\nAsk me about specific topics like budgeting, debt, goals, investments, net worth, or goal feasibility!`;
   }
 
   // Generate AI response using OpenAI or fallback to rule-based system
@@ -603,6 +805,40 @@ class AIFinancialAdvisorService {
             .join("\n")
         : "  • No debts recorded";
 
+    // Format goals for better context
+    const goalsList =
+      snapshot.goals.length > 0
+        ? snapshot.goals
+            .map((goal) => {
+              const progress = (goal.currentAmount / goal.targetAmount) * 100;
+              const monthsToTarget = goal.targetDate
+                ? Math.max(
+                    0,
+                    Math.ceil(
+                      (new Date(goal.targetDate).getTime() -
+                        new Date().getTime()) /
+                        (1000 * 60 * 60 * 24 * 30)
+                    )
+                  )
+                : 0;
+              const monthlyNeeded =
+                monthsToTarget > 0
+                  ? (goal.targetAmount - goal.currentAmount) / monthsToTarget
+                  : goal.monthlyContribution;
+
+              return `  • ${goal.name}: $${goal.currentAmount.toFixed(
+                2
+              )}/$${goal.targetAmount.toFixed(2)} (${progress.toFixed(
+                1
+              )}%) - $${goal.monthlyContribution.toFixed(
+                2
+              )}/month, ${monthsToTarget} months left, ${
+                goal.priority
+              } priority`;
+            })
+            .join("\n")
+        : "  • No goals recorded";
+
     // Calculate debt metrics
     const totalMonthlyDebtPayments = snapshot.debts.reduce(
       (sum, debt) => sum + debt.payment,
@@ -643,6 +879,9 @@ ${assetsList}
 
 **Debts Breakdown:**
 ${debtsList}
+
+**Goals Breakdown:**
+${goalsList}
 
 **Financial Health Assessment:**
 - Overall Health: ${analysis.financialHealth.toUpperCase()}
