@@ -151,10 +151,12 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     const netIncome = monthlyIncome - monthlyExpenses;
 
     // Calculate totals
-    const totalDebt = debts.reduce((sum, debt) => sum + debt.amount, 0);
+    const totalDebt = debts.reduce((sum, debt) => sum + debt.balance, 0);
+    const totalAssets = assets.reduce((sum, asset) => sum + asset.balance, 0);
     const totalSavings = assets
       .filter((asset) => asset.type === "savings")
-      .reduce((sum, asset) => sum + asset.amount, 0);
+      .reduce((sum, asset) => sum + asset.balance, 0);
+    const netWorth = totalAssets - totalDebt;
 
     // Get budget settings
     const savingsRate = budgetSettings?.savingsPercentage || 20;
@@ -172,7 +174,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       savingsRate,
       debtPayoffRate,
       totalDebt,
+      totalAssets,
       totalSavings,
+      netWorth,
       goals,
       recurringExpenses,
       assets,

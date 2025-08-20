@@ -8,6 +8,8 @@ export interface FinancialSnapshot {
   debtPayoffRate: number;
   totalDebt: number;
   totalSavings: number;
+  totalAssets: number;
+  netWorth: number;
   goals: any[];
   recurringExpenses: any[];
   assets: any[];
@@ -231,34 +233,54 @@ class AIFinancialAdvisorService {
     if (
       lowerQuestion.includes("debt") ||
       lowerQuestion.includes("loan") ||
-      lowerQuestion.includes("credit")
+      lowerQuestion.includes("credit") ||
+      lowerQuestion.includes("liability")
     ) {
       if (snapshot.totalDebt > 0) {
+        const totalMonthlyDebtPayments = snapshot.debts.reduce(
+          (sum, debt) => sum + debt.payment,
+          0
+        );
+        const averageInterestRate =
+          snapshot.debts.length > 0
+            ? snapshot.debts.reduce((sum, debt) => sum + debt.rate, 0) /
+              snapshot.debts.length
+            : 0;
         const debtToIncomeRatio =
-          snapshot.totalDebt / (snapshot.monthlyIncome * 12);
-        if (debtToIncomeRatio > 0.4) {
-          return `⚠️ **High Debt Alert**: Your debt-to-income ratio is ${(
-            debtToIncomeRatio * 100
-          ).toFixed(
+          snapshot.monthlyIncome > 0
+            ? (totalMonthlyDebtPayments / snapshot.monthlyIncome) * 100
+            : 0;
+
+        if (debtToIncomeRatio > 43) {
+          return `🚨 **High Debt-to-Income Alert**: Your debt-to-income ratio is ${debtToIncomeRatio.toFixed(
             1
-          )}%, which is concerning.\n\n**Current Debt**: $${snapshot.totalDebt.toFixed(
+          )}%, which exceeds the recommended 43% limit.\n\n**Current Debt**: $${snapshot.totalDebt.toFixed(
             2
-          )}\n**Monthly Debt Payment**: $${(
-            (snapshot.monthlyIncome * snapshot.debtPayoffRate) /
-            100
-          ).toFixed(
+          )}\n**Monthly Debt Payments**: $${totalMonthlyDebtPayments.toFixed(
             2
-          )}\n\n**Priority Actions:**\n1. Focus on high-interest debt first\n2. Consider debt consolidation\n3. Increase debt payoff rate\n4. Stop taking on new debt\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+          )}\n**Average Interest Rate**: ${averageInterestRate.toFixed(
+            2
+          )}%\n\n**Priority Actions:**\n1. Focus on highest interest rate debt first\n2. Consider debt consolidation to lower rates\n3. Increase income through side hustles\n4. Stop taking on new debt\n5. Create strict debt payoff plan\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+        } else if (debtToIncomeRatio > 28) {
+          return `⚠️ **Moderate Debt Load**: Your debt-to-income ratio is ${debtToIncomeRatio.toFixed(
+            1
+          )}%, which is manageable but could be improved.\n\n**Current Debt**: $${snapshot.totalDebt.toFixed(
+            2
+          )}\n**Monthly Debt Payments**: $${totalMonthlyDebtPayments.toFixed(
+            2
+          )}\n**Average Interest Rate**: ${averageInterestRate.toFixed(
+            2
+          )}%\n\n**Recommendations:**\n1. Pay off highest interest debt first\n2. Consider refinancing high-rate loans\n3. Increase debt payoff rate if possible\n4. Build emergency fund\n5. Avoid new debt\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
         } else {
-          return `✅ **Manageable Debt**: Your debt-to-income ratio is ${(
-            debtToIncomeRatio * 100
-          ).toFixed(
+          return `✅ **Healthy Debt Level**: Your debt-to-income ratio is ${debtToIncomeRatio.toFixed(
             1
-          )}%, which is reasonable.\n\n**Current Debt**: $${snapshot.totalDebt.toFixed(
+          )}%, which is well within healthy limits.\n\n**Current Debt**: $${snapshot.totalDebt.toFixed(
             2
-          )}\n**Debt Payoff Rate**: ${
-            snapshot.debtPayoffRate
-          }%\n\n**Recommendations:**\n1. Continue current payoff strategy\n2. Consider accelerating payoff\n3. Build emergency fund\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+          )}\n**Monthly Debt Payments**: $${totalMonthlyDebtPayments.toFixed(
+            2
+          )}\n**Average Interest Rate**: ${averageInterestRate.toFixed(
+            2
+          )}%\n\n**Recommendations:**\n1. Continue current payoff strategy\n2. Consider accelerating payoff on high-rate debt\n3. Build emergency fund\n4. Start investing for long-term goals\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
         }
       } else {
         return "🎉 **Debt-Free**: Congratulations! You're debt-free, which gives you excellent financial flexibility.\n\n**Recommendations:**\n1. Build emergency fund (3-6 months)\n2. Increase savings rate\n3. Start investing for long-term goals\n4. Consider real estate investments\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}";
@@ -355,6 +377,97 @@ class AIFinancialAdvisorService {
       }
     }
 
+    // Interest rate and debt payment advice
+    if (
+      lowerQuestion.includes("interest rate") ||
+      lowerQuestion.includes("apr") ||
+      lowerQuestion.includes("monthly payment") ||
+      lowerQuestion.includes("debt payment")
+    ) {
+      if (snapshot.debts.length > 0) {
+        const totalMonthlyDebtPayments = snapshot.debts.reduce(
+          (sum, debt) => sum + debt.payment,
+          0
+        );
+        const averageInterestRate =
+          snapshot.debts.reduce((sum, debt) => sum + debt.rate, 0) /
+          snapshot.debts.length;
+        const highestRateDebt = snapshot.debts.reduce(
+          (highest, debt) => (debt.rate > highest.rate ? debt : highest),
+          snapshot.debts[0]
+        );
+
+        return `💰 **Debt Payment Analysis**:\n\n**Total Monthly Payments**: $${totalMonthlyDebtPayments.toFixed(
+          2
+        )}\n**Average Interest Rate**: ${averageInterestRate.toFixed(
+          2
+        )}%\n**Highest Rate Debt**: ${highestRateDebt.name} (${
+          highestRateDebt.rate
+        }% APR)\n\n**Debt Breakdown:**\n${snapshot.debts
+          .map(
+            (debt) =>
+              `• ${debt.name}: $${debt.payment.toFixed(2)}/month at ${
+                debt.rate
+              }% APR`
+          )
+          .join("\n")}\n\n**Recommendations:**\n1. Pay off ${
+          highestRateDebt.name
+        } first (highest rate)\n2. Consider refinancing if rates are high\n3. Consolidate multiple debts if beneficial\n4. Increase payments on high-rate debt\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+      } else {
+        return "🎉 **No Debt Payments**: You're debt-free! No monthly debt payments to worry about.\n\n**Recommendations:**\n1. Build emergency fund\n2. Increase savings rate\n3. Start investing for long-term goals\n4. Consider real estate investments\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}";
+      }
+    }
+
+    // Net worth and assets advice
+    if (
+      lowerQuestion.includes("net worth") ||
+      lowerQuestion.includes("assets") ||
+      lowerQuestion.includes("wealth")
+    ) {
+      if (snapshot.netWorth > 0) {
+        const debtToAssetRatio = snapshot.totalDebt / snapshot.totalAssets;
+        if (debtToAssetRatio > 0.5) {
+          return `⚠️ **Net Worth Analysis**: Your net worth is $${snapshot.netWorth.toFixed(
+            2
+          )}, but your debt-to-asset ratio is ${(
+            debtToAssetRatio * 100
+          ).toFixed(
+            1
+          )}%.\n\n**Current Status**:\n• Total Assets: $${snapshot.totalAssets.toFixed(
+            2
+          )}\n• Total Debt: $${snapshot.totalDebt.toFixed(
+            2
+          )}\n• Net Worth: $${snapshot.netWorth.toFixed(
+            2
+          )}\n\n**Recommendations:**\n1. Focus on debt reduction to improve net worth\n2. Build emergency fund before investing\n3. Consider debt consolidation if rates are high\n4. Increase income through side hustles\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+        } else {
+          return `✅ **Strong Net Worth**: Your net worth is $${snapshot.netWorth.toFixed(
+            2
+          )} with a healthy debt-to-asset ratio of ${(
+            debtToAssetRatio * 100
+          ).toFixed(
+            1
+          )}%.\n\n**Current Status**:\n• Total Assets: $${snapshot.totalAssets.toFixed(
+            2
+          )}\n• Total Debt: $${snapshot.totalDebt.toFixed(
+            2
+          )}\n• Net Worth: $${snapshot.netWorth.toFixed(
+            2
+          )}\n\n**Recommendations:**\n1. Continue building assets\n2. Consider investment diversification\n3. Set net worth growth goals\n4. Review insurance coverage\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+        }
+      } else {
+        return `📈 **Building Net Worth**: Your current net worth is $${snapshot.netWorth.toFixed(
+          2
+        )}. This is common when starting your financial journey!\n\n**Current Status**:\n• Total Assets: $${snapshot.totalAssets.toFixed(
+          2
+        )}\n• Total Debt: $${snapshot.totalDebt.toFixed(
+          2
+        )}\n• Net Worth: $${snapshot.netWorth.toFixed(
+          2
+        )}\n\n**Priority Actions:**\n1. Build emergency fund first\n2. Pay down high-interest debt\n3. Increase income through side hustles\n4. Start investing in retirement accounts\n5. Track net worth monthly\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+      }
+    }
+
     // Investment advice
     if (
       lowerQuestion.includes("invest") ||
@@ -387,21 +500,45 @@ class AIFinancialAdvisorService {
     }
 
     // Default comprehensive advice
+    const totalMonthlyDebtPayments = snapshot.debts.reduce(
+      (sum, debt) => sum + debt.payment,
+      0
+    );
+    const averageInterestRate =
+      snapshot.debts.length > 0
+        ? snapshot.debts.reduce((sum, debt) => sum + debt.rate, 0) /
+          snapshot.debts.length
+        : 0;
+    const debtToIncomeRatio =
+      snapshot.monthlyIncome > 0
+        ? (totalMonthlyDebtPayments / snapshot.monthlyIncome) * 100
+        : 0;
+
     return `📊 **Financial Overview**:\n\n**Monthly Income**: $${snapshot.monthlyIncome.toFixed(
       2
     )}\n**Monthly Expenses**: $${snapshot.monthlyExpenses.toFixed(
       2
     )}\n**Net Income**: $${snapshot.netIncome.toFixed(2)}\n**Savings Rate**: ${
       snapshot.savingsRate
-    }%\n**Total Debt**: $${snapshot.totalDebt.toFixed(
+    }%\n**Total Assets**: $${snapshot.totalAssets.toFixed(
       2
-    )}\n**Emergency Fund**: $${snapshot.totalSavings.toFixed(
+    )}\n**Total Debt**: $${snapshot.totalDebt.toFixed(
+      2
+    )}\n**Net Worth**: $${snapshot.netWorth.toFixed(
+      2
+    )}\n**Monthly Debt Payments**: $${totalMonthlyDebtPayments.toFixed(
+      2
+    )}\n**Average Interest Rate**: ${averageInterestRate.toFixed(
+      2
+    )}%\n**Debt-to-Income Ratio**: ${debtToIncomeRatio.toFixed(
+      1
+    )}%\n**Emergency Fund**: $${snapshot.totalSavings.toFixed(
       2
     )}\n\n**Top Recommendations:**\n${analysis.priorityActions
       .map((action, index) => `${index + 1}. ${action}`)
       .join(
         "\n"
-      )}\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}\n\nAsk me about specific topics like budgeting, debt, goals, or investments!`;
+      )}\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}\n\nAsk me about specific topics like budgeting, debt, goals, investments, or net worth!`;
   }
 
   // Generate AI response using OpenAI or fallback to rule-based system
@@ -441,6 +578,46 @@ class AIFinancialAdvisorService {
   ): string {
     const analysis = this.analyzeFinancialHealth(snapshot);
 
+    // Format assets and debts for better context
+    const assetsList =
+      snapshot.assets.length > 0
+        ? snapshot.assets
+            .map(
+              (asset) =>
+                `  • ${asset.name}: $${asset.balance.toFixed(2)} (${
+                  asset.type
+                })`
+            )
+            .join("\n")
+        : "  • No assets recorded";
+
+    const debtsList =
+      snapshot.debts.length > 0
+        ? snapshot.debts
+            .map(
+              (debt) =>
+                `  • ${debt.name}: $${debt.balance.toFixed(2)} (${
+                  debt.type
+                }) - ${debt.rate}% APR, $${debt.payment.toFixed(2)}/month`
+            )
+            .join("\n")
+        : "  • No debts recorded";
+
+    // Calculate debt metrics
+    const totalMonthlyDebtPayments = snapshot.debts.reduce(
+      (sum, debt) => sum + debt.payment,
+      0
+    );
+    const averageInterestRate =
+      snapshot.debts.length > 0
+        ? snapshot.debts.reduce((sum, debt) => sum + debt.rate, 0) /
+          snapshot.debts.length
+        : 0;
+    const debtToIncomeRatio =
+      snapshot.monthlyIncome > 0
+        ? (totalMonthlyDebtPayments / snapshot.monthlyIncome) * 100
+        : 0;
+
     return `As a financial advisor, analyze this user's financial situation and answer their question: "${userQuestion}"
 
 **User's Financial Data:**
@@ -449,10 +626,23 @@ class AIFinancialAdvisorService {
 - Net Income: $${snapshot.netIncome.toFixed(2)}
 - Savings Rate: ${snapshot.savingsRate}%
 - Debt Payoff Rate: ${snapshot.debtPayoffRate}%
+- Total Assets: $${snapshot.totalAssets.toFixed(2)}
 - Total Debt: $${snapshot.totalDebt.toFixed(2)}
+- Net Worth: $${snapshot.netWorth.toFixed(2)}
 - Emergency Fund: $${snapshot.totalSavings.toFixed(2)}
 - Number of Financial Goals: ${snapshot.goals.length}
 - Recurring Expenses: ${snapshot.recurringExpenses.length}
+
+**Debt Analysis:**
+- Total Monthly Debt Payments: $${totalMonthlyDebtPayments.toFixed(2)}
+- Average Interest Rate: ${averageInterestRate.toFixed(2)}%
+- Debt-to-Income Ratio: ${debtToIncomeRatio.toFixed(1)}%
+
+**Assets Breakdown:**
+${assetsList}
+
+**Debts Breakdown:**
+${debtsList}
 
 **Financial Health Assessment:**
 - Overall Health: ${analysis.financialHealth.toUpperCase()}
