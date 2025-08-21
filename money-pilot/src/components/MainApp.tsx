@@ -73,6 +73,7 @@ export const MainApp: React.FC = () => {
   const [showBiometricOverlay, setShowBiometricOverlay] = useState(false);
   const [wasPreviouslyAuthenticated, setWasPreviouslyAuthenticated] =
     useState(false);
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
 
   useEffect(() => {
     initializeApp();
@@ -187,6 +188,7 @@ export const MainApp: React.FC = () => {
         isAutoLockEnabled,
         wasPreviouslyAuthenticated,
         isBiometricAuthenticated,
+        justLoggedIn,
       });
 
       if (nextAppState === "background" || nextAppState === "inactive") {
@@ -202,15 +204,19 @@ export const MainApp: React.FC = () => {
         }
       } else if (nextAppState === "active") {
         // When app becomes active, check if biometric auth is required
-        if (
-          isBiometricEnabled &&
-          isAutoLockEnabled &&
-          wasPreviouslyAuthenticated &&
-          !isBiometricAuthenticated
-        ) {
-          console.log("App became active, showing biometric overlay");
-          setShowBiometricOverlay(true);
-        }
+        // Add a small delay to prevent immediate trigger after fresh login
+        setTimeout(() => {
+          if (
+            isBiometricEnabled &&
+            isAutoLockEnabled &&
+            wasPreviouslyAuthenticated &&
+            !isBiometricAuthenticated &&
+            !justLoggedIn // Don't show biometric overlay if user just logged in
+          ) {
+            console.log("App became active, showing biometric overlay");
+            setShowBiometricOverlay(true);
+          }
+        }, 1000); // 1 second delay to prevent double verification
       }
     };
 
@@ -224,6 +230,7 @@ export const MainApp: React.FC = () => {
     isAutoLockEnabled,
     wasPreviouslyAuthenticated,
     isBiometricAuthenticated,
+    justLoggedIn,
     setBiometricAuthenticated,
   ]);
 
@@ -247,9 +254,24 @@ export const MainApp: React.FC = () => {
         // User is authenticated, go to main app
         console.log("User is authenticated, going to main app");
         setWasPreviouslyAuthenticated(true);
+        setJustLoggedIn(true);
         setAppState("main");
+
+        // Clear the justLoggedIn flag after a delay
+        setTimeout(() => {
+          setJustLoggedIn(false);
+        }, 2000); // 2 seconds to prevent immediate biometric prompt
+      } else if (isAuthenticated && appState === "main") {
+        // Ensure wasPreviouslyAuthenticated is true when user is in main app
+        if (!wasPreviouslyAuthenticated) {
+          console.log(
+            "User is in main app, setting wasPreviouslyAuthenticated to true"
+          );
+          setWasPreviouslyAuthenticated(true);
+        }
       } else if (!isAuthenticated && appState === "main") {
         console.log("User is not authenticated, going to login");
+        setWasPreviouslyAuthenticated(false);
         setAppState("login");
       } else if (!isAuthenticated && appState === "splash") {
         console.log("User is not authenticated, going to login from splash");
@@ -265,6 +287,7 @@ export const MainApp: React.FC = () => {
     isBiometricEnabled,
     isAutoLockEnabled,
     isBiometricAuthenticated,
+    wasPreviouslyAuthenticated,
   ]);
 
   const checkFirstLaunch = async () => {
