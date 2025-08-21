@@ -14,11 +14,25 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useZeroLoading } from "../hooks/useZeroLoading";
-import { saveAsset, saveDebt } from "../services/userData";
+import {
+  saveAsset,
+  saveDebt,
+  updateAsset,
+  updateDebt,
+  removeAsset,
+  removeDebt,
+} from "../services/userData";
 
 interface AddAssetDebtScreenProps {
   navigation: any;
   route: any;
+}
+
+interface RouteParams {
+  type: "asset" | "debt";
+  editMode?: boolean;
+  asset?: any;
+  debt?: any;
 }
 
 export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
@@ -29,14 +43,23 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
   const { colors } = useTheme();
   const { assets, debts, updateDataOptimistically, refreshInBackground } =
     useZeroLoading();
-  const { type } = route.params; // "asset" or "debt"
+  const { type, editMode, asset, debt } = route.params as RouteParams; // "asset" or "debt"
 
   const [formData, setFormData] = useState({
-    name: "",
-    balance: "",
-    rate: "", // APR for debts
-    payment: "", // Monthly payment for debts
-    assetType: "savings", // For assets only
+    name: editMode
+      ? type === "asset"
+        ? asset?.name || ""
+        : debt?.name || ""
+      : "",
+    balance: editMode
+      ? type === "asset"
+        ? asset?.balance?.toString() || ""
+        : debt?.balance?.toString() || ""
+      : "",
+    rate: editMode && type === "debt" ? debt?.rate?.toString() || "" : "", // APR for debts
+    payment: editMode && type === "debt" ? debt?.payment?.toString() || "" : "", // Monthly payment for debts
+    assetType:
+      editMode && type === "asset" ? asset?.type || "savings" : "savings", // For assets only
   });
 
   const handleSave = async () => {
@@ -57,70 +80,168 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
 
     try {
       if (type === "asset") {
-        const asset = {
-          id: `temp-${Date.now()}`,
-          name: formData.name,
-          balance: parseFloat(formData.balance),
-          type: formData.assetType,
-          userId: user.uid,
-          createdAt: new Date().toISOString(),
-        };
+        if (editMode && asset) {
+          // Update existing asset
+          const updatedAsset = {
+            ...asset,
+            name: formData.name,
+            balance: parseFloat(formData.balance),
+            type: formData.assetType,
+            updatedAt: Date.now(),
+          };
 
-        // Optimistic update - add to UI immediately
-        const updatedAssets = [...assets, asset];
-        updateDataOptimistically({ assets: updatedAssets });
+          // Optimistic update
+          const updatedAssets = assets.map((a) =>
+            a.id === asset.id ? updatedAsset : a
+          );
+          updateDataOptimistically({ assets: updatedAssets });
 
-        // Save to database in background
-        const savedAssetId = await saveAsset(asset);
+          // Update in database
+          await updateAsset(updatedAsset);
+        } else {
+          // Create new asset
+          const newAsset = {
+            id: `temp-${Date.now()}`,
+            name: formData.name,
+            balance: parseFloat(formData.balance),
+            type: formData.assetType,
+            userId: user.uid,
+            createdAt: new Date().toISOString(),
+          };
 
-        // Update with real ID from database
-        const finalAssets = updatedAssets.map((a) =>
-          a.id === asset.id ? { ...a, id: savedAssetId } : a
-        );
-        updateDataOptimistically({ assets: finalAssets });
+          // Optimistic update - add to UI immediately
+          const updatedAssets = [...assets, newAsset];
+          updateDataOptimistically({ assets: updatedAssets });
+
+          // Save to database in background
+          const savedAssetId = await saveAsset(newAsset);
+
+          // Update with real ID from database
+          const finalAssets = updatedAssets.map((a) =>
+            a.id === newAsset.id ? { ...a, id: savedAssetId } : a
+          );
+          updateDataOptimistically({ assets: finalAssets });
+        }
       } else {
-        const debt = {
-          id: `temp-${Date.now()}`,
-          name: formData.name,
-          balance: parseFloat(formData.balance),
-          rate: parseFloat(formData.rate),
-          payment: parseFloat(formData.payment),
-          userId: user.uid,
-          createdAt: new Date().toISOString(),
-        };
+        if (editMode && debt) {
+          // Update existing debt
+          const updatedDebt = {
+            ...debt,
+            name: formData.name,
+            balance: parseFloat(formData.balance),
+            rate: parseFloat(formData.rate),
+            payment: parseFloat(formData.payment),
+            updatedAt: Date.now(),
+          };
 
-        // Optimistic update - add to UI immediately
-        const updatedDebts = [...debts, debt];
-        updateDataOptimistically({ debts: updatedDebts });
+          // Optimistic update
+          const updatedDebts = debts.map((d) =>
+            d.id === debt.id ? updatedDebt : d
+          );
+          updateDataOptimistically({ debts: updatedDebts });
 
-        // Save to database in background
-        const savedDebtId = await saveDebt(debt);
+          // Update in database
+          await updateDebt(updatedDebt);
+        } else {
+          // Create new debt
+          const newDebt = {
+            id: `temp-${Date.now()}`,
+            name: formData.name,
+            balance: parseFloat(formData.balance),
+            rate: parseFloat(formData.rate),
+            payment: parseFloat(formData.payment),
+            userId: user.uid,
+            createdAt: new Date().toISOString(),
+          };
 
-        // Update with real ID from database
-        const finalDebts = updatedDebts.map((d) =>
-          d.id === debt.id ? { ...d, id: savedDebtId } : d
-        );
-        updateDataOptimistically({ debts: finalDebts });
+          // Optimistic update - add to UI immediately
+          const updatedDebts = [...debts, newDebt];
+          updateDataOptimistically({ debts: updatedDebts });
+
+          // Save to database in background
+          const savedDebtId = await saveDebt(newDebt);
+
+          // Update with real ID from database
+          const finalDebts = updatedDebts.map((d) =>
+            d.id === newDebt.id ? { ...d, id: savedDebtId } : d
+          );
+          updateDataOptimistically({ debts: finalDebts });
+        }
       }
 
       Alert.alert(
         "Success",
-        `${type === "asset" ? "Asset" : "Debt"} saved successfully!`,
+        `${type === "asset" ? "Asset" : "Debt"} ${
+          editMode ? "updated" : "saved"
+        } successfully!`,
         [{ text: "OK", onPress: () => navigation.goBack() }]
       );
     } catch (error) {
-      console.error(`Error saving ${type}:`, error);
-      Alert.alert("Error", `Failed to save ${type}. Please try again.`);
+      console.error(
+        `Error ${editMode ? "updating" : "saving"} ${type}:`,
+        error
+      );
+      Alert.alert(
+        "Error",
+        `Failed to ${editMode ? "update" : "save"} ${type}. Please try again.`
+      );
 
       // Revert optimistic update on error
-      if (type === "asset") {
-        const revertedAssets = assets.filter((a) => !a.id.startsWith("temp-"));
-        updateDataOptimistically({ assets: revertedAssets });
-      } else {
-        const revertedDebts = debts.filter((d) => !d.id.startsWith("temp-"));
-        updateDataOptimistically({ debts: revertedDebts });
-      }
+      refreshInBackground();
     }
+  };
+
+  const handleDelete = async () => {
+    if (!user) {
+      Alert.alert("Error", "You must be logged in to delete data");
+      return;
+    }
+
+    Alert.alert(
+      "Delete Confirmation",
+      `Are you sure you want to delete this ${type}? This action cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              if (type === "asset" && asset) {
+                // Optimistic update
+                const updatedAssets = assets.filter((a) => a.id !== asset.id);
+                updateDataOptimistically({ assets: updatedAssets });
+
+                // Delete from database
+                await removeAsset(user.uid, asset.id);
+              } else if (type === "debt" && debt) {
+                // Optimistic update
+                const updatedDebts = debts.filter((d) => d.id !== debt.id);
+                updateDataOptimistically({ debts: updatedDebts });
+
+                // Delete from database
+                await removeDebt(user.uid, debt.id);
+              }
+
+              Alert.alert(
+                "Success",
+                `${type === "asset" ? "Asset" : "Debt"} deleted successfully!`,
+                [{ text: "OK", onPress: () => navigation.goBack() }]
+              );
+            } catch (error) {
+              console.error(`Error deleting ${type}:`, error);
+              Alert.alert(
+                "Error",
+                `Failed to delete ${type}. Please try again.`
+              );
+
+              // Revert optimistic update on error
+              refreshInBackground();
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -150,7 +271,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             <Text
               style={{ fontSize: 20, fontWeight: "600", color: colors.text }}
             >
-              Add {type === "asset" ? "Asset" : "Debt"}
+              {editMode ? "Edit" : "Add"} {type === "asset" ? "Asset" : "Debt"}
             </Text>
           </View>
 
@@ -408,9 +529,34 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 fontWeight: "600",
               }}
             >
-              Save {type === "asset" ? "Asset" : "Debt"}
+              {editMode ? "Update" : "Save"}{" "}
+              {type === "asset" ? "Asset" : "Debt"}
             </Text>
           </TouchableOpacity>
+
+          {/* Delete Button (only show in edit mode) */}
+          {editMode && (
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.error,
+                borderRadius: 12,
+                padding: 16,
+                alignItems: "center",
+                marginTop: 12,
+              }}
+              onPress={handleDelete}
+            >
+              <Text
+                style={{
+                  color: colors.buttonText,
+                  fontSize: 16,
+                  fontWeight: "600",
+                }}
+              >
+                Delete {type === "asset" ? "Asset" : "Debt"}
+              </Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

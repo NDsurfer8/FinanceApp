@@ -435,6 +435,27 @@ export const removeAsset = async (
   }
 };
 
+// Update asset
+export const updateAsset = async (asset: Asset): Promise<void> => {
+  try {
+    const { encryptAsset } = await import("./encryption");
+    const encryptedAsset = await encryptAsset(asset);
+
+    const assetRef = ref(db, `users/${asset.userId}/assets/${asset.id}`);
+    await update(assetRef, {
+      ...encryptedAsset,
+      updatedAt: Date.now(),
+    });
+    console.log("Asset updated successfully");
+
+    // Auto-update shared groups
+    await updateSharedGroupsForUser(asset.userId);
+  } catch (error) {
+    console.error("Error updating asset:", error);
+    throw error;
+  }
+};
+
 // Remove debt
 export const removeDebt = async (
   userId: string,
@@ -449,6 +470,27 @@ export const removeDebt = async (
     await updateSharedGroupsForUser(userId);
   } catch (error) {
     console.error("Error removing debt:", error);
+    throw error;
+  }
+};
+
+// Update debt
+export const updateDebt = async (debt: Debt): Promise<void> => {
+  try {
+    const { encryptDebt } = await import("./encryption");
+    const encryptedDebt = await encryptDebt(debt);
+
+    const debtRef = ref(db, `users/${debt.userId}/debts/${debt.id}`);
+    await update(debtRef, {
+      ...encryptedDebt,
+      updatedAt: Date.now(),
+    });
+    console.log("Debt updated successfully");
+
+    // Auto-update shared groups
+    await updateSharedGroupsForUser(debt.userId);
+  } catch (error) {
+    console.error("Error updating debt:", error);
     throw error;
   }
 };

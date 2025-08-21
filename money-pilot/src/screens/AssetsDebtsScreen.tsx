@@ -192,31 +192,38 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           ) : (
             <>
               {assets.map((asset, i) => (
-                <View
+                <TouchableOpacity
                   key={asset.id}
                   style={{
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    paddingVertical: 10,
+                    marginBottom: 12,
+                    paddingVertical: 8,
                     borderBottomWidth: i < assets.length - 1 ? 1 : 0,
                     borderBottomColor: colors.border,
                   }}
+                  onPress={() =>
+                    navigation.navigate("AddAssetDebt", {
+                      type: "asset",
+                      editMode: true,
+                      asset: asset,
+                    })
+                  }
                 >
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        fontFamily: fontFamily.medium,
                         fontSize: 16,
                         color: colors.text,
+                        fontWeight: "500",
                       }}
                     >
                       {asset.name}
                     </Text>
                     <Text
                       style={{
-                        fontFamily: fontFamily.regular,
-                        fontSize: 12,
+                        fontSize: 14,
                         color: colors.textSecondary,
                         marginTop: 2,
                       }}
@@ -227,26 +234,21 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <Text
                       style={{
-                        fontFamily: fontFamily.semiBold,
-                        fontWeight: "600",
-                        marginRight: 8,
                         fontSize: 16,
-                        color: colors.text,
+                        fontWeight: "700",
+                        color: colors.success,
+                        marginRight: 8,
                       }}
                     >
                       ${asset.balance.toLocaleString()}
                     </Text>
-                    <TouchableOpacity
-                      onPress={() => handleDeleteAsset(asset.id)}
-                    >
-                      <Ionicons
-                        name="trash-outline"
-                        size={16}
-                        color="#ef4444"
-                      />
-                    </TouchableOpacity>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
               <View
                 style={{
@@ -334,66 +336,63 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           ) : (
             <>
               {debts.map((debt, i) => (
-                <View
+                <TouchableOpacity
                   key={debt.id}
                   style={{
-                    paddingVertical: 10,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 12,
+                    paddingVertical: 8,
                     borderBottomWidth: i < debts.length - 1 ? 1 : 0,
                     borderBottomColor: colors.border,
                   }}
+                  onPress={() =>
+                    navigation.navigate("AddAssetDebt", {
+                      type: "debt",
+                      editMode: true,
+                      debt: debt,
+                    })
+                  }
                 >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
+                  <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        fontFamily: fontFamily.medium,
-                        flex: 1,
                         fontSize: 16,
                         color: colors.text,
+                        fontWeight: "500",
                       }}
                     >
                       {debt.name}
                     </Text>
-                    <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: colors.textSecondary,
+                        marginTop: 2,
+                      }}
                     >
-                      <Text
-                        style={{
-                          fontFamily: fontFamily.semiBold,
-                          fontWeight: "600",
-                          marginRight: 8,
-                          fontSize: 16,
-                          color: colors.text,
-                        }}
-                      >
-                        ${debt.balance.toLocaleString()}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteDebt(debt.id)}
-                      >
-                        <Ionicons
-                          name="trash-outline"
-                          size={16}
-                          color="#ef4444"
-                        />
-                      </TouchableOpacity>
-                    </View>
+                      {debt.rate}% APR • ${debt.payment}/mo
+                    </Text>
                   </View>
-                  <Text
-                    style={{
-                      fontFamily: fontFamily.regular,
-                      color: colors.textSecondary,
-                      fontSize: 14,
-                    }}
-                  >
-                    {debt.rate}% APR • ${debt.payment}/mo
-                  </Text>
-                </View>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: colors.error,
+                        marginRight: 8,
+                      }}
+                    >
+                      ${debt.balance.toLocaleString()}
+                    </Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </View>
+                </TouchableOpacity>
               ))}
               <View
                 style={{
