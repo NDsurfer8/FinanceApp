@@ -80,7 +80,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       ? transaction?.type || initialType || "expense"
       : initialType || "expense",
     date: editMode ? transaction?.date || getInitialDate() : getInitialDate(),
-    isRecurring: editMode ? transaction?.isRecurring || false : false,
+    isRecurring: editMode
+      ? transaction?.isRecurring || transaction?.recurringTransactionId || false
+      : false,
     frequency: editMode
       ? transaction?.frequency || "monthly"
       : ("monthly" as
@@ -203,29 +205,120 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       setLoading(true);
 
       if (editMode && transaction) {
-        // Update existing transaction
-        const updatedTransaction = {
-          ...transaction,
-          description: formData.description,
-          amount: parseFloat(formData.amount),
-          category: formData.category,
-          type: formData.type as "income" | "expense",
-          date: new Date(formData.date).getTime(),
-          updatedAt: Date.now(),
-        };
+        // Check if user is trying to make a non-recurring transaction recurring
+        if (
+          formData.isRecurring &&
+          !transaction.isRecurring &&
+          !transaction.recurringTransactionId
+        ) {
+          // Create recurring transaction and delete the original
+          const { createRecurringTransaction } = await import(
+            "../services/transactionService"
+          );
 
-        // Optimistic update
-        const updatedTransactions = transactions.map((t) =>
-          t.id === transaction.id ? updatedTransaction : t
-        );
-        updateDataOptimistically({ transactions: updatedTransactions });
+          const recurringTransaction = {
+            name: formData.description,
+            amount: parseFloat(formData.amount),
+            type: formData.type as "income" | "expense",
+            category: formData.category,
+            frequency: formData.frequency,
+            startDate: new Date(formData.date).getTime(),
+            endDate:
+              formData.endDate && formData.endDate.trim() !== ""
+                ? new Date(formData.endDate).getTime()
+                : undefined,
+            isActive: true,
+            userId: user.uid,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
 
-        // Update in database
-        await updateTransaction(updatedTransaction);
+          // Remove the original transaction from UI
+          const updatedTransactions = transactions.filter(
+            (t) => t.id !== transaction.id
+          );
+          updateDataOptimistically({ transactions: updatedTransactions });
 
-        Alert.alert("Success", "Transaction updated successfully!", [
-          { text: "OK", onPress: () => navigation.goBack() },
-        ]);
+          // Delete original transaction and create recurring one
+          await removeTransaction(user.uid, transaction.id);
+          await createRecurringTransaction(recurringTransaction);
+
+          Alert.alert(
+            "Success",
+            "Transaction converted to recurring successfully!",
+            [{ text: "OK", onPress: () => navigation.goBack() }]
+          );
+        } else if (
+          !formData.isRecurring &&
+          (transaction.isRecurring || transaction.recurringTransactionId)
+        ) {
+          // Convert recurring transaction to regular transaction
+          const newTransaction = {
+            id: Date.now().toString(),
+            description: formData.description,
+            amount: parseFloat(formData.amount),
+            category: formData.category,
+            type: formData.type as "income" | "expense",
+            date: new Date(formData.date).getTime(),
+            userId: user.uid,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+
+          // Remove the recurring transaction from UI
+          const updatedTransactions = transactions.filter(
+            (t) => t.id !== transaction.id
+          );
+          updateDataOptimistically({ transactions: updatedTransactions });
+
+          // Delete recurring transaction and create regular one
+          const { deleteRecurringTransaction } = await import(
+            "../services/transactionService"
+          );
+
+          // Use recurringTransactionId if available, otherwise use transaction.id
+          const recurringTransactionId =
+            transaction.recurringTransactionId || transaction.id;
+          await deleteRecurringTransaction(recurringTransactionId);
+          const savedTransaction = await saveTransaction(newTransaction);
+
+          // Add the new transaction to UI
+          const finalTransactions = [
+            ...updatedTransactions,
+            { ...newTransaction, id: savedTransaction },
+          ];
+          updateDataOptimistically({ transactions: finalTransactions });
+
+          Alert.alert(
+            "Success",
+            "Recurring transaction converted to regular transaction!",
+            [{ text: "OK", onPress: () => navigation.goBack() }]
+          );
+        } else {
+          // Regular update (no change in recurring status)
+          const updatedTransaction = {
+            ...transaction,
+            description: formData.description,
+            amount: parseFloat(formData.amount),
+            category: formData.category,
+            type: formData.type as "income" | "expense",
+            date: new Date(formData.date).getTime(),
+            updatedAt: Date.now(),
+          };
+
+          // Optimistic update
+          const updatedTransactions = transactions.map((t) =>
+            t.id === transaction.id ? updatedTransaction : t
+          );
+          updateDataOptimistically({ transactions: updatedTransactions });
+
+          // Update in database
+          await updateTransaction(updatedTransaction);
+
+          Alert.alert("Success", "Transaction updated successfully!", [
+            { text: "OK", onPress: () => navigation.goBack() },
+          ]);
+        }
       } else if (formData.isRecurring) {
         // Create recurring transaction
         const { createRecurringTransaction } = await import(
@@ -312,39 +405,116 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       return;
     }
 
-    Alert.alert(
-      "Delete Confirmation",
-      "Are you sure you want to delete this transaction? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // Optimistic update
-              const updatedTransactions = transactions.filter(
-                (t) => t.id !== transaction.id
-              );
-              updateDataOptimistically({ transactions: updatedTransactions });
+    // Check if this is a recurring transaction
+    const isRecurringTransaction =
+      transaction.isRecurring || transaction.recurringTransactionId;
 
-              // Delete from database
-              await removeTransaction(user.uid, transaction.id);
+    if (isRecurringTransaction) {
+      // Show options for recurring transactions
+      Alert.alert(
+        "Delete Recurring Transaction",
+        "This is a recurring transaction. What would you like to delete?",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete This Transaction Only",
+            style: "default",
+            onPress: async () => {
+              try {
+                // Optimistic update
+                const updatedTransactions = transactions.filter(
+                  (t) => t.id !== transaction.id
+                );
+                updateDataOptimistically({ transactions: updatedTransactions });
 
-              Alert.alert("Success", "Transaction deleted successfully!", [
-                { text: "OK", onPress: () => navigation.goBack() },
-              ]);
-            } catch (error) {
-              console.error("Error deleting transaction:", error);
-              Alert.alert(
-                "Error",
-                "Failed to delete transaction. Please try again."
-              );
-            }
+                // Delete just this transaction
+                await removeTransaction(user.uid, transaction.id);
+
+                Alert.alert("Success", "Transaction deleted successfully!", [
+                  { text: "OK", onPress: () => navigation.goBack() },
+                ]);
+              } catch (error) {
+                console.error("Error deleting transaction:", error);
+                Alert.alert(
+                  "Error",
+                  "Failed to delete transaction. Please try again."
+                );
+              }
+            },
           },
-        },
-      ]
-    );
+          {
+            text: "Delete Recurring & All Future",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Optimistic update - remove all related transactions
+                const recurringTransactionId =
+                  transaction.recurringTransactionId || transaction.id;
+                const updatedTransactions = transactions.filter(
+                  (t) =>
+                    t.recurringTransactionId !== recurringTransactionId &&
+                    t.id !== transaction.id
+                );
+                updateDataOptimistically({ transactions: updatedTransactions });
+
+                // Delete the recurring transaction and all its generated transactions
+                const { deleteRecurringTransaction } = await import(
+                  "../services/transactionService"
+                );
+                await deleteRecurringTransaction(recurringTransactionId);
+
+                Alert.alert(
+                  "Success",
+                  "Recurring transaction and all future occurrences deleted!",
+                  [{ text: "OK", onPress: () => navigation.goBack() }]
+                );
+              } catch (error) {
+                console.error("Error deleting recurring transaction:", error);
+                Alert.alert(
+                  "Error",
+                  "Failed to delete recurring transaction. Please try again."
+                );
+              }
+            },
+          },
+        ]
+      );
+    } else {
+      // Regular transaction deletion
+      Alert.alert(
+        "Delete Confirmation",
+        "Are you sure you want to delete this transaction? This action cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Optimistic update
+                const updatedTransactions = transactions.filter(
+                  (t) => t.id !== transaction.id
+                );
+                updateDataOptimistically({ transactions: updatedTransactions });
+
+                // Delete from database
+                await removeTransaction(user.uid, transaction.id);
+
+                Alert.alert("Success", "Transaction deleted successfully!", [
+                  { text: "OK", onPress: () => navigation.goBack() },
+                ]);
+              } catch (error) {
+                console.error("Error deleting transaction:", error);
+                Alert.alert(
+                  "Error",
+                  "Failed to delete transaction. Please try again."
+                );
+              }
+            },
+          },
+        ]
+      );
+    }
   };
 
   return (
@@ -760,7 +930,11 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   }}
                 >
                   {formData.isRecurring
-                    ? "Recurring Transaction"
+                    ? editMode &&
+                      (transaction?.isRecurring ||
+                        transaction?.recurringTransactionId)
+                      ? "Is Recurring"
+                      : "Recurring Transaction"
                     : "Make Recurring"}
                 </Text>
               </TouchableOpacity>
