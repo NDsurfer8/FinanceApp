@@ -197,9 +197,14 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const sendMessage = async () => {
     if (!inputText.trim() || isLoading) return;
 
+    // Clear input immediately
+    const currentInputText = inputText.trim();
+    setInputText("");
+    setIsLoading(true);
+
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputText.trim(),
+      text: currentInputText,
       isUser: true,
       timestamp: new Date(),
     };
@@ -214,8 +219,6 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
 
     const newMessages = [...messages, userMessage, loadingMessage];
     setMessages(newMessages);
-    setInputText("");
-    setIsLoading(true);
 
     try {
       const snapshot = generateFinancialSnapshot();
