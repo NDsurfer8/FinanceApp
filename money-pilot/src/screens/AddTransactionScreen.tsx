@@ -110,6 +110,16 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     }
   }, [route.params]);
 
+  // Ensure recurring status is set when transaction has recurringTransactionId
+  React.useEffect(() => {
+    if (editMode && transaction?.recurringTransactionId) {
+      setFormData((prev) => ({
+        ...prev,
+        isRecurring: true,
+      }));
+    }
+  }, [editMode, transaction?.recurringTransactionId]);
+
   const getCategories = (type: string) => {
     if (type === "income") {
       return [
@@ -410,38 +420,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       transaction.isRecurring || transaction.recurringTransactionId;
 
     if (isRecurringTransaction) {
-      // Show options for recurring transactions
+      // Show confirmation for deleting recurring transaction
       Alert.alert(
         "Delete Recurring Transaction",
-        "This is a recurring transaction. What would you like to delete?",
+        "This will delete the recurring transaction and all future occurrences. This action cannot be undone.",
         [
           { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete This Transaction Only",
-            style: "default",
-            onPress: async () => {
-              try {
-                // Optimistic update
-                const updatedTransactions = transactions.filter(
-                  (t) => t.id !== transaction.id
-                );
-                updateDataOptimistically({ transactions: updatedTransactions });
-
-                // Delete just this transaction
-                await removeTransaction(user.uid, transaction.id);
-
-                Alert.alert("Success", "Transaction deleted successfully!", [
-                  { text: "OK", onPress: () => navigation.goBack() },
-                ]);
-              } catch (error) {
-                console.error("Error deleting transaction:", error);
-                Alert.alert(
-                  "Error",
-                  "Failed to delete transaction. Please try again."
-                );
-              }
-            },
-          },
           {
             text: "Delete Recurring & All Future",
             style: "destructive",
