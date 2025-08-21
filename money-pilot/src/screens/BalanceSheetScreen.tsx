@@ -414,6 +414,112 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
           )}
         </View>
 
+        {/* Liabilities Section */}
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 20,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  backgroundColor: colors.errorLight,
+                  padding: 8,
+                  borderRadius: 10,
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="trending-down" size={20} color={colors.error} />
+              </View>
+              <Text
+                style={{ fontSize: 18, fontWeight: "700", color: colors.error }}
+              >
+                Liabilities
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("AddAssetDebt", { type: "debt" })
+              }
+            >
+              <Ionicons name="add-circle" size={24} color={colors.error} />
+            </TouchableOpacity>
+          </View>
+
+          {debts.length === 0 ? (
+            <Text
+              style={{
+                color: colors.textSecondary,
+                textAlign: "center",
+                padding: 20,
+              }}
+            >
+              No debts added yet
+            </Text>
+          ) : (
+            debts.map((debt) => (
+              <View
+                key={debt.id}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
+                  paddingVertical: 8,
+                  borderBottomWidth: 1,
+                  borderBottomColor: colors.border,
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: colors.text,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {debt.name}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {formatPercentage(debt.rate)} APR • ${debt.payment}/month
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: colors.error,
+                  }}
+                >
+                  {formatCurrency(debt.balance)}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
+
         {/* Emergency Fund Section */}
         <View
           style={{
@@ -573,7 +679,7 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
           </View>
         </View>
 
-        {/* Liabilities Section */}
+        {/* Financial Ratios Section */}
         <View
           style={{
             backgroundColor: colors.surface,

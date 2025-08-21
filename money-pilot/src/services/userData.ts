@@ -290,6 +290,7 @@ export const saveAsset = async (asset: Asset): Promise<string> => {
 export const getUserAssets = async (userId: string): Promise<Asset[]> => {
   try {
     const { decryptAssets } = await import("./encryption");
+    const { migrateAssetsToTypes } = await import("../utils/assetMigration");
     const assetsRef = ref(db, `users/${userId}/assets`);
     const snapshot = await get(assetsRef);
 
@@ -301,7 +302,11 @@ export const getUserAssets = async (userId: string): Promise<Asset[]> => {
 
       // Decrypt all assets
       const decryptedAssets = await decryptAssets(assets);
-      return decryptedAssets;
+
+      // Migrate assets to have proper types if needed
+      const migratedAssets = migrateAssetsToTypes(decryptedAssets);
+
+      return migratedAssets;
     }
     return [];
   } catch (error) {
