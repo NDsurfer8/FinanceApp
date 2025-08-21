@@ -272,15 +272,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </View>
             <TouchableOpacity
               style={{
-                backgroundColor: "#f8fafc",
+                backgroundColor: colors.surfaceSecondary,
                 padding: 12,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: "#e2e8f0",
+                borderColor: colors.border,
+                alignSelf: "flex-start",
               }}
               onPress={() => navigation.navigate("EditProfile")}
             >
-              <Ionicons name="create" size={20} color="#6366f1" />
+              <Ionicons name="create" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
