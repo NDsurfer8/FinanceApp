@@ -90,18 +90,65 @@ class FinancialPlanGenerator {
     planName: string,
     userId: string
   ): FinancialPlan {
-    const planData = this.analyzeFinancialData(snapshot);
-    const csvData = this.generateCSV(planData, snapshot);
+    try {
+      const planData = this.analyzeFinancialData(snapshot);
+      const csvData = this.generateCSV(planData, snapshot);
 
-    return {
-      userId,
-      name: planName,
-      description: `Financial plan generated on ${new Date().toLocaleDateString()}`,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      planData,
-      csvData,
-    };
+      return {
+        userId,
+        name: planName,
+        description: `Financial plan generated on ${
+          new Date().toISOString().split("T")[0]
+        }`,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        planData,
+        csvData,
+      };
+    } catch (error) {
+      console.error("Error in generateFinancialPlan:", error);
+      // Return a minimal plan if generation fails
+      return {
+        userId,
+        name: planName,
+        description: "Financial plan (generated with errors)",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        planData: {
+          monthlyBudget: {
+            income: snapshot.monthlyIncome,
+            expenses: snapshot.monthlyExpenses,
+            savings: 0,
+            debtPayoff: 0,
+            discretionary: 0,
+            breakdown: [],
+          },
+          debtPayoffPlan: {
+            totalDebt: snapshot.totalDebt,
+            monthlyPayment: 0,
+            estimatedPayoffDate: new Date().toISOString().split("T")[0],
+            strategy: "avalanche",
+            priorityOrder: [],
+          },
+          savingsPlan: {
+            emergencyFund: {
+              current: 0,
+              target: 0,
+              monthlyContribution: 0,
+              monthsToTarget: 0,
+            },
+            retirement: { monthlyContribution: 0, targetPercentage: 0 },
+            otherSavings: {
+              monthlyContribution: 0,
+              purpose: "Error in generation",
+            },
+          },
+          goalTimeline: { goals: [] },
+          recommendations: ["Error occurred during plan generation"],
+        },
+        csvData: "Error generating CSV data",
+      };
+    }
   }
 
   private analyzeFinancialData(snapshot: FinancialSnapshot): PlanData {
@@ -195,11 +242,31 @@ class FinancialPlanGenerator {
     // Estimate payoff date (simplified calculation)
     const totalDebt = snapshot.totalDebt;
     const monthlyPayment = totalMonthlyPayments;
-    const estimatedMonths = totalDebt / monthlyPayment;
     const estimatedPayoffDate = new Date();
-    estimatedPayoffDate.setMonth(
-      estimatedPayoffDate.getMonth() + Math.ceil(estimatedMonths)
-    );
+
+    // Use a safer date calculation method to avoid "Date value out of bounds" errors
+    try {
+      // Handle case where monthlyPayment is 0 (no debt payments)
+      if (monthlyPayment <= 0 || totalDebt <= 0) {
+        // No debt to pay off
+        estimatedPayoffDate.setFullYear(estimatedPayoffDate.getFullYear() + 1);
+      } else {
+        const estimatedMonths = totalDebt / monthlyPayment;
+        const monthsToAdd = Math.ceil(estimatedMonths);
+
+        // Limit to a reasonable number of months to prevent invalid dates
+        const safeMonthsToAdd = Math.min(monthsToAdd, 1200); // 100 years max
+
+        estimatedPayoffDate.setTime(
+          estimatedPayoffDate.getTime() +
+            safeMonthsToAdd * 30 * 24 * 60 * 60 * 1000
+        );
+      }
+    } catch (error) {
+      console.warn("Error calculating debt payoff date:", error);
+      // Fallback: set to 5 years from now
+      estimatedPayoffDate.setFullYear(estimatedPayoffDate.getFullYear() + 5);
+    }
 
     return {
       totalDebt,
@@ -213,8 +280,12 @@ class FinancialPlanGenerator {
   private generateSavingsPlan(snapshot: FinancialSnapshot): SavingsPlan {
     const emergencyFundTarget = snapshot.monthlyExpenses * 6;
     const currentEmergencyFund = snapshot.totalSavings;
+
+    // Handle edge case where emergency fund target is already met
     const emergencyFundMonthly =
-      (emergencyFundTarget - currentEmergencyFund) / 12;
+      currentEmergencyFund >= emergencyFundTarget
+        ? 0
+        : (emergencyFundTarget - currentEmergencyFund) / 12;
 
     const retirementContribution =
       ((snapshot.monthlyIncome * snapshot.savingsRate) / 100) * 0.6; // 60% of savings to retirement
@@ -245,27 +316,50 @@ class FinancialPlanGenerator {
     const goals = snapshot.goals.map((goal) => {
       const progress = (goal.currentAmount / goal.targetAmount) * 100;
       const monthsToTarget = goal.targetDate
-        ? Math.max(
-            0,
-            Math.ceil(
-              (new Date(goal.targetDate).getTime() - new Date().getTime()) /
-                (1000 * 60 * 60 * 24 * 30)
-            )
-          )
+        ? (() => {
+            try {
+              const targetDate = new Date(goal.targetDate);
+              const currentDate = new Date();
+              const timeDiff = targetDate.getTime() - currentDate.getTime();
+              const monthsDiff = timeDiff / (1000 * 60 * 60 * 24 * 30);
+              return Math.max(0, Math.ceil(monthsDiff));
+            } catch (error) {
+              console.warn("Error calculating months to target:", error);
+              return 0;
+            }
+          })()
         : 0;
       const monthlyNeeded =
         monthsToTarget > 0
           ? (goal.targetAmount - goal.currentAmount) / monthsToTarget
           : goal.monthlyContribution;
-      const onTrack = monthlyNeeded <= goal.monthlyContribution * 1.2;
+      const onTrack =
+        goal.monthlyContribution > 0
+          ? monthlyNeeded <= goal.monthlyContribution * 1.2
+          : false;
 
       const estimatedCompletionDate = new Date();
-      if (monthlyNeeded > 0) {
+      if (monthlyNeeded > 0 && goal.monthlyContribution > 0) {
         const monthsToComplete =
           (goal.targetAmount - goal.currentAmount) / goal.monthlyContribution;
-        estimatedCompletionDate.setMonth(
-          estimatedCompletionDate.getMonth() + Math.ceil(monthsToComplete)
-        );
+
+        // Use a safer date calculation method to avoid "Date value out of bounds" errors
+        try {
+          const monthsToAdd = Math.ceil(monthsToComplete);
+          // Limit to a reasonable number of months to prevent invalid dates
+          const safeMonthsToAdd = Math.min(monthsToAdd, 1200); // 100 years max
+
+          estimatedCompletionDate.setTime(
+            estimatedCompletionDate.getTime() +
+              safeMonthsToAdd * 30 * 24 * 60 * 60 * 1000
+          );
+        } catch (error) {
+          console.warn("Error calculating estimated completion date:", error);
+          // Fallback: set to 1 year from now
+          estimatedCompletionDate.setFullYear(
+            estimatedCompletionDate.getFullYear() + 1
+          );
+        }
       }
 
       return {

@@ -499,28 +499,36 @@ class AIFinancialAdvisorService {
     ) {
       try {
         // Create a personalized plan name based on user's request
-        let planName = `Financial Plan - ${new Date().toLocaleDateString()}`;
+        let planName = `Financial Plan - ${
+          new Date().toISOString().split("T")[0]
+        }`;
 
         // Customize plan name based on user's specific request
         if (lowerQuestion.includes("budget")) {
-          planName = `Budget Plan - ${new Date().toLocaleDateString()}`;
+          planName = `Budget Plan - ${new Date().toISOString().split("T")[0]}`;
         } else if (
           lowerQuestion.includes("debt") ||
           lowerQuestion.includes("payoff")
         ) {
-          planName = `Debt Payoff Plan - ${new Date().toLocaleDateString()}`;
+          planName = `Debt Payoff Plan - ${
+            new Date().toISOString().split("T")[0]
+          }`;
         } else if (
           lowerQuestion.includes("savings") ||
           lowerQuestion.includes("emergency")
         ) {
-          planName = `Savings Plan - ${new Date().toLocaleDateString()}`;
+          planName = `Savings Plan - ${new Date().toISOString().split("T")[0]}`;
         } else if (
           lowerQuestion.includes("investment") ||
           lowerQuestion.includes("retirement")
         ) {
-          planName = `Investment Plan - ${new Date().toLocaleDateString()}`;
+          planName = `Investment Plan - ${
+            new Date().toISOString().split("T")[0]
+          }`;
         } else if (lowerQuestion.includes("goal")) {
-          planName = `Goal Achievement Plan - ${new Date().toLocaleDateString()}`;
+          planName = `Goal Achievement Plan - ${
+            new Date().toISOString().split("T")[0]
+          }`;
         }
 
         const plan = financialPlanGenerator.generateFinancialPlan(
@@ -603,13 +611,21 @@ class AIFinancialAdvisorService {
         const goalAnalysis = snapshot.goals.map((goal) => {
           const progress = (goal.currentAmount / goal.targetAmount) * 100;
           const monthsToTarget = goal.targetDate
-            ? Math.max(
-                0,
-                Math.ceil(
-                  (new Date(goal.targetDate).getTime() - new Date().getTime()) /
-                    (1000 * 60 * 60 * 24 * 30)
-                )
-              )
+            ? (() => {
+                try {
+                  const targetDate = new Date(goal.targetDate);
+                  const currentDate = new Date();
+                  const timeDiff = targetDate.getTime() - currentDate.getTime();
+                  const monthsDiff = timeDiff / (1000 * 60 * 60 * 24 * 30);
+                  return Math.max(0, Math.ceil(monthsDiff));
+                } catch (error) {
+                  console.warn(
+                    "Error calculating months to target in goal analysis:",
+                    error
+                  );
+                  return 0;
+                }
+              })()
             : 0;
           const monthlyNeeded =
             monthsToTarget > 0
