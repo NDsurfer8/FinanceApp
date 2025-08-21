@@ -388,7 +388,8 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                     <TouchableOpacity
                       key={assetType.value}
                       style={{
-                        width: 80,
+                        minWidth: 90,
+                        maxWidth: 120,
                         padding: 12,
                         borderRadius: 8,
                         borderWidth: 2,
@@ -402,6 +403,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                             : colors.surfaceSecondary,
                         alignItems: "center",
                         marginRight: 8,
+                        flexShrink: 0,
                       }}
                       onPress={() =>
                         setFormData({ ...formData, assetType: assetType.value })
@@ -420,6 +422,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                               : colors.textSecondary,
                           textAlign: "center",
                         }}
+                        numberOfLines={2}
                       >
                         {assetType.label}
                       </Text>
