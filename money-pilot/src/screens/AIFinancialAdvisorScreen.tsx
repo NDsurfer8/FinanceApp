@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Animated,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -25,6 +27,8 @@ import {
 import { financialPlanGenerator } from "../services/financialPlanGenerator";
 import { saveFinancialPlan } from "../services/userData";
 import { VectraAvatar } from "../components/VectraAvatar";
+
+const { width: screenWidth } = Dimensions.get("window");
 
 interface Message {
   id: string;
@@ -60,6 +64,12 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   } | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
+
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const typingAnim = useRef(new Animated.Value(0)).current;
 
   // AI Financial Advisor is now free for testing
   const hasAIAccess = true;
@@ -99,6 +109,56 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     } finally {
       setIsLoadingHistory(false);
     }
+  };
+
+  // Start entrance animations
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Start pulsing animation for send button
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  // Typing animation for AI responses
+  const startTypingAnimation = () => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(typingAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(typingAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   };
 
   // Save chat history to AsyncStorage
@@ -213,6 +273,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     setMessages(newMessages);
     setInputText("");
     setIsLoading(true);
+
+    // Start typing animation
+    startTypingAnimation();
 
     try {
       const snapshot = generateFinancialSnapshot();
@@ -392,82 +455,115 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Header */}
-      <View
+      {/* Enhanced Header */}
+      <Animated.View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          padding: 16,
-          backgroundColor: colors.surface,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
         }}
       >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{ marginRight: 16 }}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            padding: 16,
+            backgroundColor: colors.surface,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 2 },
+            elevation: 4,
+          }}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <VectraAvatar size={24} />
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "600",
-                color: colors.text,
-                marginLeft: 8,
-              }}
-            >
-              Vectra
-            </Text>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{
+              marginRight: 16,
+              padding: 8,
+              borderRadius: 20,
+              backgroundColor: colors.surfaceSecondary,
+            }}
+          >
+            <Ionicons name="arrow-back" size={20} color={colors.text} />
+          </TouchableOpacity>
+
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Animated.View
+                style={{
+                  transform: [{ scale: pulseAnim }],
+                }}
+              >
+                <VectraAvatar size={24} />
+              </Animated.View>
+              <View style={{ marginLeft: 10 }}>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: colors.text,
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Vectra AI
+                </Text>
+                {messages.length > 1 && (
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textTertiary,
+                      marginTop: 2,
+                      fontWeight: "500",
+                    }}
+                  >
+                    💬 {messages.length - 1} messages stored
+                  </Text>
+                )}
+              </View>
+            </View>
           </View>
-          <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-            Get personalized financial advice
-          </Text>
-          {messages.length > 1 && (
-            <Text
-              style={{ fontSize: 12, color: colors.textTertiary, marginTop: 2 }}
-            >
-              {messages.length - 1} messages stored
-            </Text>
-          )}
+
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {messages.length > 1 && (
+              <TouchableOpacity
+                onPress={() => {
+                  Alert.alert(
+                    "Clear Chat History",
+                    "Are you sure you want to clear all chat history? This action cannot be undone.",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Clear",
+                        style: "destructive",
+                        onPress: clearChatHistory,
+                      },
+                    ]
+                  );
+                }}
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  borderRadius: 16,
+                  backgroundColor: colors.surfaceSecondary,
+                  shadowColor: colors.shadow,
+                  shadowOpacity: 0.1,
+                  shadowRadius: 2,
+                  shadowOffset: { width: 0, height: 1 },
+                  elevation: 2,
+                }}
+              >
+                <Ionicons
+                  name="trash-outline"
+                  size={16}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {messages.length > 1 && (
-            <TouchableOpacity
-              onPress={() => {
-                Alert.alert(
-                  "Clear Chat History",
-                  "Are you sure you want to clear all chat history? This action cannot be undone.",
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Clear",
-                      style: "destructive",
-                      onPress: clearChatHistory,
-                    },
-                  ]
-                );
-              }}
-              style={{
-                marginRight: 12,
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                borderRadius: 12,
-                backgroundColor: colors.surfaceSecondary,
-              }}
-            >
-              <Ionicons
-                name="trash-outline"
-                size={16}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      </Animated.View>
 
       {/* Messages */}
       {isLoadingHistory ? (
@@ -485,27 +581,30 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           style={{ flex: 1, padding: 16 }}
           showsVerticalScrollIndicator={false}
         >
-          {messages.map((message) => (
-            <View
+          {messages.map((message, index) => (
+            <Animated.View
               key={message.id}
               style={{
                 marginBottom: 16,
                 alignItems: message.isUser ? "flex-end" : "flex-start",
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
               }}
             >
               {message.isUser ? (
-                // User message
+                // Enhanced User message
                 <View
                   style={{
                     maxWidth: "80%",
-                    padding: 12,
-                    borderRadius: 16,
-                    backgroundColor: "#6366f1",
-                    shadowColor: "#000",
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                    shadowOffset: { width: 0, height: 2 },
-                    elevation: 2,
+                    padding: 16,
+                    borderRadius: 20,
+                    backgroundColor: colors.primary,
+                    shadowColor: colors.primary,
+                    shadowOpacity: 0.2,
+                    shadowRadius: 8,
+                    shadowOffset: { width: 0, height: 4 },
+                    elevation: 4,
+                    borderBottomRightRadius: 4,
                   }}
                 >
                   {message.isLoading ? (
@@ -514,7 +613,12 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                     >
                       <ActivityIndicator size="small" color="#fff" />
                       <Text
-                        style={{ marginLeft: 8, color: "#fff", fontSize: 14 }}
+                        style={{
+                          marginLeft: 8,
+                          color: "#fff",
+                          fontSize: 14,
+                          fontWeight: "500",
+                        }}
                       >
                         Analyzing your finances...
                       </Text>
@@ -523,8 +627,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                     <Text
                       style={{
                         color: "#fff",
-                        fontSize: 14,
-                        lineHeight: 20,
+                        fontSize: 15,
+                        lineHeight: 22,
+                        fontWeight: "500",
                       }}
                     >
                       {message.text}
@@ -532,45 +637,63 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                   )}
                 </View>
               ) : (
-                // Vectra message with avatar
+                // Enhanced Vectra message with avatar
                 <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
-                  <VectraAvatar size={24} />
-                  <View style={{ marginLeft: 8, maxWidth: "80%" }}>
+                  <Animated.View
+                    style={{
+                      transform: [{ scale: message.isLoading ? pulseAnim : 1 }],
+                    }}
+                  >
+                    <VectraAvatar size={28} />
+                  </Animated.View>
+                  <View style={{ marginLeft: 10, maxWidth: "80%" }}>
                     <View
                       style={{
-                        padding: 12,
-                        borderRadius: 16,
-                        backgroundColor: "#fff",
+                        padding: 16,
+                        borderRadius: 20,
+                        backgroundColor: colors.surface,
                         borderWidth: 1,
-                        borderColor: "#e5e7eb",
-                        shadowColor: "#000",
-                        shadowOpacity: 0.05,
-                        shadowRadius: 4,
-                        shadowOffset: { width: 0, height: 2 },
-                        elevation: 2,
+                        borderColor: colors.border,
+                        shadowColor: colors.shadow,
+                        shadowOpacity: 0.1,
+                        shadowRadius: 8,
+                        shadowOffset: { width: 0, height: 4 },
+                        elevation: 4,
+                        borderBottomLeftRadius: 4,
                       }}
                     >
                       {message.isLoading ? (
                         <View
                           style={{ flexDirection: "row", alignItems: "center" }}
                         >
-                          <ActivityIndicator size="small" color="#6366f1" />
-                          <Text
+                          <Animated.View
                             style={{
-                              marginLeft: 8,
-                              color: "#6b7280",
-                              fontSize: 14,
+                              opacity: typingAnim,
                             }}
                           >
-                            Analyzing your finances...
+                            <ActivityIndicator
+                              size="small"
+                              color={colors.primary}
+                            />
+                          </Animated.View>
+                          <Text
+                            style={{
+                              marginLeft: 12,
+                              color: colors.textSecondary,
+                              fontSize: 14,
+                              fontWeight: "500",
+                            }}
+                          >
+                            ✨ Analyzing your finances...
                           </Text>
                         </View>
                       ) : (
                         <Text
                           style={{
-                            color: "#374151",
-                            fontSize: 14,
-                            lineHeight: 20,
+                            color: colors.text,
+                            fontSize: 15,
+                            lineHeight: 22,
+                            fontWeight: "500",
                           }}
                         >
                           {message.text}
@@ -582,10 +705,11 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
               )}
               <Text
                 style={{
-                  fontSize: 12,
-                  color: "#9ca3af",
-                  marginTop: 4,
-                  marginHorizontal: 4,
+                  fontSize: 11,
+                  color: colors.textTertiary,
+                  marginTop: 6,
+                  marginHorizontal: 8,
+                  fontWeight: "500",
                 }}
               >
                 {message.timestamp.toLocaleTimeString([], {
@@ -593,9 +717,78 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                   minute: "2-digit",
                 })}
               </Text>
-            </View>
+            </Animated.View>
           ))}
         </ScrollView>
+      )}
+
+      {/* Quick Suggestions */}
+      {messages.length <= 1 && !isLoadingHistory && (
+        <Animated.View
+          style={{
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+            paddingHorizontal: 16,
+            paddingBottom: 16,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: "600",
+              color: colors.textSecondary,
+              marginBottom: 12,
+              textAlign: "center",
+            }}
+          >
+            💡 Quick suggestions to get started:
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 8,
+              justifyContent: "center",
+            }}
+          >
+            {[
+              "How can I save more money?",
+              "Create a budget plan",
+              "Help me with debt payoff",
+              "Analyze my spending",
+              "Emergency fund advice",
+              "Investment recommendations",
+            ].map((suggestion, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => setInputText(suggestion)}
+                style={{
+                  backgroundColor: colors.surfaceSecondary,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  shadowColor: colors.shadow,
+                  shadowOpacity: 0.1,
+                  shadowRadius: 2,
+                  shadowOffset: { width: 0, height: 1 },
+                  elevation: 2,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.text,
+                    fontWeight: "500",
+                  }}
+                >
+                  {suggestion}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Animated.View>
       )}
 
       {/* Save Plan Button */}
@@ -677,7 +870,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Input */}
+      {/* Enhanced Input */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{
@@ -685,32 +878,43 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           borderTopWidth: 1,
           borderTopColor: colors.border,
           padding: 16,
+          shadowColor: colors.shadow,
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: -2 },
+          elevation: 4,
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View
             style={{
               flex: 1,
-              borderWidth: 1,
+              borderWidth: 2,
               borderColor: inputText.trim() ? colors.primary : colors.border,
-              borderRadius: 20,
+              borderRadius: 24,
               backgroundColor: colors.surfaceSecondary,
-              marginRight: 8,
-              minHeight: 40,
-              maxHeight: 100,
+              marginRight: 12,
+              minHeight: 48,
+              maxHeight: 120,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              shadowOffset: { width: 0, height: 2 },
+              elevation: 2,
             }}
           >
             <TextInput
               style={{
-                paddingHorizontal: 16,
-                paddingVertical: 10,
+                paddingHorizontal: 18,
+                paddingVertical: 12,
                 fontSize: 16,
                 color: colors.text,
                 textAlignVertical: "center",
-                minHeight: 40,
-                maxHeight: 100,
+                minHeight: 48,
+                maxHeight: 120,
+                fontWeight: "500",
               }}
-              placeholder="Ask me about your finances..."
+              placeholder="✨ Ask me about your finances..."
               placeholderTextColor={colors.textSecondary}
               value={inputText}
               onChangeText={setInputText}
@@ -722,36 +926,47 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
               blurOnSubmit={false}
             />
           </View>
-          <TouchableOpacity
-            onPress={sendMessage}
-            disabled={!inputText.trim() || isLoading}
+          <Animated.View
             style={{
-              backgroundColor:
-                inputText.trim() && !isLoading
-                  ? colors.primary
-                  : colors.surfaceSecondary,
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              justifyContent: "center",
-              alignItems: "center",
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.1,
-              shadowRadius: 2,
-              shadowOffset: { width: 0, height: 1 },
-              elevation: 2,
+              transform: [{ scale: pulseAnim }],
             }}
           >
-            <Ionicons
-              name="arrow-forward"
-              size={18}
-              color={
-                inputText.trim() && !isLoading
-                  ? colors.buttonText
-                  : colors.textSecondary
-              }
-            />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={sendMessage}
+              disabled={!inputText.trim() || isLoading}
+              style={{
+                backgroundColor:
+                  inputText.trim() && !isLoading
+                    ? colors.primary
+                    : colors.surfaceSecondary,
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                justifyContent: "center",
+                alignItems: "center",
+                shadowColor: colors.primary,
+                shadowOpacity: inputText.trim() && !isLoading ? 0.3 : 0.1,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 4,
+                borderWidth: 2,
+                borderColor:
+                  inputText.trim() && !isLoading
+                    ? colors.primary
+                    : colors.border,
+              }}
+            >
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color={
+                  inputText.trim() && !isLoading
+                    ? colors.buttonText
+                    : colors.textSecondary
+                }
+              />
+            </TouchableOpacity>
+          </Animated.View>
         </View>
         {inputText.length > 0 && (
           <Text
@@ -759,8 +974,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
               fontSize: 12,
               color: colors.textSecondary,
               textAlign: "right",
-              marginTop: 4,
+              marginTop: 8,
               marginRight: 8,
+              fontWeight: "500",
             }}
           >
             {inputText.length}/500
