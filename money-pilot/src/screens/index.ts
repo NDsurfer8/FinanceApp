@@ -21,4 +21,4 @@ export { RecurringTransactionsScreen } from "./RecurringTransactionsScreen";
 export { default as SubscriptionScreen } from "./SubscriptionScreen";
 export { BankTransactionsScreen } from "./BankTransactionsScreen";
 export { AIFinancialAdvisorScreen } from "./AIFinancialAdvisorScreen";
-export { default as FinancialPlansScreen } from "./FinancialPlansScreen";
+export { FinancialPlansScreen } from "./FinancialPlansScreen";

@@ -230,7 +230,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
               updateDataOptimistically({ goals: updatedGoals });
 
               // Delete from database
-              await removeGoal(user.uid, goal.id);
+              await removeGoal(user.uid, goal.id!);
 
               Alert.alert("Success", "Goal deleted successfully!", [
                 { text: "OK", onPress: () => navigation.goBack() },

@@ -18,7 +18,15 @@ import {
 } from "../services/userData";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function FinancialPlansScreen({ navigation }: any) {
+export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
+  navigation,
+}) => {
+  // Set navigation options to ensure proper layout
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
   const { user } = useAuth();
   const { colors } = useTheme();
   const [plans, setPlans] = useState<FinancialPlan[]>([]);
@@ -34,10 +42,12 @@ export default function FinancialPlansScreen({ navigation }: any) {
     try {
       setLoading(true);
       const userPlans = await getFinancialPlans(user.uid);
-      setPlans(userPlans);
+      // Ensure plans is always an array
+      setPlans(Array.isArray(userPlans) ? userPlans : []);
     } catch (error) {
       console.error("Error loading financial plans:", error);
       Alert.alert("Error", "Failed to load financial plans");
+      setPlans([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -45,10 +55,22 @@ export default function FinancialPlansScreen({ navigation }: any) {
 
   const exportPlanAsCSV = async (plan: FinancialPlan) => {
     try {
+      // Validate plan data
+      if (!plan || !plan.csvData || !plan.name) {
+        Alert.alert("Error", "Invalid plan data");
+        return;
+      }
+
       const csvContent = plan.csvData;
       const fileName = `${plan.name.replace(/\s+/g, "_")}_${
-        new Date(plan.createdAt).toISOString().split("T")[0]
+        new Date(plan.createdAt || Date.now()).toISOString().split("T")[0]
       }.csv`;
+
+      // Check if Share API is available
+      if (!Share || typeof Share.share !== "function") {
+        Alert.alert("Error", "Share functionality not available");
+        return;
+      }
 
       await Share.share({
         message: csvContent,
@@ -61,7 +83,7 @@ export default function FinancialPlansScreen({ navigation }: any) {
   };
 
   const deletePlan = async (planId: string) => {
-    if (!user) return;
+    if (!user || !planId) return;
 
     Alert.alert(
       "Delete Plan",
@@ -87,20 +109,43 @@ export default function FinancialPlansScreen({ navigation }: any) {
   };
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString();
+    try {
+      if (!timestamp || isNaN(timestamp)) {
+        return "Unknown Date";
+      }
+      return new Date(timestamp).toLocaleDateString();
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Unknown Date";
+    }
   };
 
   const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString();
+    try {
+      if (!timestamp || isNaN(timestamp)) {
+        return "Unknown Time";
+      }
+      return new Date(timestamp).toLocaleTimeString();
+    } catch (error) {
+      console.error("Error formatting time:", error);
+      return "Unknown Time";
+    }
   };
 
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.text }]}>
-          Loading your financial plans...
-        </Text>
+      <View
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <View style={styles.loadingContent}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text }]}>
+            Loading your financial plans...
+          </Text>
+        </View>
       </View>
     );
   }
@@ -163,124 +208,159 @@ export default function FinancialPlansScreen({ navigation }: any) {
               </Text>
             </View>
 
-            {plans.map((plan) => (
-              <View
-                key={plan.id}
-                style={[styles.planCard, { backgroundColor: colors.card }]}
-              >
-                <View style={styles.planHeader}>
-                  <View style={styles.planInfo}>
-                    <Text style={[styles.planName, { color: colors.text }]}>
-                      {plan.name}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.planDescription,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      {plan.description}
-                    </Text>
-                    <Text
-                      style={[styles.planDate, { color: colors.textSecondary }]}
-                    >
-                      Created: {formatDate(plan.createdAt)} at{" "}
-                      {formatTime(plan.createdAt)}
-                    </Text>
-                  </View>
-                  <View style={styles.planActions}>
-                    <TouchableOpacity
-                      style={[
-                        styles.actionButton,
-                        { backgroundColor: colors.primary },
-                      ]}
-                      onPress={() => exportPlanAsCSV(plan)}
-                    >
-                      <Ionicons
-                        name="download-outline"
-                        size={20}
-                        color="white"
-                      />
-                      <Text style={styles.actionButtonText}>Export</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.deleteButton,
-                        { backgroundColor: colors.error },
-                      ]}
-                      onPress={() => deletePlan(plan.id!)}
-                    >
-                      <Ionicons name="trash-outline" size={20} color="white" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
+            {plans.map((plan) => {
+              // Skip invalid plans
+              if (!plan || !plan.id) {
+                return null;
+              }
 
-                <View style={styles.planSummary}>
-                  <View style={styles.summaryItem}>
-                    <Text
-                      style={[
-                        styles.summaryLabel,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      Monthly Budget
-                    </Text>
-                    <Text style={[styles.summaryValue, { color: colors.text }]}>
-                      ${plan.planData.monthlyBudget.income.toFixed(2)}
-                    </Text>
+              return (
+                <View
+                  key={plan.id}
+                  style={[styles.planCard, { backgroundColor: colors.card }]}
+                >
+                  <View style={styles.planHeader}>
+                    <View style={styles.planInfo}>
+                      <Text style={[styles.planName, { color: colors.text }]}>
+                        {plan.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.planDescription,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {plan.description}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.planDate,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Created: {formatDate(plan.createdAt)} at{" "}
+                        {formatTime(plan.createdAt)}
+                      </Text>
+                    </View>
+                    <View style={styles.planActions}>
+                      <TouchableOpacity
+                        style={[
+                          styles.actionButton,
+                          { backgroundColor: colors.primary },
+                        ]}
+                        onPress={() => exportPlanAsCSV(plan)}
+                      >
+                        <Ionicons
+                          name="download-outline"
+                          size={20}
+                          color="white"
+                        />
+                        <Text style={styles.actionButtonText}>Export</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.deleteButton,
+                          { backgroundColor: colors.error },
+                        ]}
+                        onPress={() => deletePlan(plan.id!)}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={20}
+                          color="white"
+                        />
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                  <View style={styles.summaryItem}>
-                    <Text
-                      style={[
-                        styles.summaryLabel,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      Total Debt
-                    </Text>
-                    <Text style={[styles.summaryValue, { color: colors.text }]}>
-                      ${plan.planData.debtPayoffPlan.totalDebt.toFixed(2)}
-                    </Text>
-                  </View>
-                  <View style={styles.summaryItem}>
-                    <Text
-                      style={[
-                        styles.summaryLabel,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      Goals
-                    </Text>
-                    <Text style={[styles.summaryValue, { color: colors.text }]}>
-                      {plan.planData.goalTimeline.goals.length}
-                    </Text>
-                  </View>
-                  <View style={styles.summaryItem}>
-                    <Text
-                      style={[
-                        styles.summaryLabel,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      Recommendations
-                    </Text>
-                    <Text style={[styles.summaryValue, { color: colors.text }]}>
-                      {plan.planData.recommendations.length}
-                    </Text>
+
+                  <View style={styles.planSummary}>
+                    <View style={styles.summaryItem}>
+                      <Text
+                        style={[
+                          styles.summaryLabel,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Monthly Budget
+                      </Text>
+                      <Text
+                        style={[styles.summaryValue, { color: colors.text }]}
+                      >
+                        $
+                        {plan.planData?.monthlyBudget?.income?.toFixed(2) ||
+                          "0.00"}
+                      </Text>
+                    </View>
+                    <View style={styles.summaryItem}>
+                      <Text
+                        style={[
+                          styles.summaryLabel,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Total Debt
+                      </Text>
+                      <Text
+                        style={[styles.summaryValue, { color: colors.text }]}
+                      >
+                        $
+                        {plan.planData?.debtPayoffPlan?.totalDebt?.toFixed(2) ||
+                          "0.00"}
+                      </Text>
+                    </View>
+                    <View style={styles.summaryItem}>
+                      <Text
+                        style={[
+                          styles.summaryLabel,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Goals
+                      </Text>
+                      <Text
+                        style={[styles.summaryValue, { color: colors.text }]}
+                      >
+                        {plan.planData?.goalTimeline?.goals?.length || 0}
+                      </Text>
+                    </View>
+                    <View style={styles.summaryItem}>
+                      <Text
+                        style={[
+                          styles.summaryLabel,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Recommendations
+                      </Text>
+                      <Text
+                        style={[styles.summaryValue, { color: colors.text }]}
+                      >
+                        {plan.planData?.recommendations?.length || 0}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </>
         )}
       </ScrollView>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingContent: {
+    alignItems: "center",
+    paddingHorizontal: 20,
   },
   header: {
     flexDirection: "row",
