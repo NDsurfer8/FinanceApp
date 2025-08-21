@@ -458,7 +458,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               <Text
                 style={[styles.contactText, { color: colors.textSecondary }]}
               >
-                support@moneypilot.com
+                support@vectorFi.com
               </Text>
             </View>
             <View style={styles.contactItem}>
@@ -474,7 +474,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               <Text
                 style={[styles.contactText, { color: colors.textSecondary }]}
               >
-                moneypilot.com/support
+                vectorfi.ai/support
               </Text>
             </View>
           </View>
