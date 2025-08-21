@@ -11,6 +11,29 @@ const REVENUECAT_API_KEYS = {
   android: "goog_YOUR_ANDROID_API_KEY", // Replace with your Android API key
 };
 
+// Add error handling and retry logic
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+// Simple network connectivity check
+const checkNetworkConnectivity = async (): Promise<boolean> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch("https://api.revenuecat.com/v1/health", {
+      method: "HEAD",
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch (error) {
+    console.log("Network connectivity check failed:", error);
+    return false;
+  }
+};
+
 // Product Identifiers
 export const PRODUCT_IDS = {
   PREMIUM_MONTHLY: "premium_monthly",
@@ -47,6 +70,7 @@ class RevenueCatService {
     customerInfo: CustomerInfo
   ) => void)[] = [];
   private isInitialized = false;
+  private isOfflineMode = false;
 
   private constructor() {}
 
@@ -60,49 +84,126 @@ class RevenueCatService {
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
-    try {
-      const apiKey =
-        Platform.OS === "ios"
-          ? REVENUECAT_API_KEYS.ios
-          : REVENUECAT_API_KEYS.android;
+    let lastError: any;
 
-      await Purchases.configure({
-        apiKey,
-        appUserID: null, // Will be set when user logs in
-      });
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        console.log(
+          `RevenueCat initialization attempt ${attempt}/${MAX_RETRIES}`
+        );
 
-      // Enable debug logs in development
-      if (__DEV__) {
-        Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
+        // Check network connectivity first
+        const isConnected = await checkNetworkConnectivity();
+        if (!isConnected) {
+          throw new Error("No network connectivity to RevenueCat servers");
+        }
+
+        const apiKey =
+          Platform.OS === "ios"
+            ? REVENUECAT_API_KEYS.ios
+            : REVENUECAT_API_KEYS.android;
+
+        console.log(`Using API key: ${apiKey.substring(0, 10)}...`);
+        console.log(`Platform: ${Platform.OS}`);
+        console.log(`Bundle ID: com.ndsurf888.vectorfii`);
+
+        await Purchases.configure({
+          apiKey,
+          appUserID: null, // Will be set when user logs in
+        });
+
+        // Enable debug logs in development
+        if (__DEV__) {
+          Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
+        }
+
+        this.isInitialized = true;
+        console.log("RevenueCat initialized successfully");
+
+        // Set up customer info update listener
+        this.setupCustomerInfoUpdateListener();
+        return; // Success, exit retry loop
+      } catch (error: any) {
+        lastError = error;
+        console.error(`RevenueCat initialization attempt ${attempt} failed:`, {
+          error: error.message,
+          code: error.code,
+          userInfo: error.userInfo,
+        });
+
+        if (attempt < MAX_RETRIES) {
+          console.log(`Retrying in ${RETRY_DELAY}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+        }
       }
-
-      this.isInitialized = true;
-      console.log("RevenueCat initialized successfully");
-
-      // Set up customer info update listener
-      this.setupCustomerInfoUpdateListener();
-    } catch (error) {
-      console.error("Failed to initialize RevenueCat:", error);
-      throw error;
     }
+
+    // All attempts failed - enable offline mode
+    console.error(
+      "RevenueCat initialization failed after all attempts:",
+      lastError
+    );
+    console.log("Enabling offline mode for RevenueCat");
+    this.isOfflineMode = true;
+    this.isInitialized = true; // Mark as initialized to prevent retries
   }
 
   async setUser(userId: string): Promise<void> {
+    if (this.isOfflineMode) {
+      console.log("RevenueCat: Offline mode - skipping user set");
+      return;
+    }
+
     try {
       await Purchases.logIn(userId);
       console.log("RevenueCat user set:", userId);
-    } catch (error) {
-      console.error("Failed to set RevenueCat user:", error);
+    } catch (error: any) {
+      console.error("Failed to set RevenueCat user:", {
+        error: error.message,
+        code: error.code,
+        userInfo: error.userInfo,
+      });
       throw error;
     }
   }
 
+  // Get diagnostic information
+  getDiagnosticInfo(): any {
+    return {
+      isInitialized: this.isInitialized,
+      isOfflineMode: this.isOfflineMode,
+      platform: Platform.OS,
+      bundleId:
+        Platform.OS === "ios"
+          ? "com.ndsurf888.vectorfii"
+          : "com.ndsurf888.vectorfii",
+      apiKey:
+        Platform.OS === "ios"
+          ? `${REVENUECAT_API_KEYS.ios.substring(0, 10)}...`
+          : `${REVENUECAT_API_KEYS.android.substring(0, 10)}...`,
+    };
+  }
+
   async getOfferings(): Promise<PurchasesOffering | null> {
+    if (this.isOfflineMode) {
+      console.log("RevenueCat: Offline mode - returning null offerings");
+      return null;
+    }
+
     try {
+      console.log("RevenueCat: Fetching offerings...");
       const offerings = await Purchases.getOfferings();
+      console.log("RevenueCat: Offerings fetched successfully:", {
+        current: offerings.current?.identifier,
+        available: Object.keys(offerings.all),
+      });
       return offerings.current;
-    } catch (error) {
-      console.error("Failed to get offerings:", error);
+    } catch (error: any) {
+      console.error("Failed to get offerings:", {
+        error: error.message,
+        code: error.code,
+        userInfo: error.userInfo,
+      });
       return null;
     }
   }

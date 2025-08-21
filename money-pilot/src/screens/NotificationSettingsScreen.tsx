@@ -57,6 +57,16 @@ export const NotificationSettingsScreen: React.FC<
       );
       if (badgeEnabled === "true") {
         await updateNotificationHandler(true);
+        // Initialize badge count when badge indicators are enabled
+        try {
+          const { notificationService } = await import(
+            "../services/notifications"
+          );
+          await notificationService.getBadgeCount();
+          console.log("Badge count initialized");
+        } catch (error) {
+          console.error("Error initializing badge count:", error);
+        }
       }
 
       const defaultSettings: NotificationSetting[] = [
@@ -744,6 +754,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
+
   settingsContainer: {
     marginBottom: 24,
   },

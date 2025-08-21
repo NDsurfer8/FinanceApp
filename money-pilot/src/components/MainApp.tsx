@@ -115,14 +115,25 @@ export const MainApp: React.FC = () => {
       await checkFirstLaunch();
 
       setLoadingMessage("Setting up notifications...");
-      setupNotifications();
+      await setupNotifications();
 
       setLoadingMessage("Initializing RevenueCat...");
       try {
         await revenueCatService.initialize();
         console.log("RevenueCat initialized successfully in MainApp");
+
+        // Log diagnostic information
+        const diagnosticInfo = revenueCatService.getDiagnosticInfo();
+        console.log("RevenueCat diagnostic info:", diagnosticInfo);
       } catch (error) {
         console.error("Failed to initialize RevenueCat in MainApp:", error);
+
+        // Log diagnostic information even on failure
+        const diagnosticInfo = revenueCatService.getDiagnosticInfo();
+        console.log(
+          "RevenueCat diagnostic info (after failure):",
+          diagnosticInfo
+        );
       }
 
       // Set up user for services (actual data loading will be handled by DataPreloader)
@@ -162,7 +173,23 @@ export const MainApp: React.FC = () => {
     }
   };
 
-  const setupNotifications = () => {
+  const setupNotifications = async () => {
+    // Load persisted badge count first
+    try {
+      await notificationService.loadPersistedBadgeCount();
+      console.log("Persisted badge count loaded");
+    } catch (error) {
+      console.error("Error loading persisted badge count:", error);
+    }
+
+    // Clear badge when app opens
+    try {
+      await notificationService.clearBadge();
+      console.log("Badge cleared on app open");
+    } catch (error) {
+      console.error("Error clearing badge on app open:", error);
+    }
+
     // Setup notification listeners
     const cleanup = notificationService.setupNotificationListeners(
       (notification) => {

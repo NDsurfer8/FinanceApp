@@ -1,6 +1,7 @@
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Platform, AppState } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -24,6 +25,7 @@ export interface NotificationData {
 export class NotificationService {
   private static instance: NotificationService;
   private expoPushToken: string | null = null;
+  private badgeCount: number = 0;
 
   private constructor() {}
 
@@ -56,6 +58,60 @@ export class NotificationService {
       );
     } catch (error) {
       console.error("Error updating notification handler:", error);
+    }
+  }
+
+  // Badge count management
+  async setBadgeCount(count: number): Promise<void> {
+    try {
+      this.badgeCount = Math.max(0, count);
+      await Notifications.setBadgeCountAsync(this.badgeCount);
+
+      // Persist badge count to AsyncStorage
+      await AsyncStorage.setItem("app_badge_count", this.badgeCount.toString());
+
+      console.log(`Badge count set to: ${this.badgeCount}`);
+    } catch (error) {
+      console.error("Error setting badge count:", error);
+    }
+  }
+
+  async getBadgeCount(): Promise<number> {
+    try {
+      this.badgeCount = await Notifications.getBadgeCountAsync();
+      return this.badgeCount;
+    } catch (error) {
+      console.error("Error getting badge count:", error);
+      return this.badgeCount;
+    }
+  }
+
+  async incrementBadge(): Promise<void> {
+    this.badgeCount++;
+    await this.setBadgeCount(this.badgeCount);
+  }
+
+  async decrementBadge(): Promise<void> {
+    this.badgeCount = Math.max(0, this.badgeCount - 1);
+    await this.setBadgeCount(this.badgeCount);
+  }
+
+  async clearBadge(): Promise<void> {
+    this.badgeCount = 0;
+    await this.setBadgeCount(0);
+  }
+
+  // Load persisted badge count
+  async loadPersistedBadgeCount(): Promise<void> {
+    try {
+      const persistedCount = await AsyncStorage.getItem("app_badge_count");
+      if (persistedCount) {
+        this.badgeCount = parseInt(persistedCount, 10) || 0;
+        await Notifications.setBadgeCountAsync(this.badgeCount);
+        console.log(`Loaded persisted badge count: ${this.badgeCount}`);
+      }
+    } catch (error) {
+      console.error("Error loading persisted badge count:", error);
     }
   }
 
@@ -111,6 +167,7 @@ export class NotificationService {
     }
 
     // Don't schedule notifications when app is active/foreground
+    // This prevents notifications from appearing while user is using the app
     if (this.isAppActive()) {
       console.log(
         "App is active, skipping notification scheduling:",
@@ -118,6 +175,12 @@ export class NotificationService {
       );
       return "";
     }
+
+    console.log(
+      `Scheduling notification: ${
+        notification.title
+      } (App active: ${this.isAppActive()})`
+    );
 
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
@@ -129,6 +192,7 @@ export class NotificationService {
       trigger: notification.trigger || null,
     });
 
+    console.log(`Notification scheduled with ID: ${notificationId}`);
     return notificationId;
   }
 
@@ -304,40 +368,62 @@ export class NotificationService {
     };
   }
 
-  private handleNotificationReceived = (
+  private handleNotificationReceived = async (
     notification: Notifications.Notification
   ) => {
     console.log("Notification received:", notification);
+
+    // Increment badge count when notification is received
+    try {
+      await this.incrementBadge();
+    } catch (error) {
+      console.error("Error incrementing badge:", error);
+    }
   };
 
-  private handleNotificationResponse = (
+  private handleNotificationResponse = async (
     response: Notifications.NotificationResponse
   ) => {
     console.log("Notification response:", response);
+
+    // Clear badge when notification is tapped
+    try {
+      await this.clearBadge();
+    } catch (error) {
+      console.error("Error clearing badge:", error);
+    }
+
     // Handle notification tap - navigate to appropriate screen
     const data = response.notification.request.content.data;
 
     switch (data?.type) {
       case "budget-reminder":
         // Navigate to budget screen
+        console.log("Navigating to budget screen");
         break;
       case "bill-reminder":
         // Navigate to bills/expenses screen
+        console.log("Navigating to transactions screen");
         break;
       case "goal-reminder":
         // Navigate to goals screen
+        console.log("Navigating to goals screen");
         break;
       case "weekly-report":
         // Navigate to reports screen
+        console.log("Navigating to reports screen");
         break;
       case "monthly-report":
         // Navigate to reports screen
+        console.log("Navigating to reports screen");
         break;
       case "low-balance":
         // Navigate to accounts screen
+        console.log("Navigating to accounts screen");
         break;
       case "savings-reminder":
         // Navigate to savings/goals screen
+        console.log("Navigating to goals screen");
         break;
     }
   };
