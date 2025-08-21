@@ -731,7 +731,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                   minHeight: 44,
                   maxHeight: 120,
                 }}
-                placeholder="Message Vectra..."
+                placeholder="✨ Ask me about your finances..."
                 placeholderTextColor={colors.textSecondary}
                 value={inputText}
                 onChangeText={setInputText}
