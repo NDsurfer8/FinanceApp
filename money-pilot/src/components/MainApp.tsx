@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { AppState, AppStateStatus } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -18,6 +19,8 @@ import { DataPreloader } from "./DataPreloader";
 import { SplashScreen } from "./SplashScreen";
 import revenueCatService from "../services/revenueCat";
 import { plaidService } from "../services/plaid";
+import { useBiometricAuth } from "../hooks/useBiometricAuth";
+import { BiometricAuthOverlay } from "./BiometricAuthOverlay";
 import {
   DashboardScreen,
   BudgetScreen,
@@ -47,7 +50,7 @@ import {
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const Stack = createStackNavigator();
 
-type AppState =
+type AppScreenState =
   | "splash"
   | "intro"
   | "login"
@@ -56,10 +59,20 @@ type AppState =
   | "main";
 
 export const MainApp: React.FC = () => {
-  const [appState, setAppState] = useState<AppState>("splash");
+  const [appState, setAppState] = useState<AppScreenState>("splash");
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState("Initializing...");
   const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const {
+    isBiometricEnabled,
+    isAutoLockEnabled,
+    isBiometricAuthenticated,
+    setBiometricAuthenticated,
+  } = useBiometricAuth();
+
+  const [showBiometricOverlay, setShowBiometricOverlay] = useState(false);
+  const [wasPreviouslyAuthenticated, setWasPreviouslyAuthenticated] =
+    useState(false);
 
   useEffect(() => {
     initializeApp();
@@ -165,6 +178,48 @@ export const MainApp: React.FC = () => {
     return cleanup;
   };
 
+  // Handle app state changes for biometric authentication
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      console.log("App state changed to:", nextAppState);
+
+      if (nextAppState === "background" || nextAppState === "inactive") {
+        if (
+          isBiometricEnabled &&
+          isAutoLockEnabled &&
+          wasPreviouslyAuthenticated
+        ) {
+          console.log(
+            "App going to background, resetting biometric authentication"
+          );
+          setBiometricAuthenticated(false);
+        }
+      } else if (nextAppState === "active") {
+        // When app becomes active, check if biometric auth is required
+        if (
+          isBiometricEnabled &&
+          isAutoLockEnabled &&
+          wasPreviouslyAuthenticated &&
+          !isBiometricAuthenticated
+        ) {
+          setShowBiometricOverlay(true);
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+    return () => subscription?.remove();
+  }, [
+    isBiometricEnabled,
+    isAutoLockEnabled,
+    wasPreviouslyAuthenticated,
+    isBiometricAuthenticated,
+    setBiometricAuthenticated,
+  ]);
+
   // Handle app state changes based on authentication
   useEffect(() => {
     console.log("Auth state changed:", {
@@ -173,11 +228,16 @@ export const MainApp: React.FC = () => {
       isAuthenticated,
       appState,
       user: user?.uid,
+      isBiometricEnabled,
+      isAutoLockEnabled,
+      isBiometricAuthenticated,
     });
 
     if (!isLoading && !authLoading) {
       if (isAuthenticated && appState !== "main") {
+        // User is authenticated, go to main app
         console.log("User is authenticated, going to main app");
+        setWasPreviouslyAuthenticated(true);
         setAppState("main");
       } else if (!isAuthenticated && appState === "main") {
         console.log("User is not authenticated, going to login");
@@ -187,7 +247,16 @@ export const MainApp: React.FC = () => {
         setAppState("login");
       }
     }
-  }, [isLoading, authLoading, isAuthenticated, appState, user]);
+  }, [
+    isLoading,
+    authLoading,
+    isAuthenticated,
+    appState,
+    user,
+    isBiometricEnabled,
+    isAutoLockEnabled,
+    isBiometricAuthenticated,
+  ]);
 
   const checkFirstLaunch = async () => {
     try {
@@ -345,6 +414,21 @@ export const MainApp: React.FC = () => {
                   </Stack.Navigator>
                 </NavigationContainer>
               </DataPreloader>
+
+              {/* Biometric Authentication Overlay */}
+              <BiometricAuthOverlay
+                visible={showBiometricOverlay}
+                onSuccess={() => {
+                  setShowBiometricOverlay(false);
+                  setBiometricAuthenticated(true);
+                  setAppState("main");
+                }}
+                onCancel={() => {
+                  setShowBiometricOverlay(false);
+                  setBiometricAuthenticated(false);
+                  setAppState("login");
+                }}
+              />
             </SubscriptionProvider>
           </DataProvider>
         </UserProvider>

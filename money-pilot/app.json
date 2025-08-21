@@ -17,7 +17,8 @@
       "bundleIdentifier": "com.ndsurf888.vectorfii",
       "usesAppleSignIn": true,
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "VectorFi uses Face ID to securely authenticate you and protect your financial data."
       }
     },
     "android": {
@@ -48,6 +49,7 @@
         }
       ],
       "expo-apple-authentication",
+      "expo-local-authentication",
       "expo-dev-client"
     ],
     "extra": {
