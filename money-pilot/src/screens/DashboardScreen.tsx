@@ -100,6 +100,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   );
   const netWorth = totalAssets - totalDebts;
 
+  // Calculate savings breakdown
+  const totalSavings = assets
+    .filter((asset: any) => asset.type === "savings")
+    .reduce((sum: number, asset: any) => sum + asset.balance, 0);
+  const emergencyFundTarget = monthlyExpenses * 6;
+  const emergencyFundProgress =
+    emergencyFundTarget > 0 ? (totalSavings / emergencyFundTarget) * 100 : 0;
+
   // Premium Feature: Smart Insights
   const getInsights = () => {
     const insights = [];
@@ -144,6 +152,36 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         icon: "analytics",
         title: "Active Month",
         message: `${monthlyTransactions.length} transactions tracked`,
+      });
+    }
+
+    // Emergency Fund Insight
+    if (emergencyFundProgress >= 100) {
+      insights.push({
+        type: "success",
+        icon: "shield-checkmark",
+        title: "Emergency Fund Complete!",
+        message: `You have ${emergencyFundProgress.toFixed(
+          0
+        )}% of your 6-month target`,
+      });
+    } else if (emergencyFundProgress >= 50) {
+      insights.push({
+        type: "info",
+        icon: "shield",
+        title: "Emergency Fund Progress",
+        message: `${emergencyFundProgress.toFixed(
+          0
+        )}% of 6-month target ($${totalSavings.toLocaleString()})`,
+      });
+    } else if (emergencyFundProgress > 0) {
+      insights.push({
+        type: "warning",
+        icon: "shield-outline",
+        title: "Build Emergency Fund",
+        message: `${emergencyFundProgress.toFixed(
+          0
+        )}% of 6-month target - keep saving!`,
       });
     }
 

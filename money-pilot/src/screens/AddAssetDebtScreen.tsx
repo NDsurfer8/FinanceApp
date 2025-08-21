@@ -36,6 +36,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
     balance: "",
     rate: "", // APR for debts
     payment: "", // Monthly payment for debts
+    assetType: "savings", // For assets only
   });
 
   const handleSave = async () => {
@@ -60,7 +61,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           id: `temp-${Date.now()}`,
           name: formData.name,
           balance: parseFloat(formData.balance),
-          type: "asset",
+          type: formData.assetType,
           userId: user.uid,
           createdAt: new Date().toISOString(),
         };
@@ -146,7 +147,9 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             >
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={{ fontSize: 20, fontWeight: "600", color: colors.text }}>
+            <Text
+              style={{ fontSize: 20, fontWeight: "600", color: colors.text }}
+            >
               Add {type === "asset" ? "Asset" : "Debt"}
             </Text>
           </View>
@@ -167,7 +170,12 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             {/* Name */}
             <View style={{ marginBottom: 16 }}>
               <Text
-                style={{ fontSize: 14, fontWeight: "600", marginBottom: 8, color: colors.text }}
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  marginBottom: 8,
+                  color: colors.text,
+                }}
               >
                 Name *
               </Text>
@@ -199,7 +207,12 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             {/* Balance */}
             <View style={{ marginBottom: 16 }}>
               <Text
-                style={{ fontSize: 14, fontWeight: "600", marginBottom: 8, color: colors.text }}
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  marginBottom: 8,
+                  color: colors.text,
+                }}
               >
                 {type === "asset" ? "Current Balance" : "Outstanding Balance"} *
               </Text>
@@ -225,11 +238,95 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
               />
             </View>
 
+            {/* Asset Type (for assets only) */}
+            {type === "asset" && (
+              <View style={{ marginBottom: 16 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    marginBottom: 8,
+                    color: colors.text,
+                  }}
+                >
+                  Asset Type *
+                </Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingRight: 20 }}
+                >
+                  {[
+                    { value: "savings", label: "Savings", icon: "💾" },
+                    { value: "checking", label: "Checking", icon: "🏦" },
+                    { value: "investment", label: "Investment", icon: "📈" },
+                    { value: "real_estate", label: "Real Estate", icon: "🏠" },
+                    { value: "vehicle", label: "Vehicle", icon: "🚗" },
+                    { value: "other", label: "Other", icon: "💼" },
+                  ].map((assetType) => (
+                    <TouchableOpacity
+                      key={assetType.value}
+                      style={{
+                        width: 80,
+                        padding: 12,
+                        borderRadius: 8,
+                        borderWidth: 2,
+                        borderColor:
+                          formData.assetType === assetType.value
+                            ? colors.primary
+                            : colors.border,
+                        backgroundColor:
+                          formData.assetType === assetType.value
+                            ? colors.primary + "20"
+                            : colors.surfaceSecondary,
+                        alignItems: "center",
+                        marginRight: 8,
+                      }}
+                      onPress={() =>
+                        setFormData({ ...formData, assetType: assetType.value })
+                      }
+                    >
+                      <Text style={{ fontSize: 16, marginBottom: 4 }}>
+                        {assetType.icon}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "600",
+                          color:
+                            formData.assetType === assetType.value
+                              ? colors.primary
+                              : colors.textSecondary,
+                          textAlign: "center",
+                        }}
+                      >
+                        {assetType.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    marginTop: 8,
+                  }}
+                >
+                  💡 Savings accounts are used for emergency fund calculations
+                </Text>
+              </View>
+            )}
+
             {/* APR (for debts only) */}
             {type === "debt" && (
               <View style={{ marginBottom: 16 }}>
                 <Text
-                  style={{ fontSize: 14, fontWeight: "600", marginBottom: 8, color: colors.text }}
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    marginBottom: 8,
+                    color: colors.text,
+                  }}
                 >
                   APR (%) *
                 </Text>
@@ -260,7 +357,12 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             {type === "debt" && (
               <View style={{ marginBottom: 16 }}>
                 <Text
-                  style={{ fontSize: 14, fontWeight: "600", marginBottom: 8, color: colors.text }}
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    marginBottom: 8,
+                    color: colors.text,
+                  }}
                 >
                   Monthly Payment *
                 </Text>
@@ -299,7 +401,13 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             }}
             onPress={handleSave}
           >
-            <Text style={{ color: colors.buttonText, fontSize: 16, fontWeight: "600" }}>
+            <Text
+              style={{
+                color: colors.buttonText,
+                fontSize: 16,
+                fontWeight: "600",
+              }}
+            >
               Save {type === "asset" ? "Asset" : "Debt"}
             </Text>
           </TouchableOpacity>

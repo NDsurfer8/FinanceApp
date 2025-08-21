@@ -95,6 +95,14 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
 
+  // Calculate savings breakdown
+  const totalSavings = assets
+    .filter((asset) => asset.type === "savings")
+    .reduce((sum, asset) => sum + asset.balance, 0);
+  const emergencyFundTarget = monthlyExpenses * 6;
+  const emergencyFundProgress =
+    emergencyFundTarget > 0 ? (totalSavings / emergencyFundTarget) * 100 : 0;
+
   // Calculate financial ratios
   const liquidityRatio =
     totalLiabilities > 0 ? totalAssets / totalLiabilities : 0;
@@ -152,7 +160,9 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <Text style={{ fontSize: 16, color: colors.textSecondary }}>Loading...</Text>
+          <Text style={{ fontSize: 16, color: colors.textSecondary }}>
+            Loading...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -186,7 +196,13 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               >
                 Balance Sheet
               </Text>
-              <Text style={{ fontSize: 16, color: colors.textSecondary, marginTop: 4 }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: colors.textSecondary,
+                  marginTop: 4,
+                }}
+              >
                 Your financial position
               </Text>
             </View>
@@ -250,17 +266,33 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
             style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
             <View style={{ alignItems: "center", flex: 1 }}>
-              <Text style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 4 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 4,
+                }}
+              >
                 Total Assets
               </Text>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: colors.success }}
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.success,
+                }}
               >
                 {formatCurrency(totalAssets)}
               </Text>
             </View>
             <View style={{ alignItems: "center", flex: 1 }}>
-              <Text style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 4 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 4,
+                }}
+              >
                 Total Liabilities
               </Text>
               <Text
@@ -306,7 +338,11 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                 <Ionicons name="trending-up" size={20} color={colors.success} />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: colors.success }}
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.success,
+                }}
               >
                 Assets
               </Text>
@@ -322,7 +358,11 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
 
           {assets.length === 0 ? (
             <Text
-              style={{ color: colors.textSecondary, textAlign: "center", padding: 20 }}
+              style={{
+                color: colors.textSecondary,
+                textAlign: "center",
+                padding: 20,
+              }}
             >
               No assets added yet
             </Text>
@@ -351,19 +391,186 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                     {asset.name}
                   </Text>
                   <Text
-                    style={{ fontSize: 14, color: colors.textSecondary, marginTop: 2 }}
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
                   >
                     {asset.type}
                   </Text>
                 </View>
                 <Text
-                  style={{ fontSize: 16, fontWeight: "700", color: colors.success }}
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: colors.success,
+                  }}
                 >
                   {formatCurrency(asset.balance)}
                 </Text>
               </View>
             ))
           )}
+        </View>
+
+        {/* Emergency Fund Section */}
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 20,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  backgroundColor: "#fef3c7",
+                  padding: 8,
+                  borderRadius: 10,
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="shield-checkmark" size={20} color="#d97706" />
+              </View>
+              <Text
+                style={{ fontSize: 18, fontWeight: "700", color: "#d97706" }}
+              >
+                Emergency Fund
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ alignItems: "center", marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 24,
+                fontWeight: "800",
+                color:
+                  emergencyFundProgress >= 100
+                    ? "#16a34a"
+                    : emergencyFundProgress >= 50
+                    ? "#d97706"
+                    : "#dc2626",
+                marginBottom: 4,
+              }}
+            >
+              {formatCurrency(totalSavings)}
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                marginBottom: 8,
+              }}
+            >
+              {emergencyFundProgress >= 100
+                ? "Fully Funded!"
+                : emergencyFundProgress >= 50
+                ? "Halfway There"
+                : "Getting Started"}
+            </Text>
+            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+              {formatPercentage(emergencyFundProgress)} of 6-month target
+            </Text>
+          </View>
+
+          {/* Progress Bar */}
+          <View style={{ marginBottom: 20 }}>
+            <View
+              style={{
+                height: 8,
+                backgroundColor: "#f3f4f6",
+                borderRadius: 4,
+                overflow: "hidden",
+              }}
+            >
+              <View
+                style={{
+                  height: "100%",
+                  backgroundColor:
+                    emergencyFundProgress >= 100
+                      ? "#16a34a"
+                      : emergencyFundProgress >= 50
+                      ? "#d97706"
+                      : "#dc2626",
+                  width: `${Math.min(emergencyFundProgress, 100)}%`,
+                }}
+              />
+            </View>
+          </View>
+
+          {/* Details */}
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 4,
+                }}
+              >
+                Target
+              </Text>
+              <Text
+                style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
+              >
+                {formatCurrency(emergencyFundTarget)}
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 4,
+                }}
+              >
+                Remaining
+              </Text>
+              <Text
+                style={{ fontSize: 16, fontWeight: "700", color: "#dc2626" }}
+              >
+                {formatCurrency(
+                  Math.max(0, emergencyFundTarget - totalSavings)
+                )}
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 4,
+                }}
+              >
+                Months Covered
+              </Text>
+              <Text
+                style={{ fontSize: 16, fontWeight: "700", color: "#16a34a" }}
+              >
+                {monthlyExpenses > 0
+                  ? (totalSavings / monthlyExpenses).toFixed(1)
+                  : "0"}
+              </Text>
+            </View>
+          </View>
         </View>
 
         {/* Liabilities Section */}
@@ -416,7 +623,11 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
 
           {debts.length === 0 ? (
             <Text
-              style={{ color: colors.textSecondary, textAlign: "center", padding: 20 }}
+              style={{
+                color: colors.textSecondary,
+                textAlign: "center",
+                padding: 20,
+              }}
             >
               No debts added yet
             </Text>
@@ -445,13 +656,21 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                     {debt.name}
                   </Text>
                   <Text
-                    style={{ fontSize: 14, color: colors.textSecondary, marginTop: 2 }}
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
                   >
                     {formatPercentage(debt.rate)} APR • ${debt.payment}/month
                   </Text>
                 </View>
                 <Text
-                  style={{ fontSize: 16, fontWeight: "700", color: colors.error }}
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: colors.error,
+                  }}
                 >
                   {formatCurrency(debt.balance)}
                 </Text>
@@ -490,7 +709,9 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
             >
               <Ionicons name="analytics" size={20} color={colors.info} />
             </View>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: colors.info }}>
+            <Text
+              style={{ fontSize: 18, fontWeight: "700", color: colors.info }}
+            >
               Financial Ratios
             </Text>
           </View>
@@ -505,7 +726,11 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               }}
             >
               <Text
-                style={{ fontSize: 14, color: colors.textSecondary, fontWeight: "500" }}
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  fontWeight: "500",
+                }}
               >
                 Liquidity Ratio
               </Text>
@@ -519,7 +744,9 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                 {getRatioStatus(liquidityRatio, "liquidity")}
               </Text>
             </View>
-            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>
+            <Text
+              style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
+            >
               {formatRatio(liquidityRatio)}x
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
@@ -537,7 +764,11 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               }}
             >
               <Text
-                style={{ fontSize: 14, color: colors.textSecondary, fontWeight: "500" }}
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  fontWeight: "500",
+                }}
               >
                 Monthly Living Expenses Coverage
               </Text>
@@ -554,7 +785,9 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                 {getRatioStatus(monthlyLivingExpensesCoverage, "coverage")}
               </Text>
             </View>
-            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>
+            <Text
+              style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
+            >
               {formatRatio(monthlyLivingExpensesCoverage)}x
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
@@ -572,7 +805,11 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               }}
             >
               <Text
-                style={{ fontSize: 14, color: colors.textSecondary, fontWeight: "500" }}
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  fontWeight: "500",
+                }}
               >
                 Debt-Asset Ratio
               </Text>
@@ -586,7 +823,9 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                 {getRatioStatus(debtAssetRatio, "debtAsset")}
               </Text>
             </View>
-            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>
+            <Text
+              style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
+            >
               {formatPercentage(debtAssetRatio)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
@@ -604,7 +843,11 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               }}
             >
               <Text
-                style={{ fontSize: 14, color: colors.textSecondary, fontWeight: "500" }}
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  fontWeight: "500",
+                }}
               >
                 Debt Safety Ratio
               </Text>
@@ -618,7 +861,9 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                 {getRatioStatus(debtSafetyRatio, "debtSafety")}
               </Text>
             </View>
-            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>
+            <Text
+              style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
+            >
               {formatPercentage(debtSafetyRatio)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>

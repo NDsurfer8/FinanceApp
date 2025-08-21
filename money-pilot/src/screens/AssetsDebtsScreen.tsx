@@ -21,6 +21,7 @@ import {
 } from "../services/userData";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
+import { getAssetTypeLabel } from "../utils/assetMigration";
 
 interface AssetsDebtsScreenProps {
   navigation: any;
@@ -202,16 +203,27 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                     borderBottomColor: colors.border,
                   }}
                 >
-                  <Text
-                    style={{
-                      fontFamily: fontFamily.medium,
-                      flex: 1,
-                      fontSize: 16,
-                      color: colors.text,
-                    }}
-                  >
-                    {asset.name}
-                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontFamily: fontFamily.medium,
+                        fontSize: 16,
+                        color: colors.text,
+                      }}
+                    >
+                      {asset.name}
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: fontFamily.regular,
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                        marginTop: 2,
+                      }}
+                    >
+                      {getAssetTypeLabel(asset.type)}
+                    </Text>
+                  </View>
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <Text
                       style={{
