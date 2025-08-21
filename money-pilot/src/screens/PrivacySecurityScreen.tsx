@@ -29,6 +29,7 @@ import {
   setAutoLockEnabled,
 } from "../services/settings";
 import { biometricAuthService } from "../services/biometricAuth";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface PrivacySecurityScreenProps {
   navigation: any;
@@ -48,6 +49,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [settings, setSettings] = useState<SecuritySetting[]>([
     {
       id: "biometric-auth",
@@ -551,63 +553,118 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={styles.backButton}
+            style={[
+              styles.backButton,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
           >
-            <Ionicons name="arrow-back" size={24} color="#475569" />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View>
-            <Text style={styles.title}>Privacy & Security</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Privacy & Security
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               Manage your account security and data privacy
             </Text>
           </View>
         </View>
 
         {/* Security Status */}
-        <View style={styles.securityCard}>
+        <View
+          style={[
+            styles.securityCard,
+            { backgroundColor: colors.surface, shadowColor: colors.shadow },
+          ]}
+        >
           <View style={styles.securityHeader}>
             <Ionicons name="shield-checkmark" size={24} color="#16a34a" />
-            <Text style={styles.securityTitle}>Account Security</Text>
+            <Text style={[styles.securityTitle, { color: colors.text }]}>
+              Account Security
+            </Text>
           </View>
-          <Text style={styles.securityDescription}>
+          <Text
+            style={[
+              styles.securityDescription,
+              { color: colors.textSecondary },
+            ]}
+          >
             Your account is protected with industry-standard encryption and
             security measures.
           </Text>
           <View style={styles.securityStats}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>Strong</Text>
-              <Text style={styles.statLabel}>Password</Text>
+              <Text style={[styles.statValue, { color: "#16a34a" }]}>
+                Strong
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Password
+              </Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>Enabled</Text>
-              <Text style={styles.statLabel}>Encryption</Text>
+              <Text style={[styles.statValue, { color: "#16a34a" }]}>
+                Enabled
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Encryption
+              </Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>Active</Text>
-              <Text style={styles.statLabel}>Session</Text>
+              <Text style={[styles.statValue, { color: "#16a34a" }]}>
+                Active
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Session
+              </Text>
             </View>
           </View>
         </View>
 
         {/* Security Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Security Settings</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Security Settings
+          </Text>
 
           {settings.slice(0, 4).map((setting) => (
-            <View key={setting.id} style={styles.settingItem}>
+            <View
+              key={setting.id}
+              style={[
+                styles.settingItem,
+                { backgroundColor: colors.surface, shadowColor: colors.shadow },
+              ]}
+            >
               <View style={styles.settingInfo}>
-                <View style={styles.settingIcon}>
-                  <Ionicons name={setting.icon} size={20} color="#6366f1" />
+                <View
+                  style={[
+                    styles.settingIcon,
+                    { backgroundColor: colors.surfaceSecondary },
+                  ]}
+                >
+                  <Ionicons
+                    name={setting.icon}
+                    size={20}
+                    color={colors.primary}
+                  />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>{setting.title}</Text>
-                  <Text style={styles.settingDescription}>
+                  <Text style={[styles.settingTitle, { color: colors.text }]}>
+                    {setting.title}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.settingDescription,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
                     {setting.description}
                   </Text>
                 </View>
@@ -617,16 +674,28 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                 <Switch
                   value={setting.enabled}
                   onValueChange={() => toggleSetting(setting.id)}
-                  trackColor={{ false: "#e5e7eb", true: "#6366f1" }}
-                  thumbColor={setting.enabled ? "#ffffff" : "#f3f4f6"}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={
+                    setting.enabled
+                      ? colors.buttonText
+                      : colors.surfaceSecondary
+                  }
                 />
               ) : (
                 <TouchableOpacity
-                  style={styles.actionButton}
+                  style={[
+                    styles.actionButton,
+                    {
+                      backgroundColor: colors.surfaceSecondary,
+                      borderColor: colors.border,
+                    },
+                  ]}
                   onPress={setting.action}
                   disabled={loading}
                 >
-                  <Text style={styles.actionButtonText}>
+                  <Text
+                    style={[styles.actionButtonText, { color: colors.primary }]}
+                  >
                     {loading ? "Loading..." : "Manage"}
                   </Text>
                 </TouchableOpacity>
@@ -637,28 +706,60 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
         {/* Account Management */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Management</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Account Management
+          </Text>
 
           {settings.slice(4, 7).map((setting) => (
-            <View key={setting.id} style={styles.settingItem}>
+            <View
+              key={setting.id}
+              style={[
+                styles.settingItem,
+                { backgroundColor: colors.surface, shadowColor: colors.shadow },
+              ]}
+            >
               <View style={styles.settingInfo}>
-                <View style={styles.settingIcon}>
-                  <Ionicons name={setting.icon} size={20} color="#6366f1" />
+                <View
+                  style={[
+                    styles.settingIcon,
+                    { backgroundColor: colors.surfaceSecondary },
+                  ]}
+                >
+                  <Ionicons
+                    name={setting.icon}
+                    size={20}
+                    color={colors.primary}
+                  />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>{setting.title}</Text>
-                  <Text style={styles.settingDescription}>
+                  <Text style={[styles.settingTitle, { color: colors.text }]}>
+                    {setting.title}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.settingDescription,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
                     {setting.description}
                   </Text>
                 </View>
               </View>
 
               <TouchableOpacity
-                style={styles.actionButton}
+                style={[
+                  styles.actionButton,
+                  {
+                    backgroundColor: colors.surfaceSecondary,
+                    borderColor: colors.border,
+                  },
+                ]}
                 onPress={setting.action}
                 disabled={loading}
               >
-                <Text style={styles.actionButtonText}>
+                <Text
+                  style={[styles.actionButtonText, { color: colors.primary }]}
+                >
                   {loading ? "Loading..." : "Manage"}
                 </Text>
               </TouchableOpacity>
@@ -668,70 +769,153 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
         {/* Privacy & Legal */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Privacy & Legal</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Privacy & Legal
+          </Text>
 
           <TouchableOpacity
-            style={styles.settingItem}
+            style={[
+              styles.settingItem,
+              { backgroundColor: colors.surface, shadowColor: colors.shadow },
+            ]}
             onPress={openPrivacyPolicy}
           >
             <View style={styles.settingInfo}>
-              <View style={styles.settingIcon}>
-                <Ionicons name="document-text" size={20} color="#6366f1" />
+              <View
+                style={[
+                  styles.settingIcon,
+                  { backgroundColor: colors.surfaceSecondary },
+                ]}
+              >
+                <Ionicons
+                  name="document-text"
+                  size={20}
+                  color={colors.primary}
+                />
               </View>
               <View style={styles.settingText}>
-                <Text style={styles.settingTitle}>Privacy Policy</Text>
-                <Text style={styles.settingDescription}>
+                <Text style={[styles.settingTitle, { color: colors.text }]}>
+                  Privacy Policy
+                </Text>
+                <Text
+                  style={[
+                    styles.settingDescription,
+                    { color: colors.textSecondary },
+                  ]}
+                >
                   How we protect and use your data
                 </Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.settingItem}
+            style={[
+              styles.settingItem,
+              { backgroundColor: colors.surface, shadowColor: colors.shadow },
+            ]}
             onPress={openTermsOfService}
           >
             <View style={styles.settingInfo}>
-              <View style={styles.settingIcon}>
-                <Ionicons name="document" size={20} color="#6366f1" />
+              <View
+                style={[
+                  styles.settingIcon,
+                  { backgroundColor: colors.surfaceSecondary },
+                ]}
+              >
+                <Ionicons name="document" size={20} color={colors.primary} />
               </View>
               <View style={styles.settingText}>
-                <Text style={styles.settingTitle}>Terms of Service</Text>
-                <Text style={styles.settingDescription}>
+                <Text style={[styles.settingTitle, { color: colors.text }]}>
+                  Terms of Service
+                </Text>
+                <Text
+                  style={[
+                    styles.settingDescription,
+                    { color: colors.textSecondary },
+                  ]}
+                >
                   Our terms and conditions
                 </Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
         </View>
 
         {/* Danger Zone */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Danger Zone</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Danger Zone
+          </Text>
 
-          <View style={[styles.settingItem, styles.dangerItem]}>
+          <View
+            style={[
+              styles.settingItem,
+              styles.dangerItem,
+              {
+                backgroundColor: colors.surface,
+                shadowColor: colors.shadow,
+                borderColor: "#fecaca",
+              },
+            ]}
+          >
             <View style={styles.settingInfo}>
-              <View style={[styles.settingIcon, styles.dangerIcon]}>
+              <View
+                style={[
+                  styles.settingIcon,
+                  styles.dangerIcon,
+                  { backgroundColor: "#fef2f2" },
+                ]}
+              >
                 <Ionicons name="trash" size={20} color="#ef4444" />
               </View>
               <View style={styles.settingText}>
-                <Text style={[styles.settingTitle, styles.dangerText]}>
+                <Text
+                  style={[
+                    styles.settingTitle,
+                    styles.dangerText,
+                    { color: "#ef4444" },
+                  ]}
+                >
                   Delete Account
                 </Text>
-                <Text style={styles.settingDescription}>
+                <Text
+                  style={[
+                    styles.settingDescription,
+                    { color: colors.textSecondary },
+                  ]}
+                >
                   Permanently delete your account and all data
                 </Text>
               </View>
             </View>
 
             <TouchableOpacity
-              style={[styles.actionButton, styles.dangerButton]}
+              style={[
+                styles.actionButton,
+                styles.dangerButton,
+                { backgroundColor: "#fef2f2", borderColor: "#fecaca" },
+              ]}
               onPress={handleDeleteAccount}
               disabled={loading}
             >
-              <Text style={[styles.actionButtonText, styles.dangerButtonText]}>
+              <Text
+                style={[
+                  styles.actionButtonText,
+                  styles.dangerButtonText,
+                  { color: "#ef4444" },
+                ]}
+              >
                 {loading ? "Loading..." : "Delete"}
               </Text>
             </TouchableOpacity>
@@ -745,7 +929,6 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
   },
   scrollContent: {
     padding: 20,
@@ -759,30 +942,24 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 20,
-    backgroundColor: "#f8fafc",
     padding: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
   },
   title: {
     fontSize: 26,
     fontWeight: "700",
-    color: "#111827",
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6b7280",
     marginTop: 4,
     fontWeight: "400",
   },
   securityCard: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
-    shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -796,12 +973,10 @@ const styles = StyleSheet.create({
   securityTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
     marginLeft: 8,
   },
   securityDescription: {
     fontSize: 14,
-    color: "#6b7280",
     marginBottom: 16,
   },
   securityStats: {
@@ -815,11 +990,9 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#16a34a",
   },
   statLabel: {
     fontSize: 12,
-    color: "#6b7280",
     marginTop: 2,
   },
   section: {
@@ -828,15 +1001,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#111827",
     marginBottom: 16,
   },
   settingItem: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 20,
     marginBottom: 12,
-    shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -848,7 +1018,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   settingIcon: {
-    backgroundColor: "#f1f5f9",
     padding: 8,
     borderRadius: 8,
     marginRight: 12,
@@ -859,29 +1028,23 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
     marginBottom: 4,
   },
   settingDescription: {
     fontSize: 14,
-    color: "#6b7280",
   },
   actionButton: {
-    backgroundColor: "#f1f5f9",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
     alignSelf: "flex-start",
   },
   actionButtonText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#6366f1",
   },
   dangerItem: {
-    borderColor: "#fecaca",
     borderWidth: 1,
   },
   dangerIcon: {

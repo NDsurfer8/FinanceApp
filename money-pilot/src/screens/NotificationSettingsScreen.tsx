@@ -16,6 +16,7 @@ import { budgetReminderService } from "../services/budgetReminders";
 import { useAuth } from "../hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface NotificationSettingsScreenProps {
   navigation: any;
@@ -34,6 +35,7 @@ export const NotificationSettingsScreen: React.FC<
   NotificationSettingsScreenProps
 > = ({ navigation }) => {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [settings, setSettings] = useState<NotificationSetting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -457,17 +459,26 @@ export const NotificationSettingsScreen: React.FC<
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={styles.backButton}
+            style={[
+              styles.backButton,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
           >
-            <Ionicons name="arrow-back" size={24} color="#475569" />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View>
-            <Text style={styles.title}>Notification Settings</Text>
-            <Text style={styles.subtitle}>Loading...</Text>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Notification Settings
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Loading...
+            </Text>
           </View>
         </View>
       </SafeAreaView>
@@ -475,47 +486,74 @@ export const NotificationSettingsScreen: React.FC<
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={styles.backButton}
+            style={[
+              styles.backButton,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
           >
-            <Ionicons name="arrow-back" size={24} color="#475569" />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View>
-            <Text style={styles.title}>Notification Settings</Text>
-            <Text style={styles.subtitle}>Manage your financial reminders</Text>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Notification Settings
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Manage your financial reminders
+            </Text>
           </View>
         </View>
 
         {/* Permission Status */}
-        <View style={styles.permissionCard}>
+        <View
+          style={[
+            styles.permissionCard,
+            { backgroundColor: colors.surface, shadowColor: colors.shadow },
+          ]}
+        >
           <View style={styles.permissionHeader}>
             <Ionicons
               name={permissionGranted ? "checkmark-circle" : "alert-circle"}
               size={24}
               color={permissionGranted ? "#16a34a" : "#f59e0b"}
             />
-            <Text style={styles.permissionTitle}>
+            <Text style={[styles.permissionTitle, { color: colors.text }]}>
               {permissionGranted
                 ? "Notifications Enabled"
                 : "Permissions Required"}
             </Text>
           </View>
-          <Text style={styles.permissionDescription}>
+          <Text
+            style={[
+              styles.permissionDescription,
+              { color: colors.textSecondary },
+            ]}
+          >
             {permissionGranted
               ? "You'll receive financial reminders and updates"
               : "Enable notifications to get financial reminders and updates"}
           </Text>
           {!permissionGranted && (
             <TouchableOpacity
-              style={styles.permissionButton}
+              style={[
+                styles.permissionButton,
+                { backgroundColor: colors.primary },
+              ]}
               onPress={requestPermissions}
             >
-              <Text style={styles.permissionButtonText}>
+              <Text
+                style={[
+                  styles.permissionButtonText,
+                  { color: colors.buttonText },
+                ]}
+              >
                 Enable Notifications
               </Text>
             </TouchableOpacity>
@@ -524,17 +562,41 @@ export const NotificationSettingsScreen: React.FC<
 
         {/* Notification Settings */}
         <View style={styles.settingsContainer}>
-          <Text style={styles.sectionTitle}>Notification Types</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Notification Types
+          </Text>
 
           {settings.map((setting) => (
-            <View key={setting.id} style={styles.settingItem}>
+            <View
+              key={setting.id}
+              style={[
+                styles.settingItem,
+                { backgroundColor: colors.surface, shadowColor: colors.shadow },
+              ]}
+            >
               <View style={styles.settingInfo}>
-                <View style={styles.settingIcon}>
-                  <Ionicons name={setting.icon} size={20} color="#6366f1" />
+                <View
+                  style={[
+                    styles.settingIcon,
+                    { backgroundColor: colors.surfaceSecondary },
+                  ]}
+                >
+                  <Ionicons
+                    name={setting.icon}
+                    size={20}
+                    color={colors.primary}
+                  />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>{setting.title}</Text>
-                  <Text style={styles.settingDescription}>
+                  <Text style={[styles.settingTitle, { color: colors.text }]}>
+                    {setting.title}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.settingDescription,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
                     {setting.description}
                   </Text>
                 </View>
@@ -542,19 +604,33 @@ export const NotificationSettingsScreen: React.FC<
 
               <View style={styles.settingActions}>
                 <TouchableOpacity
-                  style={styles.testButton}
+                  style={[
+                    styles.testButton,
+                    {
+                      backgroundColor: colors.surfaceSecondary,
+                      borderColor: colors.border,
+                    },
+                  ]}
                   onPress={() => testNotification(setting)}
                   disabled={loading || !permissionGranted}
                 >
-                  <Text style={styles.testButtonText}>Test</Text>
+                  <Text
+                    style={[styles.testButtonText, { color: colors.primary }]}
+                  >
+                    Test
+                  </Text>
                 </TouchableOpacity>
 
                 <Switch
                   value={setting.enabled}
                   onValueChange={() => toggleSetting(setting.id)}
                   disabled={!permissionGranted}
-                  trackColor={{ false: "#e5e7eb", true: "#6366f1" }}
-                  thumbColor={setting.enabled ? "#ffffff" : "#f3f4f6"}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={
+                    setting.enabled
+                      ? colors.buttonText
+                      : colors.surfaceSecondary
+                  }
                 />
               </View>
             </View>
@@ -563,20 +639,28 @@ export const NotificationSettingsScreen: React.FC<
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Quick Actions
+          </Text>
 
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[
+              styles.actionButton,
+              { backgroundColor: colors.surface, shadowColor: colors.shadow },
+            ]}
             onPress={() => notificationService.cancelAllNotifications()}
           >
             <Ionicons name="close-circle" size={20} color="#ef4444" />
-            <Text style={styles.actionButtonText}>
+            <Text style={[styles.actionButtonText, { color: colors.text }]}>
               Cancel All Notifications
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[
+              styles.actionButton,
+              { backgroundColor: colors.surface, shadowColor: colors.shadow },
+            ]}
             onPress={async () => {
               const notifications =
                 await notificationService.getScheduledNotifications();
@@ -586,8 +670,10 @@ export const NotificationSettingsScreen: React.FC<
               );
             }}
           >
-            <Ionicons name="list" size={20} color="#6366f1" />
-            <Text style={styles.actionButtonText}>View Scheduled</Text>
+            <Ionicons name="list" size={20} color={colors.primary} />
+            <Text style={[styles.actionButtonText, { color: colors.text }]}>
+              View Scheduled
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -598,7 +684,6 @@ export const NotificationSettingsScreen: React.FC<
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
   },
   scrollContent: {
     padding: 20,
@@ -612,30 +697,24 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 20,
-    backgroundColor: "#f8fafc",
     padding: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
   },
   title: {
     fontSize: 26,
     fontWeight: "700",
-    color: "#111827",
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6b7280",
     marginTop: 4,
     fontWeight: "400",
   },
   permissionCard: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
-    shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -649,23 +728,19 @@ const styles = StyleSheet.create({
   permissionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
     marginLeft: 8,
   },
   permissionDescription: {
     fontSize: 14,
-    color: "#6b7280",
     marginBottom: 16,
   },
   permissionButton: {
-    backgroundColor: "#6366f1",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
     alignSelf: "flex-start",
   },
   permissionButtonText: {
-    color: "#ffffff",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -675,15 +750,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#111827",
     marginBottom: 16,
   },
   settingItem: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 20,
     marginBottom: 12,
-    shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -695,7 +767,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   settingIcon: {
-    backgroundColor: "#f1f5f9",
     padding: 8,
     borderRadius: 8,
     marginRight: 12,
@@ -706,12 +777,10 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
     marginBottom: 4,
   },
   settingDescription: {
     fontSize: 14,
-    color: "#6b7280",
   },
   settingActions: {
     flexDirection: "row",
@@ -719,29 +788,24 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   testButton: {
-    backgroundColor: "#f1f5f9",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
   },
   testButtonText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#6366f1",
   },
   quickActions: {
     marginBottom: 24,
   },
   actionButton: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
-    shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -750,7 +814,6 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
     marginLeft: 12,
   },
 });

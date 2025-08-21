@@ -32,8 +32,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { currentUser, forceRefresh } = useUser();
   const [photoKey, setPhotoKey] = useState(Date.now());
   const { presentPaywall } = usePaywall();
-  const { subscriptionStatus, refreshSubscriptionStatus } = useSubscription();
-  const [refreshingSubscription, setRefreshingSubscription] = useState(false);
+  const { subscriptionStatus } = useSubscription();
   const [isBankConnected, setIsBankConnected] = useState(false);
   const { isDark, toggleTheme, colors } = useTheme();
   const [connectedBankInfo, setConnectedBankInfo] = useState<{
@@ -157,37 +156,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         },
       ]
     );
-  };
-
-  const handleRefreshSubscription = async () => {
-    try {
-      setRefreshingSubscription(true);
-      console.log("Manually refreshing subscription status...");
-
-      // Use force refresh to get the latest data from RevenueCat servers
-      const newStatus = await refreshSubscriptionStatus(true);
-      console.log("Manual refresh completed - new status:", newStatus);
-
-      if (newStatus?.isPremium) {
-        Alert.alert(
-          "Subscription Updated!",
-          "Your premium subscription is now active. You can now use all premium features!"
-        );
-      } else {
-        Alert.alert(
-          "No Active Subscription",
-          "No active premium subscription found. If you recently purchased, try again in a moment."
-        );
-      }
-    } catch (error) {
-      console.error("Failed to refresh subscription:", error);
-      Alert.alert(
-        "Error",
-        "Failed to refresh subscription status. Please try again."
-      );
-    } finally {
-      setRefreshingSubscription(false);
-    }
   };
 
   return (
@@ -541,36 +509,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   {subscriptionStatus.expirationDate.toLocaleDateString()}
                 </Text>
               )}
-              <TouchableOpacity
-                style={{
-                  backgroundColor: "#f3f4f6",
-                  paddingVertical: 8,
-                  paddingHorizontal: 12,
-                  borderRadius: 8,
-                  alignSelf: "flex-start",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginTop: 8,
-                }}
-                onPress={handleRefreshSubscription}
-                disabled={refreshingSubscription}
-              >
-                <Ionicons
-                  name="refresh"
-                  size={14}
-                  color={refreshingSubscription ? "#9ca3af" : "#6b7280"}
-                />
-                <Text
-                  style={{
-                    color: refreshingSubscription ? "#9ca3af" : "#6b7280",
-                    fontWeight: "600",
-                    marginLeft: 6,
-                    fontSize: 12,
-                  }}
-                >
-                  {refreshingSubscription ? "Refreshing..." : "Refresh Status"}
-                </Text>
-              </TouchableOpacity>
             </View>
           ) : (
             <View>

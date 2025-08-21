@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface HelpSupportScreenProps {
   navigation: any;
@@ -25,6 +26,7 @@ interface FAQItem {
 export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
   navigation,
 }) => {
+  const { colors } = useTheme();
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
 
   const faqs: FAQItem[] = [
@@ -176,80 +178,83 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
           >
-            <Ionicons name="arrow-back" size={24} color="#475569" />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View>
-            <Text style={styles.title}>Help & Support</Text>
-            <Text style={styles.subtitle}>Get help and find answers</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Help & Support</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Get help and find answers</Text>
           </View>
         </View>
 
         {/* Quick Support Options */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Support</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Support</Text>
 
           <View style={styles.supportGrid}>
             <TouchableOpacity
-              style={styles.supportCard}
+              style={[styles.supportCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
               onPress={openSupportEmail}
             >
-              <View style={styles.supportIcon}>
+              <View style={[styles.supportIcon, { backgroundColor: colors.surfaceSecondary }]}>
                 <Ionicons name="mail" size={24} color="#6366f1" />
               </View>
-              <Text style={styles.supportTitle}>Email Support</Text>
-              <Text style={styles.supportDescription}>Get help via email</Text>
+              <Text style={[styles.supportTitle, { color: colors.text }]}>Email Support</Text>
+              <Text style={[styles.supportDescription, { color: colors.textSecondary }]}>Get help via email</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.supportCard} onPress={openLiveChat}>
-              <View style={styles.supportIcon}>
+            <TouchableOpacity 
+              style={[styles.supportCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]} 
+              onPress={openLiveChat}
+            >
+              <View style={[styles.supportIcon, { backgroundColor: colors.surfaceSecondary }]}>
                 <Ionicons name="chatbubbles" size={24} color="#10b981" />
               </View>
-              <Text style={styles.supportTitle}>Live Chat</Text>
-              <Text style={styles.supportDescription}>
+              <Text style={[styles.supportTitle, { color: colors.text }]}>Live Chat</Text>
+              <Text style={[styles.supportDescription, { color: colors.textSecondary }]}>
                 Chat with support team
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.supportCard}
+              style={[styles.supportCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
               onPress={openUserGuide}
             >
-              <View style={styles.supportIcon}>
+              <View style={[styles.supportIcon, { backgroundColor: colors.surfaceSecondary }]}>
                 <Ionicons name="book" size={24} color="#f59e0b" />
               </View>
-              <Text style={styles.supportTitle}>User Guide</Text>
-              <Text style={styles.supportDescription}>
+              <Text style={[styles.supportTitle, { color: colors.text }]}>User Guide</Text>
+              <Text style={[styles.supportDescription, { color: colors.textSecondary }]}>
                 Detailed instructions
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.supportCard}
+              style={[styles.supportCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
               onPress={openVideoTutorials}
             >
-              <View style={styles.supportIcon}>
+              <View style={[styles.supportIcon, { backgroundColor: colors.surfaceSecondary }]}>
                 <Ionicons name="play-circle" size={24} color="#ef4444" />
               </View>
-              <Text style={styles.supportTitle}>Video Tutorials</Text>
-              <Text style={styles.supportDescription}>Learn with videos</Text>
+              <Text style={[styles.supportTitle, { color: colors.text }]}>Video Tutorials</Text>
+              <Text style={[styles.supportDescription, { color: colors.textSecondary }]}>Learn with videos</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* FAQ Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Frequently Asked Questions</Text>
 
           {faqs.map((faq) => (
-            <View key={faq.id} style={styles.faqItem}>
+            <View key={faq.id} style={[styles.faqItem, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
               <TouchableOpacity
                 style={styles.faqHeader}
                 onPress={() => toggleFAQ(faq.id)}
@@ -270,18 +275,18 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
                       {faq.category}
                     </Text>
                   </View>
-                  <Text style={styles.faqQuestion}>{faq.question}</Text>
+                  <Text style={[styles.faqQuestion, { color: colors.text }]}>{faq.question}</Text>
                 </View>
                 <Ionicons
                   name={expandedFAQ === faq.id ? "chevron-up" : "chevron-down"}
                   size={20}
-                  color="#6b7280"
+                  color={colors.textSecondary}
                 />
               </TouchableOpacity>
 
               {expandedFAQ === faq.id && (
-                <View style={styles.faqAnswer}>
-                  <Text style={styles.answerText}>{faq.answer}</Text>
+                <View style={[styles.faqAnswer, { borderTopColor: colors.border }]}>
+                  <Text style={[styles.answerText, { color: colors.textSecondary }]}>{faq.answer}</Text>
                 </View>
               )}
             </View>
@@ -290,60 +295,63 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 
         {/* Feedback Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Feedback & Requests</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Feedback & Requests</Text>
 
-          <TouchableOpacity style={styles.feedbackButton} onPress={reportBug}>
+          <TouchableOpacity 
+            style={[styles.feedbackButton, { backgroundColor: colors.surface, shadowColor: colors.shadow }]} 
+            onPress={reportBug}
+          >
             <View style={styles.feedbackContent}>
               <Ionicons name="bug" size={20} color="#ef4444" />
-              <Text style={styles.feedbackText}>Report a Bug</Text>
+              <Text style={[styles.feedbackText, { color: colors.text }]}>Report a Bug</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+            <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.feedbackButton}
+            style={[styles.feedbackButton, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
             onPress={requestFeature}
           >
             <View style={styles.feedbackContent}>
               <Ionicons name="bulb" size={20} color="#6366f1" />
-              <Text style={styles.feedbackText}>Request a Feature</Text>
+              <Text style={[styles.feedbackText, { color: colors.text }]}>Request a Feature</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+            <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         {/* Contact Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact Information</Text>
-          <View style={styles.contactCard}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Information</Text>
+          <View style={[styles.contactCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
             <View style={styles.contactItem}>
-              <Ionicons name="mail" size={16} color="#6366f1" />
-              <Text style={styles.contactText}>support@moneypilot.com</Text>
+              <Ionicons name="mail" size={16} color={colors.primary} />
+              <Text style={[styles.contactText, { color: colors.textSecondary }]}>support@moneypilot.com</Text>
             </View>
             <View style={styles.contactItem}>
-              <Ionicons name="time" size={16} color="#6366f1" />
-              <Text style={styles.contactText}>Mon-Fri 9 AM - 6 PM EST</Text>
+              <Ionicons name="time" size={16} color={colors.primary} />
+              <Text style={[styles.contactText, { color: colors.textSecondary }]}>Mon-Fri 9 AM - 6 PM EST</Text>
             </View>
             <View style={styles.contactItem}>
-              <Ionicons name="globe" size={16} color="#6366f1" />
-              <Text style={styles.contactText}>moneypilot.com/support</Text>
+              <Ionicons name="globe" size={16} color={colors.primary} />
+              <Text style={[styles.contactText, { color: colors.textSecondary }]}>moneypilot.com/support</Text>
             </View>
           </View>
         </View>
 
         {/* Emergency Support */}
         <View style={styles.emergencySection}>
-          <View style={styles.emergencyCard}>
+          <View style={[styles.emergencyCard, { backgroundColor: "#fef3c7", borderColor: "#fde68a" }]}>
             <Ionicons name="warning" size={24} color="#f59e0b" />
-            <Text style={styles.emergencyTitle}>Need Immediate Help?</Text>
-            <Text style={styles.emergencyDescription}>
+            <Text style={[styles.emergencyTitle, { color: "#92400e" }]}>Need Immediate Help?</Text>
+            <Text style={[styles.emergencyDescription, { color: "#92400e" }]}>
               For urgent issues or account problems, contact us immediately.
             </Text>
             <TouchableOpacity
-              style={styles.emergencyButton}
+              style={[styles.emergencyButton, { backgroundColor: "#f59e0b" }]}
               onPress={openSupportEmail}
             >
-              <Text style={styles.emergencyButtonText}>
+              <Text style={[styles.emergencyButtonText, { color: "#ffffff" }]}>
                 Contact Support Now
               </Text>
             </TouchableOpacity>
@@ -357,7 +365,6 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
   },
   scrollContent: {
     padding: 20,
@@ -371,21 +378,17 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 20,
-    backgroundColor: "#f8fafc",
     padding: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
   },
   title: {
     fontSize: 26,
     fontWeight: "700",
-    color: "#111827",
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6b7280",
     marginTop: 4,
     fontWeight: "400",
   },
@@ -395,7 +398,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#111827",
     marginBottom: 16,
   },
   supportGrid: {
@@ -405,12 +407,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   supportCard: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 20,
     width: "48%",
     alignItems: "center",
-    shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -420,7 +420,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#f1f5f9",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
@@ -428,20 +427,16 @@ const styles = StyleSheet.create({
   supportTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#111827",
     marginBottom: 4,
     textAlign: "center",
   },
   supportDescription: {
     fontSize: 12,
-    color: "#6b7280",
     textAlign: "center",
   },
   faqItem: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     marginBottom: 12,
-    shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -472,30 +467,25 @@ const styles = StyleSheet.create({
   faqQuestion: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
     lineHeight: 22,
   },
   faqAnswer: {
     paddingHorizontal: 20,
     paddingBottom: 20,
     borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
   },
   answerText: {
     fontSize: 15,
-    color: "#374151",
     lineHeight: 22,
     marginTop: 12,
   },
   feedbackButton: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -508,14 +498,11 @@ const styles = StyleSheet.create({
   feedbackText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
     marginLeft: 12,
   },
   contactCard: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 20,
-    shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -528,7 +515,6 @@ const styles = StyleSheet.create({
   },
   contactText: {
     fontSize: 15,
-    color: "#374151",
     marginLeft: 12,
     fontWeight: "500",
   },
@@ -536,35 +522,29 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   emergencyCard: {
-    backgroundColor: "#fef3c7",
     borderRadius: 16,
     padding: 24,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#fde68a",
   },
   emergencyTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#92400e",
     marginTop: 12,
     marginBottom: 8,
   },
   emergencyDescription: {
     fontSize: 15,
-    color: "#92400e",
     textAlign: "center",
     marginBottom: 16,
     lineHeight: 22,
   },
   emergencyButton: {
-    backgroundColor: "#f59e0b",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 12,
   },
   emergencyButtonText: {
-    color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
   },
