@@ -45,6 +45,11 @@ export class BiometricAuthService {
           this.biometryType = "Biometrics";
         }
       }
+
+      console.log("Expo biometric auth initialized:", {
+        available: this.isAvailable,
+        biometryType: this.biometryType,
+      });
     } catch (error) {
       console.error("Error initializing expo biometric auth:", error);
       this.isAvailable = false;

@@ -39,6 +39,8 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
       // Add a delay to ensure the overlay is fully visible
       await new Promise((resolve) => setTimeout(resolve, 500));
 
+      console.log("Starting biometric authentication with Expo...");
+
       // Check if biometric is available first
       const isAvailable = await biometricAuthService.isBiometricAvailable();
 
@@ -57,9 +59,13 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
         true // Skip enabled check since we know it's enabled
       );
 
+      console.log("Biometric authentication result:", result);
+
       if (result.success) {
+        console.log("Biometric authentication successful");
         onSuccess();
       } else {
+        console.log("Biometric authentication failed:", result.error);
         Alert.alert(
           "Authentication Failed",
           result.error || "Please try again",

@@ -182,6 +182,12 @@ export const MainApp: React.FC = () => {
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       console.log("App state changed to:", nextAppState);
+      console.log("Biometric state:", {
+        isBiometricEnabled,
+        isAutoLockEnabled,
+        wasPreviouslyAuthenticated,
+        isBiometricAuthenticated,
+      });
 
       if (nextAppState === "background" || nextAppState === "inactive") {
         if (
@@ -202,6 +208,7 @@ export const MainApp: React.FC = () => {
           wasPreviouslyAuthenticated &&
           !isBiometricAuthenticated
         ) {
+          console.log("App became active, showing biometric overlay");
           setShowBiometricOverlay(true);
         }
       }
@@ -235,6 +242,8 @@ export const MainApp: React.FC = () => {
 
     if (!isLoading && !authLoading) {
       if (isAuthenticated && appState !== "main") {
+        console.log("User is authenticated, checking biometric auth");
+
         // User is authenticated, go to main app
         console.log("User is authenticated, going to main app");
         setWasPreviouslyAuthenticated(true);
