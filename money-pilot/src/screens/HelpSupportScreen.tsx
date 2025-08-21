@@ -39,59 +39,59 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
     },
     {
       id: "2",
+      question: "How do I generate financial plans with Vectra?",
+      answer:
+        "Go to the AI Financial Advisor tab and tap 'Generate Plan'. Vectra will analyze your financial data and create personalized recommendations for budgeting, saving, investing, and debt management. You can customize the plan based on your goals and preferences.",
+      category: "AI Features",
+    },
+    {
+      id: "3",
       question: "How do I set up a budget?",
       answer:
         "Go to the Budget tab. You can add income sources, fixed expenses, and variable expenses. The app will automatically calculate your remaining budget.",
       category: "Budgeting",
     },
     {
-      id: "3",
+      id: "4",
       question: "Can I share my finances with family members?",
       answer:
         "Yes! Use the Shared Finance feature to create groups with family members. You can share transactions, assets, and debts while maintaining privacy.",
       category: "Shared Finance",
     },
     {
-      id: "4",
+      id: "5",
       question: "How do I set financial goals?",
       answer:
         "Go to the Goals tab and tap 'Add Goal'. Set a target amount, monthly contribution, and target date. Track your progress visually.",
       category: "Goals",
     },
     {
-      id: "5",
+      id: "6",
       question: "Is my financial data secure?",
       answer:
         "Absolutely! We use industry-standard encryption and Firebase security. Your data is private and only accessible to you and your shared group members.",
       category: "Security",
     },
     {
-      id: "6",
+      id: "7",
       question: "How do I export my data?",
       answer:
         "Go to Settings → Privacy & Security → Export My Data. You'll receive an email with your financial data within 24 hours.",
       category: "Data Management",
     },
     {
-      id: "7",
+      id: "8",
       question: "Can I use the app offline?",
       answer:
         "The app requires an internet connection to sync your data with our secure servers. However, you can view recently loaded data when offline.",
       category: "Technical",
     },
     {
-      id: "8",
+      id: "9",
       question: "How do I change my password?",
       answer:
         "Go to Settings → Privacy & Security → Change Password. Enter your current password and set a new one.",
       category: "Account",
-    },
-    {
-      id: "9",
-      question: "How do I generate financial plans with Vectra?",
-      answer:
-        "Go to the AI Financial Advisor tab and tap 'Generate Plan'. Vectra will analyze your financial data and create personalized recommendations for budgeting, saving, investing, and debt management. You can customize the plan based on your goals and preferences.",
-      category: "AI Features",
     },
   ];
 
