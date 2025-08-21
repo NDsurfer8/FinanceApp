@@ -100,14 +100,6 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
       action: () => handleLoginHistory(),
     },
     {
-      id: "test-biometric",
-      title: "Test Biometric Authentication",
-      description: "Test your biometric authentication setup",
-      icon: "finger-print",
-      type: "button",
-      action: () => handleTestBiometric(),
-    },
-    {
       id: "data-export",
       title: "Export My Data",
       description: "Download a copy of your financial data",
@@ -397,44 +389,6 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
     );
   };
 
-  const handleTestBiometric = async () => {
-    try {
-      const isEnabled = await getBiometricAuthEnabled();
-      if (!isEnabled) {
-        Alert.alert(
-          "Biometric Authentication Not Enabled",
-          "Please enable biometric authentication first to test it.",
-          [{ text: "OK" }]
-        );
-        return;
-      }
-
-      const isAvailable = await biometricAuthService.isBiometricAvailable();
-      if (!isAvailable) {
-        Alert.alert(
-          "Biometric Authentication Not Available",
-          "Your device doesn't support biometric authentication or it's not properly configured.",
-          [{ text: "OK" }]
-        );
-        return;
-      }
-
-      // For now, just show that the feature is working without testing the native prompt
-      Alert.alert(
-        "Biometric Authentication Ready",
-        `Biometric authentication is enabled and ready to use! Your device supports ${biometricAuthService.getBiometricTypeName()}.`,
-        [{ text: "OK" }]
-      );
-    } catch (error) {
-      console.error("Error testing biometric authentication:", error);
-      Alert.alert(
-        "Test Error",
-        "An error occurred while testing biometric authentication.",
-        [{ text: "OK" }]
-      );
-    }
-  };
-
   const handleDataExport = () => {
     Alert.alert(
       "Export Data",
@@ -710,7 +664,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             Account Management
           </Text>
 
-          {settings.slice(4, 7).map((setting) => (
+          {settings.slice(4, 6).map((setting) => (
             <View
               key={setting.id}
               style={[
