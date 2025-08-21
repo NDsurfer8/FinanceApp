@@ -887,6 +887,24 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     borderColor: colors.border,
                   }}
                   onPress={() =>
+                    setFormData({ ...formData, date: getInitialDate() })
+                  }
+                >
+                  <Text style={{ fontSize: 12, color: colors.text }}>
+                    Today
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 6,
+                    backgroundColor: colors.surfaceSecondary,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                  onPress={() =>
                     setFormData({ ...formData, date: getTomorrowDate() })
                   }
                 >

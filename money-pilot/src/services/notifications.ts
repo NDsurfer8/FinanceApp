@@ -168,13 +168,13 @@ export class NotificationService {
 
     // Don't schedule notifications when app is active/foreground
     // This prevents notifications from appearing while user is using the app
-    // if (this.isAppActive()) {
-    //   console.log(
-    //     "App is active, skipping notification scheduling:",
-    //     notification.title
-    //   );
-    //   return "";
-    // }
+    if (this.isAppActive()) {
+      console.log(
+        "App is active, skipping notification scheduling:",
+        notification.title
+      );
+      return "";
+    }
 
     console.log(
       `Scheduling notification: ${
