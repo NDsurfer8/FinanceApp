@@ -59,7 +59,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [savingsPercentage, setSavingsPercentage] = useState("20");
-  const [debtPayoffPercentage, setDebtPayoffPercentage] = useState("75");
+  const [debtPayoffPercentage, setDebtPayoffPercentage] = useState("5");
   const [editingTransactionId, setEditingTransactionId] = useState<
     string | null
   >(null);
@@ -526,7 +526,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     try {
       const newSettings = {
         savingsPercentage: parseFloat(savingsPercentage) || 20,
-        debtPayoffPercentage: parseFloat(debtPayoffPercentage) || 75,
+        debtPayoffPercentage: parseFloat(debtPayoffPercentage) || 5,
         userId: user.uid,
         updatedAt: Date.now(),
       };

@@ -63,7 +63,7 @@ export class BudgetReminderService {
       // Calculate remaining balance like in budget summary
       const netIncome = totalIncome - totalExpenses;
       const savingsPercent = budgetSettings?.savingsPercentage || 20;
-      const debtPayoffPercent = budgetSettings?.debtPayoffPercentage || 75;
+      const debtPayoffPercent = budgetSettings?.debtPayoffPercentage || 5;
       const savingsAmount = totalIncome * (savingsPercent / 100);
 
       // Calculate total goal contributions
@@ -355,7 +355,7 @@ export class BudgetReminderService {
       // Calculate remaining balance like in budget summary
       const netIncome = totalIncome - totalExpenses;
       const savingsPercent = budgetSettings?.savingsPercentage || 20;
-      const debtPayoffPercent = budgetSettings?.debtPayoffPercentage || 75;
+      const debtPayoffPercent = budgetSettings?.debtPayoffPercentage || 5;
       const savingsAmount = totalIncome * (savingsPercent / 100);
 
       // Calculate total goal contributions

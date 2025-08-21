@@ -166,7 +166,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
 
     // Get budget settings
     const savingsRate = budgetSettings?.savingsPercentage || 20;
-    const debtPayoffRate = budgetSettings?.debtPayoffPercentage || 75;
+    const debtPayoffRate = budgetSettings?.debtPayoffPercentage || 5;
 
     // Get recurring expenses
     const recurringExpenses = recurringTransactions.filter(
