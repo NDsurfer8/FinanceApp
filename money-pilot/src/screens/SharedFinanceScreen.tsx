@@ -1158,9 +1158,10 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               </View>
               <Text
                 style={{
-                  fontSize: 12,
-                  color: colors.primary,
-                  lineHeight: 16,
+                  fontSize: 13,
+                  color: colors.text,
+                  lineHeight: 18,
+                  fontWeight: "500",
                 }}
               >
                 Choose which specific goals and data to share with this group.
@@ -1175,7 +1176,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                 style={{
                   fontSize: 16,
                   fontWeight: "600",
-                  color: "#374151",
+                  color: colors.text,
                   marginBottom: 12,
                 }}
               >
@@ -1189,12 +1190,12 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     alignItems: "center",
                     paddingVertical: 8,
                     borderBottomWidth: 1,
-                    borderBottomColor: "#f3f4f6",
+                    borderBottomColor: colors.border,
                   }}
                 >
                   <View
                     style={{
-                      backgroundColor: "#f3f4f6",
+                      backgroundColor: colors.surfaceSecondary,
                       width: 32,
                       height: 32,
                       borderRadius: 16,
@@ -1207,7 +1208,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       style={{
                         fontSize: 12,
                         fontWeight: "600",
-                        color: "#6b7280",
+                        color: colors.textSecondary,
                       }}
                     >
                       {member.displayName.charAt(0).toUpperCase()}
@@ -1218,12 +1219,12 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       style={{
                         fontSize: 14,
                         fontWeight: "500",
-                        color: "#374151",
+                        color: colors.text,
                       }}
                     >
                       {member.displayName}
                     </Text>
-                    <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>
                       {member.role.charAt(0).toUpperCase() +
                         member.role.slice(1)}
                     </Text>
