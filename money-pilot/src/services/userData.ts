@@ -222,6 +222,15 @@ export const saveTransaction = async (
     // Auto-update shared groups
     await updateSharedGroupsForUser(transaction.userId);
 
+    // Schedule bill reminders for the new transaction
+    try {
+      const { billReminderService } = await import("./billReminders");
+      await billReminderService.scheduleAllBillReminders(transaction.userId);
+      console.log("Bill reminders updated after saving transaction");
+    } catch (error) {
+      console.error("Error updating bill reminders:", error);
+    }
+
     return transactionId;
   } catch (error) {
     console.error("Error saving transaction:", error);
@@ -385,6 +394,15 @@ export const removeTransaction = async (
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(userId);
+
+    // Schedule bill reminders after removing transaction
+    try {
+      const { billReminderService } = await import("./billReminders");
+      await billReminderService.scheduleAllBillReminders(userId);
+      console.log("Bill reminders updated after removing transaction");
+    } catch (error) {
+      console.error("Error updating bill reminders:", error);
+    }
   } catch (error) {
     console.error("Error removing transaction:", error);
     throw error;
@@ -411,6 +429,15 @@ export const updateTransaction = async (
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(transaction.userId);
+
+    // Schedule bill reminders for the updated transaction
+    try {
+      const { billReminderService } = await import("./billReminders");
+      await billReminderService.scheduleAllBillReminders(transaction.userId);
+      console.log("Bill reminders updated after updating transaction");
+    } catch (error) {
+      console.error("Error updating bill reminders:", error);
+    }
   } catch (error) {
     console.error("Error updating transaction:", error);
     throw error;

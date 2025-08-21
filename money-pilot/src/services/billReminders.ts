@@ -34,24 +34,51 @@ export class BillReminderService {
         getUserRecurringTransactions(userId),
       ]);
 
+      console.log(
+        `Found ${transactions.length} transactions and ${recurringTransactions.length} recurring transactions`
+      );
+
       // Cancel existing bill reminders first
       await this.cancelAllBillReminders();
 
       // Schedule reminders for regular transactions with due dates
       for (const transaction of transactions) {
+        console.log(
+          `Checking transaction: ${transaction.description}, type: ${transaction.type}, date: ${transaction.date}`
+        );
+
         if (transaction.type === "expense" && transaction.date) {
           const dueDate = new Date(transaction.date);
           const now = new Date();
 
+          console.log(
+            `Transaction ${
+              transaction.description
+            }: dueDate=${dueDate.toLocaleDateString()}, now=${now.toLocaleDateString()}, dueDate > now = ${
+              dueDate > now
+            }`
+          );
+
           // Only schedule if due date is in the future
           if (dueDate > now) {
+            console.log(
+              `Scheduling reminder for transaction: ${transaction.description}`
+            );
             await this.scheduleBillReminder(
               transaction.description,
               dueDate,
               transaction.amount,
               false
             );
+          } else {
+            console.log(
+              `Skipping transaction ${transaction.description} - due date is not in the future`
+            );
           }
+        } else {
+          console.log(
+            `Skipping transaction ${transaction.description} - not an expense or no date`
+          );
         }
       }
 
@@ -85,16 +112,25 @@ export class BillReminderService {
     reminderDays: number = 3
   ): Promise<void> {
     try {
+      console.log(`\n=== Scheduling Bill Reminder for ${billName} ===`);
+      console.log(`Due Date: ${dueDate.toLocaleDateString()}`);
+      console.log(`Amount: $${amount}`);
+      console.log(`Reminder Days: ${reminderDays}`);
+
       const reminderDate = new Date(dueDate);
       reminderDate.setDate(reminderDate.getDate() - reminderDays);
+      console.log(`Reminder Date: ${reminderDate.toLocaleDateString()}`);
 
       // Check if bill is due today or overdue
       const isDueToday = dueDate.toDateString() === new Date().toDateString();
       const isOverdue = dueDate < new Date();
-
-      // Only skip if it's a future reminder that would be in the past (but allow bills due soon)
       const isDueSoon =
         dueDate.getTime() - new Date().getTime() <= 7 * 24 * 60 * 60 * 1000; // Within 7 days
+
+      console.log(`isDueToday: ${isDueToday}`);
+      console.log(`isOverdue: ${isOverdue}`);
+      console.log(`isDueSoon: ${isDueSoon}`);
+      console.log(`reminderDate <= new Date(): ${reminderDate <= new Date()}`);
 
       if (
         reminderDate <= new Date() &&

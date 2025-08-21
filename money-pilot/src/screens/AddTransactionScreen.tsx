@@ -72,6 +72,13 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     return new Date().toISOString().split("T")[0];
   };
 
+  // Helper function to get tomorrow's date
+  const getTomorrowDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split("T")[0];
+  };
+
   const [formData, setFormData] = useState({
     description: editMode ? transaction?.description || "" : "",
     amount: editMode ? transaction?.amount?.toString() || "" : "",
@@ -867,6 +874,50 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 autoCorrect={false}
                 returnKeyType="done"
               />
+
+              {/* Quick Date Buttons */}
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+                <TouchableOpacity
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 6,
+                    backgroundColor: colors.surfaceSecondary,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                  onPress={() =>
+                    setFormData({ ...formData, date: getTomorrowDate() })
+                  }
+                >
+                  <Text style={{ fontSize: 12, color: colors.text }}>
+                    Tomorrow
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 6,
+                    backgroundColor: colors.surfaceSecondary,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                  onPress={() => {
+                    const nextWeek = new Date();
+                    nextWeek.setDate(nextWeek.getDate() + 7);
+                    setFormData({
+                      ...formData,
+                      date: nextWeek.toISOString().split("T")[0],
+                    });
+                  }}
+                >
+                  <Text style={{ fontSize: 12, color: colors.text }}>
+                    Next Week
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Recurring Option */}
