@@ -40,6 +40,26 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     accounts: any[];
   } | null>(null);
 
+  // Function to format display name for long names
+  const formatDisplayName = (displayName: string | null | undefined) => {
+    if (!displayName) return { firstName: "User", lastName: "" };
+
+    const nameParts = displayName.trim().split(" ");
+    if (nameParts.length === 1) {
+      return { firstName: nameParts[0], lastName: "" };
+    }
+
+    // If name is longer than 20 characters, split it
+    if (displayName.length > 20) {
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(" ");
+      return { firstName, lastName };
+    }
+
+    // For shorter names, keep on one line
+    return { firstName: displayName, lastName: "" };
+  };
+
   // Debug logging
   useEffect(() => {
     console.log("SettingsScreen: User data updated", {
@@ -214,17 +234,39 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               )}
             </View>
             <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 24,
-                  fontWeight: "700",
-                  color: colors.text,
-                  marginBottom: 4,
-                  letterSpacing: -0.3,
-                }}
-              >
-                {currentUser?.displayName || "User"}
-              </Text>
+              {(() => {
+                const { firstName, lastName } = formatDisplayName(
+                  currentUser?.displayName
+                );
+                return (
+                  <>
+                    <Text
+                      style={{
+                        fontSize: 24,
+                        fontWeight: "700",
+                        color: colors.text,
+                        marginBottom: lastName ? 2 : 4,
+                        letterSpacing: -0.3,
+                      }}
+                    >
+                      {firstName}
+                    </Text>
+                    {lastName && (
+                      <Text
+                        style={{
+                          fontSize: 20,
+                          fontWeight: "600",
+                          color: colors.text,
+                          marginBottom: 4,
+                          letterSpacing: -0.3,
+                        }}
+                      >
+                        {lastName}
+                      </Text>
+                    )}
+                  </>
+                );
+              })()}
               <Text
                 style={{
                   fontSize: 16,
