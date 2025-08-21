@@ -42,6 +42,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   const route = useRoute();
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null);
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
@@ -189,25 +191,6 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
       return;
     }
 
-    // Check goal limits
-    if (!canAddGoal()) {
-      const limitInfo = getGoalLimitInfo();
-      // Only show upgrade alert if not unlimited (i.e., not subscribed)
-      if (!limitInfo.isUnlimited) {
-        Alert.alert(
-          "Goal Limit Reached",
-          `You've reached your limit of ${limitInfo.limit} goal${
-            limitInfo.limit !== 1 ? "s" : ""
-          } on the free plan.\n\nUpgrade to Premium for unlimited goals!`,
-          [
-            { text: "Cancel", style: "cancel" },
-            { text: "Upgrade to Premium", onPress: presentPaywall },
-          ]
-        );
-      }
-      return;
-    }
-
     if (
       !newGoal.name ||
       !newGoal.targetAmount ||
@@ -217,54 +200,121 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
       return;
     }
 
+    // Check goal limits (only for new goals, not edits)
+    if (!isEditMode) {
+      if (!canAddGoal()) {
+        const limitInfo = getGoalLimitInfo();
+        // Only show upgrade alert if not unlimited (i.e., not subscribed)
+        if (!limitInfo.isUnlimited) {
+          Alert.alert(
+            "Goal Limit Reached",
+            `You've reached your limit of ${limitInfo.limit} goal${
+              limitInfo.limit !== 1 ? "s" : ""
+            } on the free plan.\n\nUpgrade to Premium for unlimited goals!`,
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Upgrade to Premium", onPress: presentPaywall },
+            ]
+          );
+        }
+        return;
+      }
+    }
+
     try {
-      const goal: FinancialGoal = {
-        name: newGoal.name,
-        targetAmount: parseFloat(newGoal.targetAmount),
-        currentAmount: parseFloat(newGoal.currentAmount) || 0,
-        monthlyContribution: parseFloat(newGoal.monthlyContribution),
-        targetDate: newGoal.targetDate,
-        category: newGoal.category,
-        priority: newGoal.priority,
-        userId: user.uid,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
+      if (isEditMode && editingGoal) {
+        // Update existing goal
+        const updatedGoal = {
+          ...editingGoal,
+          name: newGoal.name,
+          targetAmount: parseFloat(newGoal.targetAmount),
+          currentAmount: parseFloat(newGoal.currentAmount) || 0,
+          monthlyContribution: parseFloat(newGoal.monthlyContribution),
+          targetDate: newGoal.targetDate,
+          category: newGoal.category,
+          priority: newGoal.priority,
+          updatedAt: Date.now(),
+        };
 
-      // Optimistic update - add to UI immediately
-      const tempGoal = { ...goal, id: `temp-${Date.now()}` };
-      const updatedGoals = [...goals, tempGoal];
-      updateDataOptimistically({ goals: updatedGoals });
+        // Optimistic update
+        const updatedGoals = goals.map((g) =>
+          g.id === editingGoal.id ? updatedGoal : g
+        );
+        updateDataOptimistically({ goals: updatedGoals });
 
-      // Save to database in background
-      const savedGoalId = await saveGoal(goal);
+        // Update in database
+        await updateGoal(updatedGoal);
 
-      // Update with real ID from database
-      const finalGoals = updatedGoals.map((g) =>
-        g.id === tempGoal.id ? { ...g, id: savedGoalId } : g
-      );
-      updateDataOptimistically({ goals: finalGoals });
+        setShowAddModal(false);
+        setIsEditMode(false);
+        setEditingGoal(null);
+        setNewGoal({
+          name: "",
+          targetAmount: "",
+          currentAmount: "",
+          monthlyContribution: "",
+          targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          category: "savings",
+          priority: "medium",
+        });
+        Alert.alert("Success", "Goal updated successfully!");
+      } else {
+        // Create new goal
+        const goal: FinancialGoal = {
+          name: newGoal.name,
+          targetAmount: parseFloat(newGoal.targetAmount),
+          currentAmount: parseFloat(newGoal.currentAmount) || 0,
+          monthlyContribution: parseFloat(newGoal.monthlyContribution),
+          targetDate: newGoal.targetDate,
+          category: newGoal.category,
+          priority: newGoal.priority,
+          userId: user.uid,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
 
-      setShowAddModal(false);
-      setNewGoal({
-        name: "",
-        targetAmount: "",
-        currentAmount: "",
-        monthlyContribution: "",
-        targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0],
-        category: "savings",
-        priority: "medium",
-      });
-      Alert.alert("Success", "Goal added successfully!");
+        // Optimistic update - add to UI immediately
+        const tempGoal = { ...goal, id: `temp-${Date.now()}` };
+        const updatedGoals = [...goals, tempGoal];
+        updateDataOptimistically({ goals: updatedGoals });
+
+        // Save to database in background
+        const savedGoalId = await saveGoal(goal);
+
+        // Update with real ID from database
+        const finalGoals = updatedGoals.map((g) =>
+          g.id === tempGoal.id ? { ...g, id: savedGoalId } : g
+        );
+        updateDataOptimistically({ goals: finalGoals });
+
+        setShowAddModal(false);
+        setNewGoal({
+          name: "",
+          targetAmount: "",
+          currentAmount: "",
+          monthlyContribution: "",
+          targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          category: "savings",
+          priority: "medium",
+        });
+        Alert.alert("Success", "Goal added successfully!");
+      }
     } catch (error) {
-      console.error("Error adding goal:", error);
-      Alert.alert("Error", "Failed to add goal. Please try again.");
+      console.error("Error saving goal:", error);
+      Alert.alert(
+        "Error",
+        `Failed to ${isEditMode ? "update" : "add"} goal. Please try again.`
+      );
 
       // Revert optimistic update on error
-      const revertedGoals = goals.filter((g) => !g.id.startsWith("temp-"));
-      updateDataOptimistically({ goals: revertedGoals });
+      if (!isEditMode) {
+        const revertedGoals = goals.filter((g) => !g.id.startsWith("temp-"));
+        updateDataOptimistically({ goals: revertedGoals });
+      }
     }
   };
 
@@ -296,33 +346,52 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     }
   };
 
-  const handleDeleteGoal = (goalId: string) => {
-    if (!user) return;
+  const handleDeleteGoal = () => {
+    if (!user || !editingGoal) return;
 
-    Alert.alert("Delete Goal", "Are you sure you want to delete this goal?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            // Optimistic update - remove from UI immediately
-            const updatedGoals = goals.filter((g) => g.id !== goalId);
-            updateDataOptimistically({ goals: updatedGoals });
+    Alert.alert(
+      "Delete Goal",
+      "Are you sure you want to delete this goal? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Optimistic update - remove from UI immediately
+              const updatedGoals = goals.filter((g) => g.id !== editingGoal.id);
+              updateDataOptimistically({ goals: updatedGoals });
 
-            // Delete from database in background
-            await removeGoal(user.uid, goalId);
-            Alert.alert("Success", "Goal deleted successfully!");
-          } catch (error) {
-            console.error("Error deleting goal:", error);
-            Alert.alert("Error", "Failed to delete goal. Please try again.");
+              // Delete from database in background
+              await removeGoal(user.uid, editingGoal.id!);
 
-            // Revert optimistic update on error
-            await refreshInBackground();
-          }
+              setShowAddModal(false);
+              setIsEditMode(false);
+              setEditingGoal(null);
+              setNewGoal({
+                name: "",
+                targetAmount: "",
+                currentAmount: "",
+                monthlyContribution: "",
+                targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                  .toISOString()
+                  .split("T")[0],
+                category: "savings",
+                priority: "medium",
+              });
+              Alert.alert("Success", "Goal deleted successfully!");
+            } catch (error) {
+              console.error("Error deleting goal:", error);
+              Alert.alert("Error", "Failed to delete goal. Please try again.");
+
+              // Revert optimistic update on error
+              await refreshInBackground();
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const handleEditGoal = (goalId: string, field: string, value: string) => {
@@ -644,7 +713,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
             );
 
             return (
-              <View
+              <TouchableOpacity
                 key={goal.id}
                 style={{
                   backgroundColor: colors.surface,
@@ -656,6 +725,20 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   shadowRadius: 12,
                   shadowOffset: { width: 0, height: 4 },
                   elevation: 4,
+                }}
+                onPress={() => {
+                  setEditingGoal(goal);
+                  setIsEditMode(true);
+                  setNewGoal({
+                    name: goal.name,
+                    targetAmount: goal.targetAmount.toString(),
+                    currentAmount: goal.currentAmount.toString(),
+                    monthlyContribution: goal.monthlyContribution.toString(),
+                    targetDate: goal.targetDate,
+                    category: goal.category,
+                    priority: goal.priority,
+                  });
+                  setShowAddModal(true);
                 }}
               >
                 {/* Goal Header */}
@@ -733,15 +816,11 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         {goal.priority}
                       </Text>
                     </View>
-                    <TouchableOpacity
-                      onPress={() => goal?.id && handleDeleteGoal(goal.id)}
-                    >
-                      <Ionicons
-                        name="trash-outline"
-                        size={20}
-                        color={colors.error}
-                      />
-                    </TouchableOpacity>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color={colors.textSecondary}
+                    />
                   </View>
                 </View>
 
@@ -810,80 +889,15 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     >
                       Target
                     </Text>
-                    {editingGoalId === goal.id &&
-                    editingField === "targetAmount" ? (
-                      <View
-                        style={{ flexDirection: "row", alignItems: "center" }}
-                      >
-                        <TextInput
-                          style={{
-                            fontSize: 16,
-                            fontWeight: "700",
-                            color: colors.text,
-                            textAlign: "center",
-                            borderBottomWidth: 1,
-                            borderBottomColor: colors.text,
-                            paddingHorizontal: 4,
-                            minWidth: 80,
-                          }}
-                          value={editingValue}
-                          onChangeText={setEditingValue}
-                          keyboardType="numeric"
-                          autoFocus
-                        />
-                        <TouchableOpacity
-                          onPress={handleSaveGoalEdit}
-                          style={{
-                            padding: 4,
-                            borderRadius: 4,
-                            backgroundColor: colors.successLight,
-                            marginLeft: 4,
-                          }}
-                        >
-                          <Ionicons
-                            name="checkmark"
-                            size={12}
-                            color={colors.success}
-                          />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={handleCancelEdit}
-                          style={{
-                            padding: 4,
-                            borderRadius: 4,
-                            backgroundColor: colors.errorLight,
-                            marginLeft: 2,
-                          }}
-                        >
-                          <Ionicons
-                            name="close"
-                            size={12}
-                            color={colors.error}
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    ) : (
-                      <TouchableOpacity
-                        onPress={() =>
-                          goal.id &&
-                          handleEditGoal(
-                            goal.id,
-                            "targetAmount",
-                            goal.targetAmount.toString()
-                          )
-                        }
-                      >
-                        <Text
-                          style={{
-                            fontSize: 16,
-                            fontWeight: "700",
-                            color: colors.text,
-                          }}
-                        >
-                          {formatCurrency(goal.targetAmount)}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: colors.text,
+                      }}
+                    >
+                      {formatCurrency(goal.targetAmount)}
+                    </Text>
                   </View>
                   <View style={{ alignItems: "center", flex: 1 }}>
                     <Text
@@ -895,80 +909,15 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     >
                       Monthly
                     </Text>
-                    {editingGoalId === goal.id &&
-                    editingField === "monthlyContribution" ? (
-                      <View
-                        style={{ flexDirection: "row", alignItems: "center" }}
-                      >
-                        <TextInput
-                          style={{
-                            fontSize: 16,
-                            fontWeight: "700",
-                            color: colors.success,
-                            textAlign: "center",
-                            borderBottomWidth: 1,
-                            borderBottomColor: colors.success,
-                            paddingHorizontal: 4,
-                            minWidth: 80,
-                          }}
-                          value={editingValue}
-                          onChangeText={setEditingValue}
-                          keyboardType="numeric"
-                          autoFocus
-                        />
-                        <TouchableOpacity
-                          onPress={handleSaveGoalEdit}
-                          style={{
-                            padding: 4,
-                            borderRadius: 4,
-                            backgroundColor: "#dcfce7",
-                            marginLeft: 4,
-                          }}
-                        >
-                          <Ionicons
-                            name="checkmark"
-                            size={12}
-                            color="#16a34a"
-                          />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={handleCancelEdit}
-                          style={{
-                            padding: 4,
-                            borderRadius: 4,
-                            backgroundColor: "#fee2e2",
-                            marginLeft: 2,
-                          }}
-                        >
-                          <Ionicons
-                            name="close"
-                            size={12}
-                            color={colors.error}
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    ) : (
-                      <TouchableOpacity
-                        onPress={() =>
-                          goal.id &&
-                          handleEditGoal(
-                            goal.id,
-                            "monthlyContribution",
-                            goal.monthlyContribution.toString()
-                          )
-                        }
-                      >
-                        <Text
-                          style={{
-                            fontSize: 16,
-                            fontWeight: "700",
-                            color: colors.success,
-                          }}
-                        >
-                          {formatCurrency(goal.monthlyContribution)}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: colors.success,
+                      }}
+                    >
+                      {formatCurrency(goal.monthlyContribution)}
+                    </Text>
                   </View>
                   <View style={{ alignItems: "center", flex: 1 }}>
                     <Text
@@ -1003,115 +952,21 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   >
                     Target Date
                   </Text>
-                  {editingGoalId === goal.id &&
-                  editingField === "targetDate" ? (
-                    <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
-                    >
-                      <TextInput
-                        style={{
-                          fontSize: 14,
-                          fontWeight: "600",
-                          color: colors.primary,
-                          textAlign: "center",
-                          borderBottomWidth: 1,
-                          borderBottomColor: colors.primary,
-                          paddingHorizontal: 4,
-                          minWidth: 100,
-                        }}
-                        value={editingValue}
-                        onChangeText={setEditingValue}
-                        placeholder="YYYY-MM-DD"
-                        autoFocus
-                      />
-                      <TouchableOpacity
-                        onPress={handleSaveGoalEdit}
-                        style={{
-                          padding: 4,
-                          borderRadius: 4,
-                          backgroundColor: colors.successLight,
-                          marginLeft: 4,
-                        }}
-                      >
-                        <Ionicons
-                          name="checkmark"
-                          size={12}
-                          color={colors.success}
-                        />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={handleCancelEdit}
-                        style={{
-                          padding: 4,
-                          borderRadius: 4,
-                          backgroundColor: colors.errorLight,
-                          marginLeft: 2,
-                        }}
-                      >
-                        <Ionicons name="close" size={12} color={colors.error} />
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <TouchableOpacity
-                      onPress={() =>
-                        goal?.id &&
-                        handleEditGoal(
-                          goal.id,
-                          "targetDate",
-                          goal.targetDate || ""
-                        )
-                      }
-                    >
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          fontWeight: "600",
-                          color: colors.primary,
-                        }}
-                      >
-                        {goal.targetDate
-                          ? new Date(goal.targetDate).toLocaleDateString()
-                          : "No date set"}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: colors.primary,
+                    }}
+                  >
+                    {goal.targetDate
+                      ? new Date(goal.targetDate).toLocaleDateString()
+                      : "No date set"}
+                  </Text>
                 </View>
 
                 {/* Quick Update Button */}
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: colors.surfaceSecondary,
-                    padding: 12,
-                    borderRadius: 12,
-                    marginTop: 16,
-                    alignItems: "center",
-                  }}
-                  onPress={() => {
-                    Alert.prompt(
-                      "Update Progress",
-                      `Current amount: ${formatCurrency(goal.currentAmount)}`,
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Update",
-                          onPress: (value) => {
-                            const newAmount = parseFloat(value || "0");
-                            if (!isNaN(newAmount) && goal?.id) {
-                              handleUpdateGoal(goal.id, newAmount);
-                            }
-                          },
-                        },
-                      ],
-                      "plain-text",
-                      goal.currentAmount.toString()
-                    );
-                  }}
-                >
-                  <Text style={{ color: colors.text, fontWeight: "600" }}>
-                    Update Goal
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
             );
           })
         )}
@@ -1149,7 +1004,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     color: colors.text,
                   }}
                 >
-                  Add New Goal
+                  {isEditMode ? "Edit Goal" : "Add New Goal"}
                 </Text>
               </View>
 
@@ -1429,7 +1284,24 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       borderRadius: 8,
                       backgroundColor: colors.surfaceSecondary,
                     }}
-                    onPress={() => setShowAddModal(false)}
+                    onPress={() => {
+                      setShowAddModal(false);
+                      setIsEditMode(false);
+                      setEditingGoal(null);
+                      setNewGoal({
+                        name: "",
+                        targetAmount: "",
+                        currentAmount: "",
+                        monthlyContribution: "",
+                        targetDate: new Date(
+                          Date.now() + 365 * 24 * 60 * 60 * 1000
+                        )
+                          .toISOString()
+                          .split("T")[0],
+                        category: "savings",
+                        priority: "medium",
+                      });
+                    }}
                   >
                     <Text
                       style={{
@@ -1457,10 +1329,33 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         fontWeight: "600",
                       }}
                     >
-                      Add Goal
+                      {isEditMode ? "Update Goal" : "Add Goal"}
                     </Text>
                   </TouchableOpacity>
                 </View>
+
+                {/* Delete Button (only show in edit mode) */}
+                {isEditMode && (
+                  <TouchableOpacity
+                    style={{
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: colors.error,
+                      marginBottom: 24,
+                    }}
+                    onPress={handleDeleteGoal}
+                  >
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        color: colors.buttonText,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Delete Goal
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </ScrollView>
             </View>
           </View>

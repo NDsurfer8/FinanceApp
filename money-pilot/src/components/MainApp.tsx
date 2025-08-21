@@ -398,6 +398,7 @@ export const MainApp: React.FC = () => {
                       name="AddAssetDebt"
                       component={AddAssetDebtScreen}
                     />
+
                     <Stack.Screen
                       name="BalanceSheet"
                       component={BalanceSheetScreen}

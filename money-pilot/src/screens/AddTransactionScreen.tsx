@@ -14,7 +14,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useZeroLoading } from "../hooks/useZeroLoading";
-import { saveTransaction } from "../services/userData";
+import {
+  saveTransaction,
+  updateTransaction,
+  removeTransaction,
+} from "../services/userData";
 import { billReminderService } from "../services/billReminders";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
@@ -22,6 +26,19 @@ import { usePaywall } from "../hooks/usePaywall";
 interface AddTransactionScreenProps {
   navigation: any;
   route: any;
+}
+
+interface RouteParams {
+  type?: "income" | "expense";
+  selectedMonth?: string;
+  editMode?: boolean;
+  transaction?: any;
+  fromBankSuggestion?: boolean;
+  description?: string;
+  amount?: string;
+  category?: string;
+  isRecurring?: boolean;
+  frequency?: string;
 }
 
 export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
@@ -32,7 +49,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const { colors } = useTheme();
   const { transactions, updateDataOptimistically } = useZeroLoading();
   const [loading, setLoading] = useState(false);
-  const { type: initialType, selectedMonth } = route.params || {};
+  const {
+    type: initialType,
+    selectedMonth,
+    editMode,
+    transaction,
+  } = (route.params as RouteParams) || {};
   const {
     canAddTransaction,
     canAddIncomeSource,
@@ -51,19 +73,23 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   };
 
   const [formData, setFormData] = useState({
-    description: "",
-    amount: "",
-    category: "",
-    type: initialType || "expense", // Use the passed type or default to expense
-    date: getInitialDate(),
-    isRecurring: false,
-    frequency: "monthly" as
-      | "weekly"
-      | "biweekly"
-      | "monthly"
-      | "quarterly"
-      | "yearly",
-    endDate: "",
+    description: editMode ? transaction?.description || "" : "",
+    amount: editMode ? transaction?.amount?.toString() || "" : "",
+    category: editMode ? transaction?.category || "" : "",
+    type: editMode
+      ? transaction?.type || initialType || "expense"
+      : initialType || "expense",
+    date: editMode ? transaction?.date || getInitialDate() : getInitialDate(),
+    isRecurring: editMode ? transaction?.isRecurring || false : false,
+    frequency: editMode
+      ? transaction?.frequency || "monthly"
+      : ("monthly" as
+          | "weekly"
+          | "biweekly"
+          | "monthly"
+          | "quarterly"
+          | "yearly"),
+    endDate: editMode ? transaction?.endDate || "" : "",
   });
 
   // Handle route params for bank suggestions
@@ -134,47 +160,73 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       return;
     }
 
-    // Check transaction limits
-    if (formData.type === "income") {
-      if (!canAddIncomeSource()) {
-        const limitInfo = getIncomeSourceLimitInfo();
-        // Only show upgrade alert if not unlimited (i.e., not subscribed)
-        if (!limitInfo.isUnlimited) {
-          Alert.alert(
-            "Income Source Limit Reached",
-            `You've reached your limit of ${limitInfo.limit} income source${
-              limitInfo.limit !== 1 ? "s" : ""
-            } on the free plan.\n\nUpgrade to Premium for unlimited income sources!`,
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Upgrade to Premium", onPress: presentPaywall },
-            ]
-          );
+    // Check transaction limits (only for new transactions, not edits)
+    if (!editMode) {
+      if (formData.type === "income") {
+        if (!canAddIncomeSource()) {
+          const limitInfo = getIncomeSourceLimitInfo();
+          // Only show upgrade alert if not unlimited (i.e., not subscribed)
+          if (!limitInfo.isUnlimited) {
+            Alert.alert(
+              "Income Source Limit Reached",
+              `You've reached your limit of ${limitInfo.limit} income source${
+                limitInfo.limit !== 1 ? "s" : ""
+              } on the free plan.\n\nUpgrade to Premium for unlimited income sources!`,
+              [
+                { text: "Cancel", style: "cancel" },
+                { text: "Upgrade to Premium", onPress: presentPaywall },
+              ]
+            );
+          }
+          return;
         }
-        return;
-      }
-    } else {
-      if (!canAddTransaction()) {
-        const limitInfo = getTransactionLimitInfo();
-        // Only show upgrade alert if not unlimited (i.e., not subscribed)
-        if (!limitInfo.isUnlimited) {
-          Alert.alert(
-            "Transaction Limit Reached",
-            `You've reached your limit of ${limitInfo.limit} transactions on the free plan.\n\nUpgrade to Premium for unlimited transactions!`,
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Upgrade to Premium", onPress: presentPaywall },
-            ]
-          );
+      } else {
+        if (!canAddTransaction()) {
+          const limitInfo = getTransactionLimitInfo();
+          // Only show upgrade alert if not unlimited (i.e., not subscribed)
+          if (!limitInfo.isUnlimited) {
+            Alert.alert(
+              "Transaction Limit Reached",
+              `You've reached your limit of ${limitInfo.limit} transactions on the free plan.\n\nUpgrade to Premium for unlimited transactions!`,
+              [
+                { text: "Cancel", style: "cancel" },
+                { text: "Upgrade to Premium", onPress: presentPaywall },
+              ]
+            );
+          }
+          return;
         }
-        return;
       }
     }
 
     try {
       setLoading(true);
 
-      if (formData.isRecurring) {
+      if (editMode && transaction) {
+        // Update existing transaction
+        const updatedTransaction = {
+          ...transaction,
+          description: formData.description,
+          amount: parseFloat(formData.amount),
+          category: formData.category,
+          type: formData.type as "income" | "expense",
+          date: new Date(formData.date).getTime(),
+          updatedAt: Date.now(),
+        };
+
+        // Optimistic update
+        const updatedTransactions = transactions.map((t) =>
+          t.id === transaction.id ? updatedTransaction : t
+        );
+        updateDataOptimistically({ transactions: updatedTransactions });
+
+        // Update in database
+        await updateTransaction(updatedTransaction);
+
+        Alert.alert("Success", "Transaction updated successfully!", [
+          { text: "OK", onPress: () => navigation.goBack() },
+        ]);
+      } else if (formData.isRecurring) {
         // Create recurring transaction
         const { createRecurringTransaction } = await import(
           "../services/transactionService"
@@ -203,7 +255,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         ]);
       } else {
         // Create regular transaction
-        const transaction = {
+        const newTransaction = {
           id: Date.now().toString(),
           description: formData.description,
           amount: parseFloat(formData.amount),
@@ -216,16 +268,16 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         };
 
         // Optimistic update - add to UI immediately
-        const newTransaction = { ...transaction, id: `temp-${Date.now()}` };
-        const updatedTransactions = [...transactions, newTransaction];
+        const tempTransaction = { ...newTransaction, id: `temp-${Date.now()}` };
+        const updatedTransactions = [...transactions, tempTransaction];
         updateDataOptimistically({ transactions: updatedTransactions });
 
         // Save to database in background
-        const savedTransaction = await saveTransaction(transaction);
+        const savedTransaction = await saveTransaction(newTransaction);
 
         // Update with real ID from database
         const finalTransactions = updatedTransactions.map((t) =>
-          t.id === newTransaction.id ? { ...t, id: savedTransaction } : t
+          t.id === tempTransaction.id ? { ...t, id: savedTransaction } : t
         );
         updateDataOptimistically({ transactions: finalTransactions });
 
@@ -242,16 +294,57 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       console.error("Error saving transaction:", error);
       Alert.alert("Error", "Failed to save transaction. Please try again.");
 
-      // Revert optimistic update on error if it was a regular transaction
-      if (!formData.isRecurring) {
+      // Revert optimistic update on error
+      if (!editMode && !formData.isRecurring) {
         const revertedTransactions = transactions.filter(
-          (t) => t.id !== `temp-${Date.now()}`
+          (t) => !t.id.startsWith("temp-")
         );
         updateDataOptimistically({ transactions: revertedTransactions });
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDelete = async () => {
+    if (!user || !editMode || !transaction) {
+      Alert.alert("Error", "Cannot delete transaction");
+      return;
+    }
+
+    Alert.alert(
+      "Delete Confirmation",
+      "Are you sure you want to delete this transaction? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Optimistic update
+              const updatedTransactions = transactions.filter(
+                (t) => t.id !== transaction.id
+              );
+              updateDataOptimistically({ transactions: updatedTransactions });
+
+              // Delete from database
+              await removeTransaction(user.uid, transaction.id);
+
+              Alert.alert("Success", "Transaction deleted successfully!", [
+                { text: "OK", onPress: () => navigation.goBack() },
+              ]);
+            } catch (error) {
+              console.error("Error deleting transaction:", error);
+              Alert.alert(
+                "Error",
+                "Failed to delete transaction. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -281,7 +374,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             <Text
               style={{ fontSize: 20, fontWeight: "600", color: colors.text }}
             >
-              {formData.type === "income" ? "Add Income" : "Add Expense"}
+              {editMode ? "Edit" : "Add"}{" "}
+              {formData.type === "income" ? "Income" : "Expense"}
             </Text>
           </View>
 
@@ -783,10 +877,38 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 fontWeight: "600",
               }}
             >
-              {formData.isRecurring ? "Create Recurring" : "Save"}{" "}
+              {editMode
+                ? "Update"
+                : formData.isRecurring
+                ? "Create Recurring"
+                : "Save"}{" "}
               {formData.type === "income" ? "Income" : "Expense"}
             </Text>
           </TouchableOpacity>
+
+          {/* Delete Button (only show in edit mode) */}
+          {editMode && (
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.error,
+                borderRadius: 12,
+                padding: 16,
+                alignItems: "center",
+                marginTop: 12,
+              }}
+              onPress={handleDelete}
+            >
+              <Text
+                style={{
+                  color: colors.buttonText,
+                  fontSize: 16,
+                  fontWeight: "600",
+                }}
+              >
+                Delete {formData.type === "income" ? "Income" : "Expense"}
+              </Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

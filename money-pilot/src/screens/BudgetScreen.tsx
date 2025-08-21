@@ -915,7 +915,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 ? projectedTransactions.filter((t) => t.type === "income")
                 : []),
             ].map((transaction, index, array) => (
-              <View
+              <TouchableOpacity
                 key={transaction.id}
                 style={{
                   flexDirection: "row",
@@ -926,6 +926,13 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   borderBottomWidth: index === array.length - 1 ? 0 : 1,
                   borderBottomColor: colors.border,
                 }}
+                onPress={() =>
+                  navigation.navigate("AddTransaction", {
+                    type: "income",
+                    editMode: true,
+                    transaction: transaction,
+                  })
+                }
               >
                 <View style={{ flex: 1 }}>
                   <Text
@@ -959,83 +966,23 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   </View>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  {editingTransactionId === transaction.id ? (
-                    <>
-                      <TextInput
-                        style={{
-                          fontSize: 16,
-                          fontWeight: "700",
-                          color: "#16a34a",
-                          marginRight: 8,
-                          borderBottomWidth: 1,
-                          borderBottomColor: "#16a34a",
-                          paddingHorizontal: 4,
-                          minWidth: 80,
-                          textAlign: "right",
-                        }}
-                        value={editingAmount}
-                        onChangeText={setEditingAmount}
-                        keyboardType="numeric"
-                        autoFocus
-                      />
-                      <TouchableOpacity
-                        onPress={handleSaveTransactionEdit}
-                        style={{
-                          padding: 6,
-                          borderRadius: 6,
-                          backgroundColor: "#dcfce7",
-                          marginRight: 4,
-                        }}
-                      >
-                        <Ionicons name="checkmark" size={14} color="#16a34a" />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={handleCancelEdit}
-                        style={{
-                          padding: 6,
-                          borderRadius: 6,
-                          backgroundColor: "#fee2e2",
-                          marginRight: 8,
-                        }}
-                      >
-                        <Ionicons name="close" size={14} color="#dc2626" />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteTransaction(transaction)}
-                        style={{
-                          padding: 6,
-                          borderRadius: 6,
-                          backgroundColor: "#fee2e2",
-                          marginRight: 8,
-                        }}
-                      >
-                        <Ionicons
-                          name="trash-outline"
-                          size={14}
-                          color="#dc2626"
-                        />
-                      </TouchableOpacity>
-                    </>
-                  ) : (
-                    <>
-                      <TouchableOpacity
-                        onPress={() => handleEditTransaction(transaction)}
-                        style={{ marginRight: 12 }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 16,
-                            fontWeight: "700",
-                            color: colors.text,
-                          }}
-                        >
-                          {formatCurrency(transaction.amount)}
-                        </Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: colors.success,
+                      marginRight: 8,
+                    }}
+                  >
+                    {formatCurrency(transaction.amount)}
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={colors.textSecondary}
+                  />
                 </View>
-              </View>
+              </TouchableOpacity>
             ))
           )}
 
@@ -1420,7 +1367,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 ? projectedTransactions.filter((t) => t.type === "expense")
                 : []),
             ].map((transaction, index, array) => (
-              <View
+              <TouchableOpacity
                 key={transaction.id}
                 style={{
                   flexDirection: "row",
@@ -1431,6 +1378,13 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   borderBottomWidth: index === array.length - 1 ? 0 : 1,
                   borderBottomColor: colors.border,
                 }}
+                onPress={() =>
+                  navigation.navigate("AddTransaction", {
+                    type: "expense",
+                    editMode: true,
+                    transaction: transaction,
+                  })
+                }
               >
                 <View style={{ flex: 1 }}>
                   <Text
@@ -1464,83 +1418,23 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   </View>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  {editingTransactionId === transaction.id ? (
-                    <>
-                      <TextInput
-                        style={{
-                          fontSize: 16,
-                          fontWeight: "700",
-                          color: "#dc2626",
-                          marginRight: 8,
-                          borderBottomWidth: 1,
-                          borderBottomColor: "#dc2626",
-                          paddingHorizontal: 4,
-                          minWidth: 80,
-                          textAlign: "right",
-                        }}
-                        value={editingAmount}
-                        onChangeText={setEditingAmount}
-                        keyboardType="numeric"
-                        autoFocus
-                      />
-                      <TouchableOpacity
-                        onPress={handleSaveTransactionEdit}
-                        style={{
-                          padding: 6,
-                          borderRadius: 6,
-                          backgroundColor: "#dcfce7",
-                          marginRight: 4,
-                        }}
-                      >
-                        <Ionicons name="checkmark" size={14} color="#16a34a" />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={handleCancelEdit}
-                        style={{
-                          padding: 6,
-                          borderRadius: 6,
-                          backgroundColor: "#fee2e2",
-                          marginRight: 8,
-                        }}
-                      >
-                        <Ionicons name="close" size={14} color="#dc2626" />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteTransaction(transaction)}
-                        style={{
-                          padding: 6,
-                          borderRadius: 6,
-                          backgroundColor: "#fee2e2",
-                          marginRight: 8,
-                        }}
-                      >
-                        <Ionicons
-                          name="trash-outline"
-                          size={14}
-                          color="#dc2626"
-                        />
-                      </TouchableOpacity>
-                    </>
-                  ) : (
-                    <>
-                      <TouchableOpacity
-                        onPress={() => handleEditTransaction(transaction)}
-                        style={{ marginRight: 12 }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 16,
-                            fontWeight: "700",
-                            color: colors.text,
-                          }}
-                        >
-                          {formatCurrency(transaction.amount)}
-                        </Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: colors.error,
+                      marginRight: 8,
+                    }}
+                  >
+                    {formatCurrency(transaction.amount)}
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={colors.textSecondary}
+                  />
                 </View>
-              </View>
+              </TouchableOpacity>
             ))
           )}
 
