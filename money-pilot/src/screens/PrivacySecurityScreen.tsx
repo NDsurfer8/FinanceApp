@@ -197,8 +197,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             if (!authResult.success) {
               Alert.alert(
                 "Authentication Failed",
-                authResult.error ||
-                  "Biometric authentication failed. Please try again.",
+                "Biometric authentication failed. Please try again.",
                 [{ text: "OK" }]
               );
               return;
