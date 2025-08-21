@@ -12,6 +12,7 @@ import {
   Alert,
   Image,
   Animated,
+  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -379,6 +380,22 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     }, 100);
   }, [messages]);
 
+  // Scroll to bottom when keyboard appears
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener?.remove();
+    };
+  }, []);
+
   // Handle scroll for header fade
   const handleScroll = (event: any) => {
     const scrollY = event.nativeEvent.contentOffset.y;
@@ -501,6 +518,8 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           onScroll={handleScroll}
           scrollEventThrottle={16}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
         >
           {messages.map((message, index) => (
             <View
@@ -694,6 +713,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       {/* ChatGPT-style Input */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         style={{
           backgroundColor: colors.background,
           borderTopWidth: 1,
