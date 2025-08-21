@@ -236,7 +236,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                       style={{
                         fontSize: 16,
                         fontWeight: "700",
-                        color: colors.success,
+                        color: colors.text,
                         marginRight: 8,
                       }}
                     >
@@ -278,7 +278,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                     fontFamily: fontFamily.bold,
                     fontWeight: "700",
                     fontSize: 18,
-                    color: colors.text,
+                    color: "#10b981",
                   }}
                 >
                   ${assetTotal.toLocaleString()}
@@ -380,7 +380,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                       style={{
                         fontSize: 16,
                         fontWeight: "700",
-                        color: colors.error,
+                        color: colors.text,
                         marginRight: 8,
                       }}
                     >
@@ -422,7 +422,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                     fontFamily: fontFamily.bold,
                     fontWeight: "700",
                     fontSize: 18,
-                    color: colors.text,
+                    color: "#ef4444",
                   }}
                 >
                   ${totalDebt.toLocaleString()}
