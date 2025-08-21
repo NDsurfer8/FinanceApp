@@ -3,15 +3,15 @@ import { View, Text, StyleSheet } from "react-native";
 
 interface VectraAvatarProps {
   size?: number;
-  showName?: boolean;
+  style?: any;
 }
 
 export const VectraAvatar: React.FC<VectraAvatarProps> = ({
-  size = 32,
-  showName = false,
+  size = 120,
+  style,
 }) => {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { width: size, height: size }, style]}>
       <View
         style={[
           styles.avatar,
@@ -24,7 +24,6 @@ export const VectraAvatar: React.FC<VectraAvatarProps> = ({
       >
         <Text style={[styles.avatarText, { fontSize: size * 0.4 }]}>V</Text>
       </View>
-      {showName && <Text style={styles.name}>Vectra</Text>}
     </View>
   );
 };
@@ -32,26 +31,21 @@ export const VectraAvatar: React.FC<VectraAvatarProps> = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
+    justifyContent: "center",
   },
   avatar: {
-    backgroundColor: "#6366f1",
+    backgroundColor: "#8b5cf6",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   avatarText: {
-    color: "#fff",
+    color: "#ffffff",
     fontWeight: "bold",
     fontFamily: "System",
-  },
-  name: {
-    fontSize: 10,
-    color: "#6b7280",
-    marginTop: 2,
-    fontWeight: "500",
   },
 });

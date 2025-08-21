@@ -448,7 +448,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const insights = getInsights();
 
   const formatCurrency = (amount: number) => {
-    return `$${amount.toFixed(2)}`;
+    return `$${amount.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
 
   const formatMonth = (date: Date) => {
@@ -1064,7 +1067,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 <Text
                   style={{ fontSize: 18, fontWeight: "800", color: "#16a34a" }}
                 >
-                  ${totalIncome.toFixed(2)}
+                  $
+                  {totalIncome.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </Text>
               </View>
             </View>
@@ -1565,7 +1572,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 <Text
                   style={{ fontSize: 18, fontWeight: "800", color: "#dc2626" }}
                 >
-                  ${totalExpenses.toFixed(2)}
+                  $
+                  {totalExpenses.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </Text>
               </View>
             </View>

@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, Dimensions, Image } from "react-native";
 import AppIntroSlider from "react-native-app-intro-slider";
 import { Ionicons } from "@expo/vector-icons";
+import { VectraAvatar } from "../components/VectraAvatar";
 
 const { width, height } = Dimensions.get("window");
 
@@ -16,34 +17,41 @@ interface IntroSlide {
 const slides: IntroSlide[] = [
   {
     key: "1",
+    title: "🤖 Meet Vectra AI",
+    text: "Your personal financial advisor powered by AI. Get personalized advice, create financial plans, and make smarter money decisions with Vectra by your side.",
+    icon: "chatbubble-ellipses",
+    backgroundColor: "#06b6d4",
+  },
+  {
+    key: "2",
     title: "💰 Master Your Money",
     text: "Transform your financial life with powerful tracking tools. See your wealth grow in real-time!",
     icon: "rocket",
     backgroundColor: "#6366f1",
   },
   {
-    key: "2",
+    key: "3",
     title: "📊 Smart Analytics",
     text: "Unlock the secrets of your spending with AI-powered insights and stunning visualizations",
     icon: "analytics",
     backgroundColor: "#10b981",
   },
   {
-    key: "3",
+    key: "4",
     title: "🎯 Crush Your Goals",
     text: "Set ambitious financial goals and watch your dreams become reality with progress tracking",
     icon: "trophy",
     backgroundColor: "#f59e0b",
   },
   {
-    key: "4",
+    key: "5",
     title: "🔒 Bank-Level Security",
     text: "Sleep soundly knowing your financial data is protected with military-grade encryption",
     icon: "lock-closed",
     backgroundColor: "#ef4444",
   },
   {
-    key: "5",
+    key: "6",
     title: "🚀 Team Up & Win",
     text: "Join forces with your partner, family, or friends to build wealth together and achieve financial freedom",
     icon: "people-circle",
@@ -62,7 +70,11 @@ export const IntroSliderScreen: React.FC<IntroSliderScreenProps> = ({
     return (
       <View style={[styles.slide, { backgroundColor: item.backgroundColor }]}>
         <View style={styles.iconContainer}>
-          <Ionicons name={item.icon} size={120} color="white" />
+          {item.key === "1" ? (
+            <VectraAvatar size={120} />
+          ) : (
+            <Ionicons name={item.icon} size={120} color="white" />
+          )}
         </View>
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.text}>{item.text}</Text>
