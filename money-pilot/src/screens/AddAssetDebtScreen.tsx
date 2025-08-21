@@ -517,7 +517,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           {/* Save Button */}
           <TouchableOpacity
             style={{
-              backgroundColor: type === "asset" ? colors.success : colors.error,
+              backgroundColor: colors.primary,
               borderRadius: 12,
               padding: 16,
               alignItems: "center",
