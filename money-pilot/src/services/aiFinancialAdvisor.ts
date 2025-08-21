@@ -812,68 +812,93 @@ class AIFinancialAdvisorService {
       }
     }
 
-    // Default comprehensive advice
-    const totalMonthlyDebtPayments = snapshot.debts.reduce(
-      (sum, debt) => sum + debt.payment,
-      0
-    );
-    const averageInterestRate =
-      snapshot.debts.length > 0
-        ? snapshot.debts.reduce((sum, debt) => sum + debt.rate, 0) /
-          snapshot.debts.length
-        : 0;
-    const debtToIncomeRatio =
-      snapshot.monthlyIncome > 0
-        ? (totalMonthlyDebtPayments / snapshot.monthlyIncome) * 100
-        : 0;
+    // Check if user is asking for a comprehensive overview or plan
+    const questionLower = userQuestion.toLowerCase();
+    const isAskingForPlan =
+      questionLower.includes("plan") ||
+      questionLower.includes("overview") ||
+      questionLower.includes("summary") ||
+      questionLower.includes("financial health") ||
+      questionLower.includes("how am i doing") ||
+      questionLower.includes("analysis") ||
+      questionLower.includes("assessment");
 
-    // Calculate goal metrics
-    const totalGoalAmount = snapshot.goals.reduce(
-      (sum, goal) => sum + goal.targetAmount,
-      0
-    );
-    const totalGoalSaved = snapshot.goals.reduce(
-      (sum, goal) => sum + goal.currentAmount,
-      0
-    );
-    const totalGoalContributions = snapshot.goals.reduce(
-      (sum, goal) => sum + goal.monthlyContribution,
-      0
-    );
-    const overallGoalProgress =
-      totalGoalAmount > 0 ? (totalGoalSaved / totalGoalAmount) * 100 : 0;
+    // If asking for comprehensive overview, provide it
+    if (isAskingForPlan) {
+      const totalMonthlyDebtPayments = snapshot.debts.reduce(
+        (sum, debt) => sum + debt.payment,
+        0
+      );
+      const averageInterestRate =
+        snapshot.debts.length > 0
+          ? snapshot.debts.reduce((sum, debt) => sum + debt.rate, 0) /
+            snapshot.debts.length
+          : 0;
+      const debtToIncomeRatio =
+        snapshot.monthlyIncome > 0
+          ? (totalMonthlyDebtPayments / snapshot.monthlyIncome) * 100
+          : 0;
 
-    return `📊 **Financial Overview**:\n\n**Monthly Income**: $${snapshot.monthlyIncome.toFixed(
-      2
-    )}\n**Monthly Expenses**: $${snapshot.monthlyExpenses.toFixed(
-      2
-    )}\n**Net Income**: $${snapshot.netIncome.toFixed(2)}\n**Savings Rate**: ${
-      snapshot.savingsRate
-    }%\n**Total Assets**: $${snapshot.totalAssets.toFixed(
-      2
-    )}\n**Total Debt**: $${snapshot.totalDebt.toFixed(
-      2
-    )}\n**Net Worth**: $${snapshot.netWorth.toFixed(
-      2
-    )}\n**Monthly Debt Payments**: $${totalMonthlyDebtPayments.toFixed(
-      2
-    )}\n**Average Interest Rate**: ${averageInterestRate.toFixed(
-      2
-    )}%\n**Debt-to-Income Ratio**: ${debtToIncomeRatio.toFixed(
-      1
-    )}%\n**Emergency Fund**: $${snapshot.totalSavings.toFixed(
-      2
-    )}\n**Financial Goals**: ${
-      snapshot.goals.length
-    } goals, ${overallGoalProgress.toFixed(
-      1
-    )}% complete, $${totalGoalContributions.toFixed(
-      2
-    )}/month\n\n**Top Recommendations:**\n${analysis.priorityActions
-      .map((action, index) => `${index + 1}. ${action}`)
-      .join(
-        "\n"
-      )}\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}\n\n**💡 Need a personalized plan?** Try asking:\n• "Create a budget plan"\n• "Help me plan for debt payoff"\n• "Make a savings plan"\n• "Generate an investment plan"\n• "Create a goal plan"\n• "I need a financial plan"\n\nOr ask about specific topics like budgeting, debt, goals, investments, net worth, or goal feasibility!`;
+      // Calculate goal metrics
+      const totalGoalAmount = snapshot.goals.reduce(
+        (sum, goal) => sum + goal.targetAmount,
+        0
+      );
+      const totalGoalSaved = snapshot.goals.reduce(
+        (sum, goal) => sum + goal.currentAmount,
+        0
+      );
+      const totalGoalContributions = snapshot.goals.reduce(
+        (sum, goal) => sum + goal.monthlyContribution,
+        0
+      );
+      const overallGoalProgress =
+        totalGoalAmount > 0 ? (totalGoalSaved / totalGoalAmount) * 100 : 0;
+
+      return `📊 **Financial Overview**:\n\n**Monthly Income**: $${snapshot.monthlyIncome.toFixed(
+        2
+      )}\n**Monthly Expenses**: $${snapshot.monthlyExpenses.toFixed(
+        2
+      )}\n**Net Income**: $${snapshot.netIncome.toFixed(
+        2
+      )}\n**Savings Rate**: ${
+        snapshot.savingsRate
+      }%\n**Total Assets**: $${snapshot.totalAssets.toFixed(
+        2
+      )}\n**Total Debt**: $${snapshot.totalDebt.toFixed(
+        2
+      )}\n**Net Worth**: $${snapshot.netWorth.toFixed(
+        2
+      )}\n**Monthly Debt Payments**: $${totalMonthlyDebtPayments.toFixed(
+        2
+      )}\n**Average Interest Rate**: ${averageInterestRate.toFixed(
+        2
+      )}%\n**Debt-to-Income Ratio**: ${debtToIncomeRatio.toFixed(
+        1
+      )}%\n**Emergency Fund**: $${snapshot.totalSavings.toFixed(
+        2
+      )}\n**Financial Goals**: ${
+        snapshot.goals.length
+      } goals, ${overallGoalProgress.toFixed(
+        1
+      )}% complete, $${totalGoalContributions.toFixed(
+        2
+      )}/month\n\n**Top Recommendations:**\n${analysis.priorityActions
+        .map((action, index) => `${index + 1}. ${action}`)
+        .join(
+          "\n"
+        )}\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}\n\n**💡 Need a personalized plan?** Try asking:\n• "Create a budget plan"\n• "Help me plan for debt payoff"\n• "Make a savings plan"\n• "Generate an investment plan"\n• "Create a goal plan"\n• "I need a financial plan"\n\nOr ask about specific topics like budgeting, debt, goals, investments, net worth, or goal feasibility!`;
+    }
+
+    // For specific questions, provide focused response
+    return `I'd be happy to help with your specific question about "${userQuestion}"! 
+
+To give you the most relevant advice, could you tell me more about what you'd like to know? For example:
+• Are you asking about a specific financial area (budgeting, debt, goals, etc.)?
+• Do you want advice on a particular purchase or decision?
+• Are you looking for tips on improving a specific aspect of your finances?
+
+Or if you'd like a comprehensive overview of your financial situation, just ask for a "financial overview" or "how am I doing financially"! 🌊🤙`;
   }
 
   // Generate AI response using OpenAI or fallback to rule-based system
@@ -987,7 +1012,28 @@ class AIFinancialAdvisorService {
         ? (totalMonthlyDebtPayments / snapshot.monthlyIncome) * 100
         : 0;
 
+    // Check if user is asking for a comprehensive overview or plan
+    const lowerQuestion = userQuestion.toLowerCase();
+    const isAskingForPlan =
+      lowerQuestion.includes("plan") ||
+      lowerQuestion.includes("overview") ||
+      lowerQuestion.includes("summary") ||
+      lowerQuestion.includes("financial health") ||
+      lowerQuestion.includes("how am i doing") ||
+      lowerQuestion.includes("analysis") ||
+      lowerQuestion.includes("assessment");
+
+    const responseType = isAskingForPlan
+      ? "comprehensive analysis with full financial overview"
+      : "focused answer addressing only the specific question asked";
+
     return `As a financial advisor, analyze this user's financial situation and answer their question: "${userQuestion}"
+
+**IMPORTANT**: The user is asking for a ${responseType}. ${
+      isAskingForPlan
+        ? "Provide a comprehensive overview."
+        : "ONLY address the specific question they asked. Do NOT give a comprehensive overview unless they specifically request it."
+    }
 
 **User's Financial Data:**
 - Monthly Income: $${snapshot.monthlyIncome.toFixed(2)}
@@ -1021,14 +1067,22 @@ ${goalsList}
 - Risk Level: ${analysis.riskLevel.toUpperCase()}
 - Priority Actions: ${analysis.priorityActions.join(", ")}
 
-**Provide:**
-1. Direct answer to their question
-2. Specific, actionable advice based on their data
-3. Relevant financial ratios and calculations
-4. Next steps they should take
-5. Encouragement while being realistic
+**Response Guidelines:**
+${
+  isAskingForPlan
+    ? `1. Provide comprehensive financial overview
+2. Include all relevant metrics and ratios
+3. Give detailed recommendations across all areas
+4. Address overall financial health and goals
+5. Provide actionable next steps for improvement`
+    : `1. Answer ONLY the specific question asked
+2. Focus on the relevant financial data for that question
+3. Provide targeted, actionable advice for that specific area
+4. Keep response concise and focused
+5. Don't include comprehensive overview unless specifically requested`
+}
 
-Keep your response conversational, helpful, and focused on their specific situation. Use bullet points and clear formatting for readability.`;
+Keep your response conversational, helpful, and appropriately detailed based on what they're asking. Use bullet points and clear formatting for readability.`;
   }
 }
 
