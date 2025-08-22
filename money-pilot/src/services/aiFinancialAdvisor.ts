@@ -1,12 +1,35 @@
 import { Alert } from "react-native";
 import { financialPlanGenerator } from "./financialPlanGenerator";
-import { saveFinancialPlan, FinancialPlan } from "./userData";
+import { FinancialPlan } from "./userData";
 
 export interface AIResponse {
   type: "text" | "plan_generated";
   message: string;
   plan?: FinancialPlan;
   planName?: string;
+}
+
+export interface Asset {
+  name: string;
+  type: string;
+  balance: number;
+}
+
+export interface Debt {
+  name: string;
+  type: string;
+  balance: number;
+  rate: number;
+  payment: number;
+}
+
+export interface Goal {
+  name: string;
+  currentAmount: number;
+  targetAmount: number;
+  monthlyContribution: number;
+  targetDate?: string; // ISO
+  priority?: "low" | "medium" | "high";
 }
 
 export interface FinancialSnapshot {
@@ -19,11 +42,11 @@ export interface FinancialSnapshot {
   totalSavings: number;
   totalAssets: number;
   netWorth: number;
-  goals: any[];
-  recurringExpenses: any[];
-  assets: any[];
-  debts: any[];
-  transactions: any[];
+  goals: Goal[];
+  recurringExpenses: any[]; // or define
+  assets: Asset[];
+  debts: Debt[];
+  transactions: any[]; // or define
 }
 
 export interface AIAnalysisResult {
@@ -61,56 +84,183 @@ class AIFinancialAdvisorService {
     return !!OPENAI_API_KEY;
   }
 
-  private SYSTEM_PROMPT: string = `
-You are Vectra, an expert financial advisor with the knowledge of a certified financial planner and a business law expert. Your expertise spans personal finance, budgeting, debt management, investing (stocks, cryptocurrency, and real estate), entrepreneurship, and creating/executing side hustles. You also serve as a VectorFi app guide, helping users understand and maximize app features. Your role is to educate and guide users toward financial freedom — not to provide legal, tax, or guaranteed investment advice.
+  // Core system prompt - always included (~200 tokens)
+  private SYSTEM_PROMPT_CORE: string = `
+  You are Vectra, an expert AI financial advisor with the knowledge of a certified financial planner and a business law expert. You guide users on personal finance, budgeting, debt management, investing (stocks, crypto, real estate), entrepreneurship, and side hustles. You are also a VectorFi app guide, helping users navigate features. Your role is to educate and guide — not provide legal, tax, or guaranteed investment advice.
+  
+  Style & conduct:
+  - Encouraging, approachable, and laid-back — like a local friend helping ride the money waves 🌊.
+  - Use at most 1–2 emojis (🌊🤙🌺💵🚀🎯).
+  - Keep answers concise and scannable: short sentences and bullet points.
+  - Finance questions → act as advisor. App usage questions → act as VectorFi expert. If unclear → ask one clarifying question.
+  - Ask for missing inputs before giving calculations.
+  - Always show math transparently (e.g., "$500/mo × 12 = $6,000/yr").
+  - For “what if” scenarios: outline assumptions, compare pros/cons, and tie back to user’s data.
+  - Use plain text, no markdown formatting.
+  `;
 
-Style & conduct:
-- Be encouraging, approachable, and laid-back — like a local friend helping them ride the money waves 🌊.
-- Use simple ocean/surf/Hawai'i metaphors where natural; do not overdo it. Use at most 1–2 emojis (🌊🤙🌺💵💰💸🚀💪🎯🔒🏆🎉🪙🌴).
-- Keep answers concise and scannable: short sentences, headings, and bullet points.
-- If the question is about finances → answer as a financial advisor. If it’s about the app → answer as a VectorFi expert. If unclear → ask one clarifying question.
-- Ask for missing inputs when needed (income, expenses, debt rates, timelines) instead of guessing.
+  private APP_FEATURES_DOC: string = `
+  VectorFi app features (reference):
+  - Dashboard: overview of financial health, recent transactions, quick insights
+  - Budget: set income sources, fixed/variable expenses, track spending vs budget
+  - Assets & Debts: track net worth; add/edit savings, investments, property, loans, credit cards
+  - Goals: set target amounts, timelines, monthly contributions
+  - Transactions: add, edit, categorize with detailed tracking
+  - AI Financial Advisor: personalized advice and financial plan generation
+  - Shared Finance: groups with family/friends to share finances and goals
+  - Settings: manage profile, security, notifications, subscription, financial plans
+  
+  Advanced features:
+  - Recurring Transactions: automatically track regular payments and income
+  - Bank Integration (Plaid): connect accounts for automatic imports
+  - Financial Plans: generate comprehensive plans with actionable steps
+  - Biometric Security: Face ID/Touch ID for secure access
+  - Data Export: export data for external analysis
+  - Premium: unlimited transactions, advanced analytics, shared finance, AI advisor
+  
+  Usage tips:
+  - Log transactions regularly for more accurate advice
+  - Set up recurring transactions for consistent tracking
+  - Use the AI advisor for step-by-step guidance
+  - Connect bank accounts for automatic sync
+  - Share finances with family for collaborative planning
+  - Export data periodically for backups/external use
+  `;
 
-Reasoning & transparency:
-- For “what if” scenarios: analyze outcomes, show assumptions, compare trade-offs (pros/cons), and tie advice back to the user’s VectorFi data when available.
-- When using numbers, include units and simple formulas (e.g., "$500/mo × 12 = $6,000/yr").
-- If uncertain, say "I’m not sure" and propose the next best step. Do not invent VectorFi features that don’t exist.
+  private FIN_PLAN_RULES: string = `
+  Financial Plan Generation Rules:
+  - Always structure plans in this exact order:
+    1. Snapshot of Current Finances
+    2. Goal Definition
+    3. Step-by-Step Action Plan
+    4. Options / Trade-Offs
+    5. Recommendations
+    6. Encouragement
+  - Use their actual financial data from the snapshot
+  - Provide specific dollar amounts, percentages, and realistic timelines
+  - Show calculations transparently (e.g., "$200 × 6 months = $1,200")
+  - Use bullet points for steps, trade-offs, and recommendations
+  - Provide multiple options when possible
+  - Keep tone friendly and encouraging, but not over-the-top
+  - End with motivational language (ocean/surf metaphors, positive encouragement)
+  - Limit emojis to 1–2 in the entire plan
+  `;
 
-VectorFi app features (reference):
-- Dashboard: overview of financial health, recent transactions, quick insights
-- Budget: set income sources, fixed/variable expenses, track spending vs budget
-- Assets & Debts: track net worth; add/edit savings, investments, property, loans, credit cards
-- Goals: set target amounts, timelines, monthly contributions
-- Transactions: add, edit, categorize with detailed tracking
-- AI Financial Advisor: personalized advice and financial plan generation
-- Shared Finance: groups with family/friends to share finances and goals
-- Settings: manage profile, security, notifications, subscription, financial plans
+  // Build dynamic system prompt based on user request
+  private buildSystemPrompt(
+    userQuestion: string,
+    isPlanRequest: boolean = false
+  ): string {
+    let systemPrompt = this.SYSTEM_PROMPT_CORE;
 
-Advanced features:
-- Recurring Transactions: automatically track regular payments and income
-- Bank Integration (Plaid): connect accounts for automatic imports
-- Financial Plans: generate comprehensive plans with actionable steps
-- Biometric Security: Face ID/Touch ID for secure access
-- Data Export: export data for external analysis
-- Premium: unlimited transactions, advanced analytics, shared finance, AI advisor
+    // Add app features documentation if user asks about app features
+    if (this.isAppFeatureQuestion(userQuestion)) {
+      systemPrompt += "\n\n" + this.APP_FEATURES_DOC;
+    }
 
-Usage tips:
-- Log transactions regularly for more accurate advice
-- Set up recurring transactions for consistent tracking
-- Use the AI advisor for step-by-step guidance
-- Connect bank accounts for automatic sync
-- Share finances with family for collaborative planning
-- Export data periodically for backups/external use
-`;
+    // Add financial plan rules if generating a plan
+    if (isPlanRequest) {
+      systemPrompt += "\n\n" + this.FIN_PLAN_RULES;
+    }
+
+    return systemPrompt;
+  }
+
+  // Check if user is requesting a financial plan
+  isPlanRequest(userQuestion: string): boolean {
+    const lowerQuestion = userQuestion.toLowerCase();
+    return (
+      // Action verbs for creating/generating plans
+      lowerQuestion.includes("generate") ||
+      lowerQuestion.includes("create") ||
+      lowerQuestion.includes("produce") ||
+      lowerQuestion.includes("make") ||
+      lowerQuestion.includes("build") ||
+      lowerQuestion.includes("develop") ||
+      lowerQuestion.includes("formulate") ||
+      lowerQuestion.includes("design") ||
+      lowerQuestion.includes("craft") ||
+      lowerQuestion.includes("put together") ||
+      // Specific plan types
+      lowerQuestion.includes("budget plan") ||
+      lowerQuestion.includes("savings plan") ||
+      lowerQuestion.includes("debt plan") ||
+      lowerQuestion.includes("investment plan") ||
+      lowerQuestion.includes("retirement plan") ||
+      lowerQuestion.includes("emergency fund plan") ||
+      lowerQuestion.includes("goal plan") ||
+      lowerQuestion.includes("money plan") ||
+      lowerQuestion.includes("finance plan") ||
+      // Export/CSV requests
+      lowerQuestion.includes("export") ||
+      lowerQuestion.includes("spreadsheet") ||
+      lowerQuestion.includes("csv") ||
+      // Help/assistance requests
+      lowerQuestion.includes("help me") ||
+      lowerQuestion.includes("i need") ||
+      lowerQuestion.includes("show me") ||
+      lowerQuestion.includes("give me")
+    );
+  }
+
+  // Check if user is asking about app features
+  private isAppFeatureQuestion(userQuestion: string): boolean {
+    const lowerQuestion = userQuestion.toLowerCase();
+    return (
+      lowerQuestion.includes("app") ||
+      lowerQuestion.includes("feature") ||
+      lowerQuestion.includes("how to use") ||
+      lowerQuestion.includes("where to find") ||
+      lowerQuestion.includes("dashboard") ||
+      lowerQuestion.includes("budget screen") ||
+      lowerQuestion.includes("assets") ||
+      lowerQuestion.includes("debts") ||
+      lowerQuestion.includes("goals") ||
+      lowerQuestion.includes("transactions") ||
+      lowerQuestion.includes("shared finance") ||
+      lowerQuestion.includes("ai advisor") ||
+      lowerQuestion.includes("settings") ||
+      lowerQuestion.includes("recurring") ||
+      lowerQuestion.includes("bank") ||
+      lowerQuestion.includes("plaid") ||
+      lowerQuestion.includes("export") ||
+      lowerQuestion.includes("premium") ||
+      lowerQuestion.includes("subscription") ||
+      lowerQuestion.includes("security") ||
+      lowerQuestion.includes("biometric") ||
+      lowerQuestion.includes("notifications")
+    );
+  }
 
   // Call OpenAI API
-  private async callOpenAI(prompt: string): Promise<string> {
+  private async callOpenAI(
+    prompt: string,
+    userQuestion: string,
+    isPlanRequest: boolean = false
+  ): Promise<string> {
     if (!this.isOpenAIConfigured()) {
       throw new Error("OpenAI API key not configured");
     }
 
+    // You can keep this helper here or move it to a class-level private method.
+    async function fetchWithRetry(init: RequestInit, retries = 3) {
+      for (let i = 0; i <= retries; i++) {
+        const res = await fetch(OPENAI_API_URL, init);
+        if (res.ok) return res;
+
+        if (res.status === 429 || res.status >= 500) {
+          const retryAfter =
+            Number(res.headers.get("retry-after")) || 2 ** i * 500;
+          await new Promise((r) => setTimeout(r, retryAfter));
+          continue;
+        }
+        throw new Error(`OpenAI API error: ${res.status}`);
+      }
+      throw new Error("OpenAI API error: exhausted retries");
+    }
+
     try {
-      const response = await fetch(OPENAI_API_URL, {
+      const init: RequestInit = {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -121,21 +271,17 @@ Usage tips:
           messages: [
             {
               role: "system",
-              content: this.SYSTEM_PROMPT,
+              content: this.buildSystemPrompt(userQuestion, isPlanRequest),
             },
-            {
-              role: "user",
-              content: prompt,
-            },
+            { role: "user", content: prompt },
           ],
           max_tokens: 1000,
           temperature: 0.7,
         }),
-      });
+      };
 
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
-      }
+      // ✅ Use the retry wrapper here
+      const response = await fetchWithRetry(init);
 
       const data: OpenAIResponse = await response.json();
       return (
@@ -507,7 +653,7 @@ Usage tips:
       lowerQuestion.includes("target")
     ) {
       if (snapshot.goals.length === 0) {
-        return `🎯 **No Financial Goals Set**: Setting specific goals helps you stay motivated and track progress.\n\n**Recommended Goals:**\n1. Emergency fund (3-6 months)\n2. Debt payoff\n3. Down payment for house\n4. Retirement savings\n5. Vacation fund\n\n**Goal Setting Tips:**\n• Make them specific and measurable\n• Set realistic timelines\n• Track progress regularly\n• Celebrate milestones\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+        return `🎯 No Financial Goals Set: Setting specific goals helps you stay motivated and track progress.\n\nRecommended Goals:\n1. Emergency fund (3-6 months)\n2. Debt payoff\n3. Down payment for house\n4. Retirement savings\n5. Vacation fund\n\nGoal Setting Tips:\n• Make them specific and measurable\n• Set realistic timelines\n• Track progress regularly\n• Celebrate milestones\n\nYour Financial Health: ${analysis.financialHealth.toUpperCase()}`;
       } else {
         const totalGoalAmount = snapshot.goals.reduce(
           (sum, goal) => sum + goal.targetAmount,
@@ -555,32 +701,30 @@ Usage tips:
           );
         });
 
-        let response = `🎯 **Goal Progress Analysis**: You have ${
+        let response = `🎯 Goal Progress Analysis: You have ${
           snapshot.goals.length
-        } financial goals.\n\n**Overall Progress**: ${overallProgress.toFixed(
+        } financial goals.\n\nOverall Progress: ${overallProgress.toFixed(
           1
-        )}%\n**Total Saved**: $${totalSaved.toFixed(
+        )}%\nTotal Saved: $${totalSaved.toFixed(
           2
         )} of $${totalGoalAmount.toFixed(
           2
-        )}\n**Monthly Contributions**: $${totalMonthlyContributions.toFixed(
+        )}\nMonthly Contributions: $${totalMonthlyContributions.toFixed(
           2
-        )}\n**Available for Goals**: $${availableForGoals.toFixed(
-          2
-        )}/month\n\n`;
+        )}\nAvailable for Goals: $${availableForGoals.toFixed(2)}/month\n\n`;
 
         if (!goalAffordability) {
-          response += `⚠️ **Goal Affordability Alert**: Your monthly goal contributions ($${totalMonthlyContributions.toFixed(
+          response += `⚠️ Goal Affordability Alert: Your monthly goal contributions ($${totalMonthlyContributions.toFixed(
             2
           )}) exceed what's available ($${availableForGoals.toFixed(
             2
-          )}).\n\n**Recommendations:**\n1. Reduce goal contributions temporarily\n2. Increase income through side hustles\n3. Prioritize high-priority goals\n4. Extend goal timelines\n\n`;
+          )}).\n\nRecommendations:\n1. Reduce goal contributions temporarily\n2. Increase income through side hustles\n3. Prioritize high-priority goals\n4. Extend goal timelines\n\n`;
         } else {
-          response += `✅ **Goals are Affordable**: Your monthly contributions are within your budget.\n\n`;
+          response += `✅ Goals are Affordable: Your monthly contributions are within your budget.\n\n`;
         }
 
         if (goalsNeedingAttention.length > 0) {
-          response += `📋 **Goals Needing Attention:**\n${goalsNeedingAttention
+          response += `📋 Goals Needing Attention:\n${goalsNeedingAttention
             .map((goal) => {
               const progress = (goal.currentAmount / goal.targetAmount) * 100;
               const monthsToTarget = goal.targetDate
@@ -607,13 +751,13 @@ Usage tips:
             .join("\n")}\n\n`;
         }
 
-        response += `**General Recommendations:**\n1. Review goal priorities regularly\n2. Increase contributions if possible\n3. Consider goal timeline adjustments\n4. Celebrate progress made\n5. Focus on one goal at a time if struggling\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+        response += `General Recommendations:\n1. Review goal priorities regularly\n2. Increase contributions if possible\n3. Consider goal timeline adjustments\n4. Celebrate progress made\n5. Focus on one goal at a time if struggling\n\nYour Financial Health: ${analysis.financialHealth.toUpperCase()}`;
 
         return response;
       }
     }
 
-    // Financial plan creation - enhanced with better triggers
+    // Financial plan creation - now handled by the screen component (redundant)
     if (
       lowerQuestion.includes("create plan") ||
       lowerQuestion.includes("generate plan") ||
@@ -680,8 +824,7 @@ Usage tips:
         );
 
         // Create personalized response based on user's request
-        let personalizedResponse = `📋 **${planName} Generated Successfully!**\n\n`;
-
+        let personalizedResponse = `📋 ${planName} Generated Successfully!\n\nBased on your request...`;
         // Add context about what the user asked for
         if (lowerQuestion.includes("budget")) {
           personalizedResponse += `**Based on your request for budget planning:**\n`;
@@ -852,24 +995,24 @@ Usage tips:
           snapshot.debts[0]
         );
 
-        return `💰 **Debt Payment Analysis**:\n\n**Total Monthly Payments**: $${totalMonthlyDebtPayments.toFixed(
+        return `💰 Debt Payment Analysis:\n\nTotal Monthly Payments: $${totalMonthlyDebtPayments.toFixed(
           2
-        )}\n**Average Interest Rate**: ${averageInterestRate.toFixed(
+        )}\nAverage Interest Rate: ${averageInterestRate.toFixed(
           2
-        )}%\n**Highest Rate Debt**: ${highestRateDebt.name} (${
+        )}%\nHighest Rate Debt: ${highestRateDebt.name} (${
           highestRateDebt.rate
-        }% APR)\n\n**Debt Breakdown:**\n${snapshot.debts
+        }% APR)\n\nDebt Breakdown:\n${snapshot.debts
           .map(
             (debt) =>
               `• ${debt.name}: $${debt.payment.toFixed(2)}/month at ${
                 debt.rate
               }% APR`
           )
-          .join("\n")}\n\n**Recommendations:**\n1. Pay off ${
+          .join("\n")}\n\nRecommendations:\n1. Pay off ${
           highestRateDebt.name
-        } first (highest rate)\n2. Consider refinancing if rates are high\n3. Consolidate multiple debts if beneficial\n4. Increase payments on high-rate debt\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}`;
+        } first (highest rate)\n2. Consider refinancing if rates are high\n3. Consolidate multiple debts if beneficial\n4. Increase payments on high-rate debt\n\nYour Financial Health: ${analysis.financialHealth.toUpperCase()}`;
       } else {
-        return "🎉 **No Debt Payments**: You're debt-free! No monthly debt payments to worry about.\n\n**Recommendations:**\n1. Build emergency fund\n2. Increase savings rate\n3. Start investing for long-term goals\n4. Consider real estate investments\n\n**Your Financial Health**: ${analysis.financialHealth.toUpperCase()}";
+        return "🎉 No Debt Payments: You're debt-free! No monthly debt payments to worry about.\n\nRecommendations:\n1. Build emergency fund\n2. Increase savings rate\n3. Start investing for long-term goals\n4. Consider real estate investments\n\nYour Financial Health: ${analysis.financialHealth.toUpperCase()}";
       }
     }
 
@@ -1073,13 +1216,18 @@ Or if you'd like a comprehensive overview of your financial situation, just ask 
   // Generate AI response using OpenAI or fallback to rule-based system
   async generateAIResponse(
     userQuestion: string,
-    snapshot: FinancialSnapshot
+    snapshot: FinancialSnapshot,
+    isPlanRequest: boolean = false
   ): Promise<string> {
     try {
       // Try OpenAI first if configured
       if (this.isOpenAIConfigured()) {
         const prompt = this.buildOpenAIPrompt(userQuestion, snapshot);
-        const aiResponse = await this.callOpenAI(prompt);
+        const aiResponse = await this.callOpenAI(
+          prompt,
+          userQuestion,
+          isPlanRequest
+        );
         return aiResponse;
       }
     } catch (error) {
@@ -1107,81 +1255,119 @@ Or if you'd like a comprehensive overview of your financial situation, just ask 
   ): string {
     const analysis = this.analyzeFinancialHealth(snapshot);
 
-    // Format assets and debts for better context
+    // Cap long lists to control token usage
+    const MAX_ITEMS = 8;
+
+    // Safe currency formatter
+    const fmt = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    });
+    fmt.format(snapshot.monthlyIncome); // "$4,000.00"
+
+    // --- ASSETS (capped) ---
     const assetsList =
-      snapshot.assets.length > 0
+      snapshot.assets && snapshot.assets.length > 0
         ? snapshot.assets
+            .slice(0, MAX_ITEMS)
             .map(
-              (asset) =>
-                `  • ${asset.name}: $${asset.balance.toFixed(2)} (${
-                  asset.type
+              (a) =>
+                `  • ${a.name}: ${fmt.format(a.balance ?? 0)} (${
+                  a.type ?? "asset"
                 })`
             )
             .join("\n")
         : "  • No assets recorded";
 
+    // --- DEBTS (capped) ---
     const debtsList =
-      snapshot.debts.length > 0
+      snapshot.debts && snapshot.debts.length > 0
         ? snapshot.debts
+            .slice(0, MAX_ITEMS)
             .map(
-              (debt) =>
-                `  • ${debt.name}: $${debt.balance.toFixed(2)} (${
-                  debt.type
-                }) - ${debt.rate}% APR, $${debt.payment.toFixed(2)}/month`
+              (d) =>
+                `  • ${d.name}: ${fmt.format(d.balance ?? 0)} (${
+                  d.type ?? "debt"
+                }) - ${d.rate ?? 0}% APR, ${fmt.format(d.payment ?? 0)}/month`
             )
             .join("\n")
         : "  • No debts recorded";
 
-    // Format goals for better context
+    // --- GOALS (capped) ---
     const goalsList =
-      snapshot.goals.length > 0
+      snapshot.goals && snapshot.goals.length > 0
         ? snapshot.goals
-            .map((goal) => {
-              const progress = (goal.currentAmount / goal.targetAmount) * 100;
-              const monthsToTarget = goal.targetDate
+            .slice(0, MAX_ITEMS)
+            .map((g) => {
+              const current = g.currentAmount ?? 0;
+              const target = g.targetAmount ?? 0;
+              const progress = target > 0 ? (current / target) * 100 : 0;
+              const monthsToTarget = g.targetDate
                 ? Math.max(
                     0,
                     Math.ceil(
-                      (new Date(goal.targetDate).getTime() -
-                        new Date().getTime()) /
+                      (new Date(g.targetDate).getTime() - Date.now()) /
                         (1000 * 60 * 60 * 24 * 30)
                     )
                   )
                 : 0;
               const monthlyNeeded =
                 monthsToTarget > 0
-                  ? (goal.targetAmount - goal.currentAmount) / monthsToTarget
-                  : goal.monthlyContribution;
+                  ? Math.max(0, target - current) / monthsToTarget
+                  : g.monthlyContribution ?? 0;
 
-              return `  • ${goal.name}: $${goal.currentAmount.toFixed(
-                2
-              )}/$${goal.targetAmount.toFixed(2)} (${progress.toFixed(
-                1
-              )}%) - $${goal.monthlyContribution.toFixed(
-                2
+              return `  • ${g.name}: ${fmt.format(current)}/${fmt.format(
+                target
+              )} (${progress.toFixed(1)}%) - ${fmt.format(
+                g.monthlyContribution ?? 0
               )}/month, ${monthsToTarget} months left, ${
-                goal.priority
-              } priority`;
+                g.priority ?? "normal"
+              } priority (needs ~${fmt.format(monthlyNeeded)}/mo)`;
             })
             .join("\n")
         : "  • No goals recorded";
 
-    // Calculate debt metrics
-    const totalMonthlyDebtPayments = snapshot.debts.reduce(
-      (sum, debt) => sum + debt.payment,
+    // Optional: indicate truncation
+    const truncatedNoteSections: string[] = [];
+    if ((snapshot.assets?.length ?? 0) > MAX_ITEMS)
+      truncatedNoteSections.push("assets");
+    if ((snapshot.debts?.length ?? 0) > MAX_ITEMS)
+      truncatedNoteSections.push("debts");
+    if ((snapshot.goals?.length ?? 0) > MAX_ITEMS)
+      truncatedNoteSections.push("goals");
+    const truncatedNote =
+      truncatedNoteSections.length > 0
+        ? `\n(Note: some ${truncatedNoteSections.join(
+            ", "
+          )} were truncated to the first ${MAX_ITEMS} items.)`
+        : "";
+
+    // Debt metrics
+    const totalMonthlyDebtPayments = (snapshot.debts ?? []).reduce(
+      (sum, d: any) => sum + (d.payment ?? 0),
       0
     );
-    const averageInterestRate =
-      snapshot.debts.length > 0
-        ? snapshot.debts.reduce((sum, debt) => sum + debt.rate, 0) /
-          snapshot.debts.length
+
+    // Weighted average interest rate by balance
+    const totalBalance = snapshot.debts.reduce(
+      (s, d) => s + (d.balance || 0),
+      0
+    );
+    const weightedAvgRate =
+      totalBalance > 0
+        ? snapshot.debts.reduce(
+            (s, d) => s + (d.rate || 0) * (d.balance || 0),
+            0
+          ) / totalBalance
         : 0;
+
+    // Use payment-based DTI consistently
     const debtToIncomeRatio =
       snapshot.monthlyIncome > 0
         ? (totalMonthlyDebtPayments / snapshot.monthlyIncome) * 100
         : 0;
 
-    // Check if user is asking for a comprehensive overview or plan
+    // Detect whether they want a full plan/overview
     const lowerQuestion = userQuestion.toLowerCase();
     const isAskingForPlan =
       lowerQuestion.includes("plan") ||
@@ -1197,61 +1383,62 @@ Or if you'd like a comprehensive overview of your financial situation, just ask 
       : "focused answer addressing only the specific question asked";
 
     return `As a financial advisor, analyze this user's financial situation and answer their question: "${userQuestion}"
-
-**IMPORTANT**: The user is asking for a ${responseType}. ${
+  
+  **IMPORTANT**: The user is asking for a ${responseType}. ${
       isAskingForPlan
         ? "Provide a comprehensive overview."
         : "ONLY address the specific question they asked. Do NOT give a comprehensive overview unless they specifically request it."
     }
-
-**User's Financial Data:**
-- Monthly Income: $${snapshot.monthlyIncome.toFixed(2)}
-- Monthly Expenses: $${snapshot.monthlyExpenses.toFixed(2)}
-- Net Income: $${snapshot.netIncome.toFixed(2)}
-- Savings Rate: ${snapshot.savingsRate}%
-- Debt Payoff Rate: ${snapshot.debtPayoffRate}%
-- Total Assets: $${snapshot.totalAssets.toFixed(2)}
-- Total Debt: $${snapshot.totalDebt.toFixed(2)}
-- Net Worth: $${snapshot.netWorth.toFixed(2)}
-- Emergency Fund: $${snapshot.totalSavings.toFixed(2)}
-- Number of Financial Goals: ${snapshot.goals.length}
-- Recurring Expenses: ${snapshot.recurringExpenses.length}
-
-**Debt Analysis:**
-- Total Monthly Debt Payments: $${totalMonthlyDebtPayments.toFixed(2)}
-- Average Interest Rate: ${averageInterestRate.toFixed(2)}%
-- Debt-to-Income Ratio: ${debtToIncomeRatio.toFixed(1)}%
-
-**Assets Breakdown:**
-${assetsList}
-
-**Debts Breakdown:**
-${debtsList}
-
-**Goals Breakdown:**
-${goalsList}
-
-**Financial Health Assessment:**
-- Overall Health: ${analysis.financialHealth.toUpperCase()}
-- Risk Level: ${analysis.riskLevel.toUpperCase()}
-- Priority Actions: ${analysis.priorityActions.join(", ")}
-
-**Response Guidelines:**
-${
-  isAskingForPlan
-    ? `1. Provide comprehensive financial overview
-2. Include all relevant metrics and ratios
-3. Give detailed recommendations across all areas
-4. Address overall financial health and goals
-5. Provide actionable next steps for improvement`
-    : `1. Answer ONLY the specific question asked
-2. Focus on the relevant financial data for that question
-3. Provide targeted, actionable advice for that specific area
-4. Keep response concise and focused
-5. Don't include comprehensive overview unless specifically requested`
-}
-
-Keep your response conversational, helpful, and appropriately detailed based on what they're asking. Use bullet points and clear formatting for readability.`;
+  
+  **User's Financial Data:**
+  - Monthly Income: ${fmt.format(snapshot.monthlyIncome)}
+  - Monthly Expenses: ${fmt.format(snapshot.monthlyExpenses)}
+  - Net Income: ${fmt.format(snapshot.netIncome)}
+  - Savings Rate: ${snapshot.savingsRate}%
+  - Debt Payoff Rate: ${snapshot.debtPayoffRate}%
+  - Total Assets: ${fmt.format(snapshot.totalAssets)}
+  - Total Debt: ${fmt.format(snapshot.totalDebt)}
+  - Net Worth: ${fmt.format(snapshot.netWorth)}
+  - Emergency Fund: ${fmt.format(snapshot.totalSavings)}
+  - Number of Financial Goals: ${snapshot.goals.length}
+  - Recurring Expenses: ${snapshot.recurringExpenses.length}
+  
+  **Debt Analysis:**
+  - Total Monthly Debt Payments: ${fmt.format(totalMonthlyDebtPayments)}
+  - Weighted Average Interest Rate: ${weightedAvgRate.toFixed(2)}%
+  - Debt-to-Income Ratio (payments/income): ${debtToIncomeRatio.toFixed(1)}%
+  
+  **Assets Breakdown:**
+  ${assetsList}
+  
+  **Debts Breakdown:**
+  ${debtsList}
+  
+  **Goals Breakdown:**
+  ${goalsList}
+  ${truncatedNote}
+  
+  **Financial Health Assessment:**
+  - Overall Health: ${analysis.financialHealth.toUpperCase()}
+  - Risk Level: ${analysis.riskLevel.toUpperCase()}
+  - Priority Actions: ${analysis.priorityActions.join(", ")}
+  
+  **Response Guidelines:**
+  ${
+    isAskingForPlan
+      ? `1. Provide comprehensive financial overview
+  2. Include all relevant metrics and ratios
+  3. Give detailed recommendations across all areas
+  4. Address overall financial health and goals
+  5. Provide actionable next steps for improvement`
+      : `1. Answer ONLY the specific question asked
+  2. Focus on the relevant financial data for that question
+  3. Provide targeted, actionable advice for that specific area
+  4. Keep response concise and focused
+  5. Don't include comprehensive overview unless specifically requested`
+  }
+  
+  Keep your response conversational, helpful, and appropriately detailed based on what they're asking. Use bullet points and clear formatting for readability.`;
   }
 }
 
