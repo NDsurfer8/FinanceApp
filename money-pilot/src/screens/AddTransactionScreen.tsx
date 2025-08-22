@@ -516,625 +516,617 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          activeOpacity={1}
+          onPress={() => Keyboard.dismiss()}
         >
-          {/* Header */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 24,
-            }}
+          <ScrollView
+            contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ marginRight: 16 }}
+            {/* Header */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 24,
+              }}
             >
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text
-              style={{ fontSize: 20, fontWeight: "600", color: colors.text }}
-            >
-              {editMode ? "Edit" : "Add"}{" "}
-              {formData.type === "income" ? "Income" : "Expense"}
-            </Text>
-          </View>
-
-          {/* Limit Indicator - Only show if not unlimited */}
-          {formData.type === "income"
-            ? !getIncomeSourceLimitInfo().isUnlimited && (
-                <View
-                  style={{
-                    backgroundColor: colors.warningLight,
-                    borderRadius: 12,
-                    padding: 12,
-                    marginBottom: 16,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Ionicons
-                      name="information-circle"
-                      size={16}
-                      color={colors.warning}
-                    />
-                    <Text
-                      style={{
-                        marginLeft: 8,
-                        color: colors.warning,
-                        fontSize: 14,
-                      }}
-                    >
-                      {`${getIncomeSourceLimitInfo().current}/${
-                        getIncomeSourceLimitInfo().limit
-                      } income sources used`}
-                    </Text>
-                  </View>
-                  <TouchableOpacity onPress={presentPaywall}>
-                    <Text
-                      style={{
-                        color: colors.warning,
-                        fontSize: 12,
-                        fontWeight: "600",
-                      }}
-                    >
-                      Upgrade
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )
-            : !getTransactionLimitInfo().isUnlimited && (
-                <View
-                  style={{
-                    backgroundColor: colors.warningLight,
-                    borderRadius: 12,
-                    padding: 12,
-                    marginBottom: 16,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Ionicons
-                      name="information-circle"
-                      size={16}
-                      color={colors.warning}
-                    />
-                    <Text
-                      style={{
-                        marginLeft: 8,
-                        color: colors.warning,
-                        fontSize: 14,
-                      }}
-                    >
-                      {`${getTransactionLimitInfo().current}/${
-                        getTransactionLimitInfo().limit
-                      } transactions used`}
-                    </Text>
-                  </View>
-                  <TouchableOpacity onPress={presentPaywall}>
-                    <Text
-                      style={{
-                        color: colors.warning,
-                        fontSize: 12,
-                        fontWeight: "600",
-                      }}
-                    >
-                      Upgrade
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-          {/* Form */}
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 16,
-              padding: 16,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.06,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 2,
-            }}
-          >
-            {/* Transaction Type */}
-            <View style={{ marginBottom: 20 }}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: "600",
-                  marginBottom: 12,
-                  color: colors.text,
-                }}
-              >
-                Transaction Type
-              </Text>
-              <View style={{ flexDirection: "row", gap: 12 }}>
-                <TouchableOpacity
-                  style={{
-                    flex: 1,
-                    padding: 12,
-                    borderRadius: 8,
-                    backgroundColor:
-                      formData.type === "expense"
-                        ? colors.error
-                        : colors.surfaceSecondary,
-                    alignItems: "center",
-                  }}
-                  onPress={() =>
-                    setFormData({ ...formData, type: "expense", category: "" })
-                  }
-                >
-                  <Text
-                    style={{
-                      color:
-                        formData.type === "expense"
-                          ? colors.buttonText
-                          : colors.textSecondary,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Expense
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={{
-                    flex: 1,
-                    padding: 12,
-                    borderRadius: 8,
-                    backgroundColor:
-                      formData.type === "income"
-                        ? colors.success
-                        : colors.surfaceSecondary,
-                    alignItems: "center",
-                  }}
-                  onPress={() =>
-                    setFormData({ ...formData, type: "income", category: "" })
-                  }
-                >
-                  <Text
-                    style={{
-                      color:
-                        formData.type === "income"
-                          ? colors.buttonText
-                          : colors.textSecondary,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Income
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Amount */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Amount
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="0.00"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.amount}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, amount: text })
-                }
-                keyboardType="decimal-pad"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={() => Keyboard.dismiss()}
-                blurOnSubmit={true}
-              />
-            </View>
-
-            {/* Category */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Category
-              </Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingRight: 16 }}
-              >
-                {categories.map((category) => (
-                  <TouchableOpacity
-                    key={category}
-                    style={{
-                      paddingHorizontal: 16,
-                      paddingVertical: 8,
-                      borderRadius: 20,
-                      backgroundColor:
-                        formData.category === category
-                          ? colors.primary
-                          : colors.surfaceSecondary,
-                      marginRight: 8,
-                      minWidth: 80,
-                      alignItems: "center",
-                    }}
-                    onPress={() => setFormData({ ...formData, category })}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          formData.category === category
-                            ? colors.buttonText
-                            : colors.text,
-                        fontSize: 14,
-                        fontWeight: "500",
-                      }}
-                    >
-                      {category}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* Description */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Description
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  minHeight: 80,
-                  textAlignVertical: "top",
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="Enter description..."
-                placeholderTextColor={colors.textSecondary}
-                value={formData.description}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, description: text })
-                }
-                autoCorrect={false}
-                multiline
-                returnKeyType="done"
-                onSubmitEditing={() => Keyboard.dismiss()}
-                blurOnSubmit={true}
-              />
-            </View>
-
-            {/* Date */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                {formData.type === "expense"
-                  ? "Due Date"
-                  : formData.type === "income"
-                  ? "Payment Date"
-                  : "Date"}
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder={
-                  formData.type === "expense"
-                    ? "Due Date (YYYY-MM-DD)"
-                    : formData.type === "income"
-                    ? "Payment Date (YYYY-MM-DD)"
-                    : "Date (YYYY-MM-DD)"
-                }
-                placeholderTextColor={colors.textSecondary}
-                value={formData.date}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, date: text })
-                }
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={() => Keyboard.dismiss()}
-                blurOnSubmit={true}
-              />
-
-              {/* Quick Date Buttons */}
-              <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-                <TouchableOpacity
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 6,
-                    backgroundColor: colors.surfaceSecondary,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  }}
-                  onPress={() =>
-                    setFormData({ ...formData, date: getInitialDate() })
-                  }
-                >
-                  <Text style={{ fontSize: 12, color: colors.text }}>
-                    Today
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 6,
-                    backgroundColor: colors.surfaceSecondary,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  }}
-                  onPress={() =>
-                    setFormData({ ...formData, date: getTomorrowDate() })
-                  }
-                >
-                  <Text style={{ fontSize: 12, color: colors.text }}>
-                    Tomorrow
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 6,
-                    backgroundColor: colors.surfaceSecondary,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  }}
-                  onPress={() => {
-                    const nextWeek = new Date();
-                    nextWeek.setDate(nextWeek.getDate() + 7);
-                    setFormData({
-                      ...formData,
-                      date: nextWeek.toISOString().split("T")[0],
-                    });
-                  }}
-                >
-                  <Text style={{ fontSize: 12, color: colors.text }}>
-                    Next Week
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Recurring Option */}
-            <View style={{ marginBottom: 20 }}>
               <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingVertical: 12,
-                  paddingHorizontal: 16,
-                  borderRadius: 8,
-                  backgroundColor: formData.isRecurring
-                    ? colors.primary
-                    : colors.background,
-                  borderWidth: 1,
-                  borderColor: formData.isRecurring
-                    ? colors.primary
-                    : colors.border,
-                }}
-                onPress={() =>
-                  setFormData({
-                    ...formData,
-                    isRecurring: !formData.isRecurring,
-                  })
-                }
+                onPress={() => navigation.goBack()}
+                style={{ marginRight: 16 }}
               >
-                <Ionicons
-                  name="repeat"
-                  size={18}
-                  color={
-                    formData.isRecurring
-                      ? colors.buttonText
-                      : colors.textSecondary
-                  }
-                  style={{ marginRight: 8 }}
-                />
+                <Ionicons name="arrow-back" size={24} color={colors.text} />
+              </TouchableOpacity>
+              <Text
+                style={{ fontSize: 20, fontWeight: "600", color: colors.text }}
+              >
+                {editMode ? "Edit" : "Add"}{" "}
+                {formData.type === "income" ? "Income" : "Expense"}
+              </Text>
+            </View>
+
+            {/* Limit Indicator - Only show if not unlimited */}
+            {formData.type === "income"
+              ? !getIncomeSourceLimitInfo().isUnlimited && (
+                  <View
+                    style={{
+                      backgroundColor: colors.warningLight,
+                      borderRadius: 12,
+                      padding: 12,
+                      marginBottom: 16,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Ionicons
+                        name="information-circle"
+                        size={16}
+                        color={colors.warning}
+                      />
+                      <Text
+                        style={{
+                          marginLeft: 8,
+                          color: colors.warning,
+                          fontSize: 14,
+                        }}
+                      >
+                        {`${getIncomeSourceLimitInfo().current}/${
+                          getIncomeSourceLimitInfo().limit
+                        } income sources used`}
+                      </Text>
+                    </View>
+                    <TouchableOpacity onPress={presentPaywall}>
+                      <Text
+                        style={{
+                          color: colors.warning,
+                          fontSize: 12,
+                          fontWeight: "600",
+                        }}
+                      >
+                        Upgrade
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )
+              : !getTransactionLimitInfo().isUnlimited && (
+                  <View
+                    style={{
+                      backgroundColor: colors.warningLight,
+                      borderRadius: 12,
+                      padding: 12,
+                      marginBottom: 16,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Ionicons
+                        name="information-circle"
+                        size={16}
+                        color={colors.warning}
+                      />
+                      <Text
+                        style={{
+                          marginLeft: 8,
+                          color: colors.warning,
+                          fontSize: 14,
+                        }}
+                      >
+                        {`${getTransactionLimitInfo().current}/${
+                          getTransactionLimitInfo().limit
+                        } transactions used`}
+                      </Text>
+                    </View>
+                    <TouchableOpacity onPress={presentPaywall}>
+                      <Text
+                        style={{
+                          color: colors.warning,
+                          fontSize: 12,
+                          fontWeight: "600",
+                        }}
+                      >
+                        Upgrade
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+            {/* Form */}
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 16,
+                padding: 16,
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.06,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 2,
+              }}
+            >
+              {/* Transaction Type */}
+              <View style={{ marginBottom: 20 }}>
                 <Text
                   style={{
                     fontSize: 16,
                     fontWeight: "600",
-                    color: formData.isRecurring
-                      ? colors.buttonText
-                      : colors.text,
+                    marginBottom: 12,
+                    color: colors.text,
                   }}
                 >
-                  {formData.isRecurring
-                    ? editMode &&
-                      (transaction?.isRecurring ||
-                        transaction?.recurringTransactionId)
-                      ? "Is Recurring"
-                      : "Recurring Transaction"
-                    : "Make Recurring"}
+                  Transaction Type
                 </Text>
-              </TouchableOpacity>
-
-              {formData.isRecurring && (
-                <View
-                  style={{
-                    marginTop: 16,
-                    paddingTop: 16,
-                    borderTopWidth: 1,
-                    borderTopColor: colors.border,
-                  }}
-                >
-                  {/* Frequency Dropdown */}
-                  <View style={{ marginBottom: 16 }}>
+                <View style={{ flexDirection: "row", gap: 12 }}>
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor:
+                        formData.type === "expense"
+                          ? colors.error
+                          : colors.surfaceSecondary,
+                      alignItems: "center",
+                    }}
+                    onPress={() =>
+                      setFormData({
+                        ...formData,
+                        type: "expense",
+                        category: "",
+                      })
+                    }
+                  >
                     <Text
                       style={{
-                        fontSize: 12,
-                        fontWeight: "500",
-                        marginBottom: 4,
-                        color: colors.textSecondary,
+                        color:
+                          formData.type === "expense"
+                            ? colors.buttonText
+                            : colors.textSecondary,
+                        fontWeight: "600",
                       }}
                     >
-                      Frequency
+                      Expense
                     </Text>
-                    <View
-                      style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor:
+                        formData.type === "income"
+                          ? colors.success
+                          : colors.surfaceSecondary,
+                      alignItems: "center",
+                    }}
+                    onPress={() =>
+                      setFormData({ ...formData, type: "income", category: "" })
+                    }
+                  >
+                    <Text
+                      style={{
+                        color:
+                          formData.type === "income"
+                            ? colors.buttonText
+                            : colors.textSecondary,
+                        fontWeight: "600",
+                      }}
                     >
-                      {["monthly"].map((freq) => (
-                        <TouchableOpacity
-                          key={freq}
-                          style={{
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 4,
-                            backgroundColor:
-                              formData.frequency === freq
-                                ? colors.primary
-                                : colors.surfaceSecondary,
-                          }}
-                          onPress={() =>
-                            setFormData({ ...formData, frequency: freq as any })
-                          }
-                        >
-                          <Text
+                      Income
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Amount */}
+              <View style={{ marginBottom: 16 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    marginBottom: 8,
+                    color: colors.text,
+                  }}
+                >
+                  Amount
+                </Text>
+                <TextInput
+                  style={{
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 8,
+                    padding: 12,
+                    fontSize: 16,
+                    backgroundColor: colors.surfaceSecondary,
+                    color: colors.text,
+                  }}
+                  placeholder="0.00"
+                  placeholderTextColor={colors.textSecondary}
+                  value={formData.amount}
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, amount: text })
+                  }
+                  keyboardType="decimal-pad"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
+                  blurOnSubmit={true}
+                />
+              </View>
+
+              {/* Category */}
+              <View style={{ marginBottom: 16 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    marginBottom: 8,
+                    color: colors.text,
+                  }}
+                >
+                  Category
+                </Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingRight: 16 }}
+                >
+                  {categories.map((category) => (
+                    <TouchableOpacity
+                      key={category}
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 20,
+                        backgroundColor:
+                          formData.category === category
+                            ? colors.primary
+                            : colors.surfaceSecondary,
+                        marginRight: 8,
+                        minWidth: 80,
+                        alignItems: "center",
+                      }}
+                      onPress={() => setFormData({ ...formData, category })}
+                    >
+                      <Text
+                        style={{
+                          color:
+                            formData.category === category
+                              ? colors.buttonText
+                              : colors.text,
+                          fontSize: 14,
+                          fontWeight: "500",
+                        }}
+                      >
+                        {category}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* Description */}
+              <View style={{ marginBottom: 16 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    marginBottom: 8,
+                    color: colors.text,
+                  }}
+                >
+                  Description
+                </Text>
+                <TextInput
+                  style={{
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 8,
+                    padding: 12,
+                    fontSize: 16,
+                    minHeight: 80,
+                    textAlignVertical: "top",
+                    backgroundColor: colors.surfaceSecondary,
+                    color: colors.text,
+                  }}
+                  placeholder="Enter description..."
+                  placeholderTextColor={colors.textSecondary}
+                  value={formData.description}
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, description: text })
+                  }
+                  autoCorrect={false}
+                  multiline
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
+                  blurOnSubmit={true}
+                />
+              </View>
+
+              {/* Date */}
+              <View style={{ marginBottom: 16 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    marginBottom: 8,
+                    color: colors.text,
+                  }}
+                >
+                  {formData.type === "expense"
+                    ? "Due Date"
+                    : formData.type === "income"
+                    ? "Payment Date"
+                    : "Date"}
+                </Text>
+                <TextInput
+                  style={{
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 8,
+                    padding: 12,
+                    fontSize: 16,
+                    backgroundColor: colors.surfaceSecondary,
+                    color: colors.text,
+                  }}
+                  placeholder={
+                    formData.type === "expense"
+                      ? "Due Date (YYYY-MM-DD)"
+                      : formData.type === "income"
+                      ? "Payment Date (YYYY-MM-DD)"
+                      : "Date (YYYY-MM-DD)"
+                  }
+                  placeholderTextColor={colors.textSecondary}
+                  value={formData.date}
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, date: text })
+                  }
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
+                  blurOnSubmit={true}
+                />
+
+                {/* Quick Date Buttons */}
+                <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+                  <TouchableOpacity
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 6,
+                      backgroundColor: colors.surfaceSecondary,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                    }}
+                    onPress={() =>
+                      setFormData({ ...formData, date: getInitialDate() })
+                    }
+                  >
+                    <Text style={{ fontSize: 12, color: colors.text }}>
+                      Today
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 6,
+                      backgroundColor: colors.surfaceSecondary,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                    }}
+                    onPress={() =>
+                      setFormData({ ...formData, date: getTomorrowDate() })
+                    }
+                  >
+                    <Text style={{ fontSize: 12, color: colors.text }}>
+                      Tomorrow
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 6,
+                      backgroundColor: colors.surfaceSecondary,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                    }}
+                    onPress={() => {
+                      const nextWeek = new Date();
+                      nextWeek.setDate(nextWeek.getDate() + 7);
+                      setFormData({
+                        ...formData,
+                        date: nextWeek.toISOString().split("T")[0],
+                      });
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, color: colors.text }}>
+                      Next Week
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Recurring Option */}
+              <View style={{ marginBottom: 20 }}>
+                <TouchableOpacity
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    borderRadius: 8,
+                    backgroundColor: formData.isRecurring
+                      ? colors.primary
+                      : colors.background,
+                    borderWidth: 1,
+                    borderColor: formData.isRecurring
+                      ? colors.primary
+                      : colors.border,
+                  }}
+                  onPress={() =>
+                    setFormData({
+                      ...formData,
+                      isRecurring: !formData.isRecurring,
+                    })
+                  }
+                >
+                  <Ionicons
+                    name="repeat"
+                    size={18}
+                    color={
+                      formData.isRecurring
+                        ? colors.buttonText
+                        : colors.textSecondary
+                    }
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "600",
+                      color: formData.isRecurring
+                        ? colors.buttonText
+                        : colors.text,
+                    }}
+                  >
+                    {formData.isRecurring
+                      ? editMode &&
+                        (transaction?.isRecurring ||
+                          transaction?.recurringTransactionId)
+                        ? "Is Recurring"
+                        : "Recurring Transaction"
+                      : "Make Recurring"}
+                  </Text>
+                </TouchableOpacity>
+
+                {formData.isRecurring && (
+                  <View
+                    style={{
+                      marginTop: 16,
+                      paddingTop: 16,
+                      borderTopWidth: 1,
+                      borderTopColor: colors.border,
+                    }}
+                  >
+                    {/* Frequency Dropdown */}
+                    <View style={{ marginBottom: 16 }}>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "500",
+                          marginBottom: 4,
+                          color: colors.textSecondary,
+                        }}
+                      >
+                        Frequency
+                      </Text>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          flexWrap: "wrap",
+                          gap: 6,
+                        }}
+                      >
+                        {["monthly"].map((freq) => (
+                          <TouchableOpacity
+                            key={freq}
                             style={{
-                              color:
+                              paddingHorizontal: 8,
+                              paddingVertical: 4,
+                              borderRadius: 4,
+                              backgroundColor:
                                 formData.frequency === freq
-                                  ? colors.buttonText
-                                  : colors.text,
-                              fontSize: 12,
-                              fontWeight: "500",
+                                  ? colors.primary
+                                  : colors.surfaceSecondary,
                             }}
+                            onPress={() =>
+                              setFormData({
+                                ...formData,
+                                frequency: freq as any,
+                              })
+                            }
                           >
-                            {freq.charAt(0).toUpperCase() + freq.slice(1)}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                            <Text
+                              style={{
+                                color:
+                                  formData.frequency === freq
+                                    ? colors.buttonText
+                                    : colors.text,
+                                fontSize: 12,
+                                fontWeight: "500",
+                              }}
+                            >
+                              {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+
+                    {/* End Date (Optional) */}
+                    <View style={{ marginBottom: 16 }}>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "500",
+                          marginBottom: 4,
+                          color: colors.textSecondary,
+                        }}
+                      >
+                        End Date (Optional)
+                      </Text>
+                      <TextInput
+                        style={{
+                          borderWidth: 1,
+                          borderColor: colors.border,
+                          borderRadius: 6,
+                          padding: 8,
+                          fontSize: 14,
+                          backgroundColor: colors.surfaceSecondary,
+                          color: colors.text,
+                        }}
+                        placeholder="YYYY-MM-DD (leave empty for no end date)"
+                        placeholderTextColor={colors.textSecondary}
+                        value={formData.endDate}
+                        onChangeText={(text) =>
+                          setFormData({ ...formData, endDate: text })
+                        }
+                        autoCorrect={false}
+                        returnKeyType="done"
+                        onSubmitEditing={() => Keyboard.dismiss()}
+                        blurOnSubmit={true}
+                      />
                     </View>
                   </View>
-
-                  {/* End Date (Optional) */}
-                  <View style={{ marginBottom: 16 }}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "500",
-                        marginBottom: 4,
-                        color: colors.textSecondary,
-                      }}
-                    >
-                      End Date (Optional)
-                    </Text>
-                    <TextInput
-                      style={{
-                        borderWidth: 1,
-                        borderColor: colors.border,
-                        borderRadius: 6,
-                        padding: 8,
-                        fontSize: 14,
-                        backgroundColor: colors.surfaceSecondary,
-                        color: colors.text,
-                      }}
-                      placeholder="YYYY-MM-DD (leave empty for no end date)"
-                      placeholderTextColor={colors.textSecondary}
-                      value={formData.endDate}
-                      onChangeText={(text) =>
-                        setFormData({ ...formData, endDate: text })
-                      }
-                      autoCorrect={false}
-                      returnKeyType="done"
-                      onSubmitEditing={() => Keyboard.dismiss()}
-                      blurOnSubmit={true}
-                    />
-                  </View>
-                </View>
-              )}
+                )}
+              </View>
             </View>
-          </View>
 
-          {/* Save Button */}
-          <TouchableOpacity
-            style={{
-              backgroundColor: colors.primary,
-              borderRadius: 12,
-              padding: 16,
-              alignItems: "center",
-              marginTop: 24,
-            }}
-            onPress={handleSave}
-          >
-            <Text
-              style={{
-                color: colors.buttonText,
-                fontSize: 16,
-                fontWeight: "600",
-              }}
-            >
-              {editMode
-                ? "Update"
-                : formData.isRecurring
-                ? "Create Recurring"
-                : "Save"}{" "}
-              {formData.type === "income" ? "Income" : "Expense"}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Delete Button (only show in edit mode) */}
-          {editMode && (
+            {/* Save Button */}
             <TouchableOpacity
               style={{
-                backgroundColor: colors.error,
+                backgroundColor: colors.primary,
                 borderRadius: 12,
                 padding: 16,
                 alignItems: "center",
-                marginTop: 12,
+                marginTop: 24,
               }}
-              onPress={handleDelete}
+              onPress={handleSave}
             >
               <Text
                 style={{
@@ -1143,11 +1135,40 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   fontWeight: "600",
                 }}
               >
-                Delete {formData.type === "income" ? "Income" : "Expense"}
+                {editMode
+                  ? "Update"
+                  : formData.isRecurring
+                  ? "Create Recurring"
+                  : "Save"}{" "}
+                {formData.type === "income" ? "Income" : "Expense"}
               </Text>
             </TouchableOpacity>
-          )}
-        </ScrollView>
+
+            {/* Delete Button (only show in edit mode) */}
+            {editMode && (
+              <TouchableOpacity
+                style={{
+                  backgroundColor: colors.error,
+                  borderRadius: 12,
+                  padding: 16,
+                  alignItems: "center",
+                  marginTop: 12,
+                }}
+                onPress={handleDelete}
+              >
+                <Text
+                  style={{
+                    color: colors.buttonText,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Delete {formData.type === "income" ? "Income" : "Expense"}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </ScrollView>
+        </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
