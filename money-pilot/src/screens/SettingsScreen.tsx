@@ -81,8 +81,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       isActive: subscriptionStatus?.isActive,
       features: subscriptionStatus?.features,
       expirationDate: subscriptionStatus?.expirationDate,
+      productId: subscriptionStatus?.productId,
+      isEligibleForIntroOffer,
     });
-  }, [subscriptionStatus]);
+  }, [subscriptionStatus, isEligibleForIntroOffer]);
 
   // Check bank connection status
   useEffect(() => {
