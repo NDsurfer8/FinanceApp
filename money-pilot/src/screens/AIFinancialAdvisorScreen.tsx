@@ -13,6 +13,7 @@ import {
   Image,
   Animated,
   Keyboard,
+  Clipboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -60,6 +61,18 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     plan: any;
     planName: string;
   } | null>(null);
+  const [feedbackStates, setFeedbackStates] = useState<{
+    [messageId: string]: { liked?: boolean; disliked?: boolean };
+  }>({});
+  const [userPreferences, setUserPreferences] = useState<{
+    preferredStyle: "detailed" | "concise" | "balanced";
+    preferredTone: "professional" | "casual" | "friendly";
+    preferredFocus: "actionable" | "educational" | "analytical";
+  }>({
+    preferredStyle: "balanced",
+    preferredTone: "friendly",
+    preferredFocus: "actionable",
+  });
   const scrollViewRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const headerOpacity = useRef(new Animated.Value(1)).current;
@@ -82,7 +95,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
         setMessages([
           {
             id: "1",
-            text: "Hi! I'm Vectra, your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions. What would you like to know about your finances?",
+            text: "Hi! I'm Vectra, your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions and more. What would you like to know about your finances?",
             isUser: false,
             timestamp: new Date(),
           },
@@ -118,10 +131,35 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     }
   };
 
-  // Clear chat history
+  // Save feedback data to AsyncStorage (user-specific)
+  const saveFeedbackData = async (feedbackData: any) => {
+    try {
+      const userId = user?.uid || "anonymous";
+      const feedbackKey = `vectra_feedback_data_${userId}`;
+
+      const existingFeedback = await AsyncStorage.getItem(feedbackKey);
+      const feedbackArray = existingFeedback
+        ? JSON.parse(existingFeedback)
+        : [];
+      feedbackArray.push(feedbackData);
+
+      // Keep only the last 100 feedback entries
+      const trimmedFeedback = feedbackArray.slice(-100);
+      await AsyncStorage.setItem(feedbackKey, JSON.stringify(trimmedFeedback));
+    } catch (error) {
+      console.error("Error saving feedback data:", error);
+    }
+  };
+
+  // Clear chat history (user-specific)
   const clearChatHistory = async () => {
     try {
+      // Only clear chat messages, keep feedback data and preferences
       await AsyncStorage.removeItem(CHAT_HISTORY_KEY);
+
+      // Reset feedback states for current session only
+      setFeedbackStates({});
+
       setMessages([
         {
           id: "1",
@@ -290,47 +328,47 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           setPendingPlan({ plan, planName });
 
           // Create personalized response with save button
-          let personalizedResponse = `📋 **${planName} Generated Successfully!**\n\n`;
+          let personalizedResponse = `📋 ${planName} Generated Successfully!\n\n`;
 
           // Add context about what the user asked for
           if (lowerQuestion.includes("budget")) {
-            personalizedResponse += `**Based on your request for budget planning:**\n`;
+            personalizedResponse += `📋 Based on your request for budget planning:\n`;
           } else if (
             lowerQuestion.includes("debt") ||
             lowerQuestion.includes("payoff")
           ) {
-            personalizedResponse += `**Based on your request for debt management:**\n`;
+            personalizedResponse += `📋 Based on your request for debt management:\n`;
           } else if (
             lowerQuestion.includes("savings") ||
             lowerQuestion.includes("emergency")
           ) {
-            personalizedResponse += `**Based on your request for savings planning:**\n`;
+            personalizedResponse += `📋 Based on your request for savings planning:\n`;
           } else if (
             lowerQuestion.includes("investment") ||
             lowerQuestion.includes("retirement")
           ) {
-            personalizedResponse += `**Based on your request for investment planning:**\n`;
+            personalizedResponse += `📋 Based on your request for investment planning:\n`;
           } else if (lowerQuestion.includes("goal")) {
-            personalizedResponse += `**Based on your request for goal planning:**\n`;
+            personalizedResponse += `📋 Based on your request for goal planning:\n`;
           } else {
-            personalizedResponse += `**Based on your financial situation:**\n`;
+            personalizedResponse += `📋 Based on your financial situation:\n`;
           }
 
-          personalizedResponse += `**Generated**: ${new Date().toLocaleDateString()}\n\n**Plan Summary:**\n• **Monthly Budget**: $${plan.planData.monthlyBudget.income.toFixed(
+          personalizedResponse += `📅 Generated: ${new Date().toLocaleDateString()}\n\n📊 Plan Summary:\n• Monthly Budget: $${plan.planData.monthlyBudget.income.toFixed(
             2
           )} income, $${plan.planData.monthlyBudget.expenses.toFixed(
             2
-          )} expenses\n• **Debt Payoff**: $${plan.planData.debtPayoffPlan.totalDebt.toFixed(
+          )} expenses\n• Debt Payoff: $${plan.planData.debtPayoffPlan.totalDebt.toFixed(
             2
           )} total debt, estimated payoff: ${
             plan.planData.debtPayoffPlan.estimatedPayoffDate
-          }\n• **Savings Plan**: Emergency fund target $${plan.planData.savingsPlan.emergencyFund.target.toFixed(
+          }\n• Savings Plan: Emergency fund target $${plan.planData.savingsPlan.emergencyFund.target.toFixed(
             2
-          )}\n• **Goals**: ${
+          )}\n• Goals: ${
             plan.planData.goalTimeline.goals.length
-          } active goals\n• **Recommendations**: ${
+          } active goals\n• Recommendations: ${
             plan.planData.recommendations.length
-          } actionable items\n\n**Plan includes:**\n✅ Monthly budget breakdown\n✅ Debt payoff strategy (avalanche method)\n✅ Savings allocation plan\n✅ Goal timeline analysis\n✅ Personalized recommendations\n✅ Exportable CSV data\n\n**💾 Would you like to save this plan to your account?**`;
+          } actionable items\n\n📋 Plan includes:\n✅ Monthly budget breakdown\n✅ Debt payoff strategy (avalanche method)\n✅ Savings allocation plan\n✅ Goal timeline analysis\n✅ Personalized recommendations\n✅ Exportable CSV data\n\n💾 Would you like to save this plan to your account?`;
 
           aiResponse = personalizedResponse;
         } catch (planError) {
@@ -341,11 +379,21 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           );
         }
       } else {
-        // Regular AI response
+        // Generate optimized prompt based on user preferences
+        const optimizedPrompt = generateOptimizedPrompt(userMessage.text);
+
+        // Regular AI response with optimized prompt
         aiResponse = await aiFinancialAdvisorService.generateAIResponse(
-          userMessage.text,
+          optimizedPrompt,
           snapshot
         );
+
+        // Clean up markdown formatting from AI responses
+        aiResponse = aiResponse
+          .replace(/\*\*(.*?)\*\*/g, "$1") // Remove bold formatting
+          .replace(/### (.*?)\n/g, "$1\n\n") // Convert headers to plain text
+          .replace(/## (.*?)\n/g, "$1\n\n") // Convert sub-headers to plain text
+          .replace(/# (.*?)\n/g, "$1\n\n"); // Convert main headers to plain text
       }
 
       const updatedMessages = newMessages.map((msg) =>
@@ -432,6 +480,181 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     }
   };
 
+  // Analyze message characteristics for feedback learning
+  const analyzeMessageCharacteristics = (messageText: string) => {
+    const characteristics = {
+      length: messageText.length,
+      hasNumbers: /\d/.test(messageText),
+      hasEmojis:
+        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(
+          messageText
+        ),
+      hasBulletPoints: messageText.includes("•") || messageText.includes("-"),
+      hasHeaders: /^[A-Z][A-Za-z\s]+:$/m.test(messageText),
+      hasIcons:
+        /[📊💰🏦🎯📝🤖👨‍👩‍👧‍👦🔄⚙️⭐🔒📱💡📋🔧📅🏆💎💳📈🛡️🎉❌✅⚠️❓📍]/g.test(
+          messageText
+        ),
+      isDetailed: messageText.length > 500,
+      isConcise: messageText.length < 200,
+      isActionable:
+        /(recommend|action|step|tip|suggest|plan|do|try|start|focus)/i.test(
+          messageText
+        ),
+      isEducational: /(explain|understand|learn|know|about|how|what|why)/i.test(
+        messageText
+      ),
+      isAnalytical:
+        /(analysis|breakdown|calculation|ratio|percentage|total|average)/i.test(
+          messageText
+        ),
+    };
+
+    return characteristics;
+  };
+
+  // Update user preferences based on feedback
+  const updateUserPreferences = (messageText: string, isPositive: boolean) => {
+    const characteristics = analyzeMessageCharacteristics(messageText);
+
+    setUserPreferences((prev) => {
+      const newPrefs = { ...prev };
+
+      if (isPositive) {
+        // Learn from positive feedback
+        if (characteristics.isDetailed) newPrefs.preferredStyle = "detailed";
+        else if (characteristics.isConcise) newPrefs.preferredStyle = "concise";
+
+        if (characteristics.isActionable)
+          newPrefs.preferredFocus = "actionable";
+        else if (characteristics.isEducational)
+          newPrefs.preferredFocus = "educational";
+        else if (characteristics.isAnalytical)
+          newPrefs.preferredFocus = "analytical";
+
+        if (characteristics.hasEmojis) newPrefs.preferredTone = "casual";
+        else if (characteristics.isAnalytical)
+          newPrefs.preferredTone = "professional";
+      } else {
+        // Learn from negative feedback - avoid what user doesn't like
+        if (characteristics.isDetailed && prev.preferredStyle === "detailed") {
+          newPrefs.preferredStyle = "concise";
+        }
+        if (characteristics.isConcise && prev.preferredStyle === "concise") {
+          newPrefs.preferredStyle = "detailed";
+        }
+        if (
+          characteristics.isActionable &&
+          prev.preferredFocus === "actionable"
+        ) {
+          newPrefs.preferredFocus = "educational";
+        }
+      }
+
+      return newPrefs;
+    });
+  };
+
+  // Generate optimized prompt based on user preferences
+  const generateOptimizedPrompt = (basePrompt: string) => {
+    const styleInstructions = {
+      detailed:
+        "Provide comprehensive, detailed responses with step-by-step explanations and thorough analysis.",
+      concise:
+        "Keep responses brief and to the point. Focus on key insights and actionable takeaways.",
+      balanced:
+        "Provide balanced responses with enough detail to be helpful but not overwhelming.",
+    };
+
+    const toneInstructions = {
+      professional:
+        "Maintain a professional, formal tone suitable for business and financial advice.",
+      casual:
+        "Use a relaxed, conversational tone with emojis and casual language.",
+      friendly: "Be warm and approachable while maintaining professionalism.",
+    };
+
+    const focusInstructions = {
+      actionable:
+        "Focus on providing specific, actionable steps and recommendations the user can implement immediately.",
+      educational:
+        "Focus on explaining concepts and helping the user understand the financial principles involved.",
+      analytical:
+        "Focus on providing detailed analysis, calculations, and data-driven insights.",
+    };
+
+    const optimization = `
+${styleInstructions[userPreferences.preferredStyle]}
+${toneInstructions[userPreferences.preferredTone]}
+${focusInstructions[userPreferences.preferredFocus]}
+
+User Preferences: ${userPreferences.preferredStyle} style, ${
+      userPreferences.preferredTone
+    } tone, ${userPreferences.preferredFocus} focus.
+
+Original Request: ${basePrompt}
+`;
+
+    return optimization;
+  };
+
+  // Handle feedback button interactions
+  const handleFeedback = (messageId: string, type: "like" | "dislike") => {
+    const message = messages.find((m) => m.id === messageId);
+    const isPositive = type === "like";
+
+    if (message && !message.isUser) {
+      // Analyze the message and update preferences
+      updateUserPreferences(message.text, isPositive);
+
+      // Store feedback for future analysis
+      const feedbackData = {
+        messageId,
+        messageText: message.text,
+        feedback: type,
+        timestamp: new Date().toISOString(),
+        userPreferences: userPreferences,
+        characteristics: analyzeMessageCharacteristics(message.text),
+      };
+
+      // Save feedback to AsyncStorage for analysis
+      saveFeedbackData(feedbackData);
+    }
+
+    setFeedbackStates((prev) => ({
+      ...prev,
+      [messageId]: {
+        ...prev[messageId],
+        liked: type === "like" ? !prev[messageId]?.liked : false,
+        disliked: type === "dislike" ? !prev[messageId]?.disliked : false,
+      },
+    }));
+
+    // Show feedback confirmation
+    const action = type === "like" ? "liked" : "disliked";
+    const isRemoving =
+      feedbackStates[messageId]?.[type === "like" ? "liked" : "disliked"];
+
+    if (!isRemoving) {
+      Alert.alert(
+        "Feedback Submitted",
+        `Thank you for your feedback! Vectra is learning your preferences to provide better responses.`,
+        [{ text: "OK" }]
+      );
+    }
+  };
+
+  // Handle copy button
+  const handleCopy = async (text: string) => {
+    try {
+      await Clipboard.setString(text);
+      Alert.alert("Copied!", "Response copied to clipboard.");
+    } catch (error) {
+      console.error("Error copying to clipboard:", error);
+      Alert.alert("Error", "Failed to copy to clipboard.");
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       {/* ChatGPT-style Header */}
@@ -474,6 +697,47 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
               Vectra
             </Text>
           </View>
+
+          <TouchableOpacity
+            onPress={() => {
+              // Show current preferences and optimization status
+              const feedbackCount = Object.keys(feedbackStates).length;
+              const preferenceInfo = `
+🎯 Vectra Learning Status
+
+Current Preferences:
+• Style: ${userPreferences.preferredStyle}
+• Tone: ${userPreferences.preferredTone}
+• Focus: ${userPreferences.preferredFocus}
+
+Learning Data:
+• Feedback given: ${feedbackCount} responses
+• System: ${feedbackCount > 0 ? "Active" : "Learning from your feedback"}
+
+How it works:
+• 👍 Like responses you prefer
+• 👎 Dislike responses you don't like
+• Vectra learns your style and adapts
+• Responses get better over time
+
+Try giving feedback on a few responses to see the system in action!
+              `;
+
+              Alert.alert("Vectra Learning Status", preferenceInfo, [
+                { text: "OK" },
+              ]);
+            }}
+            style={{
+              padding: 8,
+              borderRadius: 6,
+            }}
+          >
+            <Ionicons
+              name="information-circle-outline"
+              size={18}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => {
@@ -530,10 +794,10 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
               style={{
                 backgroundColor: message.isUser
                   ? colors.background
-                  : colors.surface,
-                paddingVertical: 20,
+                  : colors.surfaceSecondary,
+                paddingVertical: 24,
                 paddingHorizontal: 16,
-                borderBottomWidth: 1,
+                borderBottomWidth: message.isUser ? 0 : 1,
                 borderBottomColor: colors.border,
               }}
             >
@@ -541,12 +805,12 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                 {message.isUser ? (
                   // User message - ChatGPT style
                   <>
-                    <View style={{ width: 30, alignItems: "center" }}>
+                    <View style={{ width: 32, alignItems: "center" }}>
                       <View
                         style={{
-                          width: 30,
-                          height: 30,
-                          borderRadius: 4,
+                          width: 32,
+                          height: 32,
+                          borderRadius: 6,
                           backgroundColor: colors.primary,
                           justifyContent: "center",
                           alignItems: "center",
@@ -555,7 +819,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                         <Text
                           style={{
                             color: "#fff",
-                            fontSize: 12,
+                            fontSize: 14,
                             fontWeight: "600",
                           }}
                         >
@@ -585,6 +849,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                             color: colors.text,
                             fontSize: 16,
                             lineHeight: 24,
+                            fontWeight: "500",
                           }}
                         >
                           {message.text}
@@ -595,8 +860,8 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                 ) : (
                   // AI message - ChatGPT style
                   <>
-                    <View style={{ width: 30, alignItems: "center" }}>
-                      <VectraAvatar size={30} />
+                    <View style={{ width: 32, alignItems: "center" }}>
+                      <VectraAvatar size={32} />
                     </View>
                     <View style={{ flex: 1, paddingRight: 16 }}>
                       {message.isLoading ? (
@@ -615,15 +880,111 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                           </Text>
                         </View>
                       ) : (
-                        <Text
-                          style={{
-                            color: colors.text,
-                            fontSize: 16,
-                            lineHeight: 24,
-                          }}
-                        >
-                          {message.text}
-                        </Text>
+                        <View>
+                          <Text
+                            style={{
+                              color: colors.text,
+                              fontSize: 16,
+                              lineHeight: 24,
+                              fontWeight: "400",
+                            }}
+                          >
+                            {message.text}
+                          </Text>
+                          {index === messages.length - 1 && !message.isUser && (
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                marginTop: 16,
+                                gap: 8,
+                              }}
+                            >
+                              <TouchableOpacity
+                                onPress={() =>
+                                  handleFeedback(message.id, "like")
+                                }
+                                style={{
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 6,
+                                  borderRadius: 6,
+                                  backgroundColor: feedbackStates[message.id]
+                                    ?.liked
+                                    ? colors.primary
+                                    : colors.surface,
+                                  borderWidth: 1,
+                                  borderColor: feedbackStates[message.id]?.liked
+                                    ? colors.primary
+                                    : colors.border,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    fontSize: 12,
+                                    color: feedbackStates[message.id]?.liked
+                                      ? "#fff"
+                                      : colors.textSecondary,
+                                    fontWeight: "500",
+                                  }}
+                                >
+                                  👍
+                                </Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() =>
+                                  handleFeedback(message.id, "dislike")
+                                }
+                                style={{
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 6,
+                                  borderRadius: 6,
+                                  backgroundColor: feedbackStates[message.id]
+                                    ?.disliked
+                                    ? colors.error
+                                    : colors.surface,
+                                  borderWidth: 1,
+                                  borderColor: feedbackStates[message.id]
+                                    ?.disliked
+                                    ? colors.error
+                                    : colors.border,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    fontSize: 12,
+                                    color: feedbackStates[message.id]?.disliked
+                                      ? "#fff"
+                                      : colors.textSecondary,
+                                    fontWeight: "500",
+                                  }}
+                                >
+                                  👎
+                                </Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() => handleCopy(message.text)}
+                                style={{
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 6,
+                                  borderRadius: 6,
+                                  backgroundColor: colors.surface,
+                                  borderWidth: 1,
+                                  borderColor: colors.border,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    fontSize: 12,
+                                    color: colors.textSecondary,
+                                    fontWeight: "500",
+                                  }}
+                                >
+                                  Copy
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+                          )}
+                        </View>
                       )}
                     </View>
                   </>
@@ -726,45 +1087,44 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
         <View
           style={{
             paddingHorizontal: 16,
-            paddingVertical: 12,
-            paddingBottom: Platform.OS === "ios" ? 34 : 12, // Account for home indicator
+            paddingVertical: 16,
+            paddingBottom: Platform.OS === "ios" ? 34 : 16, // Account for home indicator
           }}
         >
           <View
-            style={{ flexDirection: "row", alignItems: "flex-end", gap: 8 }}
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-end",
+              gap: 8,
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+            }}
           >
-            <View
+            <TextInput
               style={{
                 flex: 1,
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: 12,
-                backgroundColor: colors.surface,
-                minHeight: 44,
+                fontSize: 16,
+                color: colors.text,
+                textAlignVertical: "center",
+                minHeight: 40,
                 maxHeight: 120,
+                paddingHorizontal: 8,
+                paddingVertical: 8,
               }}
-            >
-              <TextInput
-                style={{
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  fontSize: 16,
-                  color: colors.text,
-                  textAlignVertical: "center",
-                  minHeight: 44,
-                  maxHeight: 120,
-                }}
-                placeholder="✨ Ask me about your finances..."
-                placeholderTextColor={colors.textSecondary}
-                value={inputText}
-                onChangeText={setInputText}
-                multiline
-                maxLength={4000}
-                editable={!isLoading}
-                returnKeyType="default"
-                blurOnSubmit={false}
-              />
-            </View>
+              placeholder="✨ Ask me about your finances..."
+              placeholderTextColor={colors.textSecondary}
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+              maxLength={4000}
+              editable={!isLoading}
+              returnKeyType="default"
+              blurOnSubmit={false}
+            />
             <TouchableOpacity
               onPress={sendMessage}
               disabled={!inputText.trim() || isLoading}
@@ -773,16 +1133,16 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                   inputText.trim() && !isLoading
                     ? colors.primary
                     : colors.border,
-                width: 44,
-                height: 44,
-                borderRadius: 12,
+                width: 36,
+                height: 36,
+                borderRadius: 8,
                 justifyContent: "center",
                 alignItems: "center",
               }}
             >
               <Ionicons
                 name="arrow-up"
-                size={18}
+                size={16}
                 color={
                   inputText.trim() && !isLoading ? "#fff" : colors.textSecondary
                 }
