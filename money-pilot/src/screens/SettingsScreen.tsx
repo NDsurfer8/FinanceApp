@@ -569,7 +569,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 onPress={presentPaywall}
               >
                 <Text style={{ color: "white", fontWeight: "700" }}>
-                  Start 7‑day Trial
+                  Start 3‑day Trial
                 </Text>
               </TouchableOpacity>
             </View>
