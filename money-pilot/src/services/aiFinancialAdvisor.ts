@@ -80,16 +80,22 @@ class AIFinancialAdvisorService {
     return AIFinancialAdvisorService.instance;
   }
 
-  // Check if OpenAI is configured
+  // Check if OpenAI is configured (deprecated - now using backend only)
   private isOpenAIConfigured(): boolean {
-    return !!OPENAI_API_KEY;
+    // Always return false to prevent frontend API key usage
+    return false;
   }
 
   // Check if backend AI should be used
   private shouldUseBackendAI(): boolean {
-    // For now, always use backend AI
-    // You can add environment variable toggle later
+    // Always use backend AI for security
     return true;
+  }
+
+  // Check if frontend OpenAI fallback should be used (disabled for security)
+  private shouldUseFrontendFallback(): boolean {
+    // Disabled for security - no API keys in frontend
+    return false;
   }
 
   // Core system prompt - always included (~200 tokens)
@@ -1228,23 +1234,8 @@ Or if you'd like a comprehensive overview of your financial situation, just ask 
       console.error("Backend AI failed, falling back to frontend:", error);
     }
 
-    // Fallback to frontend OpenAI
-    try {
-      if (this.isOpenAIConfigured()) {
-        const prompt = this.buildOpenAIPrompt(userQuestion, snapshot);
-        const aiResponse = await this.callOpenAI(
-          prompt,
-          userQuestion,
-          isPlanRequest
-        );
-        return aiResponse;
-      }
-    } catch (error) {
-      console.error(
-        "Frontend OpenAI failed, falling back to rule-based system:",
-        error
-      );
-    }
+    // Fallback to rule-based system only (no frontend API keys for security)
+    console.log("Backend AI unavailable, using rule-based fallback");
 
     // Final fallback to rule-based system
     try {
