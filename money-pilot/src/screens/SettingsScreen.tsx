@@ -18,6 +18,7 @@ import { usePaywall } from "../hooks/usePaywall";
 import { useSubscription } from "../contexts/SubscriptionContext";
 import { plaidService } from "../services/plaid";
 import { useTheme } from "../contexts/ThemeContext";
+import { useChatbot } from "../contexts/ChatbotContext";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -35,6 +36,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { subscriptionStatus } = useSubscription();
   const [isBankConnected, setIsBankConnected] = useState(false);
   const { isDark, toggleTheme, colors } = useTheme();
+  const { isVisible: isChatbotVisible, toggleChatbot } = useChatbot();
   const [connectedBankInfo, setConnectedBankInfo] = useState<{
     name: string;
     accounts: any[];
@@ -654,6 +656,59 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     borderRadius: 10,
                     backgroundColor: "#fff",
                     transform: [{ translateX: isDark ? 20 : 0 }],
+                  }}
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          {/* AI Chatbot Toggle */}
+          <TouchableOpacity
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
+            onPress={toggleChatbot}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="chatbubble-ellipses"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                AI Chatbot
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  marginRight: 8,
+                  fontSize: 14,
+                }}
+              >
+                {isChatbotVisible ? "On" : "Off"}
+              </Text>
+              <View
+                style={{
+                  width: 44,
+                  height: 24,
+                  borderRadius: 12,
+                  backgroundColor: isChatbotVisible
+                    ? colors.primary
+                    : colors.border,
+                  padding: 2,
+                }}
+              >
+                <View
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    backgroundColor: "#fff",
+                    transform: [{ translateX: isChatbotVisible ? 20 : 0 }],
                   }}
                 />
               </View>

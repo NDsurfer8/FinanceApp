@@ -7,3 +7,4 @@ export {
 export { NotificationTest } from "./NotificationTest";
 export { PremiumFeature } from "./PremiumFeature";
 export { VectraAvatar } from "./VectraAvatar";
+export { FloatingAIChatbot } from "./FloatingAIChatbot";

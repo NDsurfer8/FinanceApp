@@ -205,13 +205,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       onPress: () => navigation.navigate("AddTransaction"),
       color: "#6366f1",
     },
-    {
-      title: "AI Advisor",
-      subtitle: "",
-      icon: "chatbubble-ellipses",
-      onPress: () => navigation.navigate("AIFinancialAdvisor"),
-      color: "#06b6d4",
-    },
+
     {
       title: "Asset",
       icon: "trending-up",
