@@ -66,6 +66,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [lastRequestTime, setLastRequestTime] = useState(0);
 
   const [isPlanRequest, setIsPlanRequest] = useState(false);
   const [feedbackStates, setFeedbackStates] = useState<{
@@ -80,6 +81,19 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     preferredTone: "friendly",
     preferredFocus: "actionable",
   });
+
+  // Cache for common questions to reduce API calls - user-specific
+  const [responseCache, setResponseCache] = useState<{
+    [key: string]: { response: string; timestamp: number };
+  }>({});
+
+  // Clear cache when user changes
+  useEffect(() => {
+    if (user?.uid) {
+      // Clear cache for previous user when new user logs in
+      setResponseCache({});
+    }
+  }, [user?.uid]);
   const scrollViewRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const headerOpacity = useRef(new Animated.Value(1)).current;
@@ -226,6 +240,17 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const sendMessage = async () => {
     if (!inputText.trim() || isLoading) return;
 
+    // Rate limiting: prevent requests faster than 2 seconds apart
+    const now = Date.now();
+    if (now - lastRequestTime < 2000) {
+      Alert.alert(
+        "Please wait",
+        "You're sending messages too quickly. Please wait a moment."
+      );
+      return;
+    }
+    setLastRequestTime(now);
+
     // Clear input immediately
     const currentInputText = inputText.trim();
     setInputText("");
@@ -260,9 +285,21 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       // Update the plan request state
       setIsPlanRequest(isPlanRequest);
 
+      // Check cache for common questions (cache for 1 hour) - user-specific
+      const cacheKey = `${user?.uid || "anonymous"}_${userMessage.text
+        .toLowerCase()
+        .trim()}_${snapshot.netIncome}_${snapshot.totalDebt}`;
+      const cachedResponse = responseCache[cacheKey];
+      const cacheAge = Date.now() - (cachedResponse?.timestamp || 0);
+      const isCacheValid = cachedResponse && cacheAge < 3600000; // 1 hour
+
       let aiResponse;
 
-      if (isPlanRequest && user) {
+      // Use cached response if available and valid
+      if (isCacheValid && !isPlanRequest) {
+        console.log("Using cached response for:", userMessage.text);
+        aiResponse = cachedResponse.response;
+      } else if (isPlanRequest && user) {
         // Generate a comprehensive financial plan
         try {
           // Create a simple plan name
@@ -334,6 +371,14 @@ Requirements:
           .replace(/## (.*?)\n/g, "$1\n\n") // Convert sub-headers to plain text
           .replace(/# (.*?)\n/g, "$1\n\n") // Convert main headers to plain text
           .replace(/\*\*(.*?)\*\*/g, "$1"); // Remove any remaining bold formatting
+      }
+
+      // Cache the response for future use (only for non-plan requests)
+      if (!isPlanRequest && aiResponse) {
+        setResponseCache((prev) => ({
+          ...prev,
+          [cacheKey]: { response: aiResponse, timestamp: Date.now() },
+        }));
       }
 
       // Detect percentage suggestions in the AI response
