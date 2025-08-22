@@ -467,6 +467,87 @@ function isPlanRequest(userQuestion) {
   );
 }
 
+// Helper function to analyze question type
+function analyzeQuestionType(question) {
+  const lowerQuestion = question.toLowerCase();
+
+  if (
+    lowerQuestion.includes("how much") ||
+    lowerQuestion.includes("what percentage") ||
+    lowerQuestion.includes("what should")
+  ) {
+    return "recommendation";
+  }
+  if (
+    lowerQuestion.includes("explain") ||
+    lowerQuestion.includes("what is") ||
+    lowerQuestion.includes("how does")
+  ) {
+    return "educational";
+  }
+  if (
+    lowerQuestion.includes("calculate") ||
+    lowerQuestion.includes("how long") ||
+    lowerQuestion.includes("when will")
+  ) {
+    return "analytical";
+  }
+  if (
+    lowerQuestion.includes("help") ||
+    lowerQuestion.includes("advice") ||
+    lowerQuestion.includes("suggest")
+  ) {
+    return "guidance";
+  }
+  if (
+    lowerQuestion.includes("plan") ||
+    lowerQuestion.includes("strategy") ||
+    lowerQuestion.includes("approach")
+  ) {
+    return "planning";
+  }
+  if (
+    lowerQuestion.includes("compare") ||
+    lowerQuestion.includes("vs") ||
+    lowerQuestion.includes("difference")
+  ) {
+    return "comparison";
+  }
+  if (
+    lowerQuestion.includes("emergency") ||
+    lowerQuestion.includes("crisis") ||
+    lowerQuestion.includes("problem")
+  ) {
+    return "crisis";
+  }
+
+  return "general";
+}
+
+// Helper function to generate context instructions
+function generateContextInstructions(questionType) {
+  const instructions = {
+    recommendation:
+      "Provide specific, actionable recommendations with percentages or dollar amounts when relevant.",
+    educational:
+      "Explain concepts in simple, relatable terms using analogies when helpful.",
+    analytical:
+      "Provide clear calculations and breakdowns using the user's actual financial data.",
+    guidance:
+      "Offer supportive, non-judgmental advice with step-by-step guidance.",
+    planning:
+      "Create realistic, achievable plans broken down into manageable steps.",
+    comparison:
+      "Present balanced comparisons highlighting pros and cons of each option.",
+    crisis:
+      "Be calm and reassuring with immediate, actionable steps for stability.",
+    general:
+      "Respond naturally and conversationally using the user's financial data when relevant.",
+  };
+
+  return instructions[questionType] || instructions.general;
+}
+
 // Helper function to calculate cost
 function calculateCost(usage) {
   const costPer1kTokens = 0.00015; // gpt-4o-mini pricing
@@ -521,15 +602,15 @@ exports.aiChat = onCall(async (data, context) => {
   });
 
   try {
-    // Detect if this is a plan request
+    // Analyze the question and detect if this is a plan request
+    const questionType = analyzeQuestionType(message);
     const isPlanRequestFlag = isPlanRequest(message);
+    const contextInstructions = generateContextInstructions(questionType);
 
-    // Build system prompt
-    const systemPrompt = buildSystemPrompt(
-      message,
-      isPlanRequestFlag,
-      userPreferences
-    );
+    // Build system prompt with enhanced context
+    const systemPrompt =
+      buildSystemPrompt(message, isPlanRequestFlag, userPreferences) +
+      `\n\nQuestion Type: ${questionType}\nContext Instructions: ${contextInstructions}`;
 
     // Build user message with financial context
     let userMessage = message;

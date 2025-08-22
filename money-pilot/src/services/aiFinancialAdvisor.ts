@@ -41,7 +41,7 @@ class AIFinancialAdvisorService {
     userPreferences?: any
   ): Promise<string> {
     try {
-      console.log("Using backend AI...");
+      console.log("Using backend AI... sending snapshot to backend");
       console.log("User preferences:", userPreferences);
 
       // Prepare financial data for backend - optimized for token usage
@@ -53,19 +53,19 @@ class AIFinancialAdvisorService {
         totalDebt: snapshot.totalDebt,
         totalSavings: snapshot.totalSavings,
         netWorth: snapshot.netWorth,
-        // Limit to 3 most important items each
+        // Limit to 10 most important items each
         assets:
           snapshot.assets
-            ?.slice(0, 3)
+            ?.slice(0, 10)
             .map((a) => ({ name: a.name, balance: a.balance, type: a.type })) ||
           [],
         debts:
           snapshot.debts
-            ?.slice(0, 3)
+            ?.slice(0, 10)
             .map((d) => ({ name: d.name, balance: d.balance, rate: d.rate })) ||
           [],
         goals:
-          snapshot.goals?.slice(0, 3).map((g) => ({
+          snapshot.goals?.slice(0, 10).map((g) => ({
             name: g.name,
             currentAmount: g.currentAmount,
             targetAmount: g.targetAmount,

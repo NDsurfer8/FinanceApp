@@ -46,7 +46,7 @@ interface Message {
 }
 
 // Chat history configuration
-const MAX_MESSAGES = 50; // Keep last 50 messages
+const MAX_MESSAGES = 30; // Keep last 50 messages
 const CHAT_HISTORY_KEY = "ai_financial_advisor_chat_history";
 
 export const AIFinancialAdvisorScreen: React.FC = () => {
@@ -934,11 +934,8 @@ Requirements:
     ]);
   };
 
-  // Generate optimized prompt based on user preferences and conversation context
+  // Generate optimized prompt based on user preferences
   const generateOptimizedPrompt = (basePrompt: string) => {
-    // Analyze the type of question being asked
-    const questionType = analyzeQuestionType(basePrompt);
-
     const styleInstructions = {
       detailed:
         "Provide comprehensive, detailed responses with step-by-step explanations and thorough analysis.",
@@ -965,22 +962,16 @@ Requirements:
         "Focus on providing detailed analysis, calculations, and data-driven insights.",
     };
 
-    // Generate context-specific instructions based on question type
-    const contextInstructions = generateContextInstructions(questionType);
-
-    const optimization = `
+    return `
 You are Vectra, a friendly and knowledgeable AI financial advisor. Respond naturally and conversationally to the user's question.
 
 ${styleInstructions[userPreferences.preferredStyle]}
 ${toneInstructions[userPreferences.preferredTone]}
 ${focusInstructions[userPreferences.preferredFocus]}
 
-${contextInstructions}
-
 IMPORTANT: 
 - Respond naturally as if having a real conversation
 - Don't use rigid templates or formats unless specifically requested
-- Adapt your response style to match the user's question type
 - Be encouraging and supportive
 - Use the user's actual financial data when relevant
 - Keep responses conversational and engaging
@@ -989,162 +980,8 @@ User Preferences: ${userPreferences.preferredStyle} style, ${
       userPreferences.preferredTone
     } tone, ${userPreferences.preferredFocus} focus.
 
-Question Type: ${questionType}
-
 Original Request: ${basePrompt}
 `;
-
-    return optimization;
-  };
-
-  // Analyze what type of question the user is asking
-  const analyzeQuestionType = (question: string): string => {
-    const lowerQuestion = question.toLowerCase();
-
-    if (
-      lowerQuestion.includes("how much") ||
-      lowerQuestion.includes("what percentage") ||
-      lowerQuestion.includes("what should")
-    ) {
-      return "recommendation";
-    }
-    if (
-      lowerQuestion.includes("explain") ||
-      lowerQuestion.includes("what is") ||
-      lowerQuestion.includes("how does")
-    ) {
-      return "educational";
-    }
-    if (
-      lowerQuestion.includes("calculate") ||
-      lowerQuestion.includes("how long") ||
-      lowerQuestion.includes("when will")
-    ) {
-      return "analytical";
-    }
-    if (
-      lowerQuestion.includes("help") ||
-      lowerQuestion.includes("advice") ||
-      lowerQuestion.includes("suggest")
-    ) {
-      return "guidance";
-    }
-    if (
-      lowerQuestion.includes("good") ||
-      lowerQuestion.includes("bad") ||
-      lowerQuestion.includes("okay")
-    ) {
-      return "assessment";
-    }
-    if (
-      lowerQuestion.includes("plan") ||
-      lowerQuestion.includes("strategy") ||
-      lowerQuestion.includes("approach")
-    ) {
-      return "planning";
-    }
-    if (
-      lowerQuestion.includes("compare") ||
-      lowerQuestion.includes("vs") ||
-      lowerQuestion.includes("difference")
-    ) {
-      return "comparison";
-    }
-    if (
-      lowerQuestion.includes("emergency") ||
-      lowerQuestion.includes("crisis") ||
-      lowerQuestion.includes("problem")
-    ) {
-      return "crisis";
-    }
-
-    return "general";
-  };
-
-  // Generate context-specific instructions based on question type
-  const generateContextInstructions = (questionType: string): string => {
-    switch (questionType) {
-      case "recommendation":
-        return `
-For recommendation questions:
-- Provide specific, actionable recommendations
-- Include percentages or dollar amounts when relevant
-- Explain your reasoning briefly
-- Be encouraging about the user's financial situation
-- Offer multiple options when applicable`;
-
-      case "educational":
-        return `
-For educational questions:
-- Explain concepts in simple, relatable terms
-- Use analogies when helpful
-- Break down complex ideas into digestible parts
-- Connect concepts to the user's actual financial situation
-- Encourage questions and deeper understanding`;
-
-      case "analytical":
-        return `
-For analytical questions:
-- Provide clear calculations and breakdowns
-- Show your work when doing math
-- Use the user's actual financial data
-- Present information in an easy-to-understand format
-- Offer insights based on the analysis`;
-
-      case "guidance":
-        return `
-For guidance questions:
-- Offer supportive, non-judgmental advice
-- Provide step-by-step guidance
-- Consider the user's current situation
-- Be encouraging and realistic
-- Suggest resources or next steps`;
-
-      case "assessment":
-        return `
-For assessment questions:
-- Be honest but encouraging
-- Acknowledge both strengths and areas for improvement
-- Provide constructive feedback
-- Focus on progress and potential
-- Offer specific suggestions for improvement`;
-
-      case "planning":
-        return `
-For planning questions:
-- Create realistic, achievable plans
-- Break down goals into manageable steps
-- Consider the user's timeline and resources
-- Provide multiple planning options
-- Include checkpoints and milestones`;
-
-      case "comparison":
-        return `
-For comparison questions:
-- Present balanced comparisons
-- Highlight pros and cons of each option
-- Consider the user's specific situation
-- Provide a clear recommendation if asked
-- Explain the reasoning behind your comparison`;
-
-      case "crisis":
-        return `
-For crisis situations:
-- Be calm and reassuring
-- Provide immediate, actionable steps
-- Focus on stability and safety
-- Offer emotional support
-- Suggest professional help if needed`;
-
-      default:
-        return `
-For general questions:
-- Respond naturally and conversationally
-- Use the user's financial data when relevant
-- Be helpful and encouraging
-- Adapt your response to the specific question
-- Keep the conversation flowing naturally`;
-    }
   };
 
   // Handle feedback button interactions
