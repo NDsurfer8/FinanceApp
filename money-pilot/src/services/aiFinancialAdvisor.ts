@@ -169,38 +169,7 @@ class AIFinancialAdvisorService {
   // Check if user is requesting a financial plan
   isPlanRequest(userQuestion: string): boolean {
     const lowerQuestion = userQuestion.toLowerCase();
-    return (
-      // Action verbs for creating/generating plans
-      lowerQuestion.includes("generate") ||
-      lowerQuestion.includes("create") ||
-      lowerQuestion.includes("produce") ||
-      lowerQuestion.includes("make") ||
-      lowerQuestion.includes("build") ||
-      lowerQuestion.includes("develop") ||
-      lowerQuestion.includes("formulate") ||
-      lowerQuestion.includes("design") ||
-      lowerQuestion.includes("craft") ||
-      lowerQuestion.includes("put together") ||
-      // Specific plan types
-      lowerQuestion.includes("budget plan") ||
-      lowerQuestion.includes("savings plan") ||
-      lowerQuestion.includes("debt plan") ||
-      lowerQuestion.includes("investment plan") ||
-      lowerQuestion.includes("retirement plan") ||
-      lowerQuestion.includes("emergency fund plan") ||
-      lowerQuestion.includes("goal plan") ||
-      lowerQuestion.includes("money plan") ||
-      lowerQuestion.includes("finance plan") ||
-      // Export/CSV requests
-      lowerQuestion.includes("export") ||
-      lowerQuestion.includes("spreadsheet") ||
-      lowerQuestion.includes("csv") ||
-      // Help/assistance requests
-      lowerQuestion.includes("help me") ||
-      lowerQuestion.includes("i need") ||
-      lowerQuestion.includes("show me") ||
-      lowerQuestion.includes("give me")
-    );
+    return lowerQuestion.includes("generate");
   }
 
   // Check if user is asking about app features

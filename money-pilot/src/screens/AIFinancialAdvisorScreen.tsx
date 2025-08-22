@@ -77,7 +77,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   // Get welcome message
   const getWelcomeMessage = (): Message => ({
     id: "1",
-    text: 'Hi! I\'m Vectra, your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions.\n\n💡 Need a financial plan? Try asking:\n• "Generate a plan to save for a house"\n• "Create a debt payoff strategy"\n• "Make a budget plan"\n• "Produce a savings plan"\n• "Help me build a financial plan"\n\nWhat would you like to know about your finances?',
+    text: "Aloha! I’m Vectra, your personalAI Financial Advisor. I can help with budgeting, goals, debt, investing, and side hustles — what’s on your mind today? 🤙",
     isUser: false,
     timestamp: new Date(),
   });
@@ -148,14 +148,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       // Reset feedback states for current session only
       setFeedbackStates({});
 
-      setMessages([
-        {
-          id: "1",
-          text: "Hi! I'm Vectra, your AI Financial Advisor. I can help you with budgeting, goal planning, debt management, and financial decisions and more. What would you like to know about your finances?",
-          isUser: false,
-          timestamp: new Date(),
-        },
-      ]);
+      setMessages([getWelcomeMessage()]);
     } catch (error) {
       console.error("Error clearing chat history:", error);
     }
@@ -260,31 +253,10 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       let aiResponse;
 
       if (isPlanRequest && user) {
-        // Let the AI generate a customized plan based on the user's specific request
+        // Generate a comprehensive financial plan
         try {
-          // Create a plan name based on user's request
-          const lowerQuestion = userMessage.text.toLowerCase();
-          let planName = `Financial Plan - ${new Date().toLocaleDateString()}`;
-          if (lowerQuestion.includes("budget")) {
-            planName = `Budget Plan - ${new Date().toLocaleDateString()}`;
-          } else if (
-            lowerQuestion.includes("debt") ||
-            lowerQuestion.includes("payoff")
-          ) {
-            planName = `Debt Payoff Plan - ${new Date().toLocaleDateString()}`;
-          } else if (
-            lowerQuestion.includes("savings") ||
-            lowerQuestion.includes("emergency")
-          ) {
-            planName = `Savings Plan - ${new Date().toLocaleDateString()}`;
-          } else if (
-            lowerQuestion.includes("investment") ||
-            lowerQuestion.includes("retirement")
-          ) {
-            planName = `Investment Plan - ${new Date().toLocaleDateString()}`;
-          } else if (lowerQuestion.includes("goal")) {
-            planName = `Goal Achievement Plan - ${new Date().toLocaleDateString()}`;
-          }
+          // Create a simple plan name
+          const planName = `Financial Plan - ${new Date().toLocaleDateString()}`;
 
           // Generate the base plan data (for CSV generation)
           const plan = financialPlanGenerator.generateFinancialPlan(
@@ -293,7 +265,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
             user.uid
           );
 
-          // Let the AI generate a customized plan response
+          // Let the AI generate a comprehensive plan response
           const planPrompt = `Create a comprehensive financial plan for: "${userMessage.text}"
 
 Structure the plan exactly like this format:
@@ -335,8 +307,10 @@ Requirements:
 • Use friendly, encouraging tone with emojis
 • Make it actionable and specific to their situation`;
 
+          // Use optimized prompt for plan generation
+          const optimizedPlanPrompt = generateOptimizedPrompt(planPrompt);
           aiResponse = await aiFinancialAdvisorService.generateAIResponse(
-            planPrompt,
+            optimizedPlanPrompt,
             snapshot
           );
           aiResponse += `\n\n💾 Would you like to save this plan to your account?`;
@@ -389,10 +363,45 @@ Requirements:
     }
   };
 
-  // Load chat history on component mount
+  // Load chat history and feedback states on component mount
   useEffect(() => {
     loadChatHistory();
+    loadFeedbackStates();
   }, []);
+
+  // Load feedback states from AsyncStorage
+  const loadFeedbackStates = async () => {
+    try {
+      const userId = user?.uid || "anonymous";
+      const feedbackKey = `vectra_feedback_data_${userId}`;
+      const savedFeedback = await AsyncStorage.getItem(feedbackKey);
+
+      if (savedFeedback) {
+        const feedbackArray = JSON.parse(savedFeedback);
+        const feedbackStatesMap: {
+          [messageId: string]: { liked?: boolean; disliked?: boolean };
+        } = {};
+
+        feedbackArray.forEach((feedback: any) => {
+          if (feedback.feedback === "like") {
+            feedbackStatesMap[feedback.messageId] = {
+              liked: true,
+              disliked: false,
+            };
+          } else if (feedback.feedback === "dislike") {
+            feedbackStatesMap[feedback.messageId] = {
+              liked: false,
+              disliked: true,
+            };
+          }
+        });
+
+        setFeedbackStates(feedbackStatesMap);
+      }
+    } catch (error) {
+      console.error("Error loading feedback states:", error);
+    }
+  };
 
   useEffect(() => {
     // Scroll to bottom when new messages are added
@@ -576,6 +585,14 @@ Original Request: ${basePrompt}
 
       // Save feedback to AsyncStorage for analysis
       saveFeedbackData(feedbackData);
+
+      // Debug logging
+      console.log("🧠 Feedback processed:", {
+        characteristics: feedbackData.characteristics,
+        feedback: feedbackData.feedback,
+        messageId: feedbackData.messageId,
+        newPreferences: userPreferences,
+      });
     }
 
     setFeedbackStates((prev) => ({
