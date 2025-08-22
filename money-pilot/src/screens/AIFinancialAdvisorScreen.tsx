@@ -25,7 +25,11 @@ import {
   FinancialSnapshot,
 } from "../services/aiFinancialAdvisor";
 import { financialPlanGenerator } from "../services/financialPlanGenerator";
-import { saveFinancialPlan } from "../services/userData";
+import {
+  saveFinancialPlan,
+  updateBudgetSettings,
+  saveBudgetSettings,
+} from "../services/userData";
 import { VectraAvatar } from "../components/VectraAvatar";
 import { sendBackendAIFeedback } from "../services/backendAI";
 
@@ -35,10 +39,14 @@ interface Message {
   isUser: boolean;
   timestamp: Date;
   isLoading?: boolean;
+  budgetSuggestions?: {
+    savingsPercentage?: number;
+    debtPayoffPercentage?: number;
+  };
 }
 
 // Chat history configuration
-const MAX_MESSAGES = 50; // Keep last 50 messages
+const MAX_MESSAGES = 30; // Keep last 50 messages
 const CHAT_HISTORY_KEY = "ai_financial_advisor_chat_history";
 
 export const AIFinancialAdvisorScreen: React.FC = () => {
@@ -51,12 +59,14 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     goals,
     budgetSettings,
     recurringTransactions,
+    refreshBudgetSettings,
   } = useData();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [lastRequestTime, setLastRequestTime] = useState(0);
 
   const [isPlanRequest, setIsPlanRequest] = useState(false);
   const [feedbackStates, setFeedbackStates] = useState<{
@@ -71,6 +81,19 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     preferredTone: "friendly",
     preferredFocus: "actionable",
   });
+
+  // Cache for common questions to reduce API calls - user-specific
+  const [responseCache, setResponseCache] = useState<{
+    [key: string]: { response: string; timestamp: number };
+  }>({});
+
+  // Clear cache when user changes
+  useEffect(() => {
+    if (user?.uid) {
+      // Clear cache for previous user when new user logs in
+      setResponseCache({});
+    }
+  }, [user?.uid]);
   const scrollViewRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const headerOpacity = useRef(new Animated.Value(1)).current;
@@ -217,6 +240,17 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const sendMessage = async () => {
     if (!inputText.trim() || isLoading) return;
 
+    // Rate limiting: prevent requests faster than 2 seconds apart
+    const now = Date.now();
+    if (now - lastRequestTime < 2000) {
+      Alert.alert(
+        "Please wait",
+        "You're sending messages too quickly. Please wait a moment."
+      );
+      return;
+    }
+    setLastRequestTime(now);
+
     // Clear input immediately
     const currentInputText = inputText.trim();
     setInputText("");
@@ -251,9 +285,21 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       // Update the plan request state
       setIsPlanRequest(isPlanRequest);
 
+      // Check cache for common questions (cache for 1 hour) - user-specific
+      const cacheKey = `${user?.uid || "anonymous"}_${userMessage.text
+        .toLowerCase()
+        .trim()}_${snapshot.netIncome}_${snapshot.totalDebt}`;
+      const cachedResponse = responseCache[cacheKey];
+      const cacheAge = Date.now() - (cachedResponse?.timestamp || 0);
+      const isCacheValid = cachedResponse && cacheAge < 3600000; // 1 hour
+
       let aiResponse;
 
-      if (isPlanRequest && user) {
+      // Use cached response if available and valid
+      if (isCacheValid && !isPlanRequest) {
+        console.log("Using cached response for:", userMessage.text);
+        aiResponse = cachedResponse.response;
+      } else if (isPlanRequest && user) {
         // Generate a comprehensive financial plan
         try {
           // Create a simple plan name
@@ -269,44 +315,24 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           // Let the AI generate a comprehensive plan response
           const planPrompt = `Create a comprehensive financial plan for: "${userMessage.text}"
 
-Structure the plan exactly like this format:
+You can structure this as a natural conversation or use a clear format - whatever feels most appropriate for their request. If using a format, make it feel conversational and engaging rather than rigid.
 
-1. Snapshot of Current Finances
-• Monthly income: $X
-• Monthly expenses: $X  
-• Net savings: $X/month
-• Current savings: $X
-• Debt: $X (interest rate)
-
-2. Goal Definition
-🎯 [Specific goal based on their request]
-
-3. Step-by-Step Action Plan
-• [Specific actionable steps with dollar amounts and timelines]
-• [Include debt payoff strategy if applicable]
-• [Include savings allocation strategy]
-• [Include income enhancement strategies]
-• [Include expense reduction strategies]
-
-4. Options / Trade-Offs
-• [Option A]: [Description with pros/cons]
-• [Option B]: [Description with pros/cons]  
-• [Option C]: [Description with pros/cons]
-
-5. Recommendations
-• [3-4 specific recommendations]
-• [Include timeline for reassessment]
-
-6. Encouragement
-[End with a motivational, encouraging message using ocean/surf metaphors]
+Key elements to include (but present them naturally):
+• Current financial snapshot using their actual data
+• Clear goal definition based on their request
+• Actionable steps with specific amounts and timelines
+• Different options or approaches they could take
+• Specific recommendations tailored to their situation
+• Encouraging, supportive tone throughout
 
 Requirements:
 • Use their actual financial data from the snapshot
-• Provide specific dollar amounts and percentages
+• Provide specific dollar amounts and percentages when relevant
 • Include realistic timelines
 • Give multiple options when applicable
 • Use friendly, encouraging tone with emojis
-• Make it actionable and specific to their situation`;
+• Make it actionable and specific to their situation
+• Feel free to be conversational and natural - don't force a rigid format unless it helps clarity`;
 
           // Use optimized prompt for plan generation
           const optimizedPlanPrompt = generateOptimizedPrompt(planPrompt);
@@ -347,8 +373,30 @@ Requirements:
           .replace(/\*\*(.*?)\*\*/g, "$1"); // Remove any remaining bold formatting
       }
 
+      // Cache the response for future use (only for non-plan requests)
+      if (!isPlanRequest && aiResponse) {
+        setResponseCache((prev) => ({
+          ...prev,
+          [cacheKey]: { response: aiResponse, timestamp: Date.now() },
+        }));
+      }
+
+      // Detect percentage suggestions in the AI response
+      const suggestions = detectPercentageSuggestions(aiResponse);
+
       const updatedMessages = newMessages.map((msg) =>
-        msg.isLoading ? { ...msg, text: aiResponse, isLoading: false } : msg
+        msg.isLoading
+          ? {
+              ...msg,
+              text: aiResponse,
+              isLoading: false,
+              budgetSuggestions:
+                suggestions.savingsPercentage ||
+                suggestions.debtPayoffPercentage
+                  ? suggestions
+                  : undefined,
+            }
+          : msg
       );
       setMessages(updatedMessages);
       saveChatHistory(updatedMessages);
@@ -528,6 +576,364 @@ Requirements:
     });
   };
 
+  // Detect percentage suggestions in AI responses
+  const detectPercentageSuggestions = (
+    text: string
+  ): {
+    savingsPercentage?: number;
+    debtPayoffPercentage?: number;
+  } => {
+    console.log("LOG AI Response text:", text);
+
+    const suggestions: {
+      savingsPercentage?: number;
+      debtPayoffPercentage?: number;
+    } = {};
+
+    // Get current financial snapshot for calculations
+    const snapshot = generateFinancialSnapshot();
+    const netIncome = snapshot.netIncome;
+
+    // Look for savings percentage suggestions (more comprehensive patterns)
+    // Prioritize actionable recommendations over general mentions
+    const savingsPatterns = [
+      // High priority - direct recommendations
+      /(?:aim\s+for|target|goal\s+of|consider\s+aiming\s+for)\s+(\d+)%/gi,
+      /(?:recommend|suggest|try)\s+(?:a\s+)?(\d+)%\s+(?:savings|of\s+your\s+income)/gi,
+      /(?:set\s+a\s+target\s+savings\s+rate|target\s+savings\s+rate)\s*(?:of\s+)?(\d+)%/gi,
+      /(?:increase\s+savings\s+to|savings\s+rate\s+of|save\s+)(\d+)%/gi,
+      // Medium priority - allocation suggestions
+      /(?:allocate|put|set)\s+(\d+)%\s+(?:to\s+)?savings/gi,
+      /(\d+)%\s+(?:of\s+)?(?:your\s+)?income\s+(?:to\s+)?savings/gi,
+      // Lower priority - general mentions
+      /savings\s+(?:rate\s+)?(?:of\s+)?(\d+)%/gi,
+      /(\d+)%\s+savings\s+rate/gi,
+      /save\s+(\d+)%\s+(?:of\s+)?(?:your\s+)?income/gi,
+    ];
+
+    // Track all matches to find the highest priority recommendation
+    let bestSavingsMatch = null;
+    let bestSavingsPriority = -1;
+
+    for (let i = 0; i < savingsPatterns.length; i++) {
+      const pattern = savingsPatterns[i];
+      const matches = text.match(pattern);
+      if (matches) {
+        console.log(`Savings pattern ${i} matched:`, matches[0]);
+        const percentage = parseInt(matches[0].match(/\d+/)?.[0] || "20");
+        if (percentage > 0 && percentage <= 100) {
+          // Higher priority for earlier patterns (lower index)
+          const priority = savingsPatterns.length - i;
+          if (priority > bestSavingsPriority) {
+            bestSavingsMatch = percentage;
+            bestSavingsPriority = priority;
+            console.log(
+              `New best savings match: ${percentage}% (priority: ${priority})`
+            );
+          }
+        }
+      }
+    }
+
+    if (bestSavingsMatch) {
+      suggestions.savingsPercentage = bestSavingsMatch;
+      console.log("Final savings percentage detected:", bestSavingsMatch);
+    }
+
+    // Look for debt payoff percentage suggestions (more comprehensive patterns)
+    // Prioritize actionable recommendations over general mentions
+    const debtPatterns = [
+      // High priority - direct recommendations
+      /(?:aim\s+for|target|goal\s+of|consider\s+aiming\s+for)\s+(\d+)%\s+(?:debt|debt\s+payoff)/gi,
+      /(?:recommend|suggest|try)\s+(?:a\s+)?(\d+)%\s+(?:debt\s+payoff|to\s+debt)/gi,
+      /(?:set\s+a\s+target|target)\s+(?:debt\s+payoff\s+rate|debt\s+rate)\s*(?:of\s+)?(\d+)%/gi,
+      // Medium priority - allocation suggestions
+      /(?:debt\s+payoff\s+of|pay\s+(\d+)%\s+of|allocate\s+(\d+)%\s+to\s+debt)/gi,
+      /(?:allocate|put|set)\s+(\d+)%\s+(?:to\s+)?debt/gi,
+      /(?:pay\s+off|allocate)\s+(\d+)%\s+of\s+(?:your\s+)?discretionary\s+income/gi,
+      /(\d+)%\s+(?:of\s+)?(?:your\s+)?discretionary\s+income\s+(?:to\s+)?debt/gi,
+      // Lower priority - general mentions
+      /debt\s+payoff\s+(?:of\s+)?(\d+)%/gi,
+      /(\d+)%\s+debt\s+payoff/gi,
+      /pay\s+(\d+)%\s+(?:of\s+)?(?:your\s+)?income\s+(?:to\s+)?debt/gi,
+    ];
+
+    // Track all matches to find the highest priority recommendation
+    let bestDebtMatch = null;
+    let bestDebtPriority = -1;
+
+    for (let i = 0; i < debtPatterns.length; i++) {
+      const pattern = debtPatterns[i];
+      const matches = text.match(pattern);
+      if (matches) {
+        console.log(`Debt pattern ${i} matched:`, matches[0]);
+        const percentage = parseInt(matches[0].match(/\d+/)?.[0] || "5");
+        if (percentage > 0 && percentage <= 100) {
+          // Higher priority for earlier patterns (lower index)
+          const priority = debtPatterns.length - i;
+          if (priority > bestDebtPriority) {
+            bestDebtMatch = percentage;
+            bestDebtPriority = priority;
+            console.log(
+              `New best debt match: ${percentage}% (priority: ${priority})`
+            );
+          }
+        }
+      }
+    }
+
+    if (bestDebtMatch) {
+      suggestions.debtPayoffPercentage = bestDebtMatch;
+      console.log("Final debt percentage detected:", bestDebtMatch);
+    }
+
+    // Look for dollar amount suggestions for debt payoff and calculate percentage
+    const debtDollarPatterns = [
+      /(?:pay|allocate|put|use|spend)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)\s+(?:toward|to|on|for)\s+(?:debt|credit\s+card|loan)/gi,
+      /(?:recommend|suggest|try)\s+(?:paying|allocating)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)\s+(?:toward|to|on|for)\s+(?:debt|credit\s+card|loan)/gi,
+      /(?:aim\s+for|target|goal\s+of)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)\s+(?:toward|to|on|for)\s+(?:debt|credit\s+card|loan)/gi,
+      /(?:debt\s+payoff\s+of|pay\s+off)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/gi,
+      /(?:monthly\s+payment\s+of|monthly\s+contribution\s+of)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)\s+(?:toward|to|on|for)\s+(?:debt|credit\s+card|loan)/gi,
+    ];
+
+    for (const pattern of debtDollarPatterns) {
+      const matches = text.match(pattern);
+      if (matches && netIncome > 0) {
+        console.log("Debt dollar amount pattern matched:", matches[0]);
+        const dollarAmount = parseFloat(matches[0].replace(/[$,]/g, ""));
+        if (dollarAmount > 0 && dollarAmount <= netIncome) {
+          const calculatedPercentage = Math.round(
+            (dollarAmount / netIncome) * 100
+          );
+          if (calculatedPercentage >= 1 && calculatedPercentage <= 50) {
+            suggestions.debtPayoffPercentage = calculatedPercentage;
+            console.log(
+              `Debt dollar amount detected: $${dollarAmount}, calculated percentage: ${calculatedPercentage}%`
+            );
+            break;
+          }
+        }
+      }
+    }
+
+    // Look for dollar amount suggestions for savings and calculate percentage
+    const savingsDollarPatterns = [
+      /(?:save|allocate|put|set\s+aside)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)\s+(?:to|for|toward)\s+(?:savings|emergency\s+fund|investment)/gi,
+      /(?:recommend|suggest|try)\s+(?:saving|allocating)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)\s+(?:to|for|toward)\s+(?:savings|emergency\s+fund|investment)/gi,
+      /(?:aim\s+for|target|goal\s+of)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)\s+(?:to|for|toward)\s+(?:savings|emergency\s+fund|investment)/gi,
+      /(?:monthly\s+savings\s+of|monthly\s+contribution\s+of)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)\s+(?:to|for|toward)\s+(?:savings|emergency\s+fund|investment)/gi,
+      /(?:emergency\s+fund\s+contribution\s+of|investment\s+contribution\s+of)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/gi,
+    ];
+
+    for (const pattern of savingsDollarPatterns) {
+      const matches = text.match(pattern);
+      if (matches && netIncome > 0) {
+        console.log("Savings dollar amount pattern matched:", matches[0]);
+        const dollarAmount = parseFloat(matches[0].replace(/[$,]/g, ""));
+        if (dollarAmount > 0 && dollarAmount <= netIncome) {
+          const calculatedPercentage = Math.round(
+            (dollarAmount / netIncome) * 100
+          );
+          if (calculatedPercentage >= 1 && calculatedPercentage <= 50) {
+            suggestions.savingsPercentage = calculatedPercentage;
+            console.log(
+              `Savings dollar amount detected: $${dollarAmount}, calculated percentage: ${calculatedPercentage}%`
+            );
+            break;
+          }
+        }
+      }
+    }
+
+    // First, try to extract any percentage mentioned in the context of savings/financial advice
+    const allPercentages = text.match(/(\d+)%/g);
+    console.log("All percentages found in text:", allPercentages);
+
+    if (allPercentages) {
+      const percentages = allPercentages.map((p) => parseInt(p));
+      console.log("Parsed percentages:", percentages);
+
+      // If there's only one percentage and it's in a financial context, determine if it's savings or debt
+      if (
+        percentages.length === 1 &&
+        percentages[0] >= 5 &&
+        percentages[0] <= 50
+      ) {
+        const context = text.toLowerCase();
+        if (
+          context.includes("save") ||
+          context.includes("savings") ||
+          context.includes("income") ||
+          context.includes("budget") ||
+          context.includes("financial") ||
+          context.includes("money")
+        ) {
+          // Check if it's specifically about debt payoff (not just general debt or interest rates)
+          if (
+            context.includes("debt payoff percentage") ||
+            context.includes("payoff percentage") ||
+            context.includes("pay off debt") ||
+            context.includes("payoff debt") ||
+            context.includes("monthly payment") ||
+            context.includes("pay toward") ||
+            (context.includes("allocate") && context.includes("debt")) ||
+            (context.includes("put") && context.includes("debt")) ||
+            (context.includes("set") && context.includes("debt")) ||
+            (context.includes("use") && context.includes("debt")) ||
+            (context.includes("discretionary") && context.includes("debt")) ||
+            (context.includes("debt") &&
+              context.includes("percentage") &&
+              !context.includes("interest") &&
+              !context.includes("rate"))
+          ) {
+            console.log(
+              "Single percentage in debt payoff context detected:",
+              percentages[0]
+            );
+            return { debtPayoffPercentage: percentages[0] };
+          } else {
+            console.log(
+              "Single percentage in financial context detected as savings:",
+              percentages[0]
+            );
+            return { savingsPercentage: percentages[0] };
+          }
+        }
+      }
+
+      // If there are multiple percentages, try to assign them based on context
+      if (percentages && percentages.length === 2) {
+        const context = text.toLowerCase();
+
+        // Check if this is specifically about debt payoff recommendations
+        const isDebtPayoffRecommendation =
+          context.includes("debt payoff percentage") ||
+          context.includes("payoff percentage") ||
+          context.includes("monthly payment") ||
+          context.includes("pay toward") ||
+          context.includes("allocate to debt") ||
+          (context.includes("debt") &&
+            context.includes("percentage") &&
+            !context.includes("interest") &&
+            !context.includes("rate"));
+
+        // Check if this is specifically about savings recommendations
+        const isSavingsRecommendation =
+          context.includes("savings percentage") ||
+          context.includes("save percentage") ||
+          context.includes("allocate to savings") ||
+          context.includes("emergency fund") ||
+          (context.includes("save") && context.includes("percentage"));
+
+        // If both savings and debt are mentioned, be more careful about assignment
+        if (isSavingsRecommendation && isDebtPayoffRecommendation) {
+          // Sort percentages: higher one is likely savings, lower one is debt
+          const sorted = [...percentages].sort((a, b) => b - a);
+          console.log(
+            "Two percentages detected - assigning higher to savings, lower to debt:",
+            sorted
+          );
+          return {
+            savingsPercentage: sorted[0],
+            debtPayoffPercentage: sorted[1],
+          };
+        }
+
+        // If only debt payoff is mentioned, don't assign the higher percentage to savings
+        if (isDebtPayoffRecommendation && !isSavingsRecommendation) {
+          console.log(
+            "Only debt payoff context detected - not assigning percentages automatically"
+          );
+          return suggestions; // Return existing suggestions without auto-assignment
+        }
+      }
+    }
+
+    console.log(
+      "LOG AI Response percentage suggestions detected:",
+      suggestions
+    );
+    return suggestions;
+  };
+
+  // Update budget settings with confirmation
+  const updateBudgetSettingsWithConfirmation = async (
+    savingsPercentage?: number,
+    debtPayoffPercentage?: number
+  ) => {
+    if (!user?.uid || !budgetSettings) return;
+
+    const currentSavings = budgetSettings.savingsPercentage;
+    const currentDebt = budgetSettings.debtPayoffPercentage;
+    const snapshot = generateFinancialSnapshot();
+    const netIncome = snapshot.netIncome;
+
+    const hasChanges =
+      (savingsPercentage && savingsPercentage !== currentSavings) ||
+      (debtPayoffPercentage && debtPayoffPercentage !== currentDebt);
+
+    if (!hasChanges) return;
+
+    let message = `Would you like me to update your budget settings?\n\n`;
+
+    if (savingsPercentage && savingsPercentage !== currentSavings) {
+      const savingsAmount = Math.round((savingsPercentage / 100) * netIncome);
+      message += `• Savings: ${currentSavings}% → ${savingsPercentage}% ($${savingsAmount}/month)\n`;
+    }
+
+    if (debtPayoffPercentage && debtPayoffPercentage !== currentDebt) {
+      const debtAmount = Math.round((debtPayoffPercentage / 100) * netIncome);
+      message += `• Debt Payoff: ${currentDebt}% → ${debtPayoffPercentage}% ($${debtAmount}/month)\n`;
+    }
+
+    Alert.alert("Update Budget Settings?", message, [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Update",
+        onPress: async () => {
+          try {
+            const updatedSettings = {
+              ...budgetSettings,
+              savingsPercentage: savingsPercentage || currentSavings,
+              debtPayoffPercentage: debtPayoffPercentage || currentDebt,
+              updatedAt: Date.now(),
+            };
+
+            if (budgetSettings?.id) {
+              // Update existing settings
+              await updateBudgetSettings({
+                ...updatedSettings,
+                id: budgetSettings.id,
+              });
+            } else {
+              // Create new settings
+              await saveBudgetSettings(updatedSettings);
+            }
+
+            // Refresh budget settings to ensure consistency
+            await refreshBudgetSettings();
+
+            Alert.alert(
+              "Success!",
+              "Your budget settings have been updated. You can see the changes in the Budget screen.",
+              [{ text: "OK" }]
+            );
+          } catch (error) {
+            console.error("Failed to update budget settings:", error);
+            Alert.alert(
+              "Error",
+              "Failed to update budget settings. Please try again.",
+              [{ text: "OK" }]
+            );
+          }
+        },
+      },
+    ]);
+  };
+
   // Generate optimized prompt based on user preferences
   const generateOptimizedPrompt = (basePrompt: string) => {
     const styleInstructions = {
@@ -556,10 +962,19 @@ Requirements:
         "Focus on providing detailed analysis, calculations, and data-driven insights.",
     };
 
-    const optimization = `
+    return `
+You are Vectra, a friendly and knowledgeable AI financial advisor. Respond naturally and conversationally to the user's question.
+
 ${styleInstructions[userPreferences.preferredStyle]}
 ${toneInstructions[userPreferences.preferredTone]}
 ${focusInstructions[userPreferences.preferredFocus]}
+
+IMPORTANT: 
+- Respond naturally as if having a real conversation
+- Don't use rigid templates or formats unless specifically requested
+- Be encouraging and supportive
+- Use the user's actual financial data when relevant
+- Keep responses conversational and engaging
 
 User Preferences: ${userPreferences.preferredStyle} style, ${
       userPreferences.preferredTone
@@ -567,8 +982,6 @@ User Preferences: ${userPreferences.preferredStyle} style, ${
 
 Original Request: ${basePrompt}
 `;
-
-    return optimization;
   };
 
   // Handle feedback button interactions
@@ -1161,6 +1574,46 @@ Try giving feedback on a few responses to see the system in action!
                                   </Text>
                                 </TouchableOpacity>
                               )}
+                              {/* Budget Update Button - only show if budget suggestions are detected */}
+                              {message.budgetSuggestions &&
+                                (message.budgetSuggestions.savingsPercentage ||
+                                  message.budgetSuggestions
+                                    .debtPayoffPercentage) && (
+                                  <TouchableOpacity
+                                    onPress={() =>
+                                      updateBudgetSettingsWithConfirmation(
+                                        message.budgetSuggestions
+                                          ?.savingsPercentage,
+                                        message.budgetSuggestions
+                                          ?.debtPayoffPercentage
+                                      )
+                                    }
+                                    style={{
+                                      paddingHorizontal: 12,
+                                      paddingVertical: 6,
+                                      borderRadius: 8,
+                                      backgroundColor: colors.primary,
+                                      borderWidth: 1,
+                                      borderColor: colors.primary,
+                                      marginLeft: "auto",
+                                      shadowColor: colors.text,
+                                      shadowOffset: { width: 0, height: 1 },
+                                      shadowOpacity: 0.1,
+                                      shadowRadius: 2,
+                                      elevation: 2,
+                                    }}
+                                  >
+                                    <Text
+                                      style={{
+                                        fontSize: 12,
+                                        color: "#fff",
+                                        fontWeight: "600",
+                                      }}
+                                    >
+                                      📊 Update Budget
+                                    </Text>
+                                  </TouchableOpacity>
+                                )}
                             </View>
                           )}
                         </View>

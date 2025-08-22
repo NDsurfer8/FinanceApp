@@ -8,9 +8,26 @@ export const usePaywall = () => {
 
   const presentPaywall = useCallback(async () => {
     try {
+      console.log("=== PAYWALL PRESENTATION START ===");
+
+      // Prepare paywall with preloaded data for better performance
+      console.log("Preparing paywall with optimized loading...");
+      const paywallPrep = await revenueCatService.preparePaywall();
+
+      if (!paywallPrep.isReady) {
+        console.error("Paywall not ready, offerings not available");
+        return false;
+      }
+
+      console.log(`Paywall prepared in ${paywallPrep.loadTime}ms`);
       console.log("Presenting RevenueCat paywall...");
+
+      const paywallStartTime = Date.now();
       await PurchasesUI.presentPaywall();
-      console.log("Paywall dismissed, handling purchase completion...");
+      const paywallTime = Date.now() - paywallStartTime;
+
+      console.log(`Paywall presented and dismissed in ${paywallTime}ms`);
+      console.log("Handling purchase completion...");
 
       // Handle purchase completion with multiple attempts
       let attempts = 0;
@@ -50,9 +67,11 @@ export const usePaywall = () => {
         await refreshSubscriptionStatus(true);
       }
 
+      console.log("=== PAYWALL PRESENTATION END ===");
       return true;
     } catch (error) {
       console.error("Failed to present paywall:", error);
+      console.log("=== PAYWALL PRESENTATION FAILED ===");
       return false;
     }
   }, [refreshSubscriptionStatus]);

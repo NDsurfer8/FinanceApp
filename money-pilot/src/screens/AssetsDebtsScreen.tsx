@@ -1,10 +1,4 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from "react";
-=======
-import React from "react";
-import { SafeAreaView, ScrollView, View, Text, Dimensions } from "react-native";
-import { CustomPieChart } from "../components/BeautifulCharts";
->>>>>>> origin/main
 import {
   SafeAreaView,
   ScrollView,
@@ -35,7 +29,6 @@ interface AssetsDebtsScreenProps {
 
 const screenWidth = Dimensions.get("window").width;
 
-<<<<<<< HEAD
 export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   navigation,
 }) => {
@@ -135,21 +128,6 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-=======
-export const AssetsDebtsScreen: React.FC = () => {
-  const assetTotal = assets.reduce((a, b) => a + b.balance, 0);
-  const pieChartData = spendCategories.map((c) => ({
-    name: c.name,
-    population: c.value,
-    color: c.color,
-    legendFontColor: "#374151",
-    legendFontSize: 12,
-  }));
-
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
->>>>>>> origin/main
         <View
           style={{
             marginBottom: 16,
@@ -178,10 +156,6 @@ export const AssetsDebtsScreen: React.FC = () => {
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
             elevation: 2,
-<<<<<<< HEAD
-=======
-            marginTop: 16,
->>>>>>> origin/main
           }}
         >
           <Text
@@ -328,7 +302,6 @@ export const AssetsDebtsScreen: React.FC = () => {
             marginTop: 16,
           }}
         >
-<<<<<<< HEAD
           <Text
             style={{
               fontFamily: fontFamily.semiBold,
@@ -544,12 +517,6 @@ export const AssetsDebtsScreen: React.FC = () => {
             Financial Overview
           </Text>
           <AssetsDebtsChart assets={chartAssets} debts={chartDebts} />
-=======
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
-            Spending Breakdown
-          </Text>
-          <CustomPieChart data={pieChartData} title="" height={220} />
->>>>>>> origin/main
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -1,12 +1,4 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from "react";
-=======
-import React from "react";
-import { SafeAreaView, ScrollView, View, Text, Dimensions } from "react-native";
-import { Stat, RatioBar } from "../components";
-
-import { CustomLineChart, CustomBarChart } from "../components/BeautifulCharts";
->>>>>>> origin/main
 import {
   SafeAreaView,
   ScrollView,
@@ -291,7 +283,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   };
 
   return (
-<<<<<<< HEAD
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
@@ -352,19 +343,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 Welcome back, {user?.displayName || "User"} 👋
               </Text>
             )}
-=======
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-        {/* KPIs */}
-        <View style={{ flexDirection: "row", gap: 12 }}>
-          <View style={{ flex: 1 }}>
-            <Stat
-              label="Net Worth"
-              value={`$${netWorth.toLocaleString()}`}
-              icon="trending-up"
-              positive
-            />
->>>>>>> origin/main
           </View>
           <View style={{ flexDirection: "row", gap: 12 }}>
             <TouchableOpacity
@@ -393,7 +371,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         {/* Monthly Overview - Large Card */}
         <View
           style={{
-<<<<<<< HEAD
             backgroundColor: colors.surface,
             borderRadius: 20,
             padding: 28,
@@ -577,28 +554,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               </View>
             </View>
           </View>
-=======
-            backgroundColor: "#fff",
-            borderRadius: 16,
-            padding: 16,
-            shadowColor: "#000",
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
-            marginTop: 16,
-          }}
-        >
-          <Text style={{ fontWeight: "600", marginBottom: 8 }}>
-            Cashflow Trend
-          </Text>
-          <CustomLineChart
-            data={lineChartData}
-            data2={lineChartData2}
-            title=""
-            height={200}
-          />
->>>>>>> origin/main
         </View>
 
         {/* Net Worth Card */}
@@ -612,12 +567,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
-<<<<<<< HEAD
             elevation: 4,
-=======
-            elevation: 2,
-            marginTop: 16,
->>>>>>> origin/main
           }}
         >
           <Text
@@ -630,7 +580,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           >
             Net Worth
           </Text>
-<<<<<<< HEAD
 
           <View style={{ alignItems: "center" }}>
             <Text
@@ -647,9 +596,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
             </Text>
           </View>
-=======
-          <CustomBarChart data={barChartData} title="" height={220} />
->>>>>>> origin/main
         </View>
 
         {/* Quick Actions */}
@@ -663,12 +609,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
-<<<<<<< HEAD
             elevation: 4,
-=======
-            elevation: 2,
-            marginTop: 16,
->>>>>>> origin/main
           }}
         >
           <Text

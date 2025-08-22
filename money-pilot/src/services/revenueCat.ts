@@ -122,6 +122,7 @@ class RevenueCatService {
 
         // Set up customer info update listener
         this.setupCustomerInfoUpdateListener();
+
         return; // Success, exit retry loop
       } catch (error: any) {
         lastError = error;
@@ -192,11 +193,19 @@ class RevenueCatService {
 
     try {
       console.log("RevenueCat: Fetching offerings...");
+      const startTime = Date.now();
+
       const offerings = await Purchases.getOfferings();
+
+      const fetchTime = Date.now() - startTime;
+      console.log(`RevenueCat: Offerings fetched in ${fetchTime}ms`);
+
       console.log("RevenueCat: Offerings fetched successfully:", {
         current: offerings.current?.identifier,
         available: Object.keys(offerings.all),
+        fetchTime: `${fetchTime}ms`,
       });
+
       return offerings.current;
     } catch (error: any) {
       console.error("Failed to get offerings:", {
@@ -371,6 +380,38 @@ class RevenueCatService {
     } catch (error) {
       console.error("Failed to get subscription products:", error);
       return [];
+    }
+  }
+
+  // Method to prepare paywall
+  async preparePaywall(): Promise<{
+    isReady: boolean;
+    offerings: PurchasesOffering | null;
+    loadTime: number;
+  }> {
+    const startTime = Date.now();
+
+    try {
+      console.log("RevenueCat: Preparing paywall...");
+
+      // Get offerings
+      const offerings = await this.getOfferings();
+
+      const loadTime = Date.now() - startTime;
+      console.log(`RevenueCat: Paywall prepared in ${loadTime}ms`);
+
+      return {
+        isReady: !!offerings,
+        offerings,
+        loadTime,
+      };
+    } catch (error) {
+      console.error("RevenueCat: Failed to prepare paywall:", error);
+      return {
+        isReady: false,
+        offerings: null,
+        loadTime: Date.now() - startTime,
+      };
     }
   }
 

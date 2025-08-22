@@ -7,7 +7,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { firebaseConfig } from "../config/firebase";
 
 // Initialize Firebase
-const app = getApps().length ? getApps()[0]! : initializeApp(firebaseConfig);
+export const app = getApps().length
+  ? getApps()[0]!
+  : initializeApp(firebaseConfig);
 
 console.log("Firebase initialized with config:", {
   projectId: firebaseConfig.projectId,
