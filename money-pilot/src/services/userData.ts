@@ -968,18 +968,6 @@ export const updateSharedGroup = async (group: SharedGroup): Promise<void> => {
   }
 };
 
-// Delete shared group
-export const deleteSharedGroup = async (groupId: string): Promise<void> => {
-  try {
-    const groupRef = ref(db, `sharedGroups/${groupId}`);
-    await remove(groupRef);
-    console.log("Shared group deleted successfully");
-  } catch (error) {
-    console.error("Error deleting shared group:", error);
-    throw error;
-  }
-};
-
 // Add member to shared group
 export const addGroupMember = async (
   groupId: string,
@@ -1032,6 +1020,45 @@ export const removeGroupMember = async (
     console.log("Member removed from group successfully");
   } catch (error) {
     console.error("Error removing member from group:", error);
+    throw error;
+  }
+};
+
+// Delete shared group
+export const deleteSharedGroup = async (
+  groupId: string,
+  userId: string
+): Promise<void> => {
+  try {
+    const groupRef = ref(db, `sharedGroups/${groupId}`);
+    const snapshot = await get(groupRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("Group not found");
+    }
+
+    const group = snapshot.val();
+
+    // Check if user is the owner of the group
+    const isOwner = group.members.some(
+      (member: SharedGroupMember) =>
+        member.id === userId && member.role === "owner"
+    );
+
+    if (!isOwner) {
+      throw new Error("Only group owners can delete groups");
+    }
+
+    // Delete the group
+    await remove(groupRef);
+
+    // Also remove from user's groups list
+    const userGroupsRef = ref(db, `users/${userId}/sharedGroups/${groupId}`);
+    await remove(userGroupsRef);
+
+    console.log("Shared group deleted successfully");
+  } catch (error) {
+    console.error("Error deleting shared group:", error);
     throw error;
   }
 };

@@ -22,6 +22,7 @@ import {
   createSharedGroup,
   addGroupMember,
   removeGroupMember,
+  deleteSharedGroup,
   createInvitation,
   getUserInvitations,
   updateInvitationStatus,
@@ -69,6 +70,52 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
     description: "",
     type: "couple" as const,
   });
+
+  // Delete group function
+  const handleDeleteGroup = async (group: SharedGroup) => {
+    const userId = user?.uid;
+    if (!userId) return;
+
+    // Check if user is the owner
+    const isOwner = group.members.some(
+      (member) => member.id === userId && member.role === "owner"
+    );
+
+    if (!isOwner) {
+      Alert.alert(
+        "Cannot Delete Group",
+        "Only group owners can delete groups."
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Delete Group",
+      `Are you sure you want to delete "${group.name}"? This action cannot be undone and will remove the group for all members.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              if (group.id) {
+                await deleteSharedGroup(group.id, userId as string);
+                Alert.alert("Success", "Group deleted successfully");
+                loadData(); // Refresh the groups list
+              }
+            } catch (error) {
+              console.error("Error deleting group:", error);
+              Alert.alert("Error", "Failed to delete group. Please try again.");
+            }
+          },
+        },
+      ]
+    );
+  };
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"member" | "viewer">("member");
 
@@ -675,18 +722,34 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     {group.members.length !== 1 ? "s" : ""}
                   </Text>
                 </View>
-                <TouchableOpacity
-                  onPress={() => {
-                    setSelectedGroup(group);
-                    setShowInviteModal(true);
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
                   }}
                 >
-                  <Ionicons
-                    name="person-add"
-                    size={20}
-                    color={colors.primary}
-                  />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedGroup(group);
+                      setShowInviteModal(true);
+                    }}
+                  >
+                    <Ionicons
+                      name="person-add"
+                      size={20}
+                      color={colors.primary}
+                    />
+                  </TouchableOpacity>
+                  {group.members.some(
+                    (member) =>
+                      member.id === user?.uid && member.role === "owner"
+                  ) && (
+                    <TouchableOpacity onPress={() => handleDeleteGroup(group)}>
+                      <Ionicons name="trash" size={20} color="#dc2626" />
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
 
               {group.description && (

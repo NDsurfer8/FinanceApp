@@ -72,11 +72,6 @@ class RevenueCatService {
   private isInitialized = false;
   private isOfflineMode = false;
 
-  // Cache for offerings to improve performance
-  private cachedOfferings: PurchasesOffering | null = null;
-  private offeringsCacheTime: number = 0;
-  private readonly OFFERINGS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
   private constructor() {}
 
   static getInstance(): RevenueCatService {
@@ -128,9 +123,6 @@ class RevenueCatService {
         // Set up customer info update listener
         this.setupCustomerInfoUpdateListener();
 
-        // Preload offerings in background for faster paywall loading
-        this.preloadOfferings();
-
         return; // Success, exit retry loop
       } catch (error: any) {
         lastError = error;
@@ -166,9 +158,6 @@ class RevenueCatService {
     try {
       await Purchases.logIn(userId);
       console.log("RevenueCat user set:", userId);
-
-      // Preload offerings in background for faster paywall loading
-      this.preloadOfferings();
     } catch (error: any) {
       console.error("Failed to set RevenueCat user:", {
         error: error.message,
@@ -179,33 +168,8 @@ class RevenueCatService {
     }
   }
 
-  // Preload offerings in background to improve paywall performance
-  private async preloadOfferings(): Promise<void> {
-    try {
-      console.log("RevenueCat: Preloading offerings in background...");
-      await this.getOfferings(true); // Force refresh
-      console.log("RevenueCat: Offerings preloaded successfully");
-    } catch (error) {
-      console.error("RevenueCat: Failed to preload offerings:", error);
-    }
-  }
-
-  // Clear offerings cache (useful for debugging or when cache is stale)
-  clearOfferingsCache(): void {
-    this.cachedOfferings = null;
-    this.offeringsCacheTime = 0;
-    console.log("RevenueCat: Offerings cache cleared");
-  }
-
   // Get diagnostic information
   getDiagnosticInfo(): any {
-    const now = Date.now();
-    const cacheAge = this.cachedOfferings
-      ? now - this.offeringsCacheTime
-      : null;
-    const isCacheValid =
-      cacheAge !== null && cacheAge < this.OFFERINGS_CACHE_DURATION;
-
     return {
       isInitialized: this.isInitialized,
       isOfflineMode: this.isOfflineMode,
@@ -218,31 +182,13 @@ class RevenueCatService {
         Platform.OS === "ios"
           ? `${REVENUECAT_API_KEYS.ios.substring(0, 10)}...`
           : `${REVENUECAT_API_KEYS.android.substring(0, 10)}...`,
-      // Cache information
-      hasCachedOfferings: !!this.cachedOfferings,
-      cacheAge: cacheAge ? `${Math.round(cacheAge / 1000)}s` : null,
-      isCacheValid,
-      cacheDuration: `${this.OFFERINGS_CACHE_DURATION / 1000}s`,
     };
   }
 
-  async getOfferings(
-    forceRefresh: boolean = false
-  ): Promise<PurchasesOffering | null> {
+  async getOfferings(): Promise<PurchasesOffering | null> {
     if (this.isOfflineMode) {
       console.log("RevenueCat: Offline mode - returning null offerings");
       return null;
-    }
-
-    // Check cache first (unless force refresh is requested)
-    const now = Date.now();
-    if (
-      !forceRefresh &&
-      this.cachedOfferings &&
-      now - this.offeringsCacheTime < this.OFFERINGS_CACHE_DURATION
-    ) {
-      console.log("RevenueCat: Returning cached offerings");
-      return this.cachedOfferings;
     }
 
     try {
@@ -253,10 +199,6 @@ class RevenueCatService {
 
       const fetchTime = Date.now() - startTime;
       console.log(`RevenueCat: Offerings fetched in ${fetchTime}ms`);
-
-      // Cache the offerings
-      this.cachedOfferings = offerings.current;
-      this.offeringsCacheTime = now;
 
       console.log("RevenueCat: Offerings fetched successfully:", {
         current: offerings.current?.identifier,
@@ -441,7 +383,7 @@ class RevenueCatService {
     }
   }
 
-  // Optimized method to prepare paywall with preloaded data
+  // Method to prepare paywall
   async preparePaywall(): Promise<{
     isReady: boolean;
     offerings: PurchasesOffering | null;
@@ -452,7 +394,7 @@ class RevenueCatService {
     try {
       console.log("RevenueCat: Preparing paywall...");
 
-      // Get offerings (will use cache if available)
+      // Get offerings
       const offerings = await this.getOfferings();
 
       const loadTime = Date.now() - startTime;

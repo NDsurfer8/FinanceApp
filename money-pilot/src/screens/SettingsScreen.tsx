@@ -60,6 +60,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     return { firstName: displayName, lastName: "" };
   };
 
+  // Check if user is eligible for introductory offers based on subscription status
+  const isEligibleForIntroOffer =
+    !subscriptionStatus?.isPremium && !subscriptionStatus?.isActive;
+
   // Debug logging
   useEffect(() => {
     console.log("SettingsScreen: User data updated", {
@@ -556,7 +560,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           ) : (
             <View>
               <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>
-                Unlock auto-import, AI budgeting, and unlimited accounts.
+                {isEligibleForIntroOffer
+                  ? "Start your free trial and unlock auto-import, AI budgeting, and unlimited accounts."
+                  : "Unlock auto-import, AI budgeting, and unlimited accounts."}
               </Text>
               <TouchableOpacity
                 style={{
@@ -569,7 +575,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 onPress={presentPaywall}
               >
                 <Text style={{ color: "white", fontWeight: "700" }}>
-                  Start 3‑day Trial
+                  {isEligibleForIntroOffer ? "Start Free Trial" : "Get Premium"}
                 </Text>
               </TouchableOpacity>
             </View>
