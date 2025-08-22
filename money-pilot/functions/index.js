@@ -419,7 +419,6 @@ function buildSystemPrompt(
   userPreferences = {}
 ) {
   let systemPrompt = SYSTEM_PROMPT_CORE;
-
   // Add user preferences
   if (userPreferences.preferredStyle === "concise") {
     systemPrompt += " Keep responses brief and to the point.";
