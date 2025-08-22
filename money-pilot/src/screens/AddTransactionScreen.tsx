@@ -9,6 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
@@ -513,10 +514,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           {/* Header */}
           <View
@@ -742,7 +745,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 }
                 keyboardType="decimal-pad"
                 autoCorrect={false}
-                returnKeyType="next"
+                returnKeyType="done"
+                onSubmitEditing={() => Keyboard.dismiss()}
+                blurOnSubmit={true}
               />
             </View>
 
@@ -830,6 +835,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 autoCorrect={false}
                 multiline
                 returnKeyType="done"
+                onSubmitEditing={() => Keyboard.dismiss()}
+                blurOnSubmit={true}
               />
             </View>
 
@@ -873,6 +880,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 }
                 autoCorrect={false}
                 returnKeyType="done"
+                onSubmitEditing={() => Keyboard.dismiss()}
+                blurOnSubmit={true}
               />
 
               {/* Quick Date Buttons */}
@@ -1079,6 +1088,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                       }
                       autoCorrect={false}
                       returnKeyType="done"
+                      onSubmitEditing={() => Keyboard.dismiss()}
+                      blurOnSubmit={true}
                     />
                   </View>
                 </View>
