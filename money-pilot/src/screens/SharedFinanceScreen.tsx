@@ -86,7 +86,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
           loadGroupData(selectedGroup);
         }
       }
-    }, [user, selectedGroup])
+    }, [user]) // Removed selectedGroup dependency to prevent conflicts
   );
 
   // Real-time listener for selected group data
