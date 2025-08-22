@@ -10,11 +10,17 @@
 const { onCall } = require("firebase-functions/v2/https");
 const functions = require("firebase-functions");
 
+// Load environment variables
+require("dotenv").config();
+
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
 
 // Plaid API Functions
 const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
+
+// OpenAI API Functions
+const OpenAI = require("openai");
 
 // Initialize Plaid client
 const configuration = new Configuration({
@@ -32,6 +38,40 @@ const configuration = new Configuration({
 });
 
 const plaidClient = new PlaidApi(configuration);
+
+// Initialize OpenAI client (lazy initialization)
+let openai = null;
+function getOpenAIClient() {
+  if (!openai) {
+    // Debug: Log all environment variables
+    console.log(
+      "Available environment variables:",
+      Object.keys(process.env).filter((key) =>
+        key.toLowerCase().includes("openai")
+      )
+    );
+    console.log("OPENAI_API_KEY:", !!process.env.OPENAI_API_KEY);
+    console.log("openai_api_key:", !!process.env.openai_api_key);
+
+    // Use environment variable for Firebase Functions v2
+    let apiKey = process.env.OPENAI_API_KEY || process.env.openai_api_key;
+
+    // Check if API key is available
+    if (!apiKey) {
+      console.error("OpenAI API key not configured");
+      throw new Error(
+        "OpenAI API key not configured. Please set the OPENAI_API_KEY environment variable."
+      );
+    }
+
+    console.log("OpenAI API Key available:", !!apiKey);
+
+    openai = new OpenAI({
+      apiKey: apiKey,
+    });
+  }
+  return openai;
+}
 
 // Create link token
 exports.createLinkToken = onCall(async (data, context) => {
@@ -298,6 +338,331 @@ exports.getTransactions = onCall(async (data, context) => {
     throw new functions.https.HttpsError(
       "internal",
       "Failed to get transactions"
+    );
+  }
+});
+
+// AI Financial Advisor Functions
+
+// Core system prompt components
+const SYSTEM_PROMPT_CORE = `You are Vectra, a friendly and laidback professional AI Financial Advisor for the VectorFi app. You help users with budgeting, goal setting, debt management, investing advice, and financial planning.
+
+Your style:
+- Use bullet points and emojis like ChatGPT
+- Be friendly and laidback professional
+- Provide actionable, practical advice
+- Keep responses concise but helpful
+- Use plain text (no markdown headers like ### or **bold**)
+
+Always be encouraging and supportive while giving practical financial guidance.`;
+
+const APP_FEATURES_DOC = `VectorFi App Features & Navigation:
+
+📱 Main Screens:
+- Dashboard: Overview of finances, quick actions
+- Transactions: Add/edit transactions, view history
+- Assets & Debts: Track assets, debts, net worth
+- Goals: Set and track financial goals
+- AI Advisor: Chat with me for financial advice
+- Settings: App settings, profile, subscription
+
+💡 Key Features:
+- Transaction tracking with categories
+- Asset and debt management
+- Goal setting and progress tracking
+- Shared finance groups
+- AI financial advisor (me!)
+- Dark/light mode
+- Bank account integration (Plaid)
+
+🔧 How to Navigate:
+- Bottom tabs for main sections
+- Settings → App Settings for preferences
+- AI Advisor → Ask me anything about finances
+- Goals → Create new financial goals
+- Assets & Debts → Add assets or debts
+
+I can help you find any feature or explain how to use the app!`;
+
+const FIN_PLAN_RULES = `When generating financial plans, follow this exact 6-section structure:
+
+1. Snapshot of Current Finances
+- Monthly income, expenses, net savings
+- Current savings, debts, assets
+
+2. Goal Definition
+- Clear goal statement with timeline
+
+3. Step-by-Step Action Plan
+- Specific monthly actions
+- Prioritized steps (debt first, then savings)
+- Include side hustle opportunities
+
+4. Options / Trade-Offs
+- 3 realistic options with pros/cons
+- Different timelines or approaches
+
+5. Recommendations
+- 3-4 specific actionable recommendations
+- Focus on high-impact actions
+
+6. Encouragement
+- Motivational closing message
+- Positive reinforcement
+
+Use bullet points and emojis, no markdown headers.`;
+
+// Helper function to build system prompt
+function buildSystemPrompt(
+  userQuestion,
+  isPlanRequest = false,
+  userPreferences = {}
+) {
+  let systemPrompt = SYSTEM_PROMPT_CORE;
+
+  // Add user preferences
+  if (userPreferences.preferredStyle === "concise") {
+    systemPrompt += " Keep responses brief and to the point.";
+  } else if (userPreferences.preferredStyle === "detailed") {
+    systemPrompt += " Provide detailed explanations and examples.";
+  }
+
+  if (userPreferences.preferredTone === "professional") {
+    systemPrompt += " Maintain a professional tone.";
+  } else if (userPreferences.preferredTone === "casual") {
+    systemPrompt += " Use a casual, friendly tone.";
+  }
+
+  // Add app features doc if user asks about app
+  const appKeywords = [
+    "app",
+    "feature",
+    "screen",
+    "navigate",
+    "find",
+    "where",
+    "how to",
+  ];
+  const isAppQuestion = appKeywords.some((keyword) =>
+    userQuestion.toLowerCase().includes(keyword)
+  );
+
+  if (isAppQuestion) {
+    systemPrompt += "\n\n" + APP_FEATURES_DOC;
+  }
+
+  // Add financial plan rules if it's a plan request
+  if (isPlanRequest) {
+    systemPrompt += "\n\n" + FIN_PLAN_RULES;
+  }
+
+  return systemPrompt;
+}
+
+// Helper function to detect plan requests
+function isPlanRequest(userQuestion) {
+  const planKeywords = ["generate", "create", "make", "plan", "strategy"];
+  return planKeywords.some((keyword) =>
+    userQuestion.toLowerCase().includes(keyword)
+  );
+}
+
+// Helper function to calculate cost
+function calculateCost(usage) {
+  const costPer1kTokens = 0.00015; // gpt-4o-mini pricing
+  return (usage.total_tokens / 1000) * costPer1kTokens;
+}
+
+// AI Chat endpoint
+exports.aiChat = onCall(async (data, context) => {
+  console.log("=== AI CHAT FUNCTION CALLED ===");
+
+  // Handle authentication - allow unauthenticated users for testing
+  let userId = "anonymous";
+  if (context && context.auth) {
+    userId = context.auth.uid;
+    console.log("Authenticated user:", userId);
+  } else {
+    console.log("No authentication context, using anonymous user");
+  }
+  // Handle different data structures (Firebase Functions v1 vs v2)
+  let actualData = data;
+  if (data && data.data) {
+    console.log("Found nested data structure, extracting from data.data");
+    actualData = data.data;
+  }
+
+  // Log only the fields we need, not the entire data object
+  console.log("Data fields received:", {
+    hasMessage: !!actualData?.message,
+    messageLength: actualData?.message?.length || 0,
+    hasFinancialData: !!actualData?.financialData,
+    hasUserPreferences: !!actualData?.userPreferences,
+    userPreferencesKeys: actualData?.userPreferences
+      ? Object.keys(actualData.userPreferences)
+      : [],
+  });
+
+  const { message, financialData, userPreferences = {} } = actualData;
+
+  if (!message) {
+    console.error("Message is missing from data:", actualData);
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Message is required"
+    );
+  }
+
+  console.log("AI Chat request:", {
+    userId,
+    messageLength: message.length,
+    hasFinancialData: !!financialData,
+    userPreferences,
+  });
+
+  try {
+    // Detect if this is a plan request
+    const isPlanRequestFlag = isPlanRequest(message);
+
+    // Build system prompt
+    const systemPrompt = buildSystemPrompt(
+      message,
+      isPlanRequestFlag,
+      userPreferences
+    );
+
+    // Build user message with financial context
+    let userMessage = message;
+    if (financialData) {
+      userMessage = `User Financial Data:\n${JSON.stringify(
+        financialData,
+        null,
+        2
+      )}\n\nUser Question: ${message}`;
+    }
+
+    console.log("Calling OpenAI API...");
+    const openaiClient = getOpenAIClient();
+    const response = await openaiClient.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
+      max_tokens: 1000,
+      temperature: 0.7,
+    });
+
+    const aiResponse = response.choices[0].message.content;
+    const tokensUsed = response.usage.total_tokens;
+    const cost = calculateCost(response.usage);
+
+    console.log("OpenAI response:", {
+      responseLength: aiResponse.length,
+      tokensUsed,
+      cost: `$${cost.toFixed(4)}`,
+    });
+
+    return {
+      response: aiResponse,
+      tokensUsed,
+      cost,
+      isPlanRequest: isPlanRequestFlag,
+    };
+  } catch (error) {
+    console.error("AI Chat error:", error);
+    console.error("Error details:", error.response?.data || error.message);
+    console.error("Error stack:", error.stack);
+
+    // Check if it's an API key issue
+    if (error.message && error.message.includes("API key")) {
+      throw new functions.https.HttpsError(
+        "internal",
+        "OpenAI API key not configured properly"
+      );
+    }
+
+    // Check if it's an OpenAI API issue
+    if (error.response?.status) {
+      throw new functions.https.HttpsError(
+        "internal",
+        `OpenAI API error: ${error.response.status} - ${error.message}`
+      );
+    }
+
+    throw new functions.https.HttpsError(
+      "internal",
+      `AI request failed: ${error.message}`
+    );
+  }
+});
+
+// AI Feedback endpoint
+exports.aiFeedback = onCall(async (data, context) => {
+  console.log("=== AI FEEDBACK FUNCTION CALLED ===");
+
+  // Handle authentication - allow unauthenticated users for testing
+  let userId = "anonymous";
+  if (context && context.auth) {
+    userId = context.auth.uid;
+    console.log("Authenticated user:", userId);
+  } else {
+    console.log("No authentication context, using anonymous user");
+  }
+  // Handle different data structures (Firebase Functions v1 vs v2)
+  let actualData = data;
+  if (data && data.data) {
+    console.log("Found nested data structure, extracting from data.data");
+    actualData = data.data;
+  }
+
+  // Log only the fields we need, not the entire data object
+  console.log("Feedback data fields received:", {
+    hasMessageId: !!actualData?.messageId,
+    hasFeedback: !!actualData?.feedback,
+    hasPreferences: !!actualData?.preferences,
+    preferencesKeys: actualData?.preferences
+      ? Object.keys(actualData.preferences)
+      : [],
+  });
+
+  const { messageId, feedback, preferences } = actualData;
+
+  if (!messageId || !feedback) {
+    console.error("Missing required fields:", actualData);
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Message ID and feedback are required"
+    );
+  }
+
+  console.log("AI Feedback:", {
+    userId,
+    messageId,
+    feedback,
+    preferences,
+  });
+
+  try {
+    // Store feedback in Firestore (you'll need to add admin SDK)
+    // For now, just log it
+    console.log("Storing feedback in database:", {
+      userId,
+      messageId,
+      feedback,
+      preferences,
+      timestamp: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      message: "Feedback stored successfully",
+    };
+  } catch (error) {
+    console.error("AI Feedback error:", error);
+    throw new functions.https.HttpsError(
+      "internal",
+      `Failed to store feedback: ${error.message}`
     );
   }
 });

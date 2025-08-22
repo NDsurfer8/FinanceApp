@@ -27,6 +27,7 @@ import {
 import { financialPlanGenerator } from "../services/financialPlanGenerator";
 import { saveFinancialPlan } from "../services/userData";
 import { VectraAvatar } from "../components/VectraAvatar";
+import { sendBackendAIFeedback } from "../services/backendAI";
 
 interface Message {
   id: string;
@@ -311,14 +312,18 @@ Requirements:
           const optimizedPlanPrompt = generateOptimizedPrompt(planPrompt);
           aiResponse = await aiFinancialAdvisorService.generateAIResponse(
             optimizedPlanPrompt,
-            snapshot
+            snapshot,
+            true, // isPlanRequest
+            userPreferences
           );
           aiResponse += `\n\n💾 Would you like to save this plan to your account?`;
         } catch (planError) {
           console.error("Error creating financial plan:", planError);
           aiResponse = await aiFinancialAdvisorService.generateAIResponse(
             userMessage.text,
-            snapshot
+            snapshot,
+            false, // isPlanRequest
+            userPreferences
           );
         }
       } else {
@@ -328,7 +333,9 @@ Requirements:
         // Regular AI response with optimized prompt
         aiResponse = await aiFinancialAdvisorService.generateAIResponse(
           optimizedPrompt,
-          snapshot
+          snapshot,
+          false, // isPlanRequest
+          userPreferences
         );
 
         // Clean up markdown formatting from AI responses
@@ -565,7 +572,10 @@ Original Request: ${basePrompt}
   };
 
   // Handle feedback button interactions
-  const handleFeedback = (messageId: string, type: "like" | "dislike") => {
+  const handleFeedback = async (
+    messageId: string,
+    type: "like" | "dislike"
+  ) => {
     const message = messages.find((m) => m.id === messageId);
     const isPositive = type === "like";
 
@@ -585,6 +595,14 @@ Original Request: ${basePrompt}
 
       // Save feedback to AsyncStorage for analysis
       saveFeedbackData(feedbackData);
+
+      // Send feedback to backend AI
+      try {
+        await sendBackendAIFeedback(messageId, type, userPreferences);
+        console.log("✅ Feedback sent to backend AI");
+      } catch (error) {
+        console.error("❌ Failed to send feedback to backend:", error);
+      }
 
       // Debug logging
       console.log("🧠 Feedback processed:", {

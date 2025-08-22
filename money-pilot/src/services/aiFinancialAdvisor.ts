@@ -1,6 +1,7 @@
 import { Alert } from "react-native";
 import { financialPlanGenerator } from "./financialPlanGenerator";
 import { FinancialPlan } from "./userData";
+import { callBackendAI, sendBackendAIFeedback } from "./backendAI";
 
 export interface AIResponse {
   type: "text" | "plan_generated";
@@ -82,6 +83,13 @@ class AIFinancialAdvisorService {
   // Check if OpenAI is configured
   private isOpenAIConfigured(): boolean {
     return !!OPENAI_API_KEY;
+  }
+
+  // Check if backend AI should be used
+  private shouldUseBackendAI(): boolean {
+    // For now, always use backend AI
+    // You can add environment variable toggle later
+    return true;
   }
 
   // Core system prompt - always included (~200 tokens)
@@ -1182,14 +1190,46 @@ To give you the most relevant advice, could you tell me more about what you'd li
 Or if you'd like a comprehensive overview of your financial situation, just ask for a "financial overview" or "how am I doing financially"! 🌊🤙`;
   }
 
-  // Generate AI response using OpenAI or fallback to rule-based system
+  // Generate AI response using backend AI or fallback to frontend
   async generateAIResponse(
     userQuestion: string,
     snapshot: FinancialSnapshot,
-    isPlanRequest: boolean = false
+    isPlanRequest: boolean = false,
+    userPreferences?: any
   ): Promise<string> {
     try {
-      // Try OpenAI first if configured
+      // Try backend AI first if enabled
+      if (this.shouldUseBackendAI()) {
+        console.log("Using backend AI...");
+        console.log("User preferences:", userPreferences);
+
+        // Prepare financial data for backend
+        const financialData = {
+          monthlyIncome: snapshot.monthlyIncome,
+          monthlyExpenses: snapshot.monthlyExpenses,
+          netIncome: snapshot.netIncome,
+          totalDebt: snapshot.totalDebt,
+          totalSavings: snapshot.totalSavings,
+          totalAssets: snapshot.totalAssets,
+          netWorth: snapshot.netWorth,
+          assets: snapshot.assets?.slice(0, 5) || [], // Limit to 5 items
+          debts: snapshot.debts?.slice(0, 5) || [], // Limit to 5 items
+          goals: snapshot.goals?.slice(0, 5) || [], // Limit to 5 items
+        };
+
+        const result = await callBackendAI(
+          userQuestion,
+          financialData,
+          userPreferences
+        );
+        return result.response;
+      }
+    } catch (error) {
+      console.error("Backend AI failed, falling back to frontend:", error);
+    }
+
+    // Fallback to frontend OpenAI
+    try {
       if (this.isOpenAIConfigured()) {
         const prompt = this.buildOpenAIPrompt(userQuestion, snapshot);
         const aiResponse = await this.callOpenAI(
@@ -1201,12 +1241,12 @@ Or if you'd like a comprehensive overview of your financial situation, just ask 
       }
     } catch (error) {
       console.error(
-        "OpenAI API call failed, falling back to rule-based system:",
+        "Frontend OpenAI failed, falling back to rule-based system:",
         error
       );
     }
 
-    // Fallback to rule-based system
+    // Final fallback to rule-based system
     try {
       // Simulate AI processing delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
