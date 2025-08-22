@@ -1345,7 +1345,6 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               }
               placeholder="Enter description (optional)"
               placeholderTextColor={colors.textSecondary}
-              multiline
             />
 
             <Text
