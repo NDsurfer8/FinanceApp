@@ -358,29 +358,38 @@ Always be encouraging and supportive while giving practical financial guidance.`
 
 const APP_FEATURES_DOC = `VectorFi App Features & Navigation:
 
-📱 Main Screens:
-- Dashboard: Overview of finances, quick actions
-- Transactions: Add/edit transactions, view history
-- Assets & Debts: Track assets, debts, net worth
-- Goals: Set and track financial goals
-- AI Advisor: Chat with me for financial advice
-- Settings: App settings, profile, subscription
+📱 Main Screens (Bottom Tabs):
+- Dashboard: Financial overview, quick actions, spending insights
+- Budget: Set savings/debt payoff percentages, view budget summary
+- Goals: Create and track financial goals, monitor progress
+- Assets/Debts: Manage assets, debts, view net worth
+- Settings: App preferences, profile, subscription, AI chatbot toggle
 
 💡 Key Features:
-- Transaction tracking with categories
-- Asset and debt management
-- Goal setting and progress tracking
-- Shared finance groups
-- AI financial advisor (me!)
-- Dark/light mode
+- Income and Expense tracking with categories and recurring patterns
+- Asset and debt management with net worth calculation
+- Goal setting with progress tracking and timelines
+- Shared finance groups for family/friends
+- AI financial advisor (floating button on every screen!)
+- Dark/light mode toggle
 - Bank account integration (Plaid)
+- Budget percentage settings for savings and debt payoff
 
 🔧 How to Navigate:
-- Bottom tabs for main sections
-- Settings → App Settings for preferences
-- AI Advisor → Ask me anything about finances
-- Goals → Create new financial goals
-- Assets & Debts → Add assets or debts
+- Bottom tabs for main sections (Dashboard, Budget, Goals, Assets/Debts, Settings)
+- Dashboard → Quick Actions → Add Transaction/Asset/Debt/Goal
+- Settings → App Settings → Toggle AI Chatbot, Dark Mode, etc.
+- Floating AI button (bottom-right) → Ask financial questions from any screen
+- Goals → Create new financial goals with target amounts
+- Assets/Debts → Add assets or debts with balances and rates
+- Budget → Set savings percentage and debt payoff percentage and add income and expenses with categories and recurring patterns and view budget summary.
+
+🎯 Quick Actions (Dashboard):
+- Add Transaction: Log income or expenses
+- Add Asset: Track savings, investments, property
+- Add Debt: Monitor credit cards, loans, mortgages
+- Add Goal: Set financial targets with timelines
+- Bank Data: View connected bank transactions
 
 I can help you find any feature or explain how to use the app!`;
 

@@ -5,7 +5,13 @@ import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
 import { useChatbot } from "../contexts/ChatbotContext";
 
-export const FloatingAIChatbot: React.FC = () => {
+interface FloatingAIChatbotProps {
+  hideOnAIScreen?: boolean;
+}
+
+export const FloatingAIChatbot: React.FC<FloatingAIChatbotProps> = ({
+  hideOnAIScreen = false,
+}) => {
   const { isVisible } = useChatbot();
   const navigation = useNavigation();
   const { colors } = useTheme();
@@ -85,7 +91,7 @@ export const FloatingAIChatbot: React.FC = () => {
     navigation.navigate("AIFinancialAdvisor" as never);
   };
 
-  if (!isVisible) return null;
+  if (!isVisible || hideOnAIScreen) return null;
 
   return (
     <Animated.View

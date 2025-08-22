@@ -15,11 +15,12 @@ import {
   Clipboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { useChatbot } from "../contexts/ChatbotContext";
 import {
   aiFinancialAdvisorService,
   FinancialSnapshot,
@@ -52,6 +53,7 @@ const CHAT_HISTORY_KEY = "ai_financial_advisor_chat_history";
 export const AIFinancialAdvisorScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
+  const { hideChatbot, showChatbot } = useChatbot();
   const {
     transactions,
     assets,
@@ -94,6 +96,19 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       setResponseCache({});
     }
   }, [user?.uid]);
+
+  // Hide floating AI button when on this screen, show when leaving
+  useFocusEffect(
+    React.useCallback(() => {
+      // Hide when entering this screen
+      hideChatbot();
+
+      // Show when leaving this screen
+      return () => {
+        showChatbot();
+      };
+    }, [hideChatbot, showChatbot])
+  );
   const scrollViewRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const headerOpacity = useRef(new Animated.Value(1)).current;
