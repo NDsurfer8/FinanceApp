@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,26 +10,44 @@ import {
   Platform,
   Alert,
   ScrollView,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { signIn, validateEmail } from "../services/auth";
+import { fontFamily } from "../config/fonts";
+import { signIn, validateEmail, signInWithApple } from "../services/auth";
+import * as AppleAuthentication from "expo-apple-authentication";
+import Constants from "expo-constants";
 
 interface LoginScreenProps {
   onLogin: () => void;
   onSignUp: () => void;
+  onForgotPassword: () => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({
   onLogin,
   onSignUp,
+  onForgotPassword,
 }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
+  const isExpoGo = Constants.appOwnership === "expo";
 
   // Refs for input focus management
   const passwordRef = useRef<TextInput>(null);
+
+  // Check Apple Authentication availability
+  useEffect(() => {
+    const checkAvailability = async () => {
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
+      setIsAppleAuthAvailable(isAvailable);
+    };
+
+    checkAvailability();
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -64,11 +82,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     );
   };
 
-  const handleAppleLogin = () => {
-    Alert.alert(
-      "Apple Login",
-      "Apple login functionality would be implemented here"
-    );
+  const handleAppleLogin = async () => {
+    setIsLoading(true);
+    try {
+      await signInWithApple();
+      onLogin();
+    } catch (error: any) {
+      console.error("Apple login error:", error);
+      const errorMessage =
+        error.message ||
+        "An error occurred with Apple Sign In. Please try again.";
+      Alert.alert("Apple Sign In Failed", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = () => {
+    onForgotPassword();
   };
 
   return (
@@ -86,9 +117,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              <Ionicons name="wallet" size={60} color="#6366f1" />
+              <Image
+                source={require("../../assets/icon.png")}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
-            <Text style={styles.title}>Money Pilot</Text>
+            <Text style={styles.title}>VectorFi</Text>
             <Text style={styles.subtitle}>Take control of your finances</Text>
           </View>
 
@@ -141,7 +176,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               {/* Temporarily removed eye icon for testing */}
             </View>
 
-            <TouchableOpacity style={styles.forgotPassword}>
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={handleForgotPassword}
+              disabled={isLoading}
+            >
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
 
@@ -177,14 +216,30 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <Text style={styles.socialButtonText}>Google</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={handleAppleLogin}
-              >
-                <Ionicons name="logo-apple" size={24} color="#000" />
-                <Text style={styles.socialButtonText}>Apple</Text>
-              </TouchableOpacity>
+              {isAppleAuthAvailable && (
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={
+                    AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+                  }
+                  buttonStyle={
+                    AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                  }
+                  cornerRadius={12}
+                  style={styles.appleButton}
+                  onPress={handleAppleLogin}
+                />
+              )}
             </View>
+
+            {/* Expo Go Notice */}
+            {isExpoGo && Platform.OS === "ios" && (
+              <View style={styles.expoGoNotice}>
+                <Text style={styles.expoGoText}>
+                  💡 Apple Sign-In requires a development build. Use "npx eas
+                  build --profile development --platform ios" to create one.
+                </Text>
+              </View>
+            )}
 
             {/* Sign Up Link */}
             <View style={styles.signUpContainer}>
@@ -227,7 +282,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 16,
   },
+  logoImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
   title: {
+    fontFamily: fontFamily.bold,
     fontSize: 32,
     fontWeight: "bold",
     color: "#1f2937",
@@ -257,6 +318,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 56,
+    fontFamily: fontFamily.regular,
     fontSize: 16,
     color: "#1f2937",
     paddingVertical: 0,
@@ -270,6 +332,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   forgotPasswordText: {
+    fontFamily: fontFamily.semiBold,
     color: "#6366f1",
     fontSize: 14,
     fontWeight: "600",
@@ -286,6 +349,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#a5b4fc",
   },
   loginButtonText: {
+    fontFamily: fontFamily.semiBold,
     color: "white",
     fontSize: 16,
     fontWeight: "600",
@@ -301,6 +365,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#e5e7eb",
   },
   dividerText: {
+    fontFamily: fontFamily.regular,
     marginHorizontal: 16,
     color: "#6b7280",
     fontSize: 14,
@@ -327,6 +392,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#374151",
   },
+  appleButton: {
+    flex: 1,
+    height: 56,
+  },
   signUpContainer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -340,5 +409,19 @@ const styles = StyleSheet.create({
     color: "#6366f1",
     fontSize: 14,
     fontWeight: "600",
+  },
+  expoGoNotice: {
+    backgroundColor: "#fef3c7",
+    borderWidth: 1,
+    borderColor: "#f59e0b",
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 16,
+  },
+  expoGoText: {
+    fontSize: 12,
+    color: "#92400e",
+    textAlign: "center",
+    lineHeight: 16,
   },
 });

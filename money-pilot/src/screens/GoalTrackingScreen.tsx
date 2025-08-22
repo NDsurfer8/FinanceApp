@@ -1,0 +1,1366 @@
+import React, { useState, useEffect } from "react";
+import {
+  SafeAreaView,
+  ScrollView,
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  TextInput,
+  Modal,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useRoute } from "@react-navigation/native";
+import { useAuth } from "../hooks/useAuth";
+import { useZeroLoading } from "../hooks/useZeroLoading";
+import { useTransactionLimits } from "../hooks/useTransactionLimits";
+import { usePaywall } from "../hooks/usePaywall";
+import { useTheme } from "../contexts/ThemeContext";
+import {
+  saveGoal,
+  updateGoal,
+  removeGoal,
+  FinancialGoal,
+} from "../services/userData";
+
+interface GoalTrackingScreenProps {
+  navigation: any;
+}
+
+type GoalTrackingRouteParams = {
+  openAddModal?: boolean;
+};
+
+export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
+  navigation,
+}) => {
+  const { user } = useAuth();
+  const { goals, updateDataOptimistically, refreshInBackground } =
+    useZeroLoading();
+  const { canAddGoal, getGoalLimitInfo } = useTransactionLimits();
+  const { presentPaywall } = usePaywall();
+  const route = useRoute();
+  const [loading, setLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null);
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+  const [newGoal, setNewGoal] = useState({
+    name: "",
+    targetAmount: "",
+    currentAmount: "",
+    monthlyContribution: "",
+    targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
+    category: "savings",
+    priority: "medium" as "medium" | "high" | "low",
+  });
+  const { colors } = useTheme();
+
+  const goalCategories = [
+    {
+      key: "emergency",
+      label: "Emergency Fund",
+      icon: "shield-checkmark",
+      color: "#d97706",
+    },
+    { key: "vacation", label: "Vacation", icon: "airplane", color: "#3b82f6" },
+    {
+      key: "downpayment",
+      label: "Down Payment",
+      icon: "home",
+      color: "#16a34a",
+    },
+    { key: "car", label: "New Car", icon: "car", color: "#8b5cf6" },
+    { key: "wedding", label: "Wedding", icon: "heart", color: "#ec4899" },
+    { key: "education", label: "Education", icon: "school", color: "#f59e0b" },
+    {
+      key: "retirement",
+      label: "Retirement",
+      icon: "trending-up",
+      color: "#10b981",
+    },
+    { key: "other", label: "Other", icon: "star", color: "#6b7280" },
+  ];
+
+  const priorityColors = {
+    high: "#dc2626",
+    medium: "#d97706",
+    low: "#16a34a",
+  };
+
+  // Background refresh when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user) {
+        refreshInBackground();
+      }
+    }, [user, refreshInBackground])
+  );
+
+  // Check if we should open the add modal from navigation params
+  useEffect(() => {
+    const params = route.params as GoalTrackingRouteParams | undefined;
+    const openAddModal = params?.openAddModal;
+    if (openAddModal) {
+      setShowAddModal(true);
+      // Clear the parameter so it doesn't open again on subsequent visits
+      navigation.setParams({ openAddModal: false });
+    }
+  }, [route.params, navigation]);
+
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toLocaleString()}`;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
+
+  const calculateProgress = (goal: FinancialGoal) => {
+    return goal.targetAmount > 0
+      ? (goal.currentAmount / goal.targetAmount) * 100
+      : 0;
+  };
+
+  const calculateMonthsToGoal = (goal: FinancialGoal) => {
+    const remaining = goal.targetAmount - goal.currentAmount;
+    if (goal.monthlyContribution <= 0) return Infinity;
+    return Math.ceil(remaining / goal.monthlyContribution);
+  };
+
+  const calculateTimeRemaining = (goal: FinancialGoal) => {
+    if (!goal.targetDate) return "No Date";
+
+    const now = new Date();
+    const targetDate = new Date(goal.targetDate);
+    const timeDiff = targetDate.getTime() - now.getTime();
+
+    if (timeDiff <= 0) return "Overdue";
+
+    const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+    if (daysRemaining >= 365) {
+      const years = Math.floor(daysRemaining / 365);
+      const months = Math.floor((daysRemaining % 365) / 30);
+      if (months > 0) {
+        return `${years}y ${months}m`;
+      }
+      return `${years}y`;
+    } else if (daysRemaining >= 30) {
+      const months = Math.floor(daysRemaining / 30);
+      const weeks = Math.floor((daysRemaining % 30) / 7);
+      if (weeks > 0) {
+        return `${months}m ${weeks}w`;
+      }
+      return `${months}m`;
+    } else if (daysRemaining >= 7) {
+      const weeks = Math.floor(daysRemaining / 7);
+      const days = daysRemaining % 7;
+      if (days > 0) {
+        return `${weeks}w ${days}d`;
+      }
+      return `${weeks}w`;
+    } else {
+      return `${daysRemaining}d`;
+    }
+  };
+
+  const getProgressColor = (progress: number) => {
+    if (progress >= 100) return "#16a34a";
+    if (progress >= 75) return "#d97706";
+    if (progress >= 50) return "#f59e0b";
+    return "#dc2626";
+  };
+
+  const getProgressStatus = (progress: number) => {
+    if (progress >= 100) return "Completed!";
+    if (progress >= 75) return "Almost There";
+    if (progress >= 50) return "Halfway There";
+    if (progress >= 25) return "Getting Started";
+    return "Just Starting";
+  };
+
+  const handleAddGoal = async () => {
+    if (!user) {
+      Alert.alert("Error", "You must be logged in to add goals");
+      return;
+    }
+
+    if (
+      !newGoal.name ||
+      !newGoal.targetAmount ||
+      !newGoal.monthlyContribution
+    ) {
+      Alert.alert("Error", "Please fill in all required fields");
+      return;
+    }
+
+    // Check goal limits (only for new goals, not edits)
+    if (!isEditMode) {
+      if (!canAddGoal()) {
+        const limitInfo = getGoalLimitInfo();
+        // Only show upgrade alert if not unlimited (i.e., not subscribed)
+        if (!limitInfo.isUnlimited) {
+          Alert.alert(
+            "Goal Limit Reached",
+            `You've reached your limit of ${limitInfo.limit} goal${
+              limitInfo.limit !== 1 ? "s" : ""
+            } on the free plan.\n\nUpgrade to Premium for unlimited goals!`,
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Upgrade to Premium", onPress: presentPaywall },
+            ]
+          );
+        }
+        return;
+      }
+    }
+
+    try {
+      if (isEditMode && editingGoal) {
+        // Update existing goal
+        const updatedGoal = {
+          ...editingGoal,
+          name: newGoal.name,
+          targetAmount: parseFloat(newGoal.targetAmount),
+          currentAmount: parseFloat(newGoal.currentAmount) || 0,
+          monthlyContribution: parseFloat(newGoal.monthlyContribution),
+          targetDate: newGoal.targetDate,
+          category: newGoal.category,
+          priority: newGoal.priority,
+          updatedAt: Date.now(),
+        };
+
+        // Optimistic update
+        const updatedGoals = goals.map((g) =>
+          g.id === editingGoal.id ? updatedGoal : g
+        );
+        updateDataOptimistically({ goals: updatedGoals });
+
+        // Update in database
+        await updateGoal(updatedGoal);
+
+        setShowAddModal(false);
+        setIsEditMode(false);
+        setEditingGoal(null);
+        setNewGoal({
+          name: "",
+          targetAmount: "",
+          currentAmount: "",
+          monthlyContribution: "",
+          targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          category: "savings",
+          priority: "medium",
+        });
+        Alert.alert("Success", "Goal updated successfully!");
+      } else {
+        // Create new goal
+        const goal: FinancialGoal = {
+          name: newGoal.name,
+          targetAmount: parseFloat(newGoal.targetAmount),
+          currentAmount: parseFloat(newGoal.currentAmount) || 0,
+          monthlyContribution: parseFloat(newGoal.monthlyContribution),
+          targetDate: newGoal.targetDate,
+          category: newGoal.category,
+          priority: newGoal.priority,
+          userId: user.uid,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+
+        // Optimistic update - add to UI immediately
+        const tempGoal = { ...goal, id: `temp-${Date.now()}` };
+        const updatedGoals = [...goals, tempGoal];
+        updateDataOptimistically({ goals: updatedGoals });
+
+        // Save to database in background
+        const savedGoalId = await saveGoal(goal);
+
+        // Update with real ID from database
+        const finalGoals = updatedGoals.map((g) =>
+          g.id === tempGoal.id ? { ...g, id: savedGoalId } : g
+        );
+        updateDataOptimistically({ goals: finalGoals });
+
+        setShowAddModal(false);
+        setNewGoal({
+          name: "",
+          targetAmount: "",
+          currentAmount: "",
+          monthlyContribution: "",
+          targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          category: "savings",
+          priority: "medium",
+        });
+        Alert.alert("Success", "Goal added successfully!");
+      }
+    } catch (error) {
+      console.error("Error saving goal:", error);
+      Alert.alert(
+        "Error",
+        `Failed to ${isEditMode ? "update" : "add"} goal. Please try again.`
+      );
+
+      // Revert optimistic update on error
+      if (!isEditMode) {
+        const revertedGoals = goals.filter((g) => !g.id.startsWith("temp-"));
+        updateDataOptimistically({ goals: revertedGoals });
+      }
+    }
+  };
+
+  const handleUpdateGoal = async (goalId: string, newAmount: number) => {
+    if (!user) return;
+
+    try {
+      const goalToUpdate = goals.find((goal) => goal.id === goalId);
+      if (!goalToUpdate) return;
+
+      const updatedGoal: FinancialGoal = {
+        ...goalToUpdate,
+        currentAmount: newAmount,
+        userId: user.uid,
+      };
+
+      // Optimistic update - update UI immediately
+      const updatedGoals = goals.map((goal) =>
+        goal.id === goalId ? updatedGoal : goal
+      );
+      updateDataOptimistically({ goals: updatedGoals });
+
+      await updateGoal(updatedGoal);
+      await refreshInBackground(); // Reload goals from database
+      Alert.alert("Success", "Goal updated successfully!");
+    } catch (error) {
+      console.error("Error updating goal:", error);
+      Alert.alert("Error", "Failed to update goal. Please try again.");
+    }
+  };
+
+  const handleDeleteGoal = () => {
+    if (!user || !editingGoal) return;
+
+    Alert.alert(
+      "Delete Goal",
+      "Are you sure you want to delete this goal? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Optimistic update - remove from UI immediately
+              const updatedGoals = goals.filter((g) => g.id !== editingGoal.id);
+              updateDataOptimistically({ goals: updatedGoals });
+
+              // Delete from database in background
+              await removeGoal(user.uid, editingGoal.id!);
+
+              setShowAddModal(false);
+              setIsEditMode(false);
+              setEditingGoal(null);
+              setNewGoal({
+                name: "",
+                targetAmount: "",
+                currentAmount: "",
+                monthlyContribution: "",
+                targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                  .toISOString()
+                  .split("T")[0],
+                category: "savings",
+                priority: "medium",
+              });
+              Alert.alert("Success", "Goal deleted successfully!");
+            } catch (error) {
+              console.error("Error deleting goal:", error);
+              Alert.alert("Error", "Failed to delete goal. Please try again.");
+
+              // Revert optimistic update on error
+              await refreshInBackground();
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEditGoal = (goalId: string, field: string, value: string) => {
+    setEditingGoalId(goalId);
+    setEditingField(field);
+    setEditingValue(value);
+  };
+
+  const handleSaveGoalEdit = async () => {
+    if (!user || !editingGoalId || !editingField) return;
+
+    try {
+      const goalToUpdate = goals.find((goal) => goal.id === editingGoalId);
+      if (!goalToUpdate) {
+        Alert.alert("Error", "Goal not found");
+        return;
+      }
+
+      let newValue: any = editingValue;
+
+      // Validate and convert based on field type
+      if (
+        editingField === "targetAmount" ||
+        editingField === "currentAmount" ||
+        editingField === "monthlyContribution"
+      ) {
+        const numValue = parseFloat(editingValue);
+        if (isNaN(numValue) || numValue < 0) {
+          Alert.alert("Error", "Please enter a valid amount");
+          return;
+        }
+        newValue = numValue;
+      } else if (editingField === "targetDate") {
+        // Validate date format
+        const dateValue = new Date(editingValue);
+        if (isNaN(dateValue.getTime())) {
+          Alert.alert("Error", "Please enter a valid date (YYYY-MM-DD)");
+          return;
+        }
+        newValue = editingValue;
+      }
+
+      const updatedGoal: FinancialGoal = {
+        ...goalToUpdate,
+        [editingField]: newValue,
+        userId: user.uid,
+      };
+
+      // Optimistic update - update UI immediately
+      const updatedGoals = goals.map((goal) =>
+        goal.id === editingGoalId ? updatedGoal : goal
+      );
+      updateDataOptimistically({ goals: updatedGoals });
+
+      await updateGoal(updatedGoal);
+
+      // Reset editing state
+      setEditingGoalId(null);
+      setEditingField(null);
+      setEditingValue("");
+
+      // Reload goals
+      await refreshInBackground();
+      Alert.alert("Success", "Goal updated successfully!");
+    } catch (error) {
+      console.error("Error updating goal:", error);
+      Alert.alert("Error", "Failed to update goal");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingGoalId(null);
+    setEditingField(null);
+    setEditingValue("");
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 24,
+          }}
+        >
+          <View>
+            <Text
+              style={{ fontSize: 28, fontWeight: "800", color: colors.text }}
+            >
+              Financial Goals
+            </Text>
+            <Text
+              style={{
+                fontSize: 16,
+                color: colors.textSecondary,
+                marginTop: 4,
+              }}
+            >
+              Track your progress
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => setShowAddModal(true)}
+            style={{
+              backgroundColor: colors.primary,
+              padding: 12,
+              borderRadius: 12,
+            }}
+          >
+            <Ionicons name="add" size={20} color={colors.buttonText} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Limit Indicator - Only show if not unlimited */}
+        {!getGoalLimitInfo().isUnlimited && (
+          <View
+            style={{
+              backgroundColor: colors.warningLight,
+              borderRadius: 12,
+              padding: 12,
+              marginBottom: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="information-circle"
+                size={16}
+                color={colors.warning}
+              />
+              <Text
+                style={{ marginLeft: 8, color: colors.warning, fontSize: 14 }}
+              >
+                {`${getGoalLimitInfo().current}/${
+                  getGoalLimitInfo().limit
+                } goals used`}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={presentPaywall}>
+              <Text
+                style={{
+                  color: colors.warning,
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
+                Upgrade
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Goals Summary */}
+        {goals.length > 0 && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              marginBottom: 20,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: "700",
+                marginBottom: 20,
+                color: colors.text,
+              }}
+            >
+              Goals Summary
+            </Text>
+
+            <View
+              style={{ flexDirection: "row", justifyContent: "space-between" }}
+            >
+              <View style={{ alignItems: "center", flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                    marginBottom: 4,
+                  }}
+                >
+                  Total Goals
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: colors.text,
+                  }}
+                >
+                  {goals.length}
+                </Text>
+              </View>
+              <View style={{ alignItems: "center", flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                    marginBottom: 4,
+                  }}
+                >
+                  Total Target
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: colors.success,
+                  }}
+                >
+                  {formatCurrency(
+                    goals.reduce((sum, goal) => sum + goal.targetAmount, 0)
+                  )}
+                </Text>
+              </View>
+              <View style={{ alignItems: "center", flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                    marginBottom: 4,
+                  }}
+                >
+                  Total Saved
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: colors.warning,
+                  }}
+                >
+                  {formatCurrency(
+                    goals.reduce((sum, goal) => sum + goal.currentAmount, 0)
+                  )}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Goals List */}
+        {goals.length === 0 ? (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 40,
+              alignItems: "center",
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            }}
+          >
+            <Ionicons
+              name="flag-outline"
+              size={48}
+              color={colors.textSecondary}
+              style={{ marginBottom: 16 }}
+            />
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              No Goals Yet
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                textAlign: "center",
+                marginBottom: 20,
+              }}
+            >
+              Start by adding your first financial goal
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowAddModal(true)}
+              style={{
+                backgroundColor: colors.primary,
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                borderRadius: 12,
+              }}
+            >
+              <Text style={{ color: colors.buttonText, fontWeight: "600" }}>
+                Add Goal
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          goals.map((goal) => {
+            const progress = calculateProgress(goal);
+            const monthsToGoal = calculateMonthsToGoal(goal);
+            const category = goalCategories.find(
+              (cat) => cat.key === goal.category
+            );
+
+            return (
+              <TouchableOpacity
+                key={goal.id}
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 20,
+                  padding: 24,
+                  marginBottom: 20,
+                  shadowColor: colors.shadow,
+                  shadowOpacity: 0.08,
+                  shadowRadius: 12,
+                  shadowOffset: { width: 0, height: 4 },
+                  elevation: 4,
+                }}
+                onPress={() => {
+                  setEditingGoal(goal);
+                  setIsEditMode(true);
+                  setNewGoal({
+                    name: goal.name,
+                    targetAmount: goal.targetAmount.toString(),
+                    currentAmount: goal.currentAmount.toString(),
+                    monthlyContribution: goal.monthlyContribution.toString(),
+                    targetDate: goal.targetDate,
+                    category: goal.category,
+                    priority: goal.priority,
+                  });
+                  setShowAddModal(true);
+                }}
+              >
+                {/* Goal Header */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      flex: 1,
+                    }}
+                  >
+                    <View
+                      style={{
+                        backgroundColor: `${category?.color}20`,
+                        padding: 8,
+                        borderRadius: 10,
+                        marginRight: 12,
+                      }}
+                    >
+                      <Ionicons
+                        name={category?.icon as any}
+                        size={20}
+                        color={category?.color}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          fontSize: 18,
+                          fontWeight: "700",
+                          color: colors.text,
+                        }}
+                      >
+                        {goal.name}
+                      </Text>
+                      <Text
+                        style={{ fontSize: 14, color: colors.textSecondary }}
+                      >
+                        {category?.label}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <View
+                      style={{
+                        backgroundColor: `${
+                          priorityColors[
+                            goal.priority as keyof typeof priorityColors
+                          ]
+                        }20`,
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 8,
+                        marginRight: 8,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "600",
+                          color:
+                            priorityColors[
+                              goal.priority as keyof typeof priorityColors
+                            ],
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {goal.priority}
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color={colors.textSecondary}
+                    />
+                  </View>
+                </View>
+
+                {/* Progress Bar */}
+                <View style={{ marginBottom: 16 }}>
+                  <View
+                    style={{
+                      height: 8,
+                      backgroundColor: colors.surfaceSecondary,
+                      borderRadius: 4,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <View
+                      style={{
+                        height: "100%",
+                        backgroundColor: getProgressColor(progress),
+                        width: `${Math.min(progress, 100)}%`,
+                      }}
+                    />
+                  </View>
+                </View>
+
+                {/* Progress Info */}
+                <View style={{ alignItems: "center", marginBottom: 20 }}>
+                  <Text
+                    style={{
+                      fontSize: 24,
+                      fontWeight: "800",
+                      color: getProgressColor(progress),
+                      marginBottom: 4,
+                    }}
+                  >
+                    {formatCurrency(goal.currentAmount)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginBottom: 8,
+                    }}
+                  >
+                    {getProgressStatus(progress)}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                    {progress.toFixed(1)}% of{" "}
+                    {formatCurrency(goal.targetAmount)}
+                  </Text>
+                </View>
+
+                {/* Goal Details */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    marginBottom: 12,
+                  }}
+                >
+                  <View style={{ alignItems: "center", flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: colors.textSecondary,
+                        marginBottom: 4,
+                      }}
+                    >
+                      Target
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: colors.text,
+                      }}
+                    >
+                      {formatCurrency(goal.targetAmount)}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: "center", flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: colors.textSecondary,
+                        marginBottom: 4,
+                      }}
+                    >
+                      Monthly
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: colors.success,
+                      }}
+                    >
+                      {formatCurrency(goal.monthlyContribution)}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: "center", flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: colors.textSecondary,
+                        marginBottom: 4,
+                      }}
+                    >
+                      Time Left
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: colors.warning,
+                      }}
+                    >
+                      {calculateTimeRemaining(goal)}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Target Date */}
+                <View style={{ alignItems: "center" }}>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginBottom: 2,
+                    }}
+                  >
+                    Target Date
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: colors.primary,
+                    }}
+                  >
+                    {goal.targetDate
+                      ? new Date(goal.targetDate).toLocaleDateString()
+                      : "No date set"}
+                  </Text>
+                </View>
+
+                {/* Quick Update Button */}
+              </TouchableOpacity>
+            );
+          })
+        )}
+
+        {/* Add Goal Modal */}
+        <Modal
+          visible={showAddModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowAddModal(false)}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: colors.modalOverlay,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: colors.modal,
+                borderRadius: 20,
+                width: "90%",
+                maxWidth: 400,
+                maxHeight: "85%",
+              }}
+            >
+              <View style={{ padding: 24, paddingBottom: 0 }}>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    marginBottom: 20,
+                    color: colors.text,
+                  }}
+                >
+                  {isEditMode ? "Edit Goal" : "Add New Goal"}
+                </Text>
+              </View>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 24 }}
+              >
+                {/* Goal Name */}
+                <View style={{ marginBottom: 16 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
+                  >
+                    Goal Name *
+                  </Text>
+                  <TextInput
+                    style={{
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: 8,
+                      padding: 12,
+                      fontSize: 16,
+                      backgroundColor: colors.surfaceSecondary,
+                      color: colors.text,
+                    }}
+                    value={newGoal.name}
+                    onChangeText={(text) =>
+                      setNewGoal({ ...newGoal, name: text })
+                    }
+                    placeholder="e.g., Emergency Fund"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                </View>
+
+                {/* Category */}
+                <View style={{ marginBottom: 16 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
+                  >
+                    Category
+                  </Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingRight: 16 }}
+                  >
+                    {goalCategories.map((category) => (
+                      <TouchableOpacity
+                        key={category.key}
+                        style={{
+                          paddingHorizontal: 16,
+                          paddingVertical: 8,
+                          borderRadius: 20,
+                          backgroundColor:
+                            newGoal.category === category.key
+                              ? category.color
+                              : colors.surfaceSecondary,
+                          marginRight: 8,
+                          minWidth: 80,
+                          alignItems: "center",
+                        }}
+                        onPress={() =>
+                          setNewGoal({ ...newGoal, category: category.key })
+                        }
+                      >
+                        <Text
+                          style={{
+                            color:
+                              newGoal.category === category.key
+                                ? "#fff"
+                                : colors.text,
+                            fontSize: 14,
+                            fontWeight: "500",
+                          }}
+                        >
+                          {category.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
+                {/* Target Amount */}
+                <View style={{ marginBottom: 16 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
+                  >
+                    Target Amount *
+                  </Text>
+                  <TextInput
+                    style={{
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: 8,
+                      padding: 12,
+                      fontSize: 16,
+                      backgroundColor: colors.surfaceSecondary,
+                      color: colors.text,
+                    }}
+                    value={newGoal.targetAmount}
+                    onChangeText={(text) =>
+                      setNewGoal({ ...newGoal, targetAmount: text })
+                    }
+                    keyboardType="numeric"
+                    placeholder="5000"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                </View>
+
+                {/* Current Amount */}
+                <View style={{ marginBottom: 16 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
+                  >
+                    Current Amount
+                  </Text>
+                  <TextInput
+                    style={{
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: 8,
+                      padding: 12,
+                      fontSize: 16,
+                      backgroundColor: colors.surfaceSecondary,
+                      color: colors.text,
+                    }}
+                    value={newGoal.currentAmount}
+                    onChangeText={(text) =>
+                      setNewGoal({ ...newGoal, currentAmount: text })
+                    }
+                    keyboardType="numeric"
+                    placeholder="0"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                </View>
+
+                {/* Monthly Contribution */}
+                <View style={{ marginBottom: 16 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
+                  >
+                    Monthly Contribution *
+                  </Text>
+                  <TextInput
+                    style={{
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: 8,
+                      padding: 12,
+                      fontSize: 16,
+                      backgroundColor: colors.surfaceSecondary,
+                      color: colors.text,
+                    }}
+                    value={newGoal.monthlyContribution}
+                    onChangeText={(text) =>
+                      setNewGoal({ ...newGoal, monthlyContribution: text })
+                    }
+                    keyboardType="numeric"
+                    placeholder="500"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                </View>
+
+                {/* Priority */}
+                <View style={{ marginBottom: 16 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
+                  >
+                    Priority
+                  </Text>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    {(["high", "medium", "low"] as const).map((priority) => (
+                      <TouchableOpacity
+                        key={priority}
+                        style={{
+                          flex: 1,
+                          padding: 12,
+                          borderRadius: 8,
+                          backgroundColor:
+                            newGoal.priority === priority
+                              ? priorityColors[priority]
+                              : colors.surfaceSecondary,
+                          alignItems: "center",
+                        }}
+                        onPress={() =>
+                          setNewGoal({
+                            ...newGoal,
+                            priority: priority as "medium" | "high" | "low",
+                          })
+                        }
+                      >
+                        <Text
+                          style={{
+                            color:
+                              newGoal.priority === priority
+                                ? "#fff"
+                                : colors.text,
+                            fontWeight: "600",
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          {priority}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Target Date */}
+                <View style={{ marginBottom: 24 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 8,
+                      color: colors.text,
+                    }}
+                  >
+                    Target Date
+                  </Text>
+                  <TextInput
+                    style={{
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: 8,
+                      padding: 12,
+                      fontSize: 16,
+                      backgroundColor: colors.surfaceSecondary,
+                      color: colors.text,
+                    }}
+                    value={newGoal.targetDate}
+                    onChangeText={(text) =>
+                      setNewGoal({ ...newGoal, targetDate: text })
+                    }
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                </View>
+
+                {/* Buttons */}
+                <View
+                  style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}
+                >
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: colors.surfaceSecondary,
+                    }}
+                    onPress={() => {
+                      setShowAddModal(false);
+                      setIsEditMode(false);
+                      setEditingGoal(null);
+                      setNewGoal({
+                        name: "",
+                        targetAmount: "",
+                        currentAmount: "",
+                        monthlyContribution: "",
+                        targetDate: new Date(
+                          Date.now() + 365 * 24 * 60 * 60 * 1000
+                        )
+                          .toISOString()
+                          .split("T")[0],
+                        category: "savings",
+                        priority: "medium",
+                      });
+                    }}
+                  >
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        color: colors.textSecondary,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: colors.primary,
+                    }}
+                    onPress={handleAddGoal}
+                  >
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        color: colors.buttonText,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {isEditMode ? "Update Goal" : "Add Goal"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Delete Button (only show in edit mode) */}
+                {isEditMode && (
+                  <TouchableOpacity
+                    style={{
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: colors.error,
+                      marginBottom: 24,
+                    }}
+                    onPress={handleDeleteGoal}
+                  >
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        color: colors.buttonText,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Delete Goal
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};

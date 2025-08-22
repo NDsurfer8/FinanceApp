@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, Dimensions, Image } from "react-native";
 import AppIntroSlider from "react-native-app-intro-slider";
 import { Ionicons } from "@expo/vector-icons";
+import { VectraAvatar } from "../components/VectraAvatar";
 
 const { width, height } = Dimensions.get("window");
 
@@ -16,31 +17,45 @@ interface IntroSlide {
 const slides: IntroSlide[] = [
   {
     key: "1",
-    title: "Track Your Money",
-    text: "Get a clear view of your income, expenses, and net worth in one place",
-    icon: "trending-up",
-    backgroundColor: "#6366f1",
+    title: "🤖 Meet Vectra AI",
+    text: "Your personal financial advisor powered by AI. Get personalized advice, create financial plans, and make smarter money decisions with Vectra by your side.",
+    icon: "chatbubble-ellipses",
+    backgroundColor: "#06b6d4",
   },
   {
     key: "2",
-    title: "Smart Insights",
-    text: "Understand your spending patterns with beautiful charts and analytics",
-    icon: "pie-chart",
-    backgroundColor: "#10b981",
+    title: "💰 Master Your Money",
+    text: "Transform your financial life with powerful tracking tools. See your wealth grow in real-time!",
+    icon: "rocket",
+    backgroundColor: "#6366f1",
   },
   {
     key: "3",
-    title: "Financial Health",
-    text: "Monitor your debt-to-asset ratio and financial wellness metrics",
-    icon: "heart",
-    backgroundColor: "#f59e0b",
+    title: "📊 Smart Analytics",
+    text: "Unlock the secrets of your spending with AI-powered insights and stunning visualizations",
+    icon: "analytics",
+    backgroundColor: "#10b981",
   },
   {
     key: "4",
-    title: "Secure & Private",
-    text: "Your financial data stays private and secure with bank-level encryption",
-    icon: "shield-checkmark",
+    title: "🎯 Crush Your Goals",
+    text: "Set ambitious financial goals and watch your dreams become reality with progress tracking",
+    icon: "trophy",
+    backgroundColor: "#f59e0b",
+  },
+  {
+    key: "5",
+    title: "🔒 Bank-Level Security",
+    text: "Sleep soundly knowing your financial data is protected with military-grade encryption",
+    icon: "lock-closed",
     backgroundColor: "#ef4444",
+  },
+  {
+    key: "6",
+    title: "🚀 Team Up & Win",
+    text: "Join forces with your partner, family, or friends to build wealth together and achieve financial freedom",
+    icon: "people-circle",
+    backgroundColor: "#8b5cf6",
   },
 ];
 
@@ -55,7 +70,11 @@ export const IntroSliderScreen: React.FC<IntroSliderScreenProps> = ({
     return (
       <View style={[styles.slide, { backgroundColor: item.backgroundColor }]}>
         <View style={styles.iconContainer}>
-          <Ionicons name={item.icon} size={120} color="white" />
+          {item.key === "1" ? (
+            <VectraAvatar size={120} />
+          ) : (
+            <Ionicons name={item.icon} size={120} color="white" />
+          )}
         </View>
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.text}>{item.text}</Text>
@@ -115,43 +134,66 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   iconContainer: {
-    marginBottom: 40,
+    marginBottom: 50,
     alignItems: "center",
     justifyContent: "center",
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 32,
+    fontWeight: "800",
     color: "white",
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 24,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    letterSpacing: -0.5,
   },
   text: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 18,
+    color: "rgba(255, 255, 255, 0.9)",
     textAlign: "center",
-    lineHeight: 24,
+    lineHeight: 28,
+    fontWeight: "500",
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   buttonCircle: {
-    width: 44,
-    height: 44,
+    width: 56,
+    height: 56,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 22,
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   skipButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 20,
   },
   skipText: {
-    color: "rgba(255, 255, 255, 0.8)",
+    color: "rgba(255, 255, 255, 0.9)",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   dot: {
     backgroundColor: "rgba(255, 255, 255, 0.4)",

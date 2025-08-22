@@ -1,4 +1,4 @@
-// Firebase configuration for Money Pilot app
+// Firebase configuration for VectorFi app
 export const firebaseConfig = {
   apiKey: "AIzaSyAgz2sbb7EU6Gcd0OLgpLy8haipBmtUAVA",
   authDomain: "money-pilot-ee3e3.firebaseapp.com",

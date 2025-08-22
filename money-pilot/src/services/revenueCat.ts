@@ -1,0 +1,433 @@
+import Purchases, {
+  PurchasesOffering,
+  CustomerInfo,
+  PurchasesPackage,
+} from "react-native-purchases";
+import { Platform } from "react-native";
+
+// RevenueCat API Keys
+const REVENUECAT_API_KEYS = {
+  ios: "appl_kRrkEWJYkLcgRfvkOovUpabriTI", // Replace with your iOS API key
+  android: "goog_YOUR_ANDROID_API_KEY", // Replace with your Android API key
+};
+
+// Add error handling and retry logic
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+// Simple network connectivity check
+const checkNetworkConnectivity = async (): Promise<boolean> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch("https://api.revenuecat.com/v1/health", {
+      method: "HEAD",
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch (error) {
+    console.log("Network connectivity check failed:", error);
+    return false;
+  }
+};
+
+// Product Identifiers
+export const PRODUCT_IDS = {
+  PREMIUM_MONTHLY: "premium_monthly",
+  PREMIUM_YEARLY: "premium_yearly",
+  PREMIUM_LIFETIME: "premium_lifetime",
+};
+
+// Subscription Features
+export const PREMIUM_FEATURES = {
+  UNLIMITED_TRANSACTIONS: "unlimited_transactions",
+  UNLIMITED_INCOME_SOURCES: "unlimited_income_sources",
+  ADVANCED_ANALYTICS: "advanced_analytics",
+  EXPORT_DATA: "export_data",
+  CUSTOM_CATEGORIES: "custom_categories",
+  PRIORITY_SUPPORT: "priority_support",
+  NO_ADS: "no_ads",
+  SHARED_FINANCE: "shared_finance",
+  GOAL_TRACKING: "goal_tracking",
+  BUDGET_PLANNING: "budget_planning",
+  AI_FINANCIAL_ADVISOR: "ai_financial_advisor",
+};
+
+export interface SubscriptionStatus {
+  isPremium: boolean;
+  isActive: boolean;
+  expirationDate?: Date;
+  productId?: string;
+  features: string[];
+}
+
+class RevenueCatService {
+  private static instance: RevenueCatService;
+  private customerInfoUpdateListeners: ((
+    customerInfo: CustomerInfo
+  ) => void)[] = [];
+  private isInitialized = false;
+  private isOfflineMode = false;
+
+  private constructor() {}
+
+  static getInstance(): RevenueCatService {
+    if (!RevenueCatService.instance) {
+      RevenueCatService.instance = new RevenueCatService();
+    }
+    return RevenueCatService.instance;
+  }
+
+  async initialize(): Promise<void> {
+    if (this.isInitialized) return;
+
+    let lastError: any;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        console.log(
+          `RevenueCat initialization attempt ${attempt}/${MAX_RETRIES}`
+        );
+
+        // Check network connectivity first
+        const isConnected = await checkNetworkConnectivity();
+        if (!isConnected) {
+          throw new Error("No network connectivity to RevenueCat servers");
+        }
+
+        const apiKey =
+          Platform.OS === "ios"
+            ? REVENUECAT_API_KEYS.ios
+            : REVENUECAT_API_KEYS.android;
+
+        console.log(`Using API key: ${apiKey.substring(0, 10)}...`);
+        console.log(`Platform: ${Platform.OS}`);
+        console.log(`Bundle ID: com.ndsurf888.vectorfii`);
+
+        await Purchases.configure({
+          apiKey,
+          appUserID: null, // Will be set when user logs in
+        });
+
+        // Enable debug logs in development
+        if (__DEV__) {
+          Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
+        }
+
+        this.isInitialized = true;
+        console.log("RevenueCat initialized successfully");
+
+        // Set up customer info update listener
+        this.setupCustomerInfoUpdateListener();
+        return; // Success, exit retry loop
+      } catch (error: any) {
+        lastError = error;
+        console.error(`RevenueCat initialization attempt ${attempt} failed:`, {
+          error: error.message,
+          code: error.code,
+          userInfo: error.userInfo,
+        });
+
+        if (attempt < MAX_RETRIES) {
+          console.log(`Retrying in ${RETRY_DELAY}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+        }
+      }
+    }
+
+    // All attempts failed - enable offline mode
+    console.error(
+      "RevenueCat initialization failed after all attempts:",
+      lastError
+    );
+    console.log("Enabling offline mode for RevenueCat");
+    this.isOfflineMode = true;
+    this.isInitialized = true; // Mark as initialized to prevent retries
+  }
+
+  async setUser(userId: string): Promise<void> {
+    if (this.isOfflineMode) {
+      console.log("RevenueCat: Offline mode - skipping user set");
+      return;
+    }
+
+    try {
+      await Purchases.logIn(userId);
+      console.log("RevenueCat user set:", userId);
+    } catch (error: any) {
+      console.error("Failed to set RevenueCat user:", {
+        error: error.message,
+        code: error.code,
+        userInfo: error.userInfo,
+      });
+      throw error;
+    }
+  }
+
+  // Get diagnostic information
+  getDiagnosticInfo(): any {
+    return {
+      isInitialized: this.isInitialized,
+      isOfflineMode: this.isOfflineMode,
+      platform: Platform.OS,
+      bundleId:
+        Platform.OS === "ios"
+          ? "com.ndsurf888.vectorfii"
+          : "com.ndsurf888.vectorfii",
+      apiKey:
+        Platform.OS === "ios"
+          ? `${REVENUECAT_API_KEYS.ios.substring(0, 10)}...`
+          : `${REVENUECAT_API_KEYS.android.substring(0, 10)}...`,
+    };
+  }
+
+  async getOfferings(): Promise<PurchasesOffering | null> {
+    if (this.isOfflineMode) {
+      console.log("RevenueCat: Offline mode - returning null offerings");
+      return null;
+    }
+
+    try {
+      console.log("RevenueCat: Fetching offerings...");
+      const offerings = await Purchases.getOfferings();
+      console.log("RevenueCat: Offerings fetched successfully:", {
+        current: offerings.current?.identifier,
+        available: Object.keys(offerings.all),
+      });
+      return offerings.current;
+    } catch (error: any) {
+      console.error("Failed to get offerings:", {
+        error: error.message,
+        code: error.code,
+        userInfo: error.userInfo,
+      });
+      return null;
+    }
+  }
+
+  async purchasePackage(
+    packageToPurchase: PurchasesPackage
+  ): Promise<CustomerInfo> {
+    try {
+      const { customerInfo } = await Purchases.purchasePackage(
+        packageToPurchase
+      );
+      console.log("Purchase successful:", customerInfo);
+      return customerInfo;
+    } catch (error) {
+      console.error("Purchase failed:", error);
+      throw error;
+    }
+  }
+
+  async restorePurchases(): Promise<CustomerInfo> {
+    try {
+      const customerInfo = await Purchases.restorePurchases();
+      console.log("Purchases restored successfully");
+      return customerInfo;
+    } catch (error) {
+      console.error("Failed to restore purchases:", error);
+      throw error;
+    }
+  }
+
+  // Handle purchase completion and ensure subscription status is updated
+  async handlePurchaseCompletion(): Promise<SubscriptionStatus> {
+    try {
+      console.log("RevenueCat: Handling purchase completion...");
+
+      // Force refresh customer info from servers
+      const customerInfo = await this.refreshCustomerInfo();
+
+      // Check subscription status with the fresh data
+      const subscriptionStatus = await this.checkSubscriptionStatus(true);
+
+      console.log(
+        "RevenueCat: Purchase completion handled, subscription status:",
+        subscriptionStatus
+      );
+
+      return subscriptionStatus;
+    } catch (error) {
+      console.error("Failed to handle purchase completion:", error);
+      throw error;
+    }
+  }
+
+  async getCustomerInfo(): Promise<CustomerInfo> {
+    try {
+      const customerInfo = await Purchases.getCustomerInfo();
+      return customerInfo;
+    } catch (error) {
+      console.error("Failed to get customer info:", error);
+      throw error;
+    }
+  }
+
+  // Force refresh customer info from RevenueCat servers
+  async refreshCustomerInfo(): Promise<CustomerInfo> {
+    try {
+      console.log("RevenueCat: Forcing customer info refresh from servers");
+      const customerInfo = await Purchases.getCustomerInfo();
+      console.log("RevenueCat: Customer info refreshed successfully");
+      return customerInfo;
+    } catch (error) {
+      console.error("Failed to refresh customer info:", error);
+      throw error;
+    }
+  }
+
+  async checkSubscriptionStatus(
+    forceRefresh: boolean = false
+  ): Promise<SubscriptionStatus> {
+    try {
+      const customerInfo = forceRefresh
+        ? await this.refreshCustomerInfo()
+        : await this.getCustomerInfo();
+
+      // Debug: Log all available entitlements
+      console.log(
+        "Available entitlements:",
+        Object.keys(customerInfo.entitlements.active)
+      );
+      console.log("Active entitlements:", customerInfo.entitlements.active);
+
+      // Check for both possible entitlement names
+      const isPremium =
+        customerInfo.entitlements.active["premium"] !== undefined ||
+        customerInfo.entitlements.active["premium_monthly"] !== undefined;
+
+      const premiumEntitlement =
+        customerInfo.entitlements.active["premium"] ||
+        customerInfo.entitlements.active["premium_monthly"];
+
+      console.log("Premium entitlement found:", premiumEntitlement);
+      console.log("Is premium:", isPremium);
+
+      const subscriptionStatus: SubscriptionStatus = {
+        isPremium,
+        isActive: isPremium,
+        expirationDate: premiumEntitlement?.expirationDate
+          ? new Date(premiumEntitlement.expirationDate)
+          : undefined,
+        productId: premiumEntitlement?.productIdentifier,
+        features: this.getFeaturesForSubscription(customerInfo),
+      };
+
+      return subscriptionStatus;
+    } catch (error) {
+      console.error("Failed to check subscription status:", error);
+      return {
+        isPremium: false,
+        isActive: false,
+        features: [],
+      };
+    }
+  }
+
+  private getFeaturesForSubscription(customerInfo: CustomerInfo): string[] {
+    const features: string[] = [];
+
+    // Check for premium entitlement (both possible names)
+    if (
+      customerInfo.entitlements.active["premium"] ||
+      customerInfo.entitlements.active["premium_monthly"]
+    ) {
+      features.push(
+        PREMIUM_FEATURES.UNLIMITED_TRANSACTIONS,
+        PREMIUM_FEATURES.UNLIMITED_INCOME_SOURCES,
+        PREMIUM_FEATURES.ADVANCED_ANALYTICS,
+        PREMIUM_FEATURES.EXPORT_DATA,
+        PREMIUM_FEATURES.CUSTOM_CATEGORIES,
+        PREMIUM_FEATURES.PRIORITY_SUPPORT,
+        PREMIUM_FEATURES.NO_ADS,
+        PREMIUM_FEATURES.SHARED_FINANCE,
+        PREMIUM_FEATURES.GOAL_TRACKING,
+        PREMIUM_FEATURES.BUDGET_PLANNING,
+        PREMIUM_FEATURES.AI_FINANCIAL_ADVISOR
+      );
+    }
+
+    return features;
+  }
+
+  async isFeatureAvailable(feature: string): Promise<boolean> {
+    try {
+      const subscriptionStatus = await this.checkSubscriptionStatus();
+      return subscriptionStatus.features.includes(feature);
+    } catch (error) {
+      console.error("Failed to check feature availability:", error);
+      return false;
+    }
+  }
+
+  async getSubscriptionProducts(): Promise<PurchasesPackage[]> {
+    try {
+      const offering = await this.getOfferings();
+      return offering?.availablePackages || [];
+    } catch (error) {
+      console.error("Failed to get subscription products:", error);
+      return [];
+    }
+  }
+
+  async cancelSubscription(): Promise<void> {
+    try {
+      // Note: RevenueCat doesn't directly cancel subscriptions
+      // Users need to cancel through App Store/Google Play
+      console.log(
+        "Subscription cancellation should be done through App Store/Google Play"
+      );
+    } catch (error) {
+      console.error("Failed to handle subscription cancellation:", error);
+      throw error;
+    }
+  }
+
+  private setupCustomerInfoUpdateListener(): void {
+    try {
+      // Add listener for customer info updates
+      Purchases.addCustomerInfoUpdateListener((customerInfo) => {
+        console.log("RevenueCat: Customer info updated", {
+          entitlements: Object.keys(customerInfo.entitlements.active),
+          isPremium:
+            customerInfo.entitlements.active["premium"] ||
+            customerInfo.entitlements.active["premium_monthly"],
+        });
+
+        // Notify all listeners
+        this.customerInfoUpdateListeners.forEach((listener) => {
+          try {
+            listener(customerInfo);
+          } catch (error) {
+            console.error("Error in customer info update listener:", error);
+          }
+        });
+      });
+
+      console.log("RevenueCat: Customer info update listener set up");
+    } catch (error) {
+      console.error("Failed to set up customer info update listener:", error);
+    }
+  }
+
+  // Add a listener for customer info updates
+  addCustomerInfoUpdateListener(
+    listener: (customerInfo: CustomerInfo) => void
+  ): () => void {
+    this.customerInfoUpdateListeners.push(listener);
+
+    // Return a function to remove the listener
+    return () => {
+      const index = this.customerInfoUpdateListeners.indexOf(listener);
+      if (index > -1) {
+        this.customerInfoUpdateListeners.splice(index, 1);
+      }
+    };
+  }
+}
+
+export default RevenueCatService.getInstance();

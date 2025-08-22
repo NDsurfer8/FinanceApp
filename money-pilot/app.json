@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "money-pilot",
+    "name": "VectorFi",
     "slug": "money-pilot",
-    "version": "1.0.0",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -13,29 +13,59 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ndsurf888.vectorfii",
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "VectorFi uses Face ID to securely authenticate you and protect your financial data."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": ["android.permission.RECORD_AUDIO"],
+      "package": "com.ndsurf888.vectorfii"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-font"],
+    "plugins": [
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends.",
+          "cameraPermission": "The app accesses your camera to let you take profile photos."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#6366f1"
+        }
+      ],
+      "expo-apple-authentication",
+      "expo-local-authentication",
+      "expo-dev-client"
+    ],
     "extra": {
       "firebase": {
-        "apiKey": "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-        "authDomain": "your-project-id.firebaseapp.com",
-        "projectId": "your-project-id",
-        "storageBucket": "your-project-id.appspot.com",
-        "messagingSenderId": "123456789012",
-        "appId": "1:123456789012:web:abcdefghijklmnop",
-        "databaseURL": "https://your-project-id-default-rtdb.firebaseio.com"
+        "apiKey": "AIzaSyAgz2sbb7EU6Gcd0OLgpLy8haipBmtUAVA",
+        "authDomain": "money-pilot-ee3e3.firebaseapp.com",
+        "projectId": "money-pilot-ee3e3",
+        "storageBucket": "money-pilot-ee3e3.firebasestorage.app",
+        "messagingSenderId": "957142982959",
+        "appId": "1:957142982959:web:1580b8f5ad295255f2c1da",
+        "databaseURL": "https://money-pilot-ee3e3-default-rtdb.firebaseio.com"
+      },
+      "eas": {
+        "projectId": "ad418174-c1b3-4cd0-a54e-d1198eecb1f7"
       }
-    }
+    },
+    "owner": "ndsurf888"
   }
 }

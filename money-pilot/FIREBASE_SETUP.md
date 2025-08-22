@@ -4,7 +4,7 @@
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
 2. Click "Create a project" or "Add project"
-3. Enter your project name (e.g., "money-pilot")
+3. Enter your project name (e.g., "vectorfi")
 4. Follow the setup wizard
 
 ## Step 2: Enable Authentication
@@ -28,7 +28,7 @@
 2. Select "Project settings"
 3. Scroll down to "Your apps" section
 4. Click the web icon (</>)
-5. Register your app with a nickname (e.g., "money-pilot-web")
+5. Register your app with a nickname (e.g., "vectorfi-web")
 6. Copy the configuration object
 
 ## Step 5: Update Your App Configuration

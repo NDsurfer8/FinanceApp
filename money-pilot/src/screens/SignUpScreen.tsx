@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,9 +10,16 @@ import {
   Platform,
   Alert,
   ScrollView,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { signUp, validateEmail, validatePassword } from "../services/auth";
+import {
+  signUp,
+  validateEmail,
+  validatePassword,
+  signInWithApple,
+} from "../services/auth";
+import * as AppleAuthentication from "expo-apple-authentication";
 
 interface SignUpScreenProps {
   onSignUp: () => void;
@@ -32,12 +39,23 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
 
   // Refs for input focus management
   const lastNameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
+
+  // Check Apple Authentication availability
+  useEffect(() => {
+    const checkAvailability = async () => {
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
+      setIsAppleAuthAvailable(isAvailable);
+    };
+
+    checkAvailability();
+  }, []);
 
   const validateForm = () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
@@ -109,11 +127,15 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               <Ionicons name="arrow-back" size={24} color="#6b7280" />
             </TouchableOpacity>
             <View style={styles.logoContainer}>
-              <Ionicons name="wallet" size={50} color="#6366f1" />
+              <Image
+                source={require("../../assets/icon.png")}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>
-              Join Money Pilot to start tracking your finances
+              Join VectorFi to start tracking your finances
             </Text>
           </View>
 
@@ -267,6 +289,57 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               )}
             </TouchableOpacity>
 
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Social Login */}
+            <View style={styles.socialButtons}>
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={() => {
+                  Alert.alert(
+                    "Google Login",
+                    "Google login functionality would be implemented here"
+                  );
+                }}
+              >
+                <Ionicons name="logo-google" size={24} color="#ea4335" />
+                <Text style={styles.socialButtonText}>Google</Text>
+              </TouchableOpacity>
+
+              {isAppleAuthAvailable && (
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={
+                    AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
+                  }
+                  buttonStyle={
+                    AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                  }
+                  cornerRadius={12}
+                  style={styles.appleButton}
+                  onPress={async () => {
+                    setIsLoading(true);
+                    try {
+                      await signInWithApple();
+                      onSignUp();
+                    } catch (error: any) {
+                      console.error("Apple sign up error:", error);
+                      const errorMessage =
+                        error.message ||
+                        "An error occurred with Apple Sign In. Please try again.";
+                      Alert.alert("Apple Sign In Failed", errorMessage);
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                />
+              )}
+            </View>
+
             {/* Login Link */}
             <View style={styles.loginContainer}>
               <Text style={styles.loginText}>Already have an account? </Text>
@@ -311,6 +384,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
+  },
+  logoImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
   title: {
     fontSize: 28,
@@ -417,5 +495,52 @@ const styles = StyleSheet.create({
     color: "#6366f1",
     fontSize: 14,
     fontWeight: "600",
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#e5e7eb",
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: "#9ca3af",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  socialButtons: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  socialButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    marginHorizontal: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  socialButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#1f2937",
+  },
+  appleButton: {
+    flex: 1,
+    height: 56,
   },
 });

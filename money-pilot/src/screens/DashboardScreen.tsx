@@ -1,30 +1,358 @@
+<<<<<<< HEAD
+import React, { useState, useEffect } from "react";
+=======
 import React from "react";
 import { SafeAreaView, ScrollView, View, Text, Dimensions } from "react-native";
 import { Stat, RatioBar } from "../components";
 
 import { CustomLineChart, CustomBarChart } from "../components/BeautifulCharts";
+>>>>>>> origin/main
 import {
-  months,
-  spendCategories,
-  totalIncome,
-  totalExpenses,
-  netCashFlow,
-  netWorth,
-  debtToAsset,
-  mortgageDSR,
-  debtSafety,
-  chartConfig,
-} from "../data/mockData";
+  SafeAreaView,
+  ScrollView,
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { useAuth } from "../hooks/useAuth";
+import { useZeroLoading } from "../hooks/useZeroLoading";
+import { useTransactionLimits } from "../hooks/useTransactionLimits";
+import { useData } from "../contexts/DataContext";
 
-const screenWidth = Dimensions.get("window").width;
+import { useTheme } from "../contexts/ThemeContext";
 
-export const DashboardScreen: React.FC = () => {
-  // Transform data for Victory Native charts
-  const lineChartData = months.map((m) => ({ x: m.month, y: m.income }));
-  const lineChartData2 = months.map((m) => ({ x: m.month, y: m.expenses }));
-  const barChartData = spendCategories.map((c) => ({ x: c.name, y: c.value }));
+interface DashboardScreenProps {
+  navigation: any;
+}
+
+export const DashboardScreen: React.FC<DashboardScreenProps> = ({
+  navigation,
+}) => {
+  const { user } = useAuth();
+  const { transactions, assets, debts, refreshInBackground } = useZeroLoading();
+  const { goals, budgetSettings } = useData();
+  const {
+    getTransactionLimitInfo,
+    getIncomeSourceLimitInfo,
+    getGoalLimitInfo,
+  } = useTransactionLimits();
+  const [loading, setLoading] = useState(false);
+  const { colors } = useTheme();
+
+  // Function to determine if name should be on a new line
+  const shouldWrapName = (name: string) => {
+    return name.length > 15;
+  };
+
+  // Background refresh when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user) {
+        refreshInBackground();
+      }
+    }, [user, refreshInBackground])
+  );
+
+  // Calculate current month data
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  const monthlyTransactions = transactions.filter((transaction) => {
+    const transactionDate = new Date(transaction.date);
+    return (
+      transactionDate.getMonth() === currentMonth &&
+      transactionDate.getFullYear() === currentYear
+    );
+  });
+
+  const monthlyIncome = monthlyTransactions
+    .filter((t) => t.type === "income")
+    .reduce((sum: number, t: any) => sum + t.amount, 0);
+
+  const monthlyExpenses = monthlyTransactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum: number, t: any) => sum + t.amount, 0);
+
+  const netIncome = monthlyIncome - monthlyExpenses;
+
+  // Calculate available amount (same as BudgetScreen)
+  const savingsPercent = budgetSettings?.savingsPercentage
+    ? parseFloat(budgetSettings.savingsPercentage)
+    : 0;
+  const debtPayoffPercent = budgetSettings?.debtPayoffPercentage
+    ? parseFloat(budgetSettings.debtPayoffPercentage)
+    : 0;
+  const savingsAmount = netIncome * (savingsPercent / 100);
+
+  // Calculate total goal contributions
+  const totalGoalContributions = goals.reduce((total, goal) => {
+    return total + goal.monthlyContribution;
+  }, 0);
+
+  const discretionaryIncome =
+    netIncome - savingsAmount - totalGoalContributions;
+  const debtPayoffAmount = discretionaryIncome * (debtPayoffPercent / 100);
+  const availableAmount = discretionaryIncome - debtPayoffAmount;
+
+  // Calculate total assets and debts
+  const totalAssets = assets.reduce(
+    (sum: number, asset: any) => sum + asset.balance,
+    0
+  );
+  const totalDebts = debts.reduce(
+    (sum: number, debt: any) => sum + debt.balance,
+    0
+  );
+  const netWorth = totalAssets - totalDebts;
+
+  // Calculate savings breakdown
+  const totalSavings = assets
+    .filter((asset: any) => asset.type === "savings")
+    .reduce((sum: number, asset: any) => sum + asset.balance, 0);
+  const emergencyFundTarget = monthlyExpenses * 6;
+  const emergencyFundProgress =
+    emergencyFundTarget > 0 ? (totalSavings / emergencyFundTarget) * 100 : 0;
+
+  // Premium Feature: Smart Insights
+  const getInsights = () => {
+    const insights = [];
+
+    if (monthlyIncome > 0) {
+      const savingsRate =
+        ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100;
+      if (savingsRate >= 20) {
+        insights.push({
+          type: "success",
+          icon: "trending-up",
+          title: "Excellent Savings Rate!",
+          message: `You're saving ${savingsRate.toFixed(
+            1
+          )}% of your income this month`,
+        });
+      } else if (savingsRate < 0) {
+        insights.push({
+          type: "warning",
+          icon: "alert-circle",
+          title: "Spending More Than Income",
+          message: "Consider reviewing your expenses",
+        });
+      }
+    }
+
+    if (totalDebts > 0 && totalAssets > 0) {
+      const debtToAssetRatio = (totalDebts / totalAssets) * 100;
+      if (debtToAssetRatio > 50) {
+        insights.push({
+          type: "warning",
+          icon: "card",
+          title: "High Debt Ratio",
+          message: `${debtToAssetRatio.toFixed(1)}% of assets are debt`,
+        });
+      }
+    }
+
+    if (monthlyTransactions.length >= 10) {
+      insights.push({
+        type: "info",
+        icon: "analytics",
+        title: "Active Month",
+        message: `${monthlyTransactions.length} transactions tracked`,
+      });
+    }
+
+    // Emergency Fund Insight
+    if (emergencyFundProgress >= 100) {
+      insights.push({
+        type: "success",
+        icon: "shield-checkmark",
+        title: "Emergency Fund Complete!",
+        message: `You have ${emergencyFundProgress.toFixed(
+          0
+        )}% of your 6-month target`,
+      });
+    } else if (emergencyFundProgress >= 50) {
+      insights.push({
+        type: "info",
+        icon: "shield",
+        title: "Emergency Fund Progress",
+        message: `${emergencyFundProgress.toFixed(
+          0
+        )}% of 6-month target ($${totalSavings.toLocaleString()})`,
+      });
+    } else if (emergencyFundProgress > 0) {
+      insights.push({
+        type: "warning",
+        icon: "shield-outline",
+        title: "Build Emergency Fund",
+        message: `${emergencyFundProgress.toFixed(
+          0
+        )}% of 6-month target - keep saving!`,
+      });
+    }
+
+    return insights;
+  };
+
+  const insights = getInsights();
+
+  // Premium Feature: Quick Actions
+  const transactionLimitInfo = getTransactionLimitInfo();
+  const incomeLimitInfo = getIncomeSourceLimitInfo();
+  const goalLimitInfo = getGoalLimitInfo();
+
+  const quickActions = [
+    {
+      title: "Transaction",
+      subtitle: transactionLimitInfo.isUnlimited
+        ? ""
+        : `${transactionLimitInfo.current}/${transactionLimitInfo.limit}`,
+      icon: "add-circle",
+      onPress: () => navigation.navigate("AddTransaction"),
+      color: "#6366f1",
+    },
+    {
+      title: "AI Advisor",
+      subtitle: "",
+      icon: "chatbubble-ellipses",
+      onPress: () => navigation.navigate("AIFinancialAdvisor"),
+      color: "#06b6d4",
+    },
+    {
+      title: "Asset",
+      icon: "trending-up",
+      onPress: () => navigation.navigate("AddAssetDebt", { type: "asset" }),
+      color: "#10b981",
+    },
+    {
+      title: "Debt",
+      icon: "card",
+      onPress: () => navigation.navigate("AddAssetDebt", { type: "debt" }),
+      color: "#ef4444",
+    },
+    {
+      title: "Goals",
+      subtitle: goalLimitInfo.isUnlimited
+        ? ""
+        : `${goalLimitInfo.current}/${goalLimitInfo.limit}`,
+      icon: "flag",
+      onPress: () => navigation.navigate("Goals", { openAddModal: true }),
+      color: "#f59e0b",
+    },
+    {
+      title: "Bank Data",
+      icon: "card-outline",
+      onPress: () => navigation.navigate("BankTransactions"),
+      color: "#8b5cf6",
+    },
+  ];
+
+  // Premium Feature: Trend Analysis
+  const getTrendData = () => {
+    const last6Months = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthTransactions = transactions.filter((t) => {
+        const tDate = new Date(t.date);
+        return (
+          tDate.getMonth() === date.getMonth() &&
+          tDate.getFullYear() === date.getFullYear()
+        );
+      });
+
+      const income = monthTransactions
+        .filter((t) => t.type === "income")
+        .reduce((sum: number, t: any) => sum + t.amount, 0);
+
+      const expenses = monthTransactions
+        .filter((t) => t.type === "expense")
+        .reduce((sum: number, t: any) => sum + t.amount, 0);
+
+      last6Months.push({
+        month: date.toLocaleDateString("en-US", { month: "short" }),
+        income,
+        expenses,
+        net: income - expenses,
+      });
+    }
+    return last6Months;
+  };
+
+  const trendData = getTrendData();
+
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
 
   return (
+<<<<<<< HEAD
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 32,
+            paddingTop: 8,
+          }}
+        >
+          <View>
+            <Text
+              style={{
+                fontSize: 32,
+                fontWeight: "800",
+                color: colors.text,
+                letterSpacing: -0.5,
+              }}
+            >
+              Dashboard
+            </Text>
+            {shouldWrapName(user?.displayName || "User") ? (
+              <View style={{ marginTop: 6 }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: colors.textSecondary,
+                    fontWeight: "500",
+                  }}
+                >
+                  Welcome back,
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: colors.textSecondary,
+                    fontWeight: "500",
+                    marginTop: 2,
+                  }}
+                >
+                  {user?.displayName || "User"} 👋
+                </Text>
+              </View>
+            ) : (
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: colors.textSecondary,
+                  marginTop: 6,
+                  fontWeight: "500",
+                }}
+              >
+                Welcome back, {user?.displayName || "User"} 👋
+              </Text>
+            )}
+=======
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
         {/* KPIs */}
@@ -36,37 +364,220 @@ export const DashboardScreen: React.FC = () => {
               icon="trending-up"
               positive
             />
+>>>>>>> origin/main
           </View>
-          <View style={{ flex: 1 }}>
-            <Stat
-              label="Income"
-              value={`$${totalIncome.toLocaleString()}`}
-              icon="arrow-up-circle"
-              positive
-            />
-          </View>
-        </View>
-        <View style={{ flexDirection: "row", gap: 12, marginTop: 12 }}>
-          <View style={{ flex: 1 }}>
-            <Stat
-              label="Expenses"
-              value={`$${totalExpenses.toLocaleString()}`}
-              icon="arrow-down-circle"
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Stat
-              label="Net Cash Flow"
-              value={`$${netCashFlow.toLocaleString()}`}
-              icon="wallet"
-              positive={netCashFlow >= 0}
-            />
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("BalanceSheet")}
+              style={{
+                backgroundColor: "#6366f1",
+                padding: 14,
+                borderRadius: 14,
+              }}
+            >
+              <Ionicons name="analytics-outline" size={22} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("SharedFinance")}
+              style={{
+                backgroundColor: "#ec4899",
+                padding: 14,
+                borderRadius: 14,
+              }}
+            >
+              <Ionicons name="people" size={22} color="#fff" />
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Charts */}
+        {/* Monthly Overview - Large Card */}
         <View
           style={{
+<<<<<<< HEAD
+            backgroundColor: colors.surface,
+            borderRadius: 20,
+            padding: 28,
+            marginBottom: 24,
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.08,
+            shadowRadius: 16,
+            shadowOffset: { width: 0, height: 6 },
+            elevation: 6,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 24,
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: colors.surfaceSecondary,
+                padding: 12,
+                borderRadius: 14,
+                marginRight: 16,
+              }}
+            >
+              <Ionicons name="calendar" size={22} color={colors.primary} />
+            </View>
+            <View>
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontWeight: "700",
+                  color: colors.text,
+                  letterSpacing: -0.3,
+                }}
+              >
+                Budget Snapshot
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginTop: 2,
+                  fontWeight: "500",
+                }}
+              >
+                {new Date().toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ gap: 20 }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  backgroundColor: "#dcfce7",
+                  padding: 12,
+                  borderRadius: 12,
+                  marginRight: 16,
+                  width: 50,
+                  height: 50,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Ionicons name="trending-up" size={20} color="#16a34a" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                    marginBottom: 4,
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Income
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: "#16a34a",
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  {formatCurrency(monthlyIncome)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  backgroundColor: "#fee2e2",
+                  padding: 12,
+                  borderRadius: 12,
+                  marginRight: 16,
+                  width: 50,
+                  height: 50,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Ionicons name="trending-down" size={20} color="#dc2626" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: "#6b7280",
+                    marginBottom: 4,
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Expenses
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: "#dc2626",
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  {formatCurrency(monthlyExpenses)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  backgroundColor: availableAmount >= 0 ? "#dbeafe" : "#fef3c7",
+                  padding: 12,
+                  borderRadius: 12,
+                  marginRight: 16,
+                  width: 50,
+                  height: 50,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Ionicons
+                  name={availableAmount >= 0 ? "wallet" : "alert-circle"}
+                  size={20}
+                  color={availableAmount >= 0 ? "#2563eb" : "#d97706"}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: "#6b7280",
+                    marginBottom: 4,
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Available
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: availableAmount >= 0 ? "#2563eb" : "#d97706",
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  {formatCurrency(availableAmount)}
+                </Text>
+              </View>
+            </View>
+          </View>
+=======
             backgroundColor: "#fff",
             borderRadius: 16,
             padding: 16,
@@ -87,46 +598,319 @@ export const DashboardScreen: React.FC = () => {
             title=""
             height={200}
           />
+>>>>>>> origin/main
         </View>
 
+        {/* Net Worth Card */}
         <View
           style={{
-            backgroundColor: "#fff",
-            borderRadius: 16,
-            padding: 16,
-            shadowColor: "#000",
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
+            backgroundColor: colors.surface,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
+<<<<<<< HEAD
+            elevation: 4,
+=======
             elevation: 2,
             marginTop: 16,
+>>>>>>> origin/main
           }}
         >
-          <Text style={{ fontWeight: "600", marginBottom: 8 }}>
-            Spending by Category
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "700",
+              marginBottom: 20,
+              color: colors.text,
+            }}
+          >
+            Net Worth
           </Text>
+<<<<<<< HEAD
+
+          <View style={{ alignItems: "center" }}>
+            <Text
+              style={{
+                fontSize: 36,
+                fontWeight: "800",
+                color: netWorth >= 0 ? "#16a34a" : "#dc2626",
+                marginBottom: 8,
+              }}
+            >
+              {formatCurrency(netWorth)}
+            </Text>
+            <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+              {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
+            </Text>
+          </View>
+=======
           <CustomBarChart data={barChartData} title="" height={220} />
+>>>>>>> origin/main
         </View>
 
+        {/* Quick Actions */}
         <View
           style={{
-            backgroundColor: "#fff",
-            borderRadius: 16,
-            padding: 16,
-            shadowColor: "#000",
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
+            backgroundColor: colors.surface,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
+<<<<<<< HEAD
+            elevation: 4,
+=======
             elevation: 2,
             marginTop: 16,
+>>>>>>> origin/main
           }}
         >
-          <Text style={{ fontWeight: "600", marginBottom: 8 }}>
-            Health Ratios
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "700",
+              marginBottom: 20,
+              color: colors.text,
+            }}
+          >
+            Quick Actions
           </Text>
-          <RatioBar label="Debt / Asset" value={debtToAsset} />
-          <RatioBar label="Mortgage DSR" value={mortgageDSR} />
-          <RatioBar label="Debt Safety" value={debtSafety} />
+
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+            {quickActions.map((action, index) => (
+              <TouchableOpacity
+                key={`action-${action.title}-${index}`}
+                style={{
+                  flex: 1,
+                  minWidth: "48%",
+                  backgroundColor: colors.surfaceSecondary,
+                  padding: 16,
+                  borderRadius: 16,
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  shadowColor: colors.shadow,
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 2,
+                  elevation: 1,
+                }}
+                onPress={action.onPress}
+              >
+                <View
+                  style={{
+                    backgroundColor: action.color + "15",
+                    padding: 10,
+                    borderRadius: 10,
+                    marginBottom: 8,
+                  }}
+                >
+                  <Ionicons
+                    name={action.icon as any}
+                    size={20}
+                    color={action.color}
+                  />
+                </View>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "600",
+                    color: colors.text,
+                    textAlign: "center",
+                    lineHeight: 16,
+                  }}
+                >
+                  {action.title}
+                </Text>
+                {action.subtitle && (
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "500",
+                      color: colors.textSecondary,
+                      textAlign: "center",
+                      marginTop: 2,
+                    }}
+                  >
+                    {action.subtitle}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Smart Insights - Only show if there are insights */}
+        {insights.length > 0 && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              marginBottom: 20,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: colors.warningLight,
+                  padding: 8,
+                  borderRadius: 10,
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="bulb" size={20} color={colors.warning} />
+              </View>
+              <Text
+                style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
+              >
+                Smart Insights
+              </Text>
+            </View>
+
+            {insights.map((insight, index) => (
+              <View
+                key={`insight-${insight.title}-${index}`}
+                style={{ marginBottom: 12 }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 4,
+                  }}
+                >
+                  <Ionicons
+                    name={insight.icon as any}
+                    size={16}
+                    color={
+                      insight.type === "success"
+                        ? colors.success
+                        : insight.type === "warning"
+                        ? colors.error
+                        : colors.primary
+                    }
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: colors.text,
+                    }}
+                  >
+                    {insight.title}
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: colors.textSecondary,
+                    marginLeft: 24,
+                  }}
+                >
+                  {insight.message}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* 6-Month Trend - Simplified */}
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "700",
+              marginBottom: 20,
+              color: colors.text,
+            }}
+          >
+            6-Month Trend
+          </Text>
+
+          {trendData.map((month, index) => (
+            <View
+              key={`trend-${month.month}-${index}`}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 12,
+                paddingVertical: 8,
+                borderBottomWidth: index < trendData.length - 1 ? 1 : 0,
+                borderBottomColor: colors.border,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  width: 40,
+                  fontWeight: "500",
+                }}
+              >
+                {month.month}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#16a34a",
+                  width: 80,
+                  fontWeight: "600",
+                }}
+              >
+                {formatCurrency(month.income)}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#dc2626",
+                  width: 80,
+                  fontWeight: "600",
+                }}
+              >
+                {formatCurrency(month.expenses)}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "700",
+                  color: month.net >= 0 ? "#16a34a" : "#dc2626",
+                }}
+              >
+                {formatCurrency(month.net)}
+              </Text>
+            </View>
+          ))}
         </View>
       </ScrollView>
     </SafeAreaView>

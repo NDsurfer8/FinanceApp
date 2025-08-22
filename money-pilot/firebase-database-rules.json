@@ -1,0 +1,394 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+
+        "profile": {
+          ".validate": "newData.hasChildren(['uid', 'email', 'displayName', 'createdAt', 'updatedAt'])",
+          "uid": {
+            ".validate": "newData.val() === auth.uid"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$/)"
+          },
+          "displayName": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          }
+        },
+
+        "transactions": {
+          "$transactionId": {
+            ".validate": "newData.hasChildren(['id', 'description', 'amount', 'type', 'category', 'date', 'userId'])",
+            "id": {
+              ".validate": "newData.val() === $transactionId"
+            },
+            "description": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+            },
+            "descriptionEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "amount": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "amountEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "type": {
+              ".validate": "newData.val() === 'income' || newData.val() === 'expense'"
+            },
+            "category": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            "categoryEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "date": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "recurringTransactionId": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            }
+          }
+        },
+
+        "assets": {
+          "$assetId": {
+            ".validate": "newData.hasChildren(['id', 'name', 'balance', 'type', 'userId'])",
+            "id": {
+              ".validate": "newData.val() === $assetId"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+            },
+            "nameEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "balance": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "balanceEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "type": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            }
+          }
+        },
+
+        "debts": {
+          "$debtId": {
+            ".validate": "newData.hasChildren(['id', 'name', 'balance', 'rate', 'payment', 'userId'])",
+            "id": {
+              ".validate": "newData.val() === $debtId"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+            },
+            "nameEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "balance": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "balanceEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "rate": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "rateEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "payment": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "paymentEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            }
+          }
+        },
+
+        "goals": {
+          "$goalId": {
+            ".validate": "newData.hasChildren(['id', 'name', 'targetAmount', 'currentAmount', 'monthlyContribution', 'targetDate', 'category', 'priority', 'userId', 'createdAt', 'updatedAt'])",
+            "id": {
+              ".validate": "newData.val() === $goalId"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+            },
+            "nameEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "targetAmount": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "targetAmountEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "currentAmount": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "currentAmountEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "monthlyContribution": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "monthlyContributionEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "targetDate": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "category": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            "categoryEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "priority": {
+              ".validate": "newData.val() === 'high' || newData.val() === 'medium' || newData.val() === 'low'"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "updatedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            }
+          }
+        },
+
+        "emergencyFund": {
+          "$emergencyFundId": {
+            ".validate": "newData.hasChildren(['id', 'currentBalance', 'targetMonths', 'monthlyContribution', 'userId', 'updatedAt'])",
+            "id": {
+              ".validate": "newData.val() === $emergencyFundId"
+            },
+            "currentBalance": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "currentBalanceEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "targetMonths": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 24"
+            },
+            "targetMonthsEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "monthlyContribution": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "monthlyContributionEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "updatedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            }
+          }
+        },
+
+        "budgetSettings": {
+          "$budgetSettingsId": {
+            ".validate": "newData.hasChildren(['id', 'savingsPercentage', 'debtPayoffPercentage', 'userId', 'updatedAt'])",
+            "id": {
+              ".validate": "newData.val() === $budgetSettingsId"
+            },
+            "savingsPercentage": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "savingsPercentageEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "debtPayoffPercentage": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "debtPayoffPercentageEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "updatedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            }
+          }
+        }
+      }
+    },
+
+    "recurringTransactions": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$recurringTransactionId": {
+        ".read": "auth != null && data.child('userId').val() === auth.uid",
+        ".write": "auth != null && newData.child('userId').val() === auth.uid",
+        ".validate": "newData.hasChildren(['id', 'name', 'amount', 'type', 'category', 'frequency', 'startDate', 'isActive', 'userId', 'createdAt', 'updatedAt']) && (!newData.hasChild('endDate') || newData.child('endDate').isNumber())",
+        "id": {
+          ".validate": "newData.val() === $recurringTransactionId"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "nameEncrypted": {
+          ".validate": "newData.isString()"
+        },
+        "amount": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "amountEncrypted": {
+          ".validate": "newData.isString()"
+        },
+        "type": {
+          ".validate": "newData.val() === 'income' || newData.val() === 'expense'"
+        },
+        "category": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+        },
+        "categoryEncrypted": {
+          ".validate": "newData.isString()"
+        },
+        "frequency": {
+          ".validate": "newData.val() === 'weekly' || newData.val() === 'biweekly' || newData.val() === 'monthly' || newData.val() === 'quarterly' || newData.val() === 'yearly'"
+        },
+        "startDate": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "endDate": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "isActive": {
+          ".validate": "newData.isBoolean()"
+        },
+        "userId": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        }
+      }
+    },
+
+    "sharedGroups": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$groupId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['name', 'type', 'ownerId', 'members', 'settings', 'createdAt', 'updatedAt'])",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "description": {
+          ".validate": "newData.isString() && newData.val().length <= 500"
+        },
+        "type": {
+          ".validate": "newData.val() === 'couple' || newData.val() === 'family' || newData.val() === 'business' || newData.val() === 'investment'"
+        },
+        "ownerId": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        "members": {
+          "$memberId": {
+            ".validate": "newData.hasChildren(['userId', 'displayName', 'email', 'role', 'joinedAt', 'permissions'])",
+            "userId": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "displayName": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+            },
+            "email": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "role": {
+              ".validate": "newData.val() === 'owner' || newData.val() === 'member' || newData.val() === 'viewer'"
+            },
+            "joinedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "permissions": {
+              ".validate": "newData.hasChildren(['canAddTransactions', 'canEditTransactions', 'canAddAssets', 'canEditAssets', 'canAddDebts', 'canEditDebts', 'canAddGoals', 'canEditGoals', 'canInviteMembers', 'canRemoveMembers', 'canViewAllData'])"
+            }
+          }
+        },
+        "settings": {
+          ".validate": "newData.hasChildren(['shareTransactions', 'shareAssets', 'shareDebts', 'shareGoals', 'shareBudgetSettings', 'allowMemberInvites', 'requireApprovalForJoining'])"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        }
+      }
+    },
+
+    "invitations": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$invitationId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['groupId', 'groupName', 'inviterId', 'inviterName', 'inviteeEmail', 'role', 'status', 'expiresAt', 'createdAt'])",
+        "groupId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "groupName": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "inviterId": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        "inviterName": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "inviteeEmail": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "role": {
+          ".validate": "newData.val() === 'member' || newData.val() === 'viewer'"
+        },
+        "status": {
+          ".validate": "newData.val() === 'pending' || newData.val() === 'accepted' || newData.val() === 'declined' || newData.val() === 'expired'"
+        },
+        "expiresAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        }
+      }
+    }
+  }
+}

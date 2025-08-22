@@ -54,7 +54,8 @@ export type CategoryPoint = {
 // For React Navigation bottom tabs
 export type BottomTabParamList = {
   Dashboard: undefined;
-  Transactions: undefined;
+  Budget: undefined;
+  Goals: undefined;
   "Assets/Debts": undefined;
   Settings: undefined;
 };
