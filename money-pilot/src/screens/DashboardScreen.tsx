@@ -199,7 +199,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     {
       title: "Transaction",
       subtitle: transactionLimitInfo.isUnlimited
-        ? "Unlimited"
+        ? ""
         : `${transactionLimitInfo.current}/${transactionLimitInfo.limit}`,
       icon: "add-circle",
       onPress: () => navigation.navigate("AddTransaction"),
@@ -207,7 +207,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     },
     {
       title: "AI Advisor",
-      subtitle: "Free",
+      subtitle: "",
       icon: "chatbubble-ellipses",
       onPress: () => navigation.navigate("AIFinancialAdvisor"),
       color: "#06b6d4",
@@ -227,7 +227,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     {
       title: "Goals",
       subtitle: goalLimitInfo.isUnlimited
-        ? "Unlimited"
+        ? ""
         : `${goalLimitInfo.current}/${goalLimitInfo.limit}`,
       icon: "flag",
       onPress: () => navigation.navigate("Goals", { openAddModal: true }),
