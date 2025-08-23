@@ -354,22 +354,36 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <TouchableOpacity
                 onPress={() => navigation.navigate("FinancialRisk")}
                 style={{
-                  backgroundColor: "#6366f1",
+                  backgroundColor: colors.info,
                   padding: 14,
                   borderRadius: 14,
+                  shadowColor: colors.info,
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 3,
                 }}
               >
-                <Ionicons name="analytics-outline" size={22} color="#fff" />
+                <Ionicons
+                  name="analytics-outline"
+                  size={22}
+                  color={colors.buttonText}
+                />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => navigation.navigate("SharedFinance")}
                 style={{
-                  backgroundColor: "#ec4899",
+                  backgroundColor: colors.primary,
                   padding: 14,
                   borderRadius: 14,
+                  shadowColor: colors.primary,
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 3,
                 }}
               >
-                <Ionicons name="people" size={22} color="#fff" />
+                <Ionicons name="people" size={22} color={colors.buttonText} />
               </TouchableOpacity>
             </View>
           }
