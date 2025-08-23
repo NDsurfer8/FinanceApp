@@ -142,9 +142,11 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
         const updatedGoal = {
           ...goal,
           name: formData.name,
-          targetAmount: parseFloat(formData.targetAmount),
-          currentAmount: parseFloat(formData.currentAmount),
-          monthlyContribution: parseFloat(formData.monthlyContribution),
+          targetAmount: parseFloat(removeCommas(formData.targetAmount)),
+          currentAmount: parseFloat(removeCommas(formData.currentAmount)),
+          monthlyContribution: parseFloat(
+            removeCommas(formData.monthlyContribution)
+          ),
           targetDate: formData.targetDate,
           category: formData.category,
           priority: formData.priority,
@@ -168,9 +170,11 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
         const newGoal = {
           id: `temp-${Date.now()}`,
           name: formData.name,
-          targetAmount: parseFloat(formData.targetAmount),
-          currentAmount: parseFloat(formData.currentAmount),
-          monthlyContribution: parseFloat(formData.monthlyContribution),
+          targetAmount: parseFloat(removeCommas(formData.targetAmount)),
+          currentAmount: parseFloat(removeCommas(formData.currentAmount)),
+          monthlyContribution: parseFloat(
+            removeCommas(formData.monthlyContribution)
+          ),
           targetDate: formData.targetDate,
           category: formData.category,
           priority: formData.priority,

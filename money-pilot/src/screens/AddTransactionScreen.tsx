@@ -236,7 +236,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
           const recurringTransaction = {
             name: formData.description,
-            amount: parseFloat(formData.amount),
+            amount: parseFloat(removeCommas(formData.amount)),
             type: formData.type as "income" | "expense",
             category: formData.category,
             frequency: formData.frequency,
@@ -274,7 +274,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           const newTransaction = {
             id: Date.now().toString(),
             description: formData.description,
-            amount: parseFloat(formData.amount),
+            amount: parseFloat(removeCommas(formData.amount)),
             category: formData.category,
             type: formData.type as "income" | "expense",
             date: new Date(formData.date).getTime(),
@@ -317,7 +317,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           const updatedTransaction = {
             ...transaction,
             description: formData.description,
-            amount: parseFloat(formData.amount),
+            amount: parseFloat(removeCommas(formData.amount)),
             category: formData.category,
             type: formData.type as "income" | "expense",
             date: new Date(formData.date).getTime(),
@@ -345,7 +345,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
         const recurringTransaction = {
           name: formData.description,
-          amount: parseFloat(formData.amount),
+          amount: parseFloat(removeCommas(formData.amount)),
           type: formData.type as "income" | "expense",
           category: formData.category,
           frequency: formData.frequency,
@@ -369,7 +369,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         const newTransaction = {
           id: Date.now().toString(),
           description: formData.description,
-          amount: parseFloat(formData.amount),
+          amount: parseFloat(removeCommas(formData.amount)),
           category: formData.category,
           type: formData.type as "income" | "expense",
           date: new Date(formData.date).getTime(), // Convert to timestamp

@@ -86,7 +86,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           const updatedAsset = {
             ...asset,
             name: formData.name,
-            balance: parseFloat(formData.balance),
+            balance: parseFloat(removeCommas(formData.balance)),
             type: formData.assetType,
             updatedAt: Date.now(),
           };
@@ -104,7 +104,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           const newAsset = {
             id: `temp-${Date.now()}`,
             name: formData.name,
-            balance: parseFloat(formData.balance),
+            balance: parseFloat(removeCommas(formData.balance)),
             type: formData.assetType,
             userId: user.uid,
             createdAt: new Date().toISOString(),
@@ -129,9 +129,9 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           const updatedDebt = {
             ...debt,
             name: formData.name,
-            balance: parseFloat(formData.balance),
-            rate: parseFloat(formData.rate),
-            payment: parseFloat(formData.payment),
+            balance: parseFloat(removeCommas(formData.balance)),
+            rate: parseFloat(removeCommas(formData.rate)),
+            payment: parseFloat(removeCommas(formData.payment)),
             updatedAt: Date.now(),
           };
 
@@ -148,9 +148,9 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           const newDebt = {
             id: `temp-${Date.now()}`,
             name: formData.name,
-            balance: parseFloat(formData.balance),
-            rate: parseFloat(formData.rate),
-            payment: parseFloat(formData.payment),
+            balance: parseFloat(removeCommas(formData.balance)),
+            rate: parseFloat(removeCommas(formData.rate)),
+            payment: parseFloat(removeCommas(formData.payment)),
             userId: user.uid,
             createdAt: new Date().toISOString(),
           };
@@ -207,28 +207,28 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-                          try {
-                if (type === "asset" && asset) {
-                  // Optimistic update
-                  const updatedAssets = assets.filter((a) => a.id !== asset.id);
-                  updateDataOptimistically({ assets: updatedAssets });
+            try {
+              if (type === "asset" && asset) {
+                // Optimistic update
+                const updatedAssets = assets.filter((a) => a.id !== asset.id);
+                updateDataOptimistically({ assets: updatedAssets });
 
-                  // Delete from database
-                  await removeAsset(user.uid, asset.id);
+                // Delete from database
+                await removeAsset(user.uid, asset.id);
 
-                  // Refresh context to ensure all data is in sync
-                  refreshInBackground();
-                } else if (type === "debt" && debt) {
-                  // Optimistic update
-                  const updatedDebts = debts.filter((d) => d.id !== debt.id);
-                  updateDataOptimistically({ debts: updatedDebts });
+                // Refresh context to ensure all data is in sync
+                refreshInBackground();
+              } else if (type === "debt" && debt) {
+                // Optimistic update
+                const updatedDebts = debts.filter((d) => d.id !== debt.id);
+                updateDataOptimistically({ debts: updatedDebts });
 
-                  // Delete from database
-                  await removeDebt(user.uid, debt.id);
+                // Delete from database
+                await removeDebt(user.uid, debt.id);
 
-                  // Refresh context to ensure all data is in sync
-                  refreshInBackground();
-                }
+                // Refresh context to ensure all data is in sync
+                refreshInBackground();
+              }
 
               Alert.alert(
                 "Success",
