@@ -828,203 +828,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           </View>
         )}
 
-        {/* Income Section */}
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 20,
-            padding: 24,
-            marginBottom: 20,
-            shadowColor: "#000",
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 20,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
-                style={{
-                  backgroundColor: colors.successLight,
-                  padding: 8,
-                  borderRadius: 10,
-                  marginRight: 12,
-                }}
-              >
-                <Ionicons name="trending-up" size={20} color={colors.text} />
-              </View>
-              <Text
-                style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
-              >
-                Income
-              </Text>
-            </View>
-            <TouchableOpacity onPress={handleAddIncome}>
-              <Ionicons name="add-circle" size={24} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-
-          {incomeTransactions.length === 0 &&
-          projectedIncomeTransactions.length === 0 ? (
-            <TouchableOpacity
-              onPress={handleAddIncome}
-              style={{
-                padding: 20,
-                alignItems: "center",
-                backgroundColor: colors.surfaceSecondary,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderStyle: "dashed",
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  textAlign: "center",
-                  fontSize: 16,
-                }}
-              >
-                No income transactions for this month
-              </Text>
-              <Text
-                style={{
-                  color: "#16a34a",
-                  textAlign: "center",
-                  fontSize: 14,
-                  marginTop: 4,
-                  fontWeight: "500",
-                }}
-              >
-                Tap to add income
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            // Combine actual and projected transactions for future months
-            [
-              ...incomeTransactions,
-              ...(isFutureMonth
-                ? projectedTransactions.filter((t) => t.type === "income")
-                : []),
-            ].map((transaction, index, array) => (
-              <TouchableOpacity
-                key={transaction.id}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 12,
-                  paddingVertical: 8,
-                  borderBottomWidth: index === array.length - 1 ? 0 : 1,
-                  borderBottomColor: colors.border,
-                }}
-                onPress={() =>
-                  navigation.navigate("AddTransaction", {
-                    type: "income",
-                    editMode: true,
-                    transaction: transaction,
-                  })
-                }
-              >
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: colors.text,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {transaction.description}
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginTop: 2,
-                    }}
-                  >
-                    <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                      {transaction.category} • {formatDate(transaction.date)}
-                    </Text>
-                    {(isRecurringTransaction(transaction) ||
-                      transaction.id?.startsWith("projected-")) && (
-                      <Ionicons
-                        name="repeat"
-                        size={12}
-                        color={colors.primary}
-                        style={{ marginLeft: 8 }}
-                      />
-                    )}
-                  </View>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "700",
-                      color: colors.text,
-                      marginRight: 8,
-                    }}
-                  >
-                    {formatCurrency(transaction.amount)}
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.textSecondary}
-                  />
-                </View>
-              </TouchableOpacity>
-            ))
-          )}
-
-          {(incomeTransactions.length > 0 ||
-            projectedIncomeTransactions.length > 0) && (
-            <View
-              style={{
-                borderTopWidth: 2,
-                borderTopColor: colors.border,
-                paddingTop: 16,
-                marginTop: 8,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "800",
-                    color: colors.text,
-                  }}
-                >
-                  Total Income
-                </Text>
-                <Text
-                  style={{ fontSize: 18, fontWeight: "800", color: "#16a34a" }}
-                >
-                  $
-                  {totalIncome.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </Text>
-              </View>
-            </View>
-          )}
-        </View>
-
         {/* Bank Recurring Suggestions Button */}
         {isBankConnected && (
           <View
@@ -1276,6 +1079,203 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             )}
           </View>
         )}
+
+        {/* Income Section */}
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
+            shadowColor: "#000",
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 20,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  backgroundColor: colors.successLight,
+                  padding: 8,
+                  borderRadius: 10,
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="trending-up" size={20} color={colors.text} />
+              </View>
+              <Text
+                style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
+              >
+                Income
+              </Text>
+            </View>
+            <TouchableOpacity onPress={handleAddIncome}>
+              <Ionicons name="add-circle" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          {incomeTransactions.length === 0 &&
+          projectedIncomeTransactions.length === 0 ? (
+            <TouchableOpacity
+              onPress={handleAddIncome}
+              style={{
+                padding: 20,
+                alignItems: "center",
+                backgroundColor: colors.surfaceSecondary,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderStyle: "dashed",
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  textAlign: "center",
+                  fontSize: 16,
+                }}
+              >
+                No income transactions for this month
+              </Text>
+              <Text
+                style={{
+                  color: "#16a34a",
+                  textAlign: "center",
+                  fontSize: 14,
+                  marginTop: 4,
+                  fontWeight: "500",
+                }}
+              >
+                Tap to add income
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            // Combine actual and projected transactions for future months
+            [
+              ...incomeTransactions,
+              ...(isFutureMonth
+                ? projectedTransactions.filter((t) => t.type === "income")
+                : []),
+            ].map((transaction, index, array) => (
+              <TouchableOpacity
+                key={transaction.id}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
+                  paddingVertical: 8,
+                  borderBottomWidth: index === array.length - 1 ? 0 : 1,
+                  borderBottomColor: colors.border,
+                }}
+                onPress={() =>
+                  navigation.navigate("AddTransaction", {
+                    type: "income",
+                    editMode: true,
+                    transaction: transaction,
+                  })
+                }
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: colors.text,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {transaction.description}
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginTop: 2,
+                    }}
+                  >
+                    <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                      {transaction.category} • {formatDate(transaction.date)}
+                    </Text>
+                    {(isRecurringTransaction(transaction) ||
+                      transaction.id?.startsWith("projected-")) && (
+                      <Ionicons
+                        name="repeat"
+                        size={12}
+                        color={colors.primary}
+                        style={{ marginLeft: 8 }}
+                      />
+                    )}
+                  </View>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: colors.text,
+                      marginRight: 8,
+                    }}
+                  >
+                    {formatCurrency(transaction.amount)}
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={colors.textSecondary}
+                  />
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
+
+          {(incomeTransactions.length > 0 ||
+            projectedIncomeTransactions.length > 0) && (
+            <View
+              style={{
+                borderTopWidth: 2,
+                borderTopColor: colors.border,
+                paddingTop: 16,
+                marginTop: 8,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "800",
+                    color: colors.text,
+                  }}
+                >
+                  Total Income
+                </Text>
+                <Text
+                  style={{ fontSize: 18, fontWeight: "800", color: "#16a34a" }}
+                >
+                  $
+                  {totalIncome.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
 
         {/* Expenses Section */}
         <View
