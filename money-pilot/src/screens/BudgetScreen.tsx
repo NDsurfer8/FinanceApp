@@ -970,7 +970,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     style={{
                       fontSize: 16,
                       fontWeight: "700",
-                      color: colors.success,
+                      color: colors.text,
                       marginRight: 8,
                     }}
                   >
@@ -1227,10 +1227,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                         style={{
                           fontSize: 16,
                           fontWeight: "700",
-                          color:
-                            suggestion.type === "income"
-                              ? "#16a34a"
-                              : "#dc2626",
+                          color: colors.text,
                         }}
                       >
                         {formatCurrency(suggestion.amount)}
@@ -1422,7 +1419,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     style={{
                       fontSize: 16,
                       fontWeight: "700",
-                      color: colors.error,
+                      color: colors.text,
                       marginRight: 8,
                     }}
                   >
