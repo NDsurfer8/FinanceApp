@@ -566,7 +566,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
           <TouchableOpacity
             style={{
               flex: 1,
-              backgroundColor: colors.success,
+              backgroundColor: colors.info,
               padding: 16,
               borderRadius: 12,
               alignItems: "center",

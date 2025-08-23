@@ -46,6 +46,12 @@ export const encryptValue = async (value: any): Promise<string> => {
 // Decrypt a single value
 export const decryptValue = async (encryptedValue: string): Promise<any> => {
   try {
+    // Validate input
+    if (!encryptedValue || typeof encryptedValue !== "string") {
+      console.warn("Invalid encrypted value provided");
+      return encryptedValue;
+    }
+
     const key = await getEncryptionKey();
     const decrypted = CryptoJS.AES.decrypt(encryptedValue, key);
     const jsonString = decrypted.toString(CryptoJS.enc.Utf8);
@@ -58,7 +64,25 @@ export const decryptValue = async (encryptedValue: string): Promise<any> => {
       return encryptedValue; // Return original encrypted value as fallback
     }
 
-    return JSON.parse(jsonString);
+    // Validate UTF-8 encoding
+    try {
+      // Test if the string is valid UTF-8
+      const testString = decodeURIComponent(escape(jsonString));
+      if (testString !== jsonString) {
+        console.warn("Invalid UTF-8 data detected");
+        return encryptedValue;
+      }
+    } catch (utf8Error) {
+      console.warn("UTF-8 validation failed:", utf8Error);
+      return encryptedValue;
+    }
+
+    try {
+      return JSON.parse(jsonString);
+    } catch (parseError) {
+      console.warn("JSON parse failed, returning original value:", parseError);
+      return encryptedValue;
+    }
   } catch (error) {
     console.error("Error decrypting value:", error);
     // Return the original encrypted value instead of throwing
