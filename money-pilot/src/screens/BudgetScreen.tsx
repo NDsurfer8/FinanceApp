@@ -418,23 +418,26 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     const insights = [];
 
     if (totalIncome > 0) {
-      const savingsRate = (savingsAmount / totalIncome) * 100;
+      // Calculate discretionary savings rate (what's actually available after all allocations)
+      const discretionarySavingsRate = (remainingBalance / totalIncome) * 100;
       insights.push({
         id: "savings-rate",
         type: "success",
         icon: "trending-up",
-        title: "Great Savings Rate!",
-        message: `You're saving ${savingsRate.toFixed(1)}% of your income`,
+        title: "Discretionary Savings Rate",
+        message: `You have ${discretionarySavingsRate.toFixed(
+          1
+        )}% of your income available for additional savings`,
       });
     }
 
     if (expenseTransactions.length >= 10) {
       insights.push({
-        id: "active-month",
+        id: "active-budgeting",
         type: "info",
         icon: "analytics",
-        title: "Active Month",
-        message: `${expenseTransactions.length} expenses tracked`,
+        title: "Active Budgeting",
+        message: `${expenseTransactions.length} expenses tracked this month`,
       });
     }
 

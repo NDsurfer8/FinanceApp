@@ -38,6 +38,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   } = useTransactionLimits();
   const [loading, setLoading] = useState(false);
   const [trendData, setTrendData] = useState<any[]>([]);
+  const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(
+    new Set()
+  );
   const { colors } = useTheme();
 
   // Function to determine if name should be on a new line
@@ -128,23 +131,25 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     const insights = [];
 
     if (monthlyIncome > 0) {
-      const savingsRate =
-        ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100;
-      if (savingsRate >= 20) {
+      // Calculate discretionary savings rate (what's actually available after all allocations)
+      const discretionarySavingsRate = (availableAmount / monthlyIncome) * 100;
+      if (discretionarySavingsRate >= 20) {
         insights.push({
+          id: "excellent-savings-rate",
           type: "success",
           icon: "trending-up",
-          title: "Excellent Savings Rate!",
-          message: `You're saving ${savingsRate.toFixed(
+          title: "Excellent Discretionary Savings!",
+          message: `You have ${discretionarySavingsRate.toFixed(
             1
-          )}% of your income this month`,
+          )}% of your income available for additional savings`,
         });
-      } else if (savingsRate < 0) {
+      } else if (discretionarySavingsRate < 0) {
         insights.push({
+          id: "spending-more-than-income",
           type: "warning",
           icon: "alert-circle",
-          title: "Spending More Than Income",
-          message: "Consider reviewing your expenses",
+          title: "Over Budget",
+          message: "Your expenses and allocations exceed your income",
         });
       }
     }
@@ -153,6 +158,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       const debtToAssetRatio = (totalDebts / totalAssets) * 100;
       if (debtToAssetRatio > 50) {
         insights.push({
+          id: "high-debt-ratio",
           type: "warning",
           icon: "card",
           title: "High Debt Ratio",
@@ -163,6 +169,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
     if (monthlyTransactions.length >= 10) {
       insights.push({
+        id: "active-month",
         type: "info",
         icon: "analytics",
         title: "Active Month",
@@ -173,6 +180,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     // Emergency Fund Insight
     if (emergencyFundProgress >= 100) {
       insights.push({
+        id: "emergency-fund-complete",
         type: "success",
         icon: "shield-checkmark",
         title: "Emergency Fund Complete!",
@@ -182,6 +190,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       });
     } else if (emergencyFundProgress >= 50) {
       insights.push({
+        id: "emergency-fund-progress",
         type: "info",
         icon: "shield",
         title: "Emergency Fund Progress",
@@ -191,6 +200,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       });
     } else if (emergencyFundProgress > 0) {
       insights.push({
+        id: "build-emergency-fund",
         type: "warning",
         icon: "shield-outline",
         title: "Build Emergency Fund",
@@ -203,7 +213,27 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     return insights;
   };
 
-  const insights = getInsights();
+  const allInsights = React.useMemo(
+    () => getInsights(),
+    [
+      monthlyIncome,
+      monthlyExpenses,
+      totalDebts,
+      totalAssets,
+      monthlyTransactions.length,
+      emergencyFundProgress,
+      totalSavings,
+    ]
+  );
+
+  const insights = React.useMemo(
+    () => allInsights.filter((insight) => !dismissedInsights.has(insight.id)),
+    [allInsights, dismissedInsights]
+  );
+
+  const handleDismissInsight = (insightId: string) => {
+    setDismissedInsights((prev) => new Set([...prev, insightId]));
+  };
 
   // Premium Feature: Quick Actions
   const transactionLimitInfo = getTransactionLimitInfo();
@@ -798,7 +828,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
             {insights.map((insight, index) => (
               <View
-                key={`insight-${insight.title}-${index}`}
+                key={`insight-${insight.id}-${index}`}
                 style={{ marginBottom: 12 }}
               >
                 <View
@@ -825,10 +855,25 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       fontSize: 14,
                       fontWeight: "600",
                       color: colors.text,
+                      flex: 1,
                     }}
                   >
                     {insight.title}
                   </Text>
+                  <TouchableOpacity
+                    onPress={() => handleDismissInsight(insight.id)}
+                    style={{
+                      padding: 4,
+                      borderRadius: 12,
+                      backgroundColor: colors.surfaceSecondary,
+                    }}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={14}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
                 </View>
                 <Text
                   style={{
