@@ -1,5 +1,8 @@
 // Utility function to format numbers with commas
 export const formatNumberWithCommas = (value: string): string => {
+  // Handle empty or null values
+  if (!value || value === "") return "";
+
   // Remove any existing commas and non-numeric characters except decimal point
   const cleanValue = value.replace(/[^\d.]/g, "");
 
@@ -16,6 +19,7 @@ export const formatNumberWithCommas = (value: string): string => {
 
 // Utility function to remove commas for processing
 export const removeCommas = (value: string): string => {
+  if (!value) return "";
   return value.replace(/,/g, "");
 };
 

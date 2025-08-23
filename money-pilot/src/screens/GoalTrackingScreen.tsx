@@ -22,6 +22,7 @@ import {
   removeGoal,
   FinancialGoal,
 } from "../services/userData";
+import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
 
 interface GoalTrackingScreenProps {
   navigation: any;
@@ -1118,12 +1119,13 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       backgroundColor: colors.surfaceSecondary,
                       color: colors.text,
                     }}
-                    value={newGoal.targetAmount}
-                    onChangeText={(text) =>
-                      setNewGoal({ ...newGoal, targetAmount: text })
-                    }
-                    keyboardType="numeric"
-                    placeholder="5000"
+                    value={formatNumberWithCommas(newGoal.targetAmount)}
+                    onChangeText={(text) => {
+                      const cleanValue = removeCommas(text);
+                      setNewGoal({ ...newGoal, targetAmount: cleanValue });
+                    }}
+                    keyboardType="decimal-pad"
+                    placeholder="5,000"
                     placeholderTextColor={colors.textSecondary}
                   />
                 </View>
@@ -1150,11 +1152,12 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       backgroundColor: colors.surfaceSecondary,
                       color: colors.text,
                     }}
-                    value={newGoal.currentAmount}
-                    onChangeText={(text) =>
-                      setNewGoal({ ...newGoal, currentAmount: text })
-                    }
-                    keyboardType="numeric"
+                    value={formatNumberWithCommas(newGoal.currentAmount)}
+                    onChangeText={(text) => {
+                      const cleanValue = removeCommas(text);
+                      setNewGoal({ ...newGoal, currentAmount: cleanValue });
+                    }}
+                    keyboardType="decimal-pad"
                     placeholder="0"
                     placeholderTextColor={colors.textSecondary}
                   />
@@ -1182,11 +1185,15 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       backgroundColor: colors.surfaceSecondary,
                       color: colors.text,
                     }}
-                    value={newGoal.monthlyContribution}
-                    onChangeText={(text) =>
-                      setNewGoal({ ...newGoal, monthlyContribution: text })
-                    }
-                    keyboardType="numeric"
+                    value={formatNumberWithCommas(newGoal.monthlyContribution)}
+                    onChangeText={(text) => {
+                      const cleanValue = removeCommas(text);
+                      setNewGoal({
+                        ...newGoal,
+                        monthlyContribution: cleanValue,
+                      });
+                    }}
+                    keyboardType="decimal-pad"
                     placeholder="500"
                     placeholderTextColor={colors.textSecondary}
                   />
