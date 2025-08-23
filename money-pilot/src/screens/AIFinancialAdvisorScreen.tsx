@@ -1902,13 +1902,19 @@ Original Request: ${basePrompt}
                 alignItems: "center",
               }}
             >
-              <Ionicons
-                name="arrow-up"
-                size={16}
-                color={
-                  inputText.trim() && !isLoading ? "#fff" : colors.textSecondary
-                }
-              />
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons
+                  name="arrow-up"
+                  size={16}
+                  color={
+                    inputText.trim() && !isLoading
+                      ? "#fff"
+                      : colors.textSecondary
+                  }
+                />
+              )}
             </TouchableOpacity>
           </View>
         </View>

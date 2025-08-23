@@ -9,6 +9,7 @@ import {
   TextInput,
   Modal,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -638,9 +639,21 @@ export const RecurringTransactionsScreen: React.FC<
             </Text>
             <TouchableOpacity
               onPress={handleSave}
-              style={styles.modalSaveButton}
+              style={[styles.modalSaveButton, { opacity: loading ? 0.6 : 1 }]}
+              disabled={loading}
             >
-              <Text style={styles.modalSaveText}>Save</Text>
+              {loading ? (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <ActivityIndicator
+                    size="small"
+                    color="white"
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={styles.modalSaveText}>Saving...</Text>
+                </View>
+              ) : (
+                <Text style={styles.modalSaveText}>Save</Text>
+              )}
             </TouchableOpacity>
           </View>
 

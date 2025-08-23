@@ -9,6 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
@@ -62,6 +63,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
     assetType:
       editMode && type === "asset" ? asset?.type || "savings" : "savings", // For assets only
   });
+  const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
     if (!formData.name || !formData.balance) {
@@ -79,6 +81,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
       return;
     }
 
+    setLoading(true);
     try {
       if (type === "asset") {
         if (editMode && asset) {
@@ -189,6 +192,8 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
 
       // Revert optimistic update on error
       refreshInBackground();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -530,19 +535,40 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
               padding: 16,
               alignItems: "center",
               marginTop: 24,
+              opacity: loading ? 0.6 : 1,
             }}
             onPress={handleSave}
+            disabled={loading}
           >
-            <Text
-              style={{
-                color: colors.buttonText,
-                fontSize: 16,
-                fontWeight: "600",
-              }}
-            >
-              {editMode ? "Update" : "Save"}{" "}
-              {type === "asset" ? "Asset" : "Debt"}
-            </Text>
+            {loading ? (
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <ActivityIndicator
+                  size="small"
+                  color={colors.buttonText}
+                  style={{ marginRight: 8 }}
+                />
+                <Text
+                  style={{
+                    color: colors.buttonText,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  {editMode ? "Updating..." : "Saving..."}
+                </Text>
+              </View>
+            ) : (
+              <Text
+                style={{
+                  color: colors.buttonText,
+                  fontSize: 16,
+                  fontWeight: "600",
+                }}
+              >
+                {editMode ? "Update" : "Save"}{" "}
+                {type === "asset" ? "Asset" : "Debt"}
+              </Text>
+            )}
           </TouchableOpacity>
 
           {/* Delete Button (only show in edit mode) */}
@@ -554,8 +580,10 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 padding: 16,
                 alignItems: "center",
                 marginTop: 12,
+                opacity: loading ? 0.6 : 1,
               }}
               onPress={handleDelete}
+              disabled={loading}
             >
               <Text
                 style={{

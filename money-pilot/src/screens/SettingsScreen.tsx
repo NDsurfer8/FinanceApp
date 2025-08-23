@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -35,6 +36,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { currentUser, forceRefresh } = useUser();
   const [photoKey, setPhotoKey] = useState(Date.now());
   const { presentPaywall } = usePaywall();
+
+  const handlePaywallPress = async () => {
+    setLoading(true);
+    try {
+      await presentPaywall();
+    } finally {
+      setLoading(false);
+    }
+  };
   const { subscriptionStatus, isEligibleForIntroOffer } = useSubscription();
   const [isBankConnected, setIsBankConnected] = useState(false);
   const { isDark, toggleTheme, colors } = useTheme();
@@ -44,6 +54,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     name: string;
     accounts: any[];
   } | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // Function to format display name for long names
   const formatDisplayName = (displayName: string | null | undefined) => {
@@ -577,12 +588,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   paddingHorizontal: 14,
                   borderRadius: 12,
                   alignSelf: "flex-start",
+                  opacity: loading ? 0.6 : 1,
                 }}
-                onPress={presentPaywall}
+                onPress={handlePaywallPress}
+                disabled={loading}
               >
-                <Text style={{ color: "white", fontWeight: "700" }}>
-                  {introOfferEligible ? "Start Free Trial" : "Get Premium"}
-                </Text>
+                {loading ? (
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <ActivityIndicator
+                      size="small"
+                      color="white"
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={{ color: "white", fontWeight: "700" }}>
+                      Loading...
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={{ color: "white", fontWeight: "700" }}>
+                    {introOfferEligible ? "Start Free Trial" : "Get Premium"}
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           )}

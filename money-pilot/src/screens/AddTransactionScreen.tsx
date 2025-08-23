@@ -9,6 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
@@ -1109,23 +1110,44 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               padding: 16,
               alignItems: "center",
               marginTop: 24,
+              opacity: loading ? 0.6 : 1,
             }}
             onPress={handleSave}
+            disabled={loading}
           >
-            <Text
-              style={{
-                color: colors.buttonText,
-                fontSize: 16,
-                fontWeight: "600",
-              }}
-            >
-              {editMode
-                ? "Update"
-                : formData.isRecurring
-                ? "Create Recurring"
-                : "Save"}{" "}
-              {formData.type === "income" ? "Income" : "Expense"}
-            </Text>
+            {loading ? (
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <ActivityIndicator
+                  size="small"
+                  color={colors.buttonText}
+                  style={{ marginRight: 8 }}
+                />
+                <Text
+                  style={{
+                    color: colors.buttonText,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  {editMode ? "Updating..." : "Saving..."}
+                </Text>
+              </View>
+            ) : (
+              <Text
+                style={{
+                  color: colors.buttonText,
+                  fontSize: 16,
+                  fontWeight: "600",
+                }}
+              >
+                {editMode
+                  ? "Update"
+                  : formData.isRecurring
+                  ? "Create Recurring"
+                  : "Save"}{" "}
+                {formData.type === "income" ? "Income" : "Expense"}
+              </Text>
+            )}
           </TouchableOpacity>
 
           {/* Delete Button (only show in edit mode) */}
@@ -1137,8 +1159,10 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 padding: 16,
                 alignItems: "center",
                 marginTop: 12,
+                opacity: loading ? 0.6 : 1,
               }}
               onPress={handleDelete}
+              disabled={loading}
             >
               <Text
                 style={{

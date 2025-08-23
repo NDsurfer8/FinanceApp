@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -571,19 +572,39 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
             borderRadius: 16,
             alignItems: "center",
             marginTop: 20,
+            opacity: loading ? 0.6 : 1,
           }}
           onPress={handleSave}
           disabled={loading}
         >
-          <Text
-            style={{
-              color: "white",
-              fontSize: 16,
-              fontWeight: "600",
-            }}
-          >
-            {loading ? "Saving..." : "Save Changes"}
-          </Text>
+          {loading ? (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <ActivityIndicator
+                size="small"
+                color="white"
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                style={{
+                  color: "white",
+                  fontSize: 16,
+                  fontWeight: "600",
+                }}
+              >
+                Saving...
+              </Text>
+            </View>
+          ) : (
+            <Text
+              style={{
+                color: "white",
+                fontSize: 16,
+                fontWeight: "600",
+              }}
+            >
+              Save Changes
+            </Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
