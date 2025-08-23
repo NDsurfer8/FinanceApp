@@ -350,7 +350,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             justifyContent: "space-between",
             alignItems: "center",
             marginBottom: 24,
-            paddingTop: 8,
           }}
         >
           <View>
@@ -365,40 +364,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               {translate("dashboard", isFriendlyMode)}
             </Text>
 
-            {shouldWrapName(user?.displayName || "User") ? (
-              <View style={{ marginTop: 6 }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: colors.textSecondary,
-                    fontWeight: "500",
-                  }}
-                >
-                  Welcome back,
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: colors.textSecondary,
-                    fontWeight: "500",
-                    marginTop: 2,
-                  }}
-                >
-                  {user?.displayName || "User"} 👋
-                </Text>
-              </View>
-            ) : (
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: colors.textSecondary,
-                  marginTop: 6,
-                  fontWeight: "500",
-                }}
-              >
-                Welcome back, {user?.displayName || "User"} 👋
-              </Text>
-            )}
+            <Text
+              style={{
+                fontSize: 16,
+                color: colors.textSecondary,
+                marginTop: 4,
+              }}
+            >
+              Welcome back, {user?.displayName || "User"} 👋
+            </Text>
           </View>
           <View style={{ flexDirection: "row", gap: 12 }}>
             <TouchableOpacity
@@ -458,7 +432,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <View>
               <Text
                 style={{
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: "700",
                   color: colors.text,
                   letterSpacing: -0.3,
