@@ -15,7 +15,6 @@ import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { useData } from "../contexts/DataContext";
 import {
   getUserNetWorthEntries,
-  updateCurrentMonthNetWorth,
   updateNetWorthFromAssetsAndDebts,
 } from "../services/userData";
 
@@ -248,7 +247,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
     // Get net worth entries
     const netWorthEntries = await getUserNetWorthEntries(user?.uid || "");
-    console.log("Net worth entries found:", netWorthEntries.length);
 
     for (let i = 5; i >= 0; i--) {
       const date = new Date();
@@ -292,21 +290,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           0
         );
         netWorth = totalAssets - totalDebts;
-        console.log("Calculated current net worth:", {
-          totalAssets,
-          totalDebts,
-          netWorth,
-        });
-      }
-
-      if (monthNetWorthEntry) {
-        console.log(
-          `${date.toLocaleDateString("en-US", {
-            month: "short",
-          })}: Net Worth = $${netWorth}, Assets = $${
-            monthNetWorthEntry.assets
-          }, Debts = $${monthNetWorthEntry.debts}`
-        );
       }
 
       last6Months.push({
@@ -326,13 +309,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         // Initialize net worth if no entries exist
         const netWorthEntries = await getUserNetWorthEntries(user.uid);
         if (netWorthEntries.length === 0) {
-          console.log("No net worth entries found, initializing...");
           await updateNetWorthFromAssetsAndDebts(user.uid);
         }
 
         const data = await getTrendData();
         setTrendData(data);
-        console.log("Loaded trend data:", data);
       }
     };
     loadTrendData();
@@ -353,13 +334,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     x: month.month,
     y: month.netWorth,
   }));
-
-  // Debug: Log the data being passed to the chart
-  console.log("Chart data:", {
-    chartData: chartData.map((d) => ({ x: d.x, y: d.y })),
-    expensesData: expensesData.map((d) => ({ x: d.x, y: d.y })),
-    netWorthData: netWorthData.map((d) => ({ x: d.x, y: d.y })),
-  });
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString(undefined, {
@@ -891,66 +865,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             netWorthData={netWorthData}
             height={250}
           />
-
-          {/* Test buttons */}
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
-            <TouchableOpacity
-              style={{
-                backgroundColor: colors.primary,
-                borderRadius: 8,
-                padding: 12,
-                flex: 1,
-                alignItems: "center",
-              }}
-              onPress={async () => {
-                if (user) {
-                  console.log("Manually updating net worth...");
-                  await updateNetWorthFromAssetsAndDebts(user.uid);
-                  // Reload trend data
-                  const data = await getTrendData();
-                  setTrendData(data);
-                  console.log("Updated trend data:", data);
-                }
-              }}
-            >
-              <Text style={{ color: colors.buttonText, fontWeight: "600" }}>
-                Update Net Worth
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                backgroundColor: colors.error,
-                borderRadius: 8,
-                padding: 12,
-                flex: 1,
-                alignItems: "center",
-              }}
-              onPress={() => {
-                const totalAssets = assets.reduce(
-                  (sum: number, asset: any) => sum + asset.balance,
-                  0
-                );
-                const totalDebts = debts.reduce(
-                  (sum: number, debt: any) => sum + debt.balance,
-                  0
-                );
-                const netWorth = totalAssets - totalDebts;
-                console.log("Current net worth calculation:", {
-                  totalAssets,
-                  totalDebts,
-                  netWorth,
-                });
-                alert(
-                  `Current Net Worth: $${netWorth.toLocaleString()}\nAssets: $${totalAssets.toLocaleString()}\nDebts: $${totalDebts.toLocaleString()}`
-                );
-              }}
-            >
-              <Text style={{ color: colors.buttonText, fontWeight: "600" }}>
-                Show Net Worth
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

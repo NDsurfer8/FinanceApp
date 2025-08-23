@@ -24,13 +24,6 @@ export const CustomTrendChart: React.FC<CustomTrendChartProps> = ({
   netWorthData,
   height = 250,
 }) => {
-  // Debug: Log what data the chart component receives
-  console.log("CustomTrendChart received:", {
-    incomeData: incomeData.map((d) => ({ x: d.x, y: d.y })),
-    expensesData: expensesData.map((d) => ({ x: d.x, y: d.y })),
-    netWorthData: netWorthData.map((d) => ({ x: d.x, y: d.y })),
-  });
-
   if (!incomeData.length) {
     return (
       <View style={{ height, justifyContent: "center", alignItems: "center" }}>
