@@ -9,10 +9,13 @@ import {
   Linking,
   Alert,
   Image,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { useTheme } from "../contexts/ThemeContext";
+import * as MailComposer from "expo-mail-composer";
+import { useAuth } from "../hooks/useAuth";
 
 interface AboutScreenProps {
   navigation: any;
@@ -20,6 +23,7 @@ interface AboutScreenProps {
 
 export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const appVersion = Constants.expoConfig?.version || "1.0.0";
   const buildNumber = Constants.expoConfig?.ios?.buildNumber || "1";
   const appName = Constants.expoConfig?.name || "VectorFi";
@@ -32,8 +36,66 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
     Linking.openURL("https://your-app.com/terms-of-service");
   };
 
-  const openSupportEmail = () => {
-    Linking.openURL("mailto:support@moneypilot.com");
+  const openSupportEmail = async () => {
+    try {
+      const isAvailable = await MailComposer.isAvailableAsync();
+
+      if (!isAvailable) {
+        Alert.alert(
+          "Email Not Available",
+          "No email app is configured on this device. Please set up an email account in your device settings.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      const userInfo = user
+        ? `\n\nUser Information:\n- User ID: ${user.uid}\n- Email: ${
+            user.email || "Not provided"
+          }\n- Display Name: ${user.displayName || "Not provided"}`
+        : "";
+
+      const emailContent = {
+        recipients: ["support@vectorfi.com"],
+        subject: "VectorFi Support Request",
+        body: `Hello VectorFi Support Team,
+
+I need help with the VectorFi app. Please provide assistance with my issue.
+
+${userInfo}
+
+Issue Description:
+[Please describe your issue here]
+
+Device Information:
+- App Version: ${appVersion}
+- Platform: ${Platform.OS}
+- Device: ${Platform.OS === "ios" ? "iOS" : "Android"}
+
+Thank you for your help!
+
+Best regards,
+${user?.displayName || "VectorFi User"}`,
+        isHtml: false,
+      };
+
+      const result = await MailComposer.composeAsync(emailContent);
+
+      if (result.status === MailComposer.MailComposerStatus.SENT) {
+        Alert.alert(
+          "Email Sent",
+          "Thank you for contacting us. We'll get back to you as soon as possible.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("Error opening email composer:", error);
+      Alert.alert(
+        "Error",
+        "Unable to open email composer. Please try again or contact us through other means.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   const openWebsite = () => {

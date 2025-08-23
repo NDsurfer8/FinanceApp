@@ -9,9 +9,12 @@ import {
   Linking,
   Alert,
   Switch,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
+import * as MailComposer from "expo-mail-composer";
+import { useAuth } from "../hooks/useAuth";
 
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 
@@ -30,6 +33,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
   navigation,
 }) => {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
   const { isFriendlyMode, setIsFriendlyMode } = useFriendlyMode();
 
@@ -117,10 +121,69 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
     setExpandedFAQ(expandedFAQ === faqId ? null : faqId);
   };
 
-  const openSupportEmail = () => {
-    Linking.openURL(
-      "mailto:support@moneypilot.com?subject=Money%20Pilot%20Support"
-    );
+  const openSupportEmail = async () => {
+    try {
+      // Check if device can send emails
+      const isAvailable = await MailComposer.isAvailableAsync();
+
+      if (!isAvailable) {
+        Alert.alert(
+          "Email Not Available",
+          "No email app is configured on this device. Please set up an email account in your device settings.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      // Prepare email content with user context
+      const userInfo = user
+        ? `\n\nUser Information:\n- User ID: ${user.uid}\n- Email: ${
+            user.email || "Not provided"
+          }\n- Display Name: ${user.displayName || "Not provided"}`
+        : "";
+
+      const emailContent = {
+        recipients: ["support@vectorfi.com"],
+        subject: "VectorFi Support Request",
+        body: `Hello VectorFi Support Team,
+
+I need help with the VectorFi app. Please provide assistance with my issue.
+
+${userInfo}
+
+Issue Description:
+[Please describe your issue here]
+
+Device Information:
+- App Version: [Auto-detected]
+- Platform: ${Platform.OS}
+- Device: ${Platform.OS === "ios" ? "iOS" : "Android"}
+
+Thank you for your help!
+
+Best regards,
+${user?.displayName || "VectorFi User"}`,
+        isHtml: false,
+      };
+
+      // Open email composer
+      const result = await MailComposer.composeAsync(emailContent);
+
+      if (result.status === MailComposer.MailComposerStatus.SENT) {
+        Alert.alert(
+          "Email Sent",
+          "Thank you for contacting us. We'll get back to you as soon as possible.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("Error opening email composer:", error);
+      Alert.alert(
+        "Error",
+        "Unable to open email composer. Please try again or contact us through other means.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   const openLiveChat = () => {
@@ -148,12 +211,144 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
     Linking.openURL("https://moneypilot.com/tutorials");
   };
 
-  const reportBug = () => {
-    Linking.openURL("mailto:bugs@moneypilot.com?subject=Bug%20Report");
+  const reportBug = async () => {
+    try {
+      const isAvailable = await MailComposer.isAvailableAsync();
+
+      if (!isAvailable) {
+        Alert.alert(
+          "Email Not Available",
+          "No email app is configured on this device. Please set up an email account in your device settings.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      const userInfo = user
+        ? `\n\nUser Information:\n- User ID: ${user.uid}\n- Email: ${
+            user.email || "Not provided"
+          }\n- Display Name: ${user.displayName || "Not provided"}`
+        : "";
+
+      const emailContent = {
+        recipients: ["bugs@vectorfi.com"],
+        subject: "VectorFi Bug Report",
+        body: `Hello VectorFi Team,
+
+I found a bug in the VectorFi app. Here are the details:
+
+${userInfo}
+
+Bug Description:
+[Please describe the bug you encountered]
+
+Steps to Reproduce:
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+
+Expected Behavior:
+[What should happen]
+
+Actual Behavior:
+[What actually happened]
+
+Device Information:
+- App Version: [Auto-detected]
+- Platform: ${Platform.OS}
+- Device: ${Platform.OS === "ios" ? "iOS" : "Android"}
+
+Thank you for your attention to this issue!
+
+Best regards,
+${user?.displayName || "VectorFi User"}`,
+        isHtml: false,
+      };
+
+      const result = await MailComposer.composeAsync(emailContent);
+
+      if (result.status === MailComposer.MailComposerStatus.SENT) {
+        Alert.alert(
+          "Bug Report Sent",
+          "Thank you for reporting this bug. We'll investigate and fix it as soon as possible.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("Error opening email composer:", error);
+      Alert.alert("Error", "Unable to open email composer. Please try again.", [
+        { text: "OK" },
+      ]);
+    }
   };
 
-  const requestFeature = () => {
-    Linking.openURL("mailto:features@moneypilot.com?subject=Feature%20Request");
+  const requestFeature = async () => {
+    try {
+      const isAvailable = await MailComposer.isAvailableAsync();
+
+      if (!isAvailable) {
+        Alert.alert(
+          "Email Not Available",
+          "No email app is configured on this device. Please set up an email account in your device settings.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      const userInfo = user
+        ? `\n\nUser Information:\n- User ID: ${user.uid}\n- Email: ${
+            user.email || "Not provided"
+          }\n- Display Name: ${user.displayName || "Not provided"}`
+        : "";
+
+      const emailContent = {
+        recipients: ["features@vectorfi.com"],
+        subject: "VectorFi Feature Request",
+        body: `Hello VectorFi Team,
+
+I have a feature request for the VectorFi app. Here are the details:
+
+${userInfo}
+
+Feature Request:
+[Please describe the feature you'd like to see]
+
+Why is this feature important to you?
+[Explain how this feature would help you]
+
+Use Case:
+[Describe how you would use this feature]
+
+Additional Notes:
+[Any other relevant information]
+
+Device Information:
+- App Version: [Auto-detected]
+- Platform: ${Platform.OS}
+- Device: ${Platform.OS === "ios" ? "iOS" : "Android"}
+
+Thank you for considering this feature request!
+
+Best regards,
+${user?.displayName || "VectorFi User"}`,
+        isHtml: false,
+      };
+
+      const result = await MailComposer.composeAsync(emailContent);
+
+      if (result.status === MailComposer.MailComposerStatus.SENT) {
+        Alert.alert(
+          "Feature Request Sent",
+          "Thank you for your feature request. We'll review it and consider it for future updates.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("Error opening email composer:", error);
+      Alert.alert("Error", "Unable to open email composer. Please try again.", [
+        { text: "OK" },
+      ]);
+    }
   };
 
   const getCategoryIcon = (category: string) => {

@@ -27,7 +27,9 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": ["android.permission.RECORD_AUDIO"],
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
       "package": "com.ndsurf888.vectorfii"
     },
     "web": {
@@ -50,7 +52,8 @@
       ],
       "expo-apple-authentication",
       "expo-local-authentication",
-      "expo-dev-client"
+      "expo-dev-client",
+      "expo-mail-composer"
     ],
     "extra": {
       "firebase": {
