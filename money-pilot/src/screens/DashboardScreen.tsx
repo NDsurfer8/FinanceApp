@@ -21,6 +21,7 @@ import {
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
+import { StandardHeader } from "../components/StandardHeader";
 import { CustomTrendChart } from "../components/CustomTrendChart";
 
 interface DashboardScreenProps {
@@ -344,59 +345,35 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 24,
-          }}
-        >
-          <View>
-            <Text
-              style={{
-                fontSize: 28,
-                fontWeight: "800",
-                color: colors.text,
-                letterSpacing: -0.5,
-              }}
-            >
-              {translate("dashboard", isFriendlyMode)}
-            </Text>
-
-            <Text
-              style={{
-                fontSize: 16,
-                color: colors.textSecondary,
-                marginTop: 4,
-              }}
-            >
-              Welcome back, {user?.displayName || "User"} 👋
-            </Text>
-          </View>
-          <View style={{ flexDirection: "row", gap: 12 }}>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("FinancialRisk")}
-              style={{
-                backgroundColor: "#6366f1",
-                padding: 14,
-                borderRadius: 14,
-              }}
-            >
-              <Ionicons name="analytics-outline" size={22} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("SharedFinance")}
-              style={{
-                backgroundColor: "#ec4899",
-                padding: 14,
-                borderRadius: 14,
-              }}
-            >
-              <Ionicons name="people" size={22} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <StandardHeader
+          title={translate("dashboard", isFriendlyMode)}
+          subtitle={`Welcome back, ${user?.displayName || "User"} 👋`}
+          showBackButton={false}
+          rightComponent={
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("FinancialRisk")}
+                style={{
+                  backgroundColor: "#6366f1",
+                  padding: 14,
+                  borderRadius: 14,
+                }}
+              >
+                <Ionicons name="analytics-outline" size={22} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("SharedFinance")}
+                style={{
+                  backgroundColor: "#ec4899",
+                  padding: 14,
+                  borderRadius: 14,
+                }}
+              >
+                <Ionicons name="people" size={22} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          }
+        />
 
         {/* Monthly Overview - Large Card */}
         <View

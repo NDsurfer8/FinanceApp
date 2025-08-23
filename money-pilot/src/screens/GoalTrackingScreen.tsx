@@ -18,6 +18,7 @@ import { usePaywall } from "../hooks/usePaywall";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
+import { StandardHeader } from "../components/StandardHeader";
 import {
   saveGoal,
   updateGoal,
@@ -483,41 +484,23 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 24,
-          }}
-        >
-          <View>
-            <Text
-              style={{ fontSize: 28, fontWeight: "800", color: colors.text }}
-            >
-              {translate("goals", isFriendlyMode)}
-            </Text>
-            <Text
+        <StandardHeader
+          title={translate("goals", isFriendlyMode)}
+          subtitle="Track your progress"
+          showBackButton={false}
+          rightComponent={
+            <TouchableOpacity
+              onPress={() => setShowAddModal(true)}
               style={{
-                fontSize: 16,
-                color: colors.textSecondary,
-                marginTop: 4,
+                backgroundColor: colors.primary,
+                padding: 12,
+                borderRadius: 12,
               }}
             >
-              Track your progress
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => setShowAddModal(true)}
-            style={{
-              backgroundColor: colors.primary,
-              padding: 12,
-              borderRadius: 12,
-            }}
-          >
-            <Ionicons name="add" size={20} color={colors.buttonText} />
-          </TouchableOpacity>
-        </View>
+              <Ionicons name="add" size={20} color={colors.buttonText} />
+            </TouchableOpacity>
+          }
+        />
 
         {/* Limit Indicator - Only show if not unlimited */}
         {!getGoalLimitInfo().isUnlimited && (

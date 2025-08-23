@@ -23,6 +23,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
+import { StandardHeader } from "../components/StandardHeader";
 import { getAssetTypeLabel } from "../utils/assetMigration";
 
 interface AssetsDebtsScreenProps {
@@ -131,35 +132,11 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 24,
-          }}
-        >
-          <View>
-            <Text
-              style={{
-                fontSize: 28,
-                fontWeight: "800",
-                color: colors.text,
-              }}
-            >
-              {translate("assetsDebts", isFriendlyMode)}
-            </Text>
-            <Text
-              style={{
-                fontSize: 16,
-                color: colors.textSecondary,
-                marginTop: 4,
-              }}
-            >
-              Manage your net worth
-            </Text>
-          </View>
-        </View>
+        <StandardHeader
+          title={translate("assetsDebts", isFriendlyMode)}
+          subtitle="Manage your net worth"
+          showBackButton={false}
+        />
 
         {/* Assets Section */}
         <View

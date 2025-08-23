@@ -15,6 +15,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
+import { StandardHeader } from "../components/StandardHeader";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import {
   saveTransaction,
@@ -525,32 +526,18 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 24,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ marginRight: 16 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text
-              style={{ fontSize: 20, fontWeight: "600", color: colors.text }}
-            >
-              {editMode
+          <StandardHeader
+            title={
+              editMode
                 ? translate("edit", isFriendlyMode)
-                : translate("addTransaction", isFriendlyMode).split(
-                    " "
-                  )[0]}{" "}
-              {formData.type === "income"
-                ? translate("income", isFriendlyMode)
-                : translate("expenses", isFriendlyMode)}
-            </Text>
-          </View>
+                : translate("addTransaction", isFriendlyMode).split(" ")[0] +
+                  " " +
+                  (formData.type === "income"
+                    ? translate("income", isFriendlyMode)
+                    : translate("expenses", isFriendlyMode))
+            }
+            onBack={() => navigation.goBack()}
+          />
 
           {/* Limit Indicator - Only show if not unlimited */}
           {formData.type === "income"

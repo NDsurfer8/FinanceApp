@@ -23,6 +23,7 @@ import {
 import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
+import { StandardHeader } from "../components/StandardHeader";
 
 interface AddGoalScreenProps {
   navigation: any;
@@ -261,25 +262,10 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
           keyboardShouldPersistTaps="handled"
         >
           {/* Header */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 24,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ marginRight: 16 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text
-              style={{ fontSize: 20, fontWeight: "600", color: colors.text }}
-            >
-              {editMode ? "Edit" : "Add"} Goal
-            </Text>
-          </View>
+          <StandardHeader
+            title={`${editMode ? "Edit" : "Add"} Goal`}
+            onBack={() => navigation.goBack()}
+          />
 
           {/* Form */}
           <View

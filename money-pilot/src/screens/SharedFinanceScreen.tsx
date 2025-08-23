@@ -15,6 +15,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useTheme } from "../contexts/ThemeContext";
+import { StandardHeader } from "../components/StandardHeader";
 import {
   getUserSharedGroups,
   getGroupAggregatedData,
@@ -532,37 +533,11 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={{ flex: 1, padding: 20 }}>
         {/* Header */}
-        <View style={{ marginBottom: 24 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 8,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ marginRight: 16 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text
-              style={{ fontSize: 28, fontWeight: "800", color: colors.text }}
-            >
-              Shared Finance
-            </Text>
-          </View>
-          <Text
-            style={{
-              fontSize: 16,
-              color: colors.textSecondary,
-              marginTop: 4,
-              marginLeft: 40,
-            }}
-          >
-            Manage shared financial groups
-          </Text>
-        </View>
+        <StandardHeader
+          title="Shared Finance"
+          subtitle="Manage shared financial groups"
+          onBack={() => navigation.goBack()}
+        />
 
         {/* Action Buttons */}
         <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>

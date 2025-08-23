@@ -13,6 +13,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
+import { StandardHeader } from "../components/StandardHeader";
 import { gradeRatio, fmt } from "../utils/ratioGrading";
 import {
   getUserAssets,
@@ -197,39 +198,11 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 24,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ marginRight: 16 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <View>
-              <Text
-                style={{ fontSize: 28, fontWeight: "800", color: colors.text }}
-              >
-                {"Financial Risk Profile"}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: colors.textSecondary,
-                  marginTop: 4,
-                }}
-              >
-                Your financial risk overview
-              </Text>
-            </View>
-          </View>
-        </View>
+        <StandardHeader
+          title="Financial Risk Profile"
+          subtitle="Your financial risk overview"
+          onBack={() => navigation.goBack()}
+        />
 
         {/* Emergency Fund Section */}
         <View

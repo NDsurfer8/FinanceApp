@@ -3,3 +3,4 @@ export { PremiumFeature } from "./PremiumFeature";
 export { VectraAvatar } from "./VectraAvatar";
 export { FloatingAIChatbot } from "./FloatingAIChatbot";
 export { CustomTrendChart } from "./CustomTrendChart";
+export { StandardHeader } from "./StandardHeader";

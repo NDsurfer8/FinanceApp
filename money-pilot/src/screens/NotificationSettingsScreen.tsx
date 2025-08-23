@@ -17,6 +17,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../contexts/ThemeContext";
+import { StandardHeader } from "../components/StandardHeader";
 
 interface NotificationSettingsScreenProps {
   navigation: any;
@@ -472,25 +473,13 @@ export const NotificationSettingsScreen: React.FC<
       <SafeAreaView
         style={[styles.container, { backgroundColor: colors.background }]}
       >
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={[
-              styles.backButton,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <View>
-            <Text style={[styles.title, { color: colors.text }]}>
-              Notification Settings
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Loading...
-            </Text>
-          </View>
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <StandardHeader
+            title="Notification Settings"
+            subtitle="Loading..."
+            onBack={() => navigation.goBack()}
+          />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -501,25 +490,11 @@ export const NotificationSettingsScreen: React.FC<
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={[
-              styles.backButton,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <View>
-            <Text style={[styles.title, { color: colors.text }]}>
-              Notification Settings
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Manage your financial reminders
-            </Text>
-          </View>
-        </View>
+        <StandardHeader
+          title="Notification Settings"
+          subtitle="Manage your financial reminders"
+          onBack={() => navigation.goBack()}
+        />
 
         {/* Permission Status */}
         <View
@@ -698,28 +673,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 32,
-    paddingTop: 8,
-  },
-  backButton: {
-    marginRight: 20,
-    padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "700",
-    letterSpacing: -0.3,
-  },
-  subtitle: {
-    fontSize: 16,
-    marginTop: 4,
-    fontWeight: "400",
   },
   permissionCard: {
     borderRadius: 16,

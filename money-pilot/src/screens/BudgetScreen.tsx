@@ -17,6 +17,7 @@ import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
+import { StandardHeader } from "../components/StandardHeader";
 import {
   saveTransaction,
   removeTransaction,
@@ -722,57 +723,39 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 24,
-          }}
-        >
-          <View>
-            <Text
-              style={{ fontSize: 28, fontWeight: "800", color: colors.text }}
-            >
-              {translate("budget", isFriendlyMode)}
-            </Text>
-            <Text
-              style={{
-                fontSize: 16,
-                color: colors.textSecondary,
-                marginTop: 4,
-              }}
-            >
-              Plan your finances
-            </Text>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <TouchableOpacity onPress={() => handleMonthChange("prev")}>
-              <Ionicons
-                name="chevron-back"
-                size={24}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "600",
-                color: "#f97316",
-                marginHorizontal: 12,
-              }}
-            >
-              {formatMonth(selectedMonth)}
-            </Text>
-            <TouchableOpacity onPress={() => handleMonthChange("next")}>
-              <Ionicons
-                name="chevron-forward"
-                size={24}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <StandardHeader
+          title={translate("budget", isFriendlyMode)}
+          subtitle="Plan your finances"
+          showBackButton={false}
+          rightComponent={
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <TouchableOpacity onPress={() => handleMonthChange("prev")}>
+                <Ionicons
+                  name="chevron-back"
+                  size={24}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "600",
+                  color: "#f97316",
+                  marginHorizontal: 12,
+                }}
+              >
+                {formatMonth(selectedMonth)}
+              </Text>
+              <TouchableOpacity onPress={() => handleMonthChange("next")}>
+                <Ionicons
+                  name="chevron-forward"
+                  size={24}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+          }
+        />
 
         {/* Premium Feature: Quick Setup */}
 
