@@ -228,9 +228,11 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
         const updatedGoal = {
           ...editingGoal,
           name: newGoal.name,
-          targetAmount: parseFloat(newGoal.targetAmount),
-          currentAmount: parseFloat(newGoal.currentAmount) || 0,
-          monthlyContribution: parseFloat(newGoal.monthlyContribution),
+          targetAmount: parseFloat(removeCommas(newGoal.targetAmount)),
+          currentAmount: parseFloat(removeCommas(newGoal.currentAmount)) || 0,
+          monthlyContribution: parseFloat(
+            removeCommas(newGoal.monthlyContribution)
+          ),
           targetDate: newGoal.targetDate,
           category: newGoal.category,
           priority: newGoal.priority,
@@ -265,9 +267,11 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
         // Create new goal
         const goal: FinancialGoal = {
           name: newGoal.name,
-          targetAmount: parseFloat(newGoal.targetAmount),
-          currentAmount: parseFloat(newGoal.currentAmount) || 0,
-          monthlyContribution: parseFloat(newGoal.monthlyContribution),
+          targetAmount: parseFloat(removeCommas(newGoal.targetAmount)),
+          currentAmount: parseFloat(removeCommas(newGoal.currentAmount)) || 0,
+          monthlyContribution: parseFloat(
+            removeCommas(newGoal.monthlyContribution)
+          ),
           targetDate: newGoal.targetDate,
           category: newGoal.category,
           priority: newGoal.priority,
