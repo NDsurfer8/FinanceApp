@@ -518,11 +518,14 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           >
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={[styles.title, { color: colors.text }]}>
               Privacy & Security
             </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            <Text
+              style={[styles.subtitle, { color: colors.textSecondary }]}
+              numberOfLines={0}
+            >
               Manage your account security and data privacy
             </Text>
           </View>
@@ -615,42 +618,45 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                       styles.settingDescription,
                       { color: colors.textSecondary },
                     ]}
+                    numberOfLines={0}
                   >
                     {setting.description}
                   </Text>
                 </View>
-              </View>
-
-              {setting.type === "switch" ? (
-                <Switch
-                  value={setting.enabled}
-                  onValueChange={() => toggleSetting(setting.id)}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor={
-                    setting.enabled
-                      ? colors.buttonText
-                      : colors.surfaceSecondary
-                  }
-                />
-              ) : (
-                <TouchableOpacity
-                  style={[
-                    styles.actionButton,
-                    {
-                      backgroundColor: colors.surfaceSecondary,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                  onPress={setting.action}
-                  disabled={loading}
-                >
-                  <Text
-                    style={[styles.actionButtonText, { color: colors.primary }]}
+                {setting.type === "switch" ? (
+                  <Switch
+                    value={setting.enabled}
+                    onValueChange={() => toggleSetting(setting.id)}
+                    trackColor={{ false: colors.border, true: colors.primary }}
+                    thumbColor={
+                      setting.enabled
+                        ? colors.buttonText
+                        : colors.surfaceSecondary
+                    }
+                  />
+                ) : (
+                  <TouchableOpacity
+                    style={[
+                      styles.actionButton,
+                      {
+                        backgroundColor: colors.surfaceSecondary,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                    onPress={setting.action}
+                    disabled={loading}
                   >
-                    {loading ? "Loading..." : "Manage"}
-                  </Text>
-                </TouchableOpacity>
-              )}
+                    <Text
+                      style={[
+                        styles.actionButtonText,
+                        { color: colors.primary },
+                      ]}
+                    >
+                      {loading ? "Loading..." : "Manage"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           ))}
         </View>
@@ -691,29 +697,29 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                       styles.settingDescription,
                       { color: colors.textSecondary },
                     ]}
+                    numberOfLines={0}
                   >
                     {setting.description}
                   </Text>
                 </View>
-              </View>
-
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  {
-                    backgroundColor: colors.surfaceSecondary,
-                    borderColor: colors.border,
-                  },
-                ]}
-                onPress={setting.action}
-                disabled={loading}
-              >
-                <Text
-                  style={[styles.actionButtonText, { color: colors.primary }]}
+                <TouchableOpacity
+                  style={[
+                    styles.actionButton,
+                    {
+                      backgroundColor: colors.surfaceSecondary,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                  onPress={setting.action}
+                  disabled={loading}
                 >
-                  {loading ? "Loading..." : "Manage"}
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[styles.actionButtonText, { color: colors.primary }]}
+                  >
+                    {loading ? "Loading..." : "Manage"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           ))}
         </View>
@@ -930,7 +936,6 @@ const styles = StyleSheet.create({
   securityDescription: {
     fontSize: 14,
     marginBottom: 16,
-    flexWrap: 'wrap',
   },
   securityStats: {
     flexDirection: "row",
@@ -968,6 +973,7 @@ const styles = StyleSheet.create({
   settingInfo: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 16,
   },
   settingIcon: {
@@ -977,6 +983,7 @@ const styles = StyleSheet.create({
   },
   settingText: {
     flex: 1,
+    marginRight: 16,
   },
   settingTitle: {
     fontSize: 16,
@@ -985,7 +992,6 @@ const styles = StyleSheet.create({
   },
   settingDescription: {
     fontSize: 14,
-    flexWrap: 'wrap',
   },
   actionButton: {
     paddingVertical: 8,
