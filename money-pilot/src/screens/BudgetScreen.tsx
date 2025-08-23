@@ -67,6 +67,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const [projectedTransactions, setProjectedTransactions] = useState<any[]>([]);
   const [isFutureMonth, setIsFutureMonth] = useState(false);
   const [showBankSuggestions, setShowBankSuggestions] = useState(false);
+  const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(
+    new Set()
+  );
   const { colors } = useTheme();
 
   useEffect(() => {
@@ -417,6 +420,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     if (totalIncome > 0) {
       const savingsRate = (savingsAmount / totalIncome) * 100;
       insights.push({
+        id: "savings-rate",
         type: "success",
         icon: "trending-up",
         title: "Great Savings Rate!",
@@ -426,6 +430,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
     if (expenseTransactions.length >= 10) {
       insights.push({
+        id: "active-month",
         type: "info",
         icon: "analytics",
         title: "Active Month",
@@ -435,6 +440,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
     if (incomeTransactions.length >= 2) {
       insights.push({
+        id: "diversified-income",
         type: "success",
         icon: "diamond",
         title: "Diversified Income",
@@ -445,7 +451,24 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     return insights;
   };
 
-  const insights = getInsights();
+  const allInsights = React.useMemo(
+    () => getInsights(),
+    [
+      totalIncome,
+      savingsAmount,
+      expenseTransactions.length,
+      incomeTransactions.length,
+    ]
+  );
+
+  const insights = React.useMemo(
+    () => allInsights.filter((insight) => !dismissedInsights.has(insight.id)),
+    [allInsights, dismissedInsights]
+  );
+
+  const handleDismissInsight = (insightId: string) => {
+    setDismissedInsights((prev) => new Set([...prev, insightId]));
+  };
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString(undefined, {
@@ -788,7 +811,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
             {insights.map((insight, index) => (
               <View
-                key={`insight-${insight.title}-${index}`}
+                key={`insight-${insight.id}-${index}`}
                 style={{ marginBottom: 12 }}
               >
                 <View
@@ -809,10 +832,25 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       fontSize: 14,
                       fontWeight: "600",
                       color: colors.text,
+                      flex: 1,
                     }}
                   >
                     {insight.title}
                   </Text>
+                  <TouchableOpacity
+                    onPress={() => handleDismissInsight(insight.id)}
+                    style={{
+                      padding: 4,
+                      borderRadius: 12,
+                      backgroundColor: colors.surfaceSecondary,
+                    }}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={14}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
                 </View>
                 <Text
                   style={{

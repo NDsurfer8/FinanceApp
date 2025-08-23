@@ -24,18 +24,29 @@ interface ChatbotProviderProps {
 export const ChatbotProvider: React.FC<ChatbotProviderProps> = ({
   children,
 }) => {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState<boolean>(true);
 
-  const showChatbot = () => setIsVisible(true);
-  const hideChatbot = () => setIsVisible(false);
-  const toggleChatbot = () => setIsVisible(!isVisible);
+  const showChatbot = React.useCallback(() => {
+    setIsVisible(true);
+  }, []);
 
-  const value = {
-    isVisible,
-    showChatbot,
-    hideChatbot,
-    toggleChatbot,
-  };
+  const hideChatbot = React.useCallback(() => {
+    setIsVisible(false);
+  }, []);
+
+  const toggleChatbot = React.useCallback(() => {
+    setIsVisible((prev) => !prev);
+  }, []);
+
+  const value = React.useMemo(
+    () => ({
+      isVisible,
+      showChatbot,
+      hideChatbot,
+      toggleChatbot,
+    }),
+    [isVisible, showChatbot, hideChatbot, toggleChatbot]
+  );
 
   return (
     <ChatbotContext.Provider value={value}>{children}</ChatbotContext.Provider>
