@@ -19,6 +19,7 @@ interface SubscriptionContextType {
   getSubscriptionFeatures: () => string[];
   getExpirationDate: () => Date | undefined;
   getProductId: () => string | undefined;
+  isEligibleForIntroOffer: () => boolean;
   refreshSubscriptionStatus: (
     forceRefresh?: boolean
   ) => Promise<SubscriptionStatus | null>;
@@ -137,6 +138,10 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
     return subscriptionStatus?.productId;
   }, [subscriptionStatus]);
 
+  const isEligibleForIntroOffer = useCallback((): boolean => {
+    return subscriptionStatus?.isEligibleForIntroOffer ?? false;
+  }, [subscriptionStatus]);
+
   // Initialize subscription when user changes
   useEffect(() => {
     initializeSubscription();
@@ -204,6 +209,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
     getSubscriptionFeatures,
     getExpirationDate,
     getProductId,
+    isEligibleForIntroOffer,
     refreshSubscriptionStatus,
     PREMIUM_FEATURES,
   };

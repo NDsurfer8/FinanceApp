@@ -62,6 +62,7 @@ export interface SubscriptionStatus {
   expirationDate?: Date;
   productId?: string;
   features: string[];
+  isEligibleForIntroOffer?: boolean;
 }
 
 class RevenueCatService {
@@ -316,6 +317,9 @@ class RevenueCatService {
       console.log("Premium entitlement found:", premiumEntitlement);
       console.log("Is premium:", isPremium);
 
+      // Check introductory offer eligibility
+      const isEligibleForIntroOffer = await this.checkIntroOfferEligibility();
+
       const subscriptionStatus: SubscriptionStatus = {
         isPremium,
         isActive: isPremium,
@@ -324,6 +328,7 @@ class RevenueCatService {
           : undefined,
         productId: premiumEntitlement?.productIdentifier,
         features: this.getFeaturesForSubscription(customerInfo),
+        isEligibleForIntroOffer,
       };
 
       return subscriptionStatus;
@@ -333,7 +338,58 @@ class RevenueCatService {
         isPremium: false,
         isActive: false,
         features: [],
+        isEligibleForIntroOffer: false,
       };
+    }
+  }
+
+  // Check if user is eligible for introductory offers
+  async checkIntroOfferEligibility(): Promise<boolean> {
+    try {
+      if (this.isOfflineMode) {
+        console.log(
+          "RevenueCat: Offline mode - assuming eligible for intro offer"
+        );
+        return true;
+      }
+
+      const customerInfo = await this.getCustomerInfo();
+
+      // Check if user has any active subscriptions
+      const hasActiveSubscription =
+        Object.keys(customerInfo.entitlements.active).length > 0;
+
+      // Check if user has any non-subscription purchases (lifetime)
+      const hasNonSubscriptionPurchases =
+        Object.keys(customerInfo.nonSubscriptionTransactions).length > 0;
+
+      // Check if user has any subscription transactions (past or present)
+      const hasSubscriptionHistory =
+        Object.keys(customerInfo.allPurchaseDates).length > 0;
+
+      console.log("Intro offer eligibility check:", {
+        hasActiveSubscription,
+        hasNonSubscriptionPurchases,
+        hasSubscriptionHistory,
+        allPurchaseDates: Object.keys(customerInfo.allPurchaseDates),
+        nonSubscriptionTransactions: Object.keys(
+          customerInfo.nonSubscriptionTransactions
+        ),
+      });
+
+      // User is eligible for intro offer if they have no active subscriptions,
+      // no lifetime purchases, and no subscription history
+      const isEligible =
+        !hasActiveSubscription &&
+        !hasNonSubscriptionPurchases &&
+        !hasSubscriptionHistory;
+
+      console.log("User eligible for intro offer:", isEligible);
+      return isEligible;
+    } catch (error) {
+      console.error("Failed to check intro offer eligibility:", error);
+      // Default to true if we can't determine eligibility
+      return true;
     }
   }
 

@@ -35,7 +35,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { currentUser, forceRefresh } = useUser();
   const [photoKey, setPhotoKey] = useState(Date.now());
   const { presentPaywall } = usePaywall();
-  const { subscriptionStatus } = useSubscription();
+  const { subscriptionStatus, isEligibleForIntroOffer } = useSubscription();
   const [isBankConnected, setIsBankConnected] = useState(false);
   const { isDark, toggleTheme, colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
@@ -65,9 +65,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     return { firstName: displayName, lastName: "" };
   };
 
-  // Check if user is eligible for introductory offers based on subscription status
-  const isEligibleForIntroOffer =
-    !subscriptionStatus?.isPremium && !subscriptionStatus?.isActive;
+  // Get introductory offer eligibility from RevenueCat
+  const introOfferEligible = isEligibleForIntroOffer();
 
   // Debug logging
   useEffect(() => {
@@ -87,9 +86,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       features: subscriptionStatus?.features,
       expirationDate: subscriptionStatus?.expirationDate,
       productId: subscriptionStatus?.productId,
-      isEligibleForIntroOffer,
+      isEligibleForIntroOffer: introOfferEligible,
     });
-  }, [subscriptionStatus, isEligibleForIntroOffer]);
+  }, [subscriptionStatus, introOfferEligible]);
 
   // Check bank connection status
   useEffect(() => {
@@ -567,7 +566,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           ) : (
             <View>
               <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>
-                {isEligibleForIntroOffer
+                {introOfferEligible
                   ? "Start your free trial and unlock auto-import, AI budgeting, and unlimited accounts."
                   : "Unlock auto-import, AI budgeting, and unlimited accounts."}
               </Text>
@@ -582,7 +581,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 onPress={presentPaywall}
               >
                 <Text style={{ color: "white", fontWeight: "700" }}>
-                  {isEligibleForIntroOffer ? "Start Free Trial" : "Get Premium"}
+                  {introOfferEligible ? "Start Free Trial" : "Get Premium"}
                 </Text>
               </TouchableOpacity>
             </View>
