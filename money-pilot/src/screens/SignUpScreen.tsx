@@ -11,6 +11,7 @@ import {
   Alert,
   ScrollView,
   Image,
+  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -40,6 +41,15 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
+
+  // Functions to open Terms of Service and Privacy Policy
+  const openTermsOfService = () => {
+    Linking.openURL("https://vectorfi.ai/");
+  };
+
+  const openPrivacyPolicy = () => {
+    Linking.openURL("https://vectorfi.ai/");
+  };
 
   // Refs for input focus management
   const lastNameRef = useRef<TextInput>(null);
@@ -252,26 +262,36 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
             </View>
 
             {/* Terms Agreement */}
-            <TouchableOpacity
-              style={styles.termsContainer}
-              onPress={() => setAgreedToTerms(!agreedToTerms)}
-            >
-              <View
-                style={[
-                  styles.checkbox,
-                  agreedToTerms && styles.checkboxChecked,
-                ]}
+            <View style={styles.termsContainer}>
+              <TouchableOpacity
+                style={styles.checkboxContainer}
+                onPress={() => setAgreedToTerms(!agreedToTerms)}
+                activeOpacity={0.7}
               >
-                {agreedToTerms && (
-                  <Ionicons name="checkmark" size={16} color="white" />
-                )}
+                <View
+                  style={[
+                    styles.checkbox,
+                    agreedToTerms && styles.checkboxChecked,
+                  ]}
+                >
+                  {agreedToTerms && (
+                    <Ionicons name="checkmark" size={16} color="white" />
+                  )}
+                </View>
+              </TouchableOpacity>
+              <View style={styles.termsTextContainer}>
+                <Text style={styles.termsText} numberOfLines={0}>
+                  I agree to the{" "}
+                  <Text style={styles.termsLink} onPress={openTermsOfService}>
+                    Terms of Service
+                  </Text>{" "}
+                  and{" "}
+                  <Text style={styles.termsLink} onPress={openPrivacyPolicy}>
+                    Privacy Policy
+                  </Text>
+                </Text>
               </View>
-              <Text style={styles.termsText}>
-                I agree to the{" "}
-                <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
-                <Text style={styles.termsLink}>Privacy Policy</Text>
-              </Text>
-            </TouchableOpacity>
+            </View>
 
             {/* Sign Up Button */}
             <TouchableOpacity
@@ -440,6 +460,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     marginBottom: 24,
+    paddingHorizontal: 4,
+  },
+  checkboxContainer: {
+    padding: 8,
+    marginRight: 8,
+    marginTop: 2,
+    flexShrink: 0,
   },
   checkbox: {
     width: 20,
@@ -447,8 +474,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 2,
     borderColor: "#d1d5db",
-    marginRight: 12,
-    marginTop: 2,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -456,11 +481,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#6366f1",
     borderColor: "#6366f1",
   },
-  termsText: {
+  termsTextContainer: {
     flex: 1,
+    paddingTop: 2,
+    paddingRight: 4,
+    minWidth: 0, // Allows text to wrap properly
+  },
+  termsText: {
     fontSize: 14,
     color: "#6b7280",
     lineHeight: 20,
+    flexShrink: 1, // Allows text to shrink and wrap
   },
   termsLink: {
     color: "#6366f1",
