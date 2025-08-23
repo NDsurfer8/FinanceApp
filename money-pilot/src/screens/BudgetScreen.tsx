@@ -73,6 +73,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(
     new Set()
   );
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
@@ -553,6 +554,35 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     setSelectedMonth(newDate);
   };
 
+  const generateAvailableMonths = () => {
+    const months = [];
+    const currentDate = new Date();
+
+    // Generate last 12 months
+    for (let i = 12; i >= 1; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      months.push(date);
+    }
+
+    // Add current month
+    months.push(new Date());
+
+    // Generate next 12 months
+    for (let i = 1; i <= 12; i++) {
+      const date = new Date();
+      date.setMonth(date.getMonth() + i);
+      months.push(date);
+    }
+
+    return months;
+  };
+
+  const handleMonthSelect = (month: Date) => {
+    setSelectedMonth(month);
+    setShowMonthPicker(false);
+  };
+
   const handleSaveBudgetSettings = async () => {
     if (!user) return;
 
@@ -729,24 +759,26 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           showBackButton={false}
           rightComponent={
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <TouchableOpacity onPress={() => handleMonthChange("prev")}>
+              <TouchableOpacity onPress={() => setShowMonthPicker(true)}>
                 <Ionicons
                   name="chevron-back"
                   size={24}
                   color={colors.textSecondary}
                 />
               </TouchableOpacity>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "600",
-                  color: "#f97316",
-                  marginHorizontal: 12,
-                }}
-              >
-                {formatMonth(selectedMonth)}
-              </Text>
-              <TouchableOpacity onPress={() => handleMonthChange("next")}>
+              <TouchableOpacity onPress={() => setShowMonthPicker(true)}>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "600",
+                    color: "#f97316",
+                    marginHorizontal: 12,
+                  }}
+                >
+                  {formatMonth(selectedMonth)}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowMonthPicker(true)}>
                 <Ionicons
                   name="chevron-forward"
                   size={24}
@@ -1851,6 +1883,143 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Month Picker Modal */}
+      <Modal
+        visible={showMonthPicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowMonthPicker(false)}
+      >
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          activeOpacity={1}
+          onPress={() => setShowMonthPicker(false)}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              width: "85%",
+              maxHeight: "70%",
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.25,
+              shadowRadius: 20,
+              shadowOffset: { width: 0, height: 10 },
+              elevation: 10,
+            }}
+            onStartShouldSetResponder={() => true}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
+                Select Month
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowMonthPicker(false)}
+                style={{
+                  padding: 4,
+                }}
+              >
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={{ maxHeight: 400 }}
+            >
+              {generateAvailableMonths().map((month, index) => {
+                const isSelected =
+                  month.getMonth() === selectedMonth.getMonth() &&
+                  month.getFullYear() === selectedMonth.getFullYear();
+                const isCurrentMonth =
+                  month.getMonth() === new Date().getMonth() &&
+                  month.getFullYear() === new Date().getFullYear();
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleMonthSelect(month)}
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      paddingVertical: 16,
+                      paddingHorizontal: 16,
+                      borderRadius: 12,
+                      backgroundColor: isSelected
+                        ? colors.primary
+                        : "transparent",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: isSelected ? "700" : "500",
+                          color: isSelected ? colors.buttonText : colors.text,
+                        }}
+                      >
+                        {formatMonth(month)}
+                      </Text>
+                      {isCurrentMonth && (
+                        <View
+                          style={{
+                            backgroundColor: colors.warning,
+                            paddingHorizontal: 8,
+                            paddingVertical: 2,
+                            borderRadius: 8,
+                            marginLeft: 8,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: "600",
+                              color: colors.buttonText,
+                            }}
+                          >
+                            Current
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark"
+                        size={20}
+                        color={colors.buttonText}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
