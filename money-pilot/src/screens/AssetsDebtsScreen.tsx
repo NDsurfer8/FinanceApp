@@ -133,40 +133,53 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         {/* Header */}
         <View
           style={{
-            marginBottom: 16,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 24,
           }}
         >
-          <Text
-            style={{
-              fontFamily: fontFamily.bold,
-              fontSize: 28,
-              fontWeight: "700",
-              color: colors.text,
-            }}
-          >
-            {translate("assetsDebts", isFriendlyMode)}
-          </Text>
+          <View>
+            <Text
+              style={{
+                fontSize: 28,
+                fontWeight: "800",
+                color: colors.text,
+              }}
+            >
+              {translate("assetsDebts", isFriendlyMode)}
+            </Text>
+            <Text
+              style={{
+                fontSize: 16,
+                color: colors.textSecondary,
+                marginTop: 4,
+              }}
+            >
+              Manage your net worth
+            </Text>
+          </View>
         </View>
 
         {/* Assets Section */}
         <View
           style={{
             backgroundColor: colors.surface,
-            borderRadius: 16,
-            padding: 16,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
             shadowColor: colors.shadow,
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
+            elevation: 4,
           }}
         >
           <Text
             style={{
-              fontFamily: fontFamily.semiBold,
-              fontSize: 18,
-              fontWeight: "600",
-              marginBottom: 12,
+              fontSize: 20,
+              fontWeight: "700",
+              marginBottom: 20,
               color: colors.text,
             }}
           >
@@ -295,22 +308,21 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         <View
           style={{
             backgroundColor: colors.surface,
-            borderRadius: 16,
-            padding: 16,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
             shadowColor: colors.shadow,
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
-            marginTop: 16,
+            elevation: 4,
           }}
         >
           <Text
             style={{
-              fontFamily: fontFamily.semiBold,
-              fontSize: 18,
-              fontWeight: "600",
-              marginBottom: 12,
+              fontSize: 20,
+              fontWeight: "700",
+              marginBottom: 20,
               color: colors.text,
             }}
           >
