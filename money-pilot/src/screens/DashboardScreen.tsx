@@ -124,7 +124,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     .reduce((sum: number, asset: any) => sum + asset.balance, 0);
   const emergencyFundTarget = monthlyExpenses * 6;
   const emergencyFundProgress =
-    emergencyFundTarget > 0 ? (totalSavings / emergencyFundTarget) * 100 : 0;
+    emergencyFundTarget > 0 && monthlyExpenses > 0
+      ? (totalSavings / emergencyFundTarget) * 100
+      : 0;
 
   // Premium Feature: Smart Insights
   const getInsights = () => {
@@ -154,7 +156,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       }
     }
 
-    if (totalDebts > 0 && totalAssets > 0) {
+    if (totalDebts > 0 && totalAssets > 0 && totalAssets > totalDebts) {
       const debtToAssetRatio = (totalDebts / totalAssets) * 100;
       if (debtToAssetRatio > 50) {
         insights.push({
@@ -217,7 +219,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     () => getInsights(),
     [
       monthlyIncome,
-      monthlyExpenses,
+      availableAmount,
       totalDebts,
       totalAssets,
       monthlyTransactions.length,

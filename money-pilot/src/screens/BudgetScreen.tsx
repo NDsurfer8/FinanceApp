@@ -458,7 +458,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     () => getInsights(),
     [
       totalIncome,
-      savingsAmount,
+      remainingBalance,
       expenseTransactions.length,
       incomeTransactions.length,
     ]
