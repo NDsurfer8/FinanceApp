@@ -19,11 +19,11 @@ import {
   getUserTransactions,
 } from "../services/userData";
 
-interface BalanceSheetScreenProps {
+interface FinancialRiskScreenProps {
   navigation: any;
 }
 
-export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
+export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();

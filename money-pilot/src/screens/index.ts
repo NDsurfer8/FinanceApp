@@ -9,7 +9,7 @@ export { ForgotPasswordScreen } from "./ForgotPasswordScreen";
 export { IntroSliderScreen } from "./IntroSliderScreen";
 export { AddTransactionScreen } from "./AddTransactionScreen";
 export { AddAssetDebtScreen } from "./AddAssetDebtScreen";
-export { BalanceSheetScreen } from "./BalanceSheetScreen";
+export { FinancialRiskScreen } from "./FinancialRiskScreen";
 export { default as SharedFinanceScreen } from "./SharedFinanceScreen";
 export { EditProfileScreen } from "./EditProfileScreen";
 export { NotificationSettingsScreen } from "./NotificationSettingsScreen";

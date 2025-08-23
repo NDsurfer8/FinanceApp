@@ -78,7 +78,7 @@ export const friendlyTranslations: FinancialTranslations = {
   liabilities: "Money You Owe",
   netWorth: "Net Worth",
   discretionaryIncome: "Available to spend",
-  availableAmount: "Available to spend now",
+  availableAmount: "Available",
   remainingBalance: "Left this month",
 
   // Budget
