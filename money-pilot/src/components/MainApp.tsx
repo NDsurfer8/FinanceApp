@@ -436,7 +436,7 @@ export const MainApp: React.FC = () => {
                         />
 
                         <Stack.Screen
-                          name="BalanceSheet"
+                          name="FinancialRisk"
                           component={FinancialRiskScreen}
                         />
                         <Stack.Screen

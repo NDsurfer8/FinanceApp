@@ -402,7 +402,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </View>
           <View style={{ flexDirection: "row", gap: 12 }}>
             <TouchableOpacity
-              onPress={() => navigation.navigate("BalanceSheet")}
+              onPress={() => navigation.navigate("FinancialRisk")}
               style={{
                 backgroundColor: "#6366f1",
                 padding: 14,
