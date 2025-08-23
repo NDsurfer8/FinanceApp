@@ -15,6 +15,8 @@ import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { translate } from "../services/translations";
 import {
   saveTransaction,
   removeTransaction,
@@ -71,6 +73,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     new Set()
   );
   const { colors } = useTheme();
+  const { isFriendlyMode } = useFriendlyMode();
 
   useEffect(() => {
     if (user) {
@@ -731,7 +734,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             <Text
               style={{ fontSize: 28, fontWeight: "800", color: colors.text }}
             >
-              Budget
+              {translate("budget", isFriendlyMode)}
             </Text>
             <Text
               style={{
@@ -808,7 +811,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               <Text
                 style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
               >
-                Smart Insights
+                {translate("smartInsights", isFriendlyMode)}
               </Text>
             </View>
 
@@ -989,7 +992,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     <Text
                       style={{
                         fontSize: 12,
-                        color: colors.textTertiary,
+                        color: colors.textSecondary,
                         fontStyle: "italic",
                       }}
                     >
@@ -1536,7 +1539,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               color: colors.text,
             }}
           >
-            Budget Summary
+            {translate("budget", isFriendlyMode)} Summary
           </Text>
 
           <View style={{ marginBottom: 16 }}>
@@ -1554,7 +1557,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   fontWeight: "500",
                 }}
               >
-                Net Income
+                {translate("netIncome", isFriendlyMode)}
               </Text>
               <Text
                 style={{
@@ -1585,7 +1588,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     fontWeight: "500",
                   }}
                 >
-                  Savings (
+                  {translate("savings", isFriendlyMode)} (
                 </Text>
                 <TextInput
                   style={{
@@ -1657,7 +1660,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 <Text
                   style={{
                     fontSize: 12,
-                    color: colors.textTertiary,
+                    color: colors.textSecondary,
                     fontStyle: "italic",
                   }}
                 >
@@ -1667,7 +1670,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   <Text
                     style={{
                       fontSize: 12,
-                      color: colors.textTertiary,
+                      color: colors.textSecondary,
                       marginRight: 4,
                     }}
                   >
@@ -1801,7 +1804,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               <Text
                 style={{ fontSize: 20, fontWeight: "800", color: colors.text }}
               >
-                $ Available
+                $ {translate("availableAmount", isFriendlyMode)}
               </Text>
               <Text
                 style={{
@@ -1836,7 +1839,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 fontWeight: "500",
               }}
             >
-              Save Budget Settings
+              {translate("save", isFriendlyMode)}{" "}
+              {translate("budget", isFriendlyMode)} Settings
             </Text>
           </TouchableOpacity>
         </View>

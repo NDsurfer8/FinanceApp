@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
-import { useTransactionLimits } from "../hooks/useTransactionLimits";
+
 import { useData } from "../contexts/DataContext";
 import {
   getUserNetWorthEntries,
@@ -19,6 +19,8 @@ import {
 } from "../services/userData";
 
 import { useTheme } from "../contexts/ThemeContext";
+import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { translate } from "../services/translations";
 import { CustomTrendChart } from "../components/CustomTrendChart";
 
 interface DashboardScreenProps {
@@ -31,17 +33,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const { user } = useAuth();
   const { transactions, assets, debts, refreshInBackground } = useZeroLoading();
   const { goals, budgetSettings, refreshAssetsDebts } = useData();
-  const {
-    getTransactionLimitInfo,
-    getIncomeSourceLimitInfo,
-    getGoalLimitInfo,
-  } = useTransactionLimits();
+
   const [loading, setLoading] = useState(false);
   const [trendData, setTrendData] = useState<any[]>([]);
   const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(
     new Set()
   );
   const { colors } = useTheme();
+  const { isFriendlyMode } = useFriendlyMode();
 
   // Function to determine if name should be on a new line
   const shouldWrapName = (name: string) => {
@@ -237,51 +236,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     setDismissedInsights((prev) => new Set([...prev, insightId]));
   };
 
-  // Premium Feature: Quick Actions
-  const transactionLimitInfo = getTransactionLimitInfo();
-  const incomeLimitInfo = getIncomeSourceLimitInfo();
-  const goalLimitInfo = getGoalLimitInfo();
-
-  const quickActions = [
-    {
-      title: "Transaction",
-      subtitle: transactionLimitInfo.isUnlimited
-        ? ""
-        : `${transactionLimitInfo.current}/${transactionLimitInfo.limit}`,
-      icon: "add-circle",
-      onPress: () => navigation.navigate("AddTransaction"),
-      color: "#6366f1",
-    },
-
-    {
-      title: "Asset",
-      icon: "trending-up",
-      onPress: () => navigation.navigate("AddAssetDebt", { type: "asset" }),
-      color: "#10b981",
-    },
-    {
-      title: "Debt",
-      icon: "card",
-      onPress: () => navigation.navigate("AddAssetDebt", { type: "debt" }),
-      color: "#ef4444",
-    },
-    {
-      title: "Goals",
-      subtitle: goalLimitInfo.isUnlimited
-        ? ""
-        : `${goalLimitInfo.current}/${goalLimitInfo.limit}`,
-      icon: "flag",
-      onPress: () => navigation.navigate("Goals", { openAddModal: true }),
-      color: "#f59e0b",
-    },
-    {
-      title: "Bank Data",
-      icon: "card-outline",
-      onPress: () => navigation.navigate("BankTransactions"),
-      color: "#8b5cf6",
-    },
-  ];
-
   // Premium Feature: Trend Analysis
   const getTrendData = async () => {
     const last6Months = [];
@@ -408,7 +362,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 letterSpacing: -0.5,
               }}
             >
-              Dashboard
+              {translate("dashboard", isFriendlyMode)}
             </Text>
 
             {shouldWrapName(user?.displayName || "User") ? (
@@ -555,7 +509,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     letterSpacing: 0.5,
                   }}
                 >
-                  Income
+                  {translate("income", isFriendlyMode)}
                 </Text>
                 <Text
                   style={{
@@ -589,14 +543,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Text
                   style={{
                     fontSize: 14,
-                    color: "#6b7280",
+                    color: colors.textSecondary,
                     marginBottom: 4,
                     fontWeight: "600",
                     textTransform: "uppercase",
                     letterSpacing: 0.5,
                   }}
                 >
-                  Expenses
+                  {translate("expenses", isFriendlyMode)}
                 </Text>
                 <Text
                   style={{
@@ -634,14 +588,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Text
                   style={{
                     fontSize: 14,
-                    color: "#6b7280",
+                    color: colors.textSecondary,
                     marginBottom: 4,
                     fontWeight: "600",
                     textTransform: "uppercase",
                     letterSpacing: 0.5,
                   }}
                 >
-                  Available
+                  {translate("availableAmount", isFriendlyMode)}
                 </Text>
                 <Text
                   style={{
@@ -658,7 +612,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </View>
         </View>
 
-        {/* Net Worth Card */}
+        {/* Balance Sheet Card */}
         <View
           style={{
             backgroundColor: colors.surface,
@@ -680,10 +634,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               color: colors.text,
             }}
           >
-            Net Worth
+            Balance Sheet Snapshot
           </Text>
 
-          <View style={{ alignItems: "center" }}>
+          <View style={{ alignItems: "center", marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 36,
@@ -698,94 +652,46 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
             </Text>
           </View>
-        </View>
 
-        {/* Quick Actions */}
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 20,
-            padding: 24,
-            marginBottom: 20,
-            shadowColor: colors.shadow,
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "700",
-              marginBottom: 20,
-              color: colors.text,
-            }}
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
-            Quick Actions
-          </Text>
-
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-            {quickActions.map((action, index) => (
-              <TouchableOpacity
-                key={`action-${action.title}-${index}`}
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
                 style={{
-                  flex: 1,
-                  minWidth: "48%",
-                  backgroundColor: colors.surfaceSecondary,
-                  padding: 16,
-                  borderRadius: 16,
-                  alignItems: "center",
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  shadowColor: colors.shadow,
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 2,
-                  elevation: 1,
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 4,
                 }}
-                onPress={action.onPress}
               >
-                <View
-                  style={{
-                    backgroundColor: action.color + "15",
-                    padding: 10,
-                    borderRadius: 10,
-                    marginBottom: 8,
-                  }}
-                >
-                  <Ionicons
-                    name={action.icon as any}
-                    size={20}
-                    color={action.color}
-                  />
-                </View>
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: "600",
-                    color: colors.text,
-                    textAlign: "center",
-                    lineHeight: 16,
-                  }}
-                >
-                  {action.title}
-                </Text>
-                {action.subtitle && (
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      fontWeight: "500",
-                      color: colors.textSecondary,
-                      textAlign: "center",
-                      marginTop: 2,
-                    }}
-                  >
-                    {action.subtitle}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            ))}
+                Total {translate("assets", isFriendlyMode)}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.success,
+                }}
+              >
+                {formatCurrency(totalAssets)}
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 4,
+                }}
+              >
+                Total {translate("liabilities", isFriendlyMode)}
+              </Text>
+              <Text
+                style={{ fontSize: 18, fontWeight: "700", color: colors.error }}
+              >
+                {formatCurrency(totalDebts)}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -824,7 +730,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <Text
                 style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
               >
-                Smart Insights
+                {translate("smartInsights", isFriendlyMode)}
               </Text>
             </View>
 

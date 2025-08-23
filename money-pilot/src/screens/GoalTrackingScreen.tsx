@@ -16,6 +16,8 @@ import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
 import { useTheme } from "../contexts/ThemeContext";
+import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { translate } from "../services/translations";
 import {
   saveGoal,
   updateGoal,
@@ -60,6 +62,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     priority: "medium" as "medium" | "high" | "low",
   });
   const { colors } = useTheme();
+  const { isFriendlyMode } = useFriendlyMode();
 
   const goalCategories = [
     {
@@ -492,7 +495,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
             <Text
               style={{ fontSize: 28, fontWeight: "800", color: colors.text }}
             >
-              Financial Goals
+              {translate("goals", isFriendlyMode)}
             </Text>
             <Text
               style={{
@@ -540,7 +543,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
               >
                 {`${getGoalLimitInfo().current}/${
                   getGoalLimitInfo().limit
-                } goals used`}
+                } ${translate("goals", isFriendlyMode).toLowerCase()} used`}
               </Text>
             </View>
             <TouchableOpacity onPress={presentPaywall}>
@@ -580,7 +583,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 color: colors.text,
               }}
             >
-              Goals Summary
+              {translate("goals", isFriendlyMode)} Summary
             </Text>
 
             <View
@@ -594,7 +597,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     marginBottom: 4,
                   }}
                 >
-                  Total Goals
+                  Total {translate("goals", isFriendlyMode)}
                 </Text>
                 <Text
                   style={{
@@ -683,7 +686,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              No Goals Yet
+              No {translate("goals", isFriendlyMode)} Yet
             </Text>
             <Text
               style={{
@@ -705,7 +708,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
               }}
             >
               <Text style={{ color: colors.buttonText, fontWeight: "600" }}>
-                Add Goal
+                {translate("addGoal", isFriendlyMode)}
               </Text>
             </TouchableOpacity>
           </View>

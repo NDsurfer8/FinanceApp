@@ -4,7 +4,9 @@ import { getDatabase } from "firebase/database";
 import { initializeAuth, getReactNativePersistence } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { firebaseConfig } from "../config/firebase";
+import Constants from "expo-constants";
+
+const firebaseConfig = Constants.expoConfig?.extra?.firebase;
 
 // Initialize Firebase
 export const app = getApps().length

@@ -21,6 +21,8 @@ import {
 } from "../services/userData";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
+import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { translate } from "../services/translations";
 import { getAssetTypeLabel } from "../utils/assetMigration";
 
 interface AssetsDebtsScreenProps {
@@ -37,6 +39,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
     useZeroLoading();
   const [loading, setLoading] = useState(false);
   const { colors } = useTheme();
+  const { isFriendlyMode } = useFriendlyMode();
 
   // Background refresh when screen comes into focus
   useFocusEffect(
@@ -141,7 +144,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               color: colors.text,
             }}
           >
-            Assets & Debts
+            {translate("assetsDebts", isFriendlyMode)}
           </Text>
         </View>
 
@@ -167,7 +170,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               color: colors.text,
             }}
           >
-            Assets
+            {translate("assets", isFriendlyMode)}
           </Text>
 
           {assets.length === 0 ? (
@@ -186,7 +189,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   fontSize: 16,
                 }}
               >
-                No assets yet
+                No {translate("assets", isFriendlyMode).toLowerCase()} yet
               </Text>
             </View>
           ) : (
@@ -311,7 +314,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               color: colors.text,
             }}
           >
-            Debts
+            {translate("debt", isFriendlyMode)}
           </Text>
 
           {debts.length === 0 ? (
@@ -330,7 +333,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   fontSize: 16,
                 }}
               >
-                No debts yet
+                No {translate("debt", isFriendlyMode).toLowerCase()} yet
               </Text>
             </View>
           ) : (

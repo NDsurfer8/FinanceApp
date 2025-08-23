@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -8,9 +8,12 @@ import {
   StyleSheet,
   Linking,
   Alert,
+  Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
+
+import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 
 interface HelpSupportScreenProps {
   navigation: any;
@@ -28,6 +31,21 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 }) => {
   const { colors } = useTheme();
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
+  const { isFriendlyMode, setIsFriendlyMode } = useFriendlyMode();
+
+  // Handle friendly mode toggle
+  const handleFriendlyModeToggle = async (value: boolean) => {
+    setIsFriendlyMode(value);
+
+    // Show confirmation message
+    Alert.alert(
+      value ? "Friendly Mode Enabled" : "Friendly Mode Disabled",
+      value
+        ? "Financial terms will now be shown in friendly, easy-to-understand language."
+        : "Financial terms will now be shown in standard language.",
+      [{ text: "OK" }]
+    );
+  };
 
   const faqs: FAQItem[] = [
     {
@@ -211,6 +229,56 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               Get help and find answers
             </Text>
+          </View>
+        </View>
+
+        {/* Friendly Mode Toggle */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Accessibility
+          </Text>
+
+          <View
+            style={[
+              styles.settingCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <View
+                  style={[
+                    styles.settingIcon,
+                    { backgroundColor: colors.surfaceSecondary },
+                  ]}
+                >
+                  <Ionicons name="school" size={20} color="#6366f1" />
+                </View>
+                <View style={styles.settingText}>
+                  <Text style={[styles.settingTitle, { color: colors.text }]}>
+                    Friendly Mode
+                  </Text>
+                  <Text
+                    style={[
+                      styles.settingDescription,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Translate financial terms into friendly, easy-to-understand
+                    language
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={isFriendlyMode}
+                onValueChange={handleFriendlyModeToggle}
+                trackColor={{
+                  false: colors.surfaceSecondary,
+                  true: colors.primary,
+                }}
+                thumbColor={isFriendlyMode ? "#ffffff" : colors.textSecondary}
+              />
+            </View>
           </View>
         </View>
 
@@ -683,9 +751,46 @@ const styles = StyleSheet.create({
   },
   emergencyDescription: {
     fontSize: 15,
-    textAlign: "center",
-    marginBottom: 16,
-    lineHeight: 22,
+  },
+  settingCard: {
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    marginBottom: 12,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  settingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  settingInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  settingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  settingText: {
+    flex: 1,
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  settingDescription: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   emergencyButton: {
     paddingVertical: 12,

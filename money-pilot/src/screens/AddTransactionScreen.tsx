@@ -13,6 +13,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
+import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { translate } from "../services/translations";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import {
   saveTransaction,
@@ -48,6 +50,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { isFriendlyMode } = useFriendlyMode();
   const { transactions, updateDataOptimistically } = useZeroLoading();
   const [loading, setLoading] = useState(false);
   const {
@@ -538,8 +541,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             <Text
               style={{ fontSize: 20, fontWeight: "600", color: colors.text }}
             >
-              {editMode ? "Edit" : "Add"}{" "}
-              {formData.type === "income" ? "Income" : "Expense"}
+              {editMode
+                ? translate("edit", isFriendlyMode)
+                : translate("addTransaction", isFriendlyMode).split(" ")[0]}{" "}
+              {formData.type === "income"
+                ? translate("income", isFriendlyMode)
+                : translate("expenses", isFriendlyMode)}
             </Text>
           </View>
 

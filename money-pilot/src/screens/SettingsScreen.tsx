@@ -18,6 +18,8 @@ import { usePaywall } from "../hooks/usePaywall";
 import { useSubscription } from "../contexts/SubscriptionContext";
 import { plaidService } from "../services/plaid";
 import { useTheme } from "../contexts/ThemeContext";
+import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { translate } from "../services/translations";
 import { useChatbot } from "../contexts/ChatbotContext";
 
 interface SettingsScreenProps {
@@ -36,6 +38,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { subscriptionStatus } = useSubscription();
   const [isBankConnected, setIsBankConnected] = useState(false);
   const { isDark, toggleTheme, colors } = useTheme();
+  const { isFriendlyMode } = useFriendlyMode();
   const { isVisible: isChatbotVisible, toggleChatbot } = useChatbot();
   const [connectedBankInfo, setConnectedBankInfo] = useState<{
     name: string;
@@ -608,7 +611,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               color: colors.text,
             }}
           >
-            App Settings
+            {translate("settings", isFriendlyMode)}
           </Text>
 
           {/* Dark Mode Toggle */}

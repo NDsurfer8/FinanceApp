@@ -16,6 +16,7 @@ import { DataProvider } from "../contexts/DataContext";
 import { SubscriptionProvider } from "../contexts/SubscriptionContext";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { ChatbotProvider } from "../contexts/ChatbotContext";
+import { FriendlyModeProvider } from "../contexts/FriendlyModeContext";
 import { DataPreloader } from "./DataPreloader";
 import { SplashScreen } from "./SplashScreen";
 import revenueCatService from "../services/revenueCat";
@@ -409,93 +410,95 @@ export const MainApp: React.FC = () => {
           <DataProvider>
             <SubscriptionProvider>
               <ChatbotProvider>
-                <DataPreloader>
-                  <NavigationContainer>
-                    {/* Floating AI Chatbot - only show on main app screens */}
-                    {appState === "main" && (
-                      <FloatingAIChatbot hideOnAIScreen={false} />
-                    )}
-                    <Stack.Navigator
-                      screenOptions={{
-                        headerShown: false,
-                      }}
-                    >
-                      <Stack.Screen
-                        name="MainTabs"
-                        component={MainTabNavigator}
-                      />
-                      <Stack.Screen
-                        name="AddTransaction"
-                        component={AddTransactionScreen}
-                      />
-                      <Stack.Screen
-                        name="AddAssetDebt"
-                        component={AddAssetDebtScreen}
-                      />
+                <FriendlyModeProvider>
+                  <DataPreloader>
+                    <NavigationContainer>
+                      {/* Floating AI Chatbot - only show on main app screens */}
+                      {appState === "main" && (
+                        <FloatingAIChatbot hideOnAIScreen={false} />
+                      )}
+                      <Stack.Navigator
+                        screenOptions={{
+                          headerShown: false,
+                        }}
+                      >
+                        <Stack.Screen
+                          name="MainTabs"
+                          component={MainTabNavigator}
+                        />
+                        <Stack.Screen
+                          name="AddTransaction"
+                          component={AddTransactionScreen}
+                        />
+                        <Stack.Screen
+                          name="AddAssetDebt"
+                          component={AddAssetDebtScreen}
+                        />
 
-                      <Stack.Screen
-                        name="BalanceSheet"
-                        component={BalanceSheetScreen}
-                      />
-                      <Stack.Screen
-                        name="SharedFinance"
-                        component={SharedFinanceScreen}
-                      />
-                      <Stack.Screen
-                        name="EditProfile"
-                        component={EditProfileScreen}
-                      />
-                      <Stack.Screen
-                        name="NotificationSettings"
-                        component={NotificationSettingsScreen}
-                      />
-                      <Stack.Screen
-                        name="PrivacySecurity"
-                        component={PrivacySecurityScreen}
-                      />
-                      <Stack.Screen name="About" component={AboutScreen} />
-                      <Stack.Screen
-                        name="HelpSupport"
-                        component={HelpSupportScreen}
-                      />
-                      <Stack.Screen
-                        name="RecurringTransactions"
-                        component={RecurringTransactionsScreen}
-                      />
-                      <Stack.Screen
-                        name="Subscription"
-                        component={SubscriptionScreen}
-                      />
-                      <Stack.Screen
-                        name="BankTransactions"
-                        component={BankTransactionsScreen}
-                      />
-                      <Stack.Screen
-                        name="AIFinancialAdvisor"
-                        component={AIFinancialAdvisorScreen}
-                      />
-                      <Stack.Screen
-                        name="FinancialPlans"
-                        component={FinancialPlansScreen}
-                      />
-                    </Stack.Navigator>
-                  </NavigationContainer>
-                </DataPreloader>
+                        <Stack.Screen
+                          name="BalanceSheet"
+                          component={BalanceSheetScreen}
+                        />
+                        <Stack.Screen
+                          name="SharedFinance"
+                          component={SharedFinanceScreen}
+                        />
+                        <Stack.Screen
+                          name="EditProfile"
+                          component={EditProfileScreen}
+                        />
+                        <Stack.Screen
+                          name="NotificationSettings"
+                          component={NotificationSettingsScreen}
+                        />
+                        <Stack.Screen
+                          name="PrivacySecurity"
+                          component={PrivacySecurityScreen}
+                        />
+                        <Stack.Screen name="About" component={AboutScreen} />
+                        <Stack.Screen
+                          name="HelpSupport"
+                          component={HelpSupportScreen}
+                        />
+                        <Stack.Screen
+                          name="RecurringTransactions"
+                          component={RecurringTransactionsScreen}
+                        />
+                        <Stack.Screen
+                          name="Subscription"
+                          component={SubscriptionScreen}
+                        />
+                        <Stack.Screen
+                          name="BankTransactions"
+                          component={BankTransactionsScreen}
+                        />
+                        <Stack.Screen
+                          name="AIFinancialAdvisor"
+                          component={AIFinancialAdvisorScreen}
+                        />
+                        <Stack.Screen
+                          name="FinancialPlans"
+                          component={FinancialPlansScreen}
+                        />
+                      </Stack.Navigator>
+                    </NavigationContainer>
+                  </DataPreloader>
 
-                {/* Biometric Authentication Overlay */}
-                <BiometricAuthOverlay
-                  visible={showBiometricOverlay}
-                  onSuccess={() => {
-                    setShowBiometricOverlay(false);
-                    setBiometricAuthenticated(true);
-                    setAppState("main");
-                  }}
-                  onCancel={() => {
-                    setShowBiometricOverlay(false);
-                    setBiometricAuthenticated(false);
-                    setAppState("login");
-                  }}
-                />
+                  {/* Biometric Authentication Overlay */}
+                  <BiometricAuthOverlay
+                    visible={showBiometricOverlay}
+                    onSuccess={() => {
+                      setShowBiometricOverlay(false);
+                      setBiometricAuthenticated(true);
+                      setAppState("main");
+                    }}
+                    onCancel={() => {
+                      setShowBiometricOverlay(false);
+                      setBiometricAuthenticated(false);
+                      setAppState("login");
+                    }}
+                  />
+                </FriendlyModeProvider>
               </ChatbotProvider>
             </SubscriptionProvider>
           </DataProvider>

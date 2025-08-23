@@ -4,27 +4,30 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const ENCRYPTION_ENABLED_KEY = "finance_app_encryption_enabled";
 const BIOMETRIC_AUTH_ENABLED_KEY = "finance_app_biometric_auth_enabled";
 const AUTO_LOCK_ENABLED_KEY = "finance_app_auto_lock_enabled";
+const FRIENDLY_MODE_ENABLED_KEY = "finance_app_friendly_mode_enabled";
 
 // Default settings
 const DEFAULT_SETTINGS = {
   encryptionEnabled: true,
   biometricAuthEnabled: false,
   autoLockEnabled: true,
+  friendlyModeEnabled: false,
 };
 
 export interface AppSettings {
   encryptionEnabled: boolean;
   biometricAuthEnabled: boolean;
   autoLockEnabled: boolean;
+  friendlyModeEnabled: boolean;
 }
 
 // Get encryption enabled setting
 export const getEncryptionEnabled = async (): Promise<boolean> => {
   try {
     const value = await AsyncStorage.getItem(ENCRYPTION_ENABLED_KEY);
-    return value === null
-      ? DEFAULT_SETTINGS.encryptionEnabled
-      : value === "true";
+    return value !== null
+      ? value === "true"
+      : DEFAULT_SETTINGS.encryptionEnabled;
   } catch (error) {
     console.error("Error getting encryption setting:", error);
     return DEFAULT_SETTINGS.encryptionEnabled;
@@ -44,9 +47,9 @@ export const setEncryptionEnabled = async (enabled: boolean): Promise<void> => {
 export const getBiometricAuthEnabled = async (): Promise<boolean> => {
   try {
     const value = await AsyncStorage.getItem(BIOMETRIC_AUTH_ENABLED_KEY);
-    return value === null
-      ? DEFAULT_SETTINGS.biometricAuthEnabled
-      : value === "true";
+    return value !== null
+      ? value === "true"
+      : DEFAULT_SETTINGS.biometricAuthEnabled;
   } catch (error) {
     console.error("Error getting biometric auth setting:", error);
     return DEFAULT_SETTINGS.biometricAuthEnabled;
@@ -68,7 +71,7 @@ export const setBiometricAuthEnabled = async (
 export const getAutoLockEnabled = async (): Promise<boolean> => {
   try {
     const value = await AsyncStorage.getItem(AUTO_LOCK_ENABLED_KEY);
-    return value === null ? DEFAULT_SETTINGS.autoLockEnabled : value === "true";
+    return value !== null ? value === "true" : DEFAULT_SETTINGS.autoLockEnabled;
   } catch (error) {
     console.error("Error getting auto lock setting:", error);
     return DEFAULT_SETTINGS.autoLockEnabled;
@@ -84,20 +87,49 @@ export const setAutoLockEnabled = async (enabled: boolean): Promise<void> => {
   }
 };
 
+// Get friendly mode enabled setting
+export const getFriendlyModeEnabled = async (): Promise<boolean> => {
+  try {
+    const value = await AsyncStorage.getItem(FRIENDLY_MODE_ENABLED_KEY);
+    return value !== null
+      ? value === "true"
+      : DEFAULT_SETTINGS.friendlyModeEnabled;
+  } catch (error) {
+    console.error("Error getting friendly mode setting:", error);
+    return DEFAULT_SETTINGS.friendlyModeEnabled;
+  }
+};
+
+// Set friendly mode enabled setting
+export const setFriendlyModeEnabled = async (
+  enabled: boolean
+): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(FRIENDLY_MODE_ENABLED_KEY, enabled.toString());
+  } catch (error) {
+    console.error("Error setting friendly mode setting:", error);
+  }
+};
+
 // Get all settings
 export const getAllSettings = async (): Promise<AppSettings> => {
   try {
-    const [encryptionEnabled, biometricAuthEnabled, autoLockEnabled] =
-      await Promise.all([
-        getEncryptionEnabled(),
-        getBiometricAuthEnabled(),
-        getAutoLockEnabled(),
-      ]);
-
+    const [
+      encryptionEnabled,
+      biometricAuthEnabled,
+      autoLockEnabled,
+      friendlyModeEnabled,
+    ] = await Promise.all([
+      getEncryptionEnabled(),
+      getBiometricAuthEnabled(),
+      getAutoLockEnabled(),
+      getFriendlyModeEnabled(),
+    ]);
     return {
       encryptionEnabled,
       biometricAuthEnabled,
       autoLockEnabled,
+      friendlyModeEnabled,
     };
   } catch (error) {
     console.error("Error getting all settings:", error);
@@ -105,13 +137,14 @@ export const getAllSettings = async (): Promise<AppSettings> => {
   }
 };
 
-// Reset all settings to defaults
+// Reset settings to defaults
 export const resetSettingsToDefaults = async (): Promise<void> => {
   try {
     await Promise.all([
       setEncryptionEnabled(DEFAULT_SETTINGS.encryptionEnabled),
       setBiometricAuthEnabled(DEFAULT_SETTINGS.biometricAuthEnabled),
       setAutoLockEnabled(DEFAULT_SETTINGS.autoLockEnabled),
+      setFriendlyModeEnabled(DEFAULT_SETTINGS.friendlyModeEnabled),
     ]);
   } catch (error) {
     console.error("Error resetting settings:", error);
