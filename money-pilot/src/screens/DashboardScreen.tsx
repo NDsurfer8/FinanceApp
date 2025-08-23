@@ -365,7 +365,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 }}
               >
                 <Ionicons
-                  name="analytics-outline"
+                  name="shield-checkmark"
                   size={22}
                   color={colors.buttonText}
                 />
@@ -373,10 +373,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <TouchableOpacity
                 onPress={() => navigation.navigate("SharedFinance")}
                 style={{
-                  backgroundColor: colors.success,
+                  backgroundColor: "#8b5cf6",
                   padding: 14,
                   borderRadius: 14,
-                  shadowColor: colors.success,
+                  shadowColor: "#8b5cf6",
                   shadowOpacity: 0.2,
                   shadowRadius: 8,
                   shadowOffset: { width: 0, height: 2 },
