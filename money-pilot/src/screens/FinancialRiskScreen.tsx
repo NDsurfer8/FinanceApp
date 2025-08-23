@@ -196,7 +196,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
               <Text
                 style={{ fontSize: 28, fontWeight: "800", color: colors.text }}
               >
-                {translate("balanceSheet", isFriendlyMode)}
+                {"Financial Risk Profile"}
               </Text>
               <Text
                 style={{
