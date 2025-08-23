@@ -1163,9 +1163,9 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
             {/* Info Section */}
             <View
               style={{
-                backgroundColor: colors.primaryLight,
+                backgroundColor: colors.infoLight,
                 borderWidth: 1,
-                borderColor: colors.primary,
+                borderColor: colors.info,
                 borderRadius: 12,
                 padding: 16,
                 marginBottom: 20,
@@ -1181,13 +1181,13 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                 <Ionicons
                   name="information-circle"
                   size={20}
-                  color={colors.primary}
+                  color={colors.info}
                 />
                 <Text
                   style={{
                     fontSize: 14,
                     fontWeight: "600",
-                    color: colors.primary,
+                    color: colors.info,
                     marginLeft: 8,
                   }}
                 >
