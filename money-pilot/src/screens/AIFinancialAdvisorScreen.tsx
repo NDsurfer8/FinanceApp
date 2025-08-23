@@ -1510,47 +1510,6 @@ Original Request: ${basePrompt}
 
           <TouchableOpacity
             onPress={() => {
-              // Show current preferences and optimization status
-              const feedbackCount = Object.keys(feedbackStates).length;
-              const preferenceInfo = `
-🎯 Vectra Learning Status
-
-Current Preferences:
-• Style: ${userPreferences.preferredStyle}
-• Tone: ${userPreferences.preferredTone}
-• Focus: ${userPreferences.preferredFocus}
-
-Learning Data:
-• Feedback given: ${feedbackCount} responses
-• System: ${feedbackCount > 0 ? "Active" : "Learning from your feedback"}
-
-How it works:
-• 👍 Like responses you prefer
-• 👎 Dislike responses you don't like
-• Vectra learns your style and adapts
-• Responses get better over time
-
-Try giving feedback on a few responses to see the system in action!
-              `;
-
-              Alert.alert("Vectra Learning Status", preferenceInfo, [
-                { text: "OK" },
-              ]);
-            }}
-            style={{
-              padding: 8,
-              borderRadius: 6,
-            }}
-          >
-            <Ionicons
-              name="information-circle-outline"
-              size={18}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => {
               Alert.alert(
                 "Clear Chat History",
                 "Are you sure you want to clear all chat history? This action cannot be undone.",
