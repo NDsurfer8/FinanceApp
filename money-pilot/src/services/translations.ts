@@ -59,6 +59,40 @@ export interface FinancialTranslations {
   loading: string;
   error: string;
   success: string;
+  // Financial Risk Screen translations
+  financialRiskProfile: string;
+  financialRiskOverview: string;
+  emergencyFund: string;
+  fullyFunded: string;
+  halfwayThere: string;
+  gettingStarted: string;
+  monthTarget: string;
+  target: string;
+  remaining: string;
+  months: string;
+  financialRatios: string;
+  keyNumbers: string;
+  liquidityRatio: string;
+  billsCushion: string;
+  monthlyLivingExpensesCoverage: string;
+  monthsCovered: string;
+  debtAssetRatio: string;
+  debtVsWhatYouOwn: string;
+  debtSafetyRatio: string;
+  debtVsIncome: string;
+  currentAssetsCurrentLiabilities: string;
+  currentAssetsTotalMonthlyExpenses: string;
+  totalLiabilitiesTotalAssets: string;
+  totalMonthlyDebtPaymentsTotalIncome: string;
+  // Ratio status words
+  tight: string;
+  ok: string;
+  healthy: string;
+  strong: string;
+  poor: string;
+  fair: string;
+  good: string;
+  excellent: string;
 }
 
 export const friendlyTranslations: FinancialTranslations = {
@@ -135,6 +169,41 @@ export const friendlyTranslations: FinancialTranslations = {
   loading: "Loading…",
   error: "Something went wrong",
   success: "Saved",
+  // Financial Risk Screen translations
+  financialRiskProfile: "Financial Risk Profile",
+  financialRiskOverview: "Your financial risk overview",
+  emergencyFund: "Emergency Fund",
+  fullyFunded: "Fully Funded!",
+  halfwayThere: "Halfway There",
+  gettingStarted: "Getting Started",
+  monthTarget: "of 6-month target",
+  target: "Target",
+  remaining: "Remaining",
+  months: "Months",
+  financialRatios: "Financial Ratios",
+  keyNumbers: "Key Numbers",
+  liquidityRatio: "Liquidity Ratio",
+  billsCushion: "Bills Cushion",
+  monthlyLivingExpensesCoverage: "Monthly Living Expenses Coverage",
+  monthsCovered: "Months Covered",
+  debtAssetRatio: "Debt-Asset Ratio",
+  debtVsWhatYouOwn: "Debt vs What You Own",
+  debtSafetyRatio: "Debt Safety Ratio",
+  debtVsIncome: "Debt vs Income",
+  currentAssetsCurrentLiabilities: "Current assets ÷ Current liabilities",
+  currentAssetsTotalMonthlyExpenses: "Current assets ÷ Total monthly expenses",
+  totalLiabilitiesTotalAssets: "Total liabilities ÷ Total assets",
+  totalMonthlyDebtPaymentsTotalIncome:
+    "Total monthly debt payments ÷ Total income",
+  // Ratio status words
+  tight: "Tight",
+  ok: "OK",
+  healthy: "Healthy",
+  strong: "Strong",
+  poor: "Poor",
+  fair: "Fair",
+  good: "Good",
+  excellent: "Excellent",
 };
 
 export const standardTranslations: FinancialTranslations = {
@@ -212,6 +281,41 @@ export const standardTranslations: FinancialTranslations = {
   loading: "Loading...",
   error: "Error",
   success: "Success!",
+  // Financial Risk Screen translations
+  financialRiskProfile: "Financial Risk Profile",
+  financialRiskOverview: "Your financial risk overview",
+  emergencyFund: "Emergency Fund",
+  fullyFunded: "Fully Funded!",
+  halfwayThere: "Halfway There",
+  gettingStarted: "Getting Started",
+  monthTarget: "of 6-month target",
+  target: "Target",
+  remaining: "Remaining",
+  months: "Months",
+  financialRatios: "Financial Ratios",
+  keyNumbers: "Key Numbers",
+  liquidityRatio: "Liquidity Ratio",
+  billsCushion: "Bills Cushion",
+  monthlyLivingExpensesCoverage: "Monthly Living Expenses Coverage",
+  monthsCovered: "Months Covered",
+  debtAssetRatio: "Debt-Asset Ratio",
+  debtVsWhatYouOwn: "Debt vs What You Own",
+  debtSafetyRatio: "Debt Safety Ratio",
+  debtVsIncome: "Debt vs Income",
+  currentAssetsCurrentLiabilities: "Current assets ÷ Current liabilities",
+  currentAssetsTotalMonthlyExpenses: "Current assets ÷ Total monthly expenses",
+  totalLiabilitiesTotalAssets: "Total liabilities ÷ Total assets",
+  totalMonthlyDebtPaymentsTotalIncome:
+    "Total monthly debt payments ÷ Total income",
+  // Ratio status words
+  tight: "Tight",
+  ok: "OK",
+  healthy: "Healthy",
+  strong: "Strong",
+  poor: "Poor",
+  fair: "Fair",
+  good: "Good",
+  excellent: "Excellent",
 };
 
 // Definitions for tooltips and coaching
@@ -276,6 +380,46 @@ export const definitions: Record<keyof FinancialTranslations, string> = {
   loading: "Please wait while we load your data.",
   error: "Something went wrong. Please try again.",
   success: "Your changes have been saved successfully.",
+  // Financial Risk Screen definitions
+  financialRiskProfile:
+    "A comprehensive view of your financial health and risk factors.",
+  financialRiskOverview: "Summary of your financial risk assessment.",
+  emergencyFund: "Money set aside for unexpected expenses.",
+  fullyFunded: "Your emergency fund is complete and ready.",
+  halfwayThere: "Your emergency fund is 50% complete.",
+  gettingStarted: "Your emergency fund is in the early stages.",
+  monthTarget: "Target based on 6 months of expenses.",
+  target: "The goal amount you want to reach.",
+  remaining: "Amount left to reach your target.",
+  months: "Number of months your savings will last.",
+  financialRatios: "Key metrics that measure your financial health.",
+  keyNumbers: "Important financial metrics at a glance.",
+  liquidityRatio: "How easily you can pay short-term debts.",
+  billsCushion: "Cash ready vs. bills due soon.",
+  monthlyLivingExpensesCoverage:
+    "How long your assets can cover monthly expenses.",
+  monthsCovered: "How many months you can cover.",
+  debtAssetRatio: "Percentage of your assets that are financed by debt.",
+  debtVsWhatYouOwn: "How much you owe compared to what you own.",
+  debtSafetyRatio: "Percentage of income used for debt payments.",
+  debtVsIncome: "How much of monthly income goes to debt.",
+  currentAssetsCurrentLiabilities:
+    "Formula: Current assets divided by current liabilities.",
+  currentAssetsTotalMonthlyExpenses:
+    "Formula: Current assets divided by total monthly expenses.",
+  totalLiabilitiesTotalAssets:
+    "Formula: Total liabilities divided by total assets.",
+  totalMonthlyDebtPaymentsTotalIncome:
+    "Formula: Total monthly debt payments divided by total income.",
+  // Ratio status words
+  tight: "Limited financial flexibility.",
+  ok: "Adequate financial position.",
+  healthy: "Good financial health.",
+  strong: "Excellent financial position.",
+  poor: "Needs immediate attention.",
+  fair: "Room for improvement.",
+  good: "Solid financial standing.",
+  excellent: "Outstanding financial health.",
 };
 
 export const getTranslations = (

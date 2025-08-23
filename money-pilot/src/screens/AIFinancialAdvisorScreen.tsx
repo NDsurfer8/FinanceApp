@@ -332,7 +332,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   // Get welcome message
   const getWelcomeMessage = (): Message => ({
     id: "1",
-    text: "Aloha! I’m Vectra, your personalAI Financial Advisor. I can help with budgeting, goals, debt, investing, and side hustles — what’s on your mind today? 🤙",
+    text: "Aloha! I’m Vectra, your personal AI Financial Advisor. I can help with budgeting, goals, debt, investing, and side hustles — what’s on your mind today? 🤙",
     isUser: false,
     timestamp: new Date(),
   });

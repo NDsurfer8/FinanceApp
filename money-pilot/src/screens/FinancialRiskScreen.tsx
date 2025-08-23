@@ -13,6 +13,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
+import { gradeRatio, fmt } from "../utils/ratioGrading";
 import {
   getUserAssets,
   getUserDebts,
@@ -128,32 +129,51 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
   };
 
   const getRatioStatus = (ratio: number, type: string) => {
+    const mode = isFriendlyMode ? "friendly" : "pro";
+    let ratioKey: any;
+
     switch (type) {
       case "liquidity":
-        return ratio >= 1 ? "Good" : "Poor";
+        ratioKey = "liquidity";
+        break;
       case "coverage":
-        return ratio >= 6 ? "Excellent" : ratio >= 3 ? "Good" : "Poor";
+        ratioKey = "monthsCovered";
+        break;
       case "debtAsset":
-        return ratio <= 30 ? "Excellent" : ratio <= 50 ? "Good" : "Poor";
+        ratioKey = "debtToAsset";
+        break;
       case "debtSafety":
-        return ratio <= 28 ? "Excellent" : ratio <= 36 ? "Good" : "Poor";
+        ratioKey = "debtToIncome";
+        break;
       default:
         return "Unknown";
     }
+
+    return gradeRatio(ratioKey, ratio, mode).status;
   };
 
   const getRatioColor = (ratio: number, type: string) => {
-    const status = getRatioStatus(ratio, type);
-    switch (status) {
-      case "Excellent":
-        return "#16a34a";
-      case "Good":
-        return "#d97706";
-      case "Poor":
-        return "#dc2626";
+    const mode = isFriendlyMode ? "friendly" : "pro";
+    let ratioKey: any;
+
+    switch (type) {
+      case "liquidity":
+        ratioKey = "liquidity";
+        break;
+      case "coverage":
+        ratioKey = "monthsCovered";
+        break;
+      case "debtAsset":
+        ratioKey = "debtToAsset";
+        break;
+      case "debtSafety":
+        ratioKey = "debtToIncome";
+        break;
       default:
         return "#6b7280";
     }
+
+    return gradeRatio(ratioKey, ratio, mode).color;
   };
 
   if (loading) {
@@ -431,7 +451,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                 color: colors.info,
               }}
             >
-              Financial Ratios
+              {translate(
+                isFriendlyMode ? "keyNumbers" : "financialRatios",
+                isFriendlyMode
+              )}
             </Text>
           </View>
 
@@ -451,7 +474,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   fontWeight: "500",
                 }}
               >
-                Liquidity Ratio
+                {translate(
+                  isFriendlyMode ? "billsCushion" : "liquidityRatio",
+                  isFriendlyMode
+                )}
               </Text>
               <Text
                 style={{
@@ -466,10 +492,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
             <Text
               style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
             >
-              {formatRatio(liquidityRatio)}x
+              {fmt.ratio(liquidityRatio)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-              Current assets ÷ Current liabilities
+              {translate("currentAssetsCurrentLiabilities", isFriendlyMode)}
             </Text>
           </View>
 
@@ -489,7 +515,12 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   fontWeight: "500",
                 }}
               >
-                Monthly Living Expenses Coverage
+                {translate(
+                  isFriendlyMode
+                    ? "monthsCovered"
+                    : "monthlyLivingExpensesCoverage",
+                  isFriendlyMode
+                )}
               </Text>
               <Text
                 style={{
@@ -507,10 +538,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
             <Text
               style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
             >
-              {formatRatio(monthlyLivingExpensesCoverage)}x
+              {fmt.months(monthlyLivingExpensesCoverage)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-              Current assets ÷ Total monthly expenses
+              {translate("currentAssetsTotalMonthlyExpenses", isFriendlyMode)}
             </Text>
           </View>
 
@@ -530,7 +561,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   fontWeight: "500",
                 }}
               >
-                Debt-Asset Ratio
+                {translate(
+                  isFriendlyMode ? "debtVsWhatYouOwn" : "debtAssetRatio",
+                  isFriendlyMode
+                )}
               </Text>
               <Text
                 style={{
@@ -545,10 +579,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
             <Text
               style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
             >
-              {formatPercentage(debtAssetRatio)}
+              {fmt.pct(debtAssetRatio)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-              Total liabilities ÷ Total assets
+              {translate("totalLiabilitiesTotalAssets", isFriendlyMode)}
             </Text>
           </View>
 
@@ -568,7 +602,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   fontWeight: "500",
                 }}
               >
-                Debt Safety Ratio
+                {translate(
+                  isFriendlyMode ? "debtVsIncome" : "debtSafetyRatio",
+                  isFriendlyMode
+                )}
               </Text>
               <Text
                 style={{
@@ -583,10 +620,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
             <Text
               style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
             >
-              {formatPercentage(debtSafetyRatio)}
+              {fmt.pct(debtSafetyRatio)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-              Total monthly debt payments ÷ Total income
+              {translate("totalMonthlyDebtPaymentsTotalIncome", isFriendlyMode)}
             </Text>
           </View>
         </View>
