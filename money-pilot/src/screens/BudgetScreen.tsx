@@ -1800,18 +1800,26 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               style={{ flexDirection: "row", justifyContent: "space-between" }}
             >
               <Text
-                style={{ fontSize: 20, fontWeight: "800", color: colors.text }}
+                style={{
+                  fontSize: 18,
+                  fontWeight: "800",
+                  color: colors.text,
+                }}
               >
-                $ {translate("availableAmount", isFriendlyMode)}
+                {translate("availableAmount", isFriendlyMode)}
               </Text>
               <Text
                 style={{
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: "800",
                   color: remainingBalance >= 0 ? "#16a34a" : "#dc2626",
                 }}
               >
-                {formatCurrency(remainingBalance)}
+                $
+                {remainingBalance.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </Text>
             </View>
           </View>

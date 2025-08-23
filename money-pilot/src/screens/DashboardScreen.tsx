@@ -354,10 +354,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <TouchableOpacity
                 onPress={() => navigation.navigate("FinancialRisk")}
                 style={{
-                  backgroundColor: colors.info,
+                  backgroundColor: colors.error,
                   padding: 14,
                   borderRadius: 14,
-                  shadowColor: colors.info,
+                  shadowColor: colors.error,
                   shadowOpacity: 0.2,
                   shadowRadius: 8,
                   shadowOffset: { width: 0, height: 2 },
@@ -373,10 +373,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <TouchableOpacity
                 onPress={() => navigation.navigate("SharedFinance")}
                 style={{
-                  backgroundColor: colors.primary,
+                  backgroundColor: colors.success,
                   padding: 14,
                   borderRadius: 14,
-                  shadowColor: colors.primary,
+                  shadowColor: colors.success,
                   shadowOpacity: 0.2,
                   shadowRadius: 8,
                   shadowOffset: { width: 0, height: 2 },
