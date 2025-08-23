@@ -134,7 +134,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={onBackToLogin} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="#6b7280" />
+              <Ionicons name="arrow-back" size={24} color="#9ca3af" />
             </TouchableOpacity>
             <View style={styles.logoContainer}>
               <Image
@@ -157,6 +157,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 <TextInput
                   style={styles.input}
                   placeholder="First Name"
+                  placeholderTextColor="#9ca3af"
                   value={firstName}
                   onChangeText={setFirstName}
                   autoCapitalize="words"
@@ -173,6 +174,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                   ref={lastNameRef}
                   style={styles.input}
                   placeholder="Last Name"
+                  placeholderTextColor="#9ca3af"
                   value={lastName}
                   onChangeText={setLastName}
                   autoCapitalize="words"
@@ -191,13 +193,14 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               <Ionicons
                 name="mail"
                 size={20}
-                color="#6b7280"
+                color="#9ca3af"
                 style={styles.inputIcon}
               />
               <TextInput
                 ref={emailRef}
                 style={styles.input}
                 placeholder="Email"
+                placeholderTextColor="#9ca3af"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -216,13 +219,14 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               <Ionicons
                 name="lock-closed"
                 size={20}
-                color="#6b7280"
+                color="#9ca3af"
                 style={styles.inputIcon}
               />
               <TextInput
                 ref={passwordRef}
                 style={styles.input}
                 placeholder="Password"
+                placeholderTextColor="#9ca3af"
                 value={password}
                 onChangeText={setPassword}
                 autoCapitalize="none"
@@ -241,13 +245,14 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               <Ionicons
                 name="lock-closed"
                 size={20}
-                color="#6b7280"
+                color="#9ca3af"
                 style={styles.inputIcon}
               />
               <TextInput
                 ref={confirmPasswordRef}
                 style={styles.input}
                 placeholder="Confirm Password"
+                placeholderTextColor="#9ca3af"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 autoCapitalize="none"
@@ -377,7 +382,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#000000",
   },
   keyboardView: {
     flex: 1,
@@ -400,7 +405,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: "#1a1a1a",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -413,12 +418,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#1f2937",
+    color: "#ffffff",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6b7280",
+    color: "#9ca3af",
     textAlign: "center",
   },
   form: {
@@ -435,12 +440,12 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "white",
+    backgroundColor: "#1a1a1a",
     borderRadius: 12,
     marginBottom: 16,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#374151",
   },
   inputIcon: {
     marginRight: 12,
@@ -449,7 +454,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 56,
     fontSize: 16,
-    color: "#1f2937",
+    color: "#ffffff",
     paddingVertical: 0,
     paddingHorizontal: 0,
   },
@@ -473,13 +478,13 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: "#d1d5db",
+    borderColor: "#374151",
     alignItems: "center",
     justifyContent: "center",
   },
   checkboxChecked: {
-    backgroundColor: "#6366f1",
-    borderColor: "#6366f1",
+    backgroundColor: "#10b981",
+    borderColor: "#10b981",
   },
   termsTextContainer: {
     flex: 1,
@@ -489,16 +494,16 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontSize: 14,
-    color: "#6b7280",
+    color: "#9ca3af",
     lineHeight: 20,
     flexShrink: 1, // Allows text to shrink and wrap
   },
   termsLink: {
-    color: "#6366f1",
+    color: "#10b981",
     fontWeight: "600",
   },
   signUpButton: {
-    backgroundColor: "#6366f1",
+    backgroundColor: "#10b981",
     borderRadius: 12,
     height: 56,
     alignItems: "center",
@@ -506,7 +511,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   signUpButtonDisabled: {
-    backgroundColor: "#a5b4fc",
+    backgroundColor: "#6b7280",
   },
   signUpButtonText: {
     color: "white",
@@ -519,11 +524,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loginText: {
-    color: "#6b7280",
+    color: "#9ca3af",
     fontSize: 14,
   },
   loginLink: {
-    color: "#6366f1",
+    color: "#10b981",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -535,7 +540,7 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#e5e7eb",
+    backgroundColor: "#374151",
   },
   dividerText: {
     marginHorizontal: 16,
@@ -551,18 +556,18 @@ const styles = StyleSheet.create({
   socialButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "white",
+    backgroundColor: "#1a1a1a",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#374151",
     borderRadius: 12,
     paddingHorizontal: 24,
     paddingVertical: 16,
     marginHorizontal: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   socialButtonText: {
     marginLeft: 8,

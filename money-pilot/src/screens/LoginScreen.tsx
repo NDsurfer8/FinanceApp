@@ -133,12 +133,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <Ionicons
                 name="mail"
                 size={20}
-                color="#6b7280"
+                color="#9ca3af"
                 style={styles.inputIcon}
               />
               <TextInput
                 style={styles.input}
                 placeholder="Email"
+                placeholderTextColor="#9ca3af"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -156,13 +157,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <Ionicons
                 name="lock-closed"
                 size={20}
-                color="#6b7280"
+                color="#9ca3af"
                 style={styles.inputIcon}
               />
               <TextInput
                 ref={passwordRef}
                 style={styles.input}
                 placeholder="Password"
+                placeholderTextColor="#9ca3af"
                 value={password}
                 onChangeText={setPassword}
                 autoCapitalize="none"
@@ -258,7 +260,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#000000",
   },
   keyboardView: {
     flex: 1,
@@ -277,7 +279,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: "#1a1a1a",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -291,12 +293,12 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bold,
     fontSize: 32,
     fontWeight: "bold",
-    color: "#1f2937",
+    color: "#ffffff",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6b7280",
+    color: "#9ca3af",
     textAlign: "center",
   },
   form: {
@@ -305,12 +307,12 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "white",
+    backgroundColor: "#1a1a1a",
     borderRadius: 12,
     marginBottom: 16,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#374151",
   },
   inputIcon: {
     marginRight: 12,
@@ -320,7 +322,7 @@ const styles = StyleSheet.create({
     height: 56,
     fontFamily: fontFamily.regular,
     fontSize: 16,
-    color: "#1f2937",
+    color: "#ffffff",
     paddingVertical: 0,
     paddingHorizontal: 0,
   },
@@ -333,12 +335,12 @@ const styles = StyleSheet.create({
   },
   forgotPasswordText: {
     fontFamily: fontFamily.semiBold,
-    color: "#6366f1",
+    color: "#10b981",
     fontSize: 14,
     fontWeight: "600",
   },
   loginButton: {
-    backgroundColor: "#6366f1",
+    backgroundColor: "#10b981",
     borderRadius: 12,
     height: 56,
     alignItems: "center",
@@ -346,7 +348,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   loginButtonDisabled: {
-    backgroundColor: "#a5b4fc",
+    backgroundColor: "#6b7280",
   },
   loginButtonText: {
     fontFamily: fontFamily.semiBold,
@@ -362,12 +364,12 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#e5e7eb",
+    backgroundColor: "#374151",
   },
   dividerText: {
     fontFamily: fontFamily.regular,
     marginHorizontal: 16,
-    color: "#6b7280",
+    color: "#9ca3af",
     fontSize: 14,
   },
   socialButtons: {
@@ -380,17 +382,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "white",
+    backgroundColor: "#1a1a1a",
     borderRadius: 12,
     height: 56,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#374151",
     gap: 8,
   },
   socialButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#374151",
+    color: "#ffffff",
   },
   appleButton: {
     flex: 1,
@@ -402,11 +404,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   signUpText: {
-    color: "#6b7280",
+    color: "#9ca3af",
     fontSize: 14,
   },
   signUpLink: {
-    color: "#6366f1",
+    color: "#10b981",
     fontSize: 14,
     fontWeight: "600",
   },
