@@ -536,18 +536,55 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text
+                <View
                   style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
+                    flexDirection: "row",
+                    alignItems: "center",
                     marginBottom: 4,
-                    fontWeight: "600",
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
                   }}
                 >
-                  {translate("availableAmount", isFriendlyMode)}
-                </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      fontWeight: "600",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {translate("availableAmount", isFriendlyMode)}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Alert.alert(
+                        "Available Amount Calculation",
+                        `Formula:\nNet Income - Savings (${savingsPercent}%) - Goal Contributions - Debt Payoff (${debtPayoffPercent}%)\n\nBreakdown:\n\nGross Income:     ${formatCurrency(
+                          monthlyIncome
+                        )}\nExpenses:         ${formatCurrency(
+                          monthlyExpenses
+                        )}\n─────────────────────────\nNet Income:       ${formatCurrency(
+                          netIncome
+                        )}\n\nSavings:          ${formatCurrency(
+                          savingsAmount
+                        )}\nGoal Contrib:     ${formatCurrency(
+                          totalGoalContributions
+                        )}\nDebt Payoff:      ${formatCurrency(
+                          debtPayoffAmount
+                        )}\n─────────────────────────\nAvailable:        ${formatCurrency(
+                          availableAmount
+                        )}`,
+                        [{ text: "Got it", style: "default" }]
+                      );
+                    }}
+                    style={{ marginLeft: 8 }}
+                  >
+                    <Ionicons
+                      name="information-circle"
+                      size={16}
+                      color={colors.textTertiary}
+                    />
+                  </TouchableOpacity>
+                </View>
                 <Text
                   style={{
                     fontSize: 20,
