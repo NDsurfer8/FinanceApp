@@ -122,6 +122,28 @@ const APP_NAVIGATION_RESPONSES = {
       "VectorFi features:\n\n• Income & expense tracking with categories\n• Asset and debt management\n• Goal setting with progress tracking\n• Budget percentage settings\n• Bank account integration (Plaid)\n• AI financial advisor (floating button)\n• Dark/light mode\n• Shared finance groups\n\nEverything you need for smart money management! 💡",
     isLocal: true,
   },
+
+  // Shared goals questions
+  "shared goals": {
+    response:
+      "To view shared goals, go to the Dashboard and tap the people icon in the top right corner! 👥 That's where you can see and manage your shared financial goals with family or friends.",
+    isLocal: true,
+  },
+  "shared finance": {
+    response:
+      "To access shared finance features, go to the Dashboard and tap the people icon in the top right corner! 👥 There you can view shared goals and manage group finances.",
+    isLocal: true,
+  },
+  "people icon": {
+    response:
+      "The people icon is in the top right corner of the Dashboard! 👥 Tap it to view shared goals and manage group finances.",
+    isLocal: true,
+  },
+  groups: {
+    response:
+      "To access Groups, go to the Dashboard and tap the people icon in the top right corner! 👥 There you can view and manage your shared financial groups.",
+    isLocal: true,
+  },
 };
 
 // Function to check if question can be answered locally
@@ -201,6 +223,28 @@ function getLocalResponse(
 
   if (lowerQuestion.includes("feature") || lowerQuestion.includes("what can")) {
     return APP_NAVIGATION_RESPONSES["app features"];
+  }
+
+  // Shared goals and finance questions
+  if (
+    lowerQuestion.includes("shared") &&
+    (lowerQuestion.includes("goal") || lowerQuestion.includes("finance"))
+  ) {
+    if (lowerQuestion.includes("goal")) {
+      return APP_NAVIGATION_RESPONSES["shared goals"];
+    }
+    return APP_NAVIGATION_RESPONSES["shared finance"];
+  }
+
+  if (
+    lowerQuestion.includes("people") ||
+    lowerQuestion.includes("group") ||
+    lowerQuestion.includes("family")
+  ) {
+    if (lowerQuestion.includes("group") && !lowerQuestion.includes("shared")) {
+      return APP_NAVIGATION_RESPONSES["groups"];
+    }
+    return APP_NAVIGATION_RESPONSES["people icon"];
   }
 
   return null;
