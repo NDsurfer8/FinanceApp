@@ -75,13 +75,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   };
 
-  const handleGoogleLogin = () => {
-    Alert.alert(
-      "Google Login",
-      "Google login functionality would be implemented here"
-    );
-  };
-
   const handleAppleLogin = async () => {
     setIsLoading(true);
     try {
@@ -210,21 +203,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
             {/* Social Login */}
             <View style={styles.socialButtons}>
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={handleGoogleLogin}
-              >
-                <Ionicons name="logo-google" size={24} color="#ea4335" />
-                <Text style={styles.socialButtonText}>Google</Text>
-              </TouchableOpacity>
-
               {isAppleAuthAvailable && (
                 <AppleAuthentication.AppleAuthenticationButton
                   buttonType={
                     AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
                   }
                   buttonStyle={
-                    AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                    AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
                   }
                   cornerRadius={12}
                   style={styles.appleButton}

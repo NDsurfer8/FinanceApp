@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { useData } from "../contexts/DataContext";
 import { useAuth } from "../hooks/useAuth";
 
@@ -113,7 +113,7 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
   // Show minimal loading indicator only during initial preload
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Loading your financial data...</Text>
+      <ActivityIndicator size="large" color="#10b981" />
     </View>
   );
 };
@@ -123,11 +123,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
-  },
-  text: {
-    fontSize: 16,
-    color: "#6b7280",
-    textAlign: "center",
+    backgroundColor: "#000000",
   },
 });
