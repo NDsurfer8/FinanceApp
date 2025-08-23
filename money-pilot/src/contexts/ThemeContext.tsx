@@ -74,65 +74,65 @@ const lightColors = {
 };
 
 const darkColors = {
-  // Background colors - Deep financial blue
-  background: "#0a0e1a",
-  surface: "#1a1f2e",
-  surfaceSecondary: "#2a2f3e",
+  // Background colors - Optimized for readability and modern standards
+  background: "#0f1419", // Slightly lighter, better for long viewing
+  surface: "#1a1f2e", // Keep current - good contrast
+  surfaceSecondary: "#2a2f3e", // Keep current - good hierarchy
 
-  // Text colors - Professional whites and grays
-  text: "#ffffff",
-  textSecondary: "#b8c5d6",
-  textTertiary: "#8a9bb3",
+  // Text colors - Improved hierarchy and accessibility
+  text: "#f8fafc", // Slightly softer than pure white
+  textSecondary: "#cbd5e1", // Better contrast than current
+  textTertiary: "#94a3b8", // More readable tertiary text
 
-  // Primary colors - Financial green
+  // Primary colors - Keep financial green (excellent choice)
   primary: "#10b981",
   primaryLight: "#34d399",
   primaryDark: "#059669",
 
-  // Status colors - Financial indicators
-  success: "#10b981",
-  successLight: "#064e3b",
-  warning: "#f59e0b",
-  warningLight: "#451a03",
-  error: "#ef4444",
-  errorLight: "#450a0a",
-  info: "#3b82f6",
-  infoLight: "#1e3a8a",
+  // Status colors - Enhanced for better visibility
+  success: "#22c55e", // Slightly brighter for better visibility
+  successLight: "#14532d", // Darker background for better contrast
+  warning: "#fbbf24", // Brighter amber for better visibility
+  warningLight: "#451a03", // Keep current
+  error: "#f87171", // Slightly softer red
+  errorLight: "#450a0a", // Keep current
+  info: "#38bdf8", // Brighter blue for better visibility
+  infoLight: "#0c4a6e", // Keep current
 
-  // Border colors - Subtle financial grays
-  border: "#374151",
-  borderLight: "#4b5563",
+  // Border colors - Enhanced for better definition
+  border: "#334155", // Slightly lighter for better visibility
+  borderLight: "#475569", // Better contrast
 
   // Shadow colors
   shadow: "#000000",
 
-  // Card colors - Professional card backgrounds
-  card: "#1a1f2e",
-  cardSecondary: "#2a2f3e",
+  // Card colors - Enhanced for better depth perception
+  card: "#1e293b", // Slightly lighter for better contrast
+  cardSecondary: "#334155", // Better hierarchy
 
-  // Input colors - Clean input styling
-  input: "#1a1f2e",
-  inputBorder: "#374151",
-  inputPlaceholder: "#6b7280",
+  // Input colors - Improved for better usability
+  input: "#1e293b", // Better contrast with text
+  inputBorder: "#475569", // More visible borders
+  inputPlaceholder: "#64748b", // Better contrast for placeholders
 
-  // Button colors - Financial green buttons
-  buttonPrimary: "#10b981",
-  buttonSecondary: "#374151",
-  buttonText: "#ffffff",
-  buttonTextSecondary: "#f9fafb",
+  // Button colors - Enhanced for better interaction
+  buttonPrimary: "#10b981", // Keep financial green
+  buttonSecondary: "#334155", // Better contrast
+  buttonText: "#ffffff", // Keep pure white for buttons
+  buttonTextSecondary: "#f1f5f9", // Better contrast
 
-  // Navigation colors - Professional nav
-  tabBar: "#1a1f2e",
-  tabBarInactive: "#6b7280",
-  tabBarActive: "#10b981",
+  // Navigation colors - Enhanced for better usability
+  tabBar: "#1e293b", // Better contrast
+  tabBarInactive: "#64748b", // More visible inactive state
+  tabBarActive: "#10b981", // Keep financial green
 
-  // Modal colors - Professional modals
-  modal: "#1a1f2e",
-  modalOverlay: "rgba(0, 0, 0, 0.8)",
+  // Modal colors - Enhanced for better focus
+  modal: "#1e293b", // Better contrast
+  modalOverlay: "rgba(0, 0, 0, 0.75)", // Slightly lighter for better visibility
 
-  // Chart colors - Financial chart styling
-  chartGrid: "#374151",
-  chartText: "#8a9bb3",
+  // Chart colors - Enhanced for better data visualization
+  chartGrid: "#334155", // Better grid visibility
+  chartText: "#94a3b8", // Better text contrast
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
