@@ -10,11 +10,13 @@ import {
   Alert,
   Image,
   Platform,
+  Share,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { useTheme } from "../contexts/ThemeContext";
 import * as MailComposer from "expo-mail-composer";
+import * as StoreReview from "expo-store-review";
 import { useAuth } from "../hooks/useAuth";
 
 interface AboutScreenProps {
@@ -106,42 +108,109 @@ ${user?.displayName || "VectorFi User"}`,
     Linking.openURL("https://github.com/ndsurf888/vectorfii");
   };
 
-  const shareApp = () => {
-    Alert.alert(
-      "Share VectorFi",
-      "Help others take control of their finances! Share this app with friends and family.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Share",
-          onPress: () => {
-            // You can implement actual sharing functionality here
-            Alert.alert(
-              "Share",
-              "Sharing functionality would be implemented here"
-            );
-          },
-        },
-      ]
-    );
+  const shareApp = async () => {
+    try {
+      // Start with general share as the primary option
+      // This is more reliable and doesn't require permissions
+      shareAppGeneral();
+    } catch (error) {
+      console.error("Error sharing app:", error);
+      Alert.alert("Error", "Unable to share the app. Please try again later.", [
+        { text: "OK" },
+      ]);
+    }
   };
 
-  const rateApp = () => {
-    // This would open the app store for rating
-    Alert.alert(
-      "Rate VectorFi",
-      "Enjoying the app? Please rate us on the App Store!",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Rate",
-          onPress: () => {
-            // You can implement actual app store rating here
-            Alert.alert("Rate", "App store rating would be implemented here");
-          },
-        },
-      ]
-    );
+  const shareAppGeneral = async () => {
+    try {
+      // Prepare share content
+      const shareContent = {
+        title: "VectorFi - Take Control of Your Finances",
+        message: `Check out VectorFi - the smart finance app that helps you track expenses, set goals, and build wealth! 
+
+Download now and start your financial journey:
+https://vectorfi.com
+
+#VectorFi #Finance #Budgeting #Investing`,
+        url: "https://vectorfi.com",
+      };
+
+      // Share the app using React Native's Share API
+      const result = await Share.share(shareContent);
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          console.log("Shared with activity type:", result.activityType);
+        } else {
+          console.log("Shared successfully");
+        }
+      } else if (result.action === Share.dismissedAction) {
+        console.log("Share dismissed");
+      }
+    } catch (error) {
+      console.error("Error sharing app:", error);
+
+      // Fallback to a simpler share if the main one fails
+      try {
+        const simpleShare = {
+          message:
+            "Check out VectorFi - the smart finance app! https://vectorfi.com",
+        };
+        await Share.share(simpleShare);
+      } catch (fallbackError) {
+        console.error("Fallback share also failed:", fallbackError);
+        Alert.alert(
+          "Sharing Unavailable",
+          "Sharing is not available on this device. You can copy the link manually: https://vectorfi.com",
+          [{ text: "OK" }]
+        );
+      }
+    }
+  };
+
+  const rateApp = async () => {
+    try {
+      // Check if the app is available for review
+      const isAvailable = await StoreReview.isAvailableAsync();
+
+      if (!isAvailable) {
+        Alert.alert(
+          "Rating Not Available",
+          "App rating is not available at this time. Please try again later.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      // Check if the user has already rated the app
+      const hasAction = await StoreReview.hasAction();
+
+      if (!hasAction) {
+        Alert.alert(
+          "Rating Not Available",
+          "App rating is not available at this time. Please try again later.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      // Request a review
+      await StoreReview.requestReview();
+
+      // Show thank you message after requesting review
+      Alert.alert(
+        "Thank You!",
+        "Thank you for taking the time to rate VectorFi! Your feedback helps us improve the app.",
+        [{ text: "OK" }]
+      );
+    } catch (error) {
+      console.error("Error requesting app review:", error);
+      Alert.alert(
+        "Error",
+        "Unable to open app rating. Please try again later.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   return (

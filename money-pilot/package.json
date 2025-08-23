@@ -45,7 +45,11 @@
     "react-native-screens": "~4.11.1",
     "react-native-svg": "^15.12.1",
     "react-native-walkthrough-tooltip": "^1.6.0",
-    "expo-mail-composer": "~14.1.6"
+    "expo-mail-composer": "~14.1.6",
+    "expo-store-review": "~8.1.5",
+    "expo-sharing": "~13.1.5",
+    "expo-contacts": "~14.2.5",
+    "expo-location": "~18.1.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
