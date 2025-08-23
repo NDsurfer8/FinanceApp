@@ -126,7 +126,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     try {
       setIsLoading(true);
-      console.log("Loading all data for user:", user.uid);
+      console.log("DataContext: loadAllData called for user:", user.uid);
+      console.log(
+        "DataContext: loadAllData timestamp:",
+        new Date().toISOString()
+      );
 
       const [
         userTransactions,
@@ -680,6 +684,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Load data when user changes
   useEffect(() => {
+    console.log("DataContext: useEffect triggered for user:", user?.uid);
     if (user) {
       loadAllData();
 
@@ -727,7 +732,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setIsBankConnected(false);
       setBankDataLastUpdated(null);
     }
-  }, [user, loadAllData]);
+  }, [user]);
 
   const value: DataContextType = {
     transactions,

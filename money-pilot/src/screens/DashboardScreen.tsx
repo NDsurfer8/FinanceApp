@@ -313,7 +313,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       }
     };
     loadTrendData();
-  }, [user, transactions, assets, debts]); // Added assets and debts as dependencies
+  }, [user, transactions]); // Removed assets and debts dependencies to prevent circular updates
 
   // Prepare data for line chart
   const chartData = trendData.map((month) => ({

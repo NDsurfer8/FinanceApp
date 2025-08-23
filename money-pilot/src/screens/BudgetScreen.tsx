@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -74,6 +74,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     new Set()
   );
   const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const monthPickerScrollRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
@@ -134,22 +135,24 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     }
   };
 
-  // Background refresh when screen comes into focus
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log("BudgetScreen useFocusEffect triggered");
-      if (user) {
-        console.log("Refreshing data in background...");
-        // Force refresh when screen comes into focus to get latest data
-        refreshData().catch((error: any) => {
-          console.error("Background refresh failed:", error);
-        });
+  // Load data once when component mounts
+  useEffect(() => {
+    if (user) {
+      console.log("BudgetScreen: Initial data load");
+      // Load bank data with smart caching strategy
+      refreshBankData();
+    }
+  }, [user]);
 
-        // Load bank data with smart caching strategy
-        refreshBankData();
-      }
-    }, [user, refreshData])
-  );
+  // Scroll to current month when modal opens
+  useEffect(() => {
+    if (showMonthPicker) {
+      // Use setTimeout to ensure the modal is fully rendered
+      setTimeout(() => {
+        scrollToCurrentMonth();
+      }, 100);
+    }
+  }, [showMonthPicker]);
 
   // Get transactions for selected month
   const getMonthlyTransactions = (date: Date) => {
@@ -177,16 +180,28 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
   // Load projected transactions for future months
   const loadProjectedTransactions = async (date: Date) => {
+    console.log(
+      "BudgetScreen: loadProjectedTransactions called with date:",
+      date
+    );
     if (!user) return;
 
     const isFuture = checkIfFutureMonth(date);
+    console.log("BudgetScreen: Is future month?", isFuture);
     setIsFutureMonth(isFuture);
 
     if (isFuture) {
       try {
+        console.log(
+          "BudgetScreen: Loading projected transactions for future month"
+        );
         const { projected } = await getProjectedTransactionsForMonth(
           user.uid,
           date
+        );
+        console.log(
+          "BudgetScreen: Projected transactions loaded:",
+          projected.length
         );
         setProjectedTransactions(projected);
       } catch (error) {
@@ -194,12 +209,20 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         setProjectedTransactions([]);
       }
     } else {
+      console.log(
+        "BudgetScreen: Not a future month, clearing projected transactions"
+      );
       setProjectedTransactions([]);
     }
   };
 
   // Load projected transactions when selected month changes
   useEffect(() => {
+    console.log(
+      "BudgetScreen: useEffect triggered for selectedMonth:",
+      selectedMonth
+    );
+    console.log("BudgetScreen: User:", user?.uid);
     loadProjectedTransactions(selectedMonth);
   }, [selectedMonth, user]);
 
@@ -579,8 +602,31 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   };
 
   const handleMonthSelect = (month: Date) => {
+    console.log("BudgetScreen: handleMonthSelect called with month:", month);
+    console.log("BudgetScreen: Current selectedMonth:", selectedMonth);
+    console.log(
+      "BudgetScreen: Are they different?",
+      month.getTime() !== selectedMonth.getTime()
+    );
     setSelectedMonth(month);
     setShowMonthPicker(false);
+  };
+
+  const scrollToCurrentMonth = () => {
+    const months = generateAvailableMonths();
+    const currentMonthIndex = months.findIndex(
+      (month) =>
+        month.getMonth() === new Date().getMonth() &&
+        month.getFullYear() === new Date().getFullYear()
+    );
+
+    if (currentMonthIndex !== -1 && monthPickerScrollRef.current) {
+      // Scroll to one position before current month for better visibility
+      monthPickerScrollRef.current.scrollTo({
+        y: Math.max(0, (currentMonthIndex - 1) * 60), // One position before current month
+        animated: true,
+      });
+    }
   };
 
   const handleSaveBudgetSettings = async () => {
@@ -1944,6 +1990,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             </View>
 
             <ScrollView
+              ref={monthPickerScrollRef}
               showsVerticalScrollIndicator={false}
               style={{ maxHeight: 400 }}
             >

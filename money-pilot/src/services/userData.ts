@@ -264,85 +264,100 @@ export const getUserNetWorthEntries = async (
   }
 };
 
+// Debounce mechanism to prevent multiple simultaneous calls
+const updateNetWorthCallbacks: { [userId: string]: NodeJS.Timeout } = {};
+
 // Update net worth from current assets and debts
 export const updateNetWorthFromAssetsAndDebts = async (
   userId: string
 ): Promise<void> => {
-  try {
-    // Get current assets and debts
-    const [assets, debts] = await Promise.all([
-      getUserAssets(userId),
-      getUserDebts(userId),
-    ]);
+  console.log("updateNetWorthFromAssetsAndDebts called for user:", userId);
 
-    // Calculate totals
-    const totalAssets = assets.reduce(
-      (sum: number, asset: any) => sum + asset.balance,
-      0
-    );
-    const totalDebts = debts.reduce(
-      (sum: number, debt: any) => sum + debt.balance,
-      0
-    );
-    const netWorth = totalAssets - totalDebts;
-
-    // Get existing net worth entries
-    const entries = await getUserNetWorthEntries(userId);
-
-    // Check if there's already an entry for current month
-    const currentDate = new Date();
-    const currentMonthEntry = entries.find((entry) => {
-      const entryDate = new Date(entry.date);
-      return (
-        entryDate.getMonth() === currentDate.getMonth() &&
-        entryDate.getFullYear() === currentDate.getFullYear()
-      );
-    });
-
-    if (currentMonthEntry) {
-      // Update existing entry
-      const { encryptNetWorthEntry } = await import("./encryption");
-      const updatedEntry = {
-        ...currentMonthEntry,
-        netWorth,
-        assets: totalAssets,
-        debts: totalDebts,
-        updatedAt: Date.now(),
-      };
-      const encryptedEntry = await encryptNetWorthEntry(updatedEntry);
-
-      const entryRef = ref(
-        db,
-        `users/${userId}/netWorth/${currentMonthEntry.id}`
-      );
-      await set(entryRef, encryptedEntry);
-      console.log("Current month net worth updated successfully");
-    } else {
-      // Create new entry for current month
-      const currentMonth = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        1
-      );
-      const newEntry: NetWorthEntry = {
-        userId,
-        netWorth,
-        assets: totalAssets,
-        debts: totalDebts,
-        date: currentMonth.getTime(),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
-      await saveNetWorthEntry(newEntry);
-      console.log("New net worth entry created for current month");
-    }
-
-    // Maintain only last 6 entries
-    await maintainNetWorthHistory(userId);
-  } catch (error) {
-    console.error("Error updating net worth from assets and debts:", error);
-    throw error;
+  // Clear any existing timeout for this user
+  if (updateNetWorthCallbacks[userId]) {
+    clearTimeout(updateNetWorthCallbacks[userId]);
   }
+
+  // Set a new timeout to debounce the call
+  updateNetWorthCallbacks[userId] = setTimeout(async () => {
+    console.log("updateNetWorthFromAssetsAndDebts executing for user:", userId);
+    try {
+      // Get current assets and debts
+      const [assets, debts] = await Promise.all([
+        getUserAssets(userId),
+        getUserDebts(userId),
+      ]);
+
+      // Calculate totals
+      const totalAssets = assets.reduce(
+        (sum: number, asset: any) => sum + asset.balance,
+        0
+      );
+      const totalDebts = debts.reduce(
+        (sum: number, debt: any) => sum + debt.balance,
+        0
+      );
+      const netWorth = totalAssets - totalDebts;
+
+      // Get existing net worth entries
+      const entries = await getUserNetWorthEntries(userId);
+
+      // Check if there's already an entry for current month
+      const currentDate = new Date();
+      const currentMonthEntry = entries.find((entry) => {
+        const entryDate = new Date(entry.date);
+        return (
+          entryDate.getMonth() === currentDate.getMonth() &&
+          entryDate.getFullYear() === currentDate.getFullYear()
+        );
+      });
+
+      if (currentMonthEntry) {
+        // Update existing entry
+        const { encryptNetWorthEntry } = await import("./encryption");
+        const updatedEntry = {
+          ...currentMonthEntry,
+          netWorth,
+          assets: totalAssets,
+          debts: totalDebts,
+          updatedAt: Date.now(),
+        };
+        const encryptedEntry = await encryptNetWorthEntry(updatedEntry);
+
+        const entryRef = ref(
+          db,
+          `users/${userId}/netWorth/${currentMonthEntry.id}`
+        );
+        await set(entryRef, encryptedEntry);
+        console.log("Current month net worth updated successfully");
+      } else {
+        // Create new entry for current month
+        const currentMonth = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          1
+        );
+        console.log("Creating new net worth entry for month:", currentMonth);
+        const newEntry: NetWorthEntry = {
+          userId,
+          netWorth,
+          assets: totalAssets,
+          debts: totalDebts,
+          date: currentMonth.getTime(),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        await saveNetWorthEntry(newEntry);
+        console.log("New net worth entry created for current month");
+      }
+
+      // Maintain only last 6 entries
+      await maintainNetWorthHistory(userId);
+    } catch (error) {
+      console.error("Error updating net worth from assets and debts:", error);
+      throw error;
+    }
+  }, 100); // 100ms debounce delay
 };
 
 // Maintain only last 6 net worth entries
