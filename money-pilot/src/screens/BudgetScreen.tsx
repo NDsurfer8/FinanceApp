@@ -809,7 +809,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 <Ionicons name="bulb" size={20} color={colors.warning} />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  marginBottom: 20,
+                  color: colors.text,
+                }}
               >
                 {translate("smartInsights", isFriendlyMode)}
               </Text>
@@ -1158,7 +1163,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 <Ionicons name="trending-up" size={20} color={colors.text} />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  marginBottom: 20,
+                  color: colors.text,
+                }}
               >
                 {translate("income", isFriendlyMode)}
               </Text>
@@ -1355,7 +1365,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 <Ionicons name="trending-down" size={20} color={colors.text} />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  marginBottom: 20,
+                  color: colors.text,
+                }}
               >
                 {translate("expenses", isFriendlyMode)}
               </Text>

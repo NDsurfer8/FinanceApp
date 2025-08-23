@@ -196,7 +196,7 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               <Text
                 style={{ fontSize: 28, fontWeight: "800", color: colors.text }}
               >
-                {"Financial Risk Profile"}
+                {translate("balanceSheet", isFriendlyMode)}
               </Text>
               <Text
                 style={{
@@ -245,7 +245,12 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                 <Ionicons name="shield-checkmark" size={20} color="#d97706" />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#d97706" }}
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  marginBottom: 20,
+                  color: "#d97706",
+                }}
               >
                 Emergency Fund
               </Text>
@@ -419,7 +424,12 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               <Ionicons name="analytics" size={20} color={colors.info} />
             </View>
             <Text
-              style={{ fontSize: 18, fontWeight: "700", color: colors.info }}
+              style={{
+                fontSize: 20,
+                fontWeight: "700",
+                marginBottom: 20,
+                color: colors.info,
+              }}
             >
               Financial Ratios
             </Text>

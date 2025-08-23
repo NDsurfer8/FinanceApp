@@ -356,7 +356,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <View>
             <Text
               style={{
-                fontSize: 32,
+                fontSize: 28,
                 fontWeight: "800",
                 color: colors.text,
                 letterSpacing: -0.5,
@@ -728,7 +728,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Ionicons name="bulb" size={20} color={colors.warning} />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  marginBottom: 20,
+                  color: colors.text,
+                }}
               >
                 {translate("smartInsights", isFriendlyMode)}
               </Text>
