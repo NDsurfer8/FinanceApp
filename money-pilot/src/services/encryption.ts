@@ -250,6 +250,17 @@ export const decryptEmergencyFund = async (fund: any): Promise<any> => {
   return await decryptFields(fund, fieldsToDecrypt);
 };
 
+// Net Worth Entry encryption/decryption
+export const encryptNetWorthEntry = async (entry: any): Promise<any> => {
+  const fieldsToEncrypt = ["netWorth", "assets", "debts", "date", "userId"];
+  return await encryptFields(entry, fieldsToEncrypt);
+};
+
+export const decryptNetWorthEntry = async (entry: any): Promise<any> => {
+  const fieldsToDecrypt = ["netWorth", "assets", "debts", "date", "userId"];
+  return await decryptFields(entry, fieldsToDecrypt);
+};
+
 // Batch operations for arrays
 export const encryptTransactions = async (
   transactions: any[]
@@ -359,6 +370,12 @@ export const decryptRecurringTransactions = async (
   return await Promise.all(
     transactions.map((transaction) => decryptRecurringTransaction(transaction))
   );
+};
+
+export const decryptNetWorthEntries = async (
+  entries: any[]
+): Promise<any[]> => {
+  return await Promise.all(entries.map((entry) => decryptNetWorthEntry(entry)));
 };
 
 // Reset encryption key (use this if you're having decryption issues)

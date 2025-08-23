@@ -8,3 +8,5 @@ export { NotificationTest } from "./NotificationTest";
 export { PremiumFeature } from "./PremiumFeature";
 export { VectraAvatar } from "./VectraAvatar";
 export { FloatingAIChatbot } from "./FloatingAIChatbot";
+export { TrendLineChart } from "./TrendLineChart";
+export { CustomTrendChart } from "./CustomTrendChart";

@@ -13,8 +13,14 @@ import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { useData } from "../contexts/DataContext";
+import {
+  getUserNetWorthEntries,
+  updateCurrentMonthNetWorth,
+  updateNetWorthFromAssetsAndDebts,
+} from "../services/userData";
 
 import { useTheme } from "../contexts/ThemeContext";
+import { CustomTrendChart } from "../components/CustomTrendChart";
 
 interface DashboardScreenProps {
   navigation: any;
@@ -32,6 +38,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     getGoalLimitInfo,
   } = useTransactionLimits();
   const [loading, setLoading] = useState(false);
+  const [trendData, setTrendData] = useState<any[]>([]);
   const { colors } = useTheme();
 
   // Function to determine if name should be on a new line
@@ -236,8 +243,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   ];
 
   // Premium Feature: Trend Analysis
-  const getTrendData = () => {
+  const getTrendData = async () => {
     const last6Months = [];
+
+    // Get net worth entries
+    const netWorthEntries = await getUserNetWorthEntries(user?.uid || "");
+    console.log("Net worth entries found:", netWorthEntries.length);
+
     for (let i = 5; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
@@ -257,17 +269,97 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         .filter((t) => t.type === "expense")
         .reduce((sum: number, t: any) => sum + t.amount, 0);
 
+      // Find net worth for this month
+      const monthNetWorthEntry = netWorthEntries.find((entry) => {
+        const entryDate = new Date(entry.date);
+        return (
+          entryDate.getMonth() === date.getMonth() &&
+          entryDate.getFullYear() === date.getFullYear()
+        );
+      });
+
+      let netWorth = monthNetWorthEntry ? monthNetWorthEntry.netWorth : 0;
+
+      // If no net worth entry exists, calculate current net worth for current month
+      if (!monthNetWorthEntry && i === 0) {
+        // Current month
+        const totalAssets = assets.reduce(
+          (sum: number, asset: any) => sum + asset.balance,
+          0
+        );
+        const totalDebts = debts.reduce(
+          (sum: number, debt: any) => sum + debt.balance,
+          0
+        );
+        netWorth = totalAssets - totalDebts;
+        console.log("Calculated current net worth:", {
+          totalAssets,
+          totalDebts,
+          netWorth,
+        });
+      }
+
+      if (monthNetWorthEntry) {
+        console.log(
+          `${date.toLocaleDateString("en-US", {
+            month: "short",
+          })}: Net Worth = $${netWorth}, Assets = $${
+            monthNetWorthEntry.assets
+          }, Debts = $${monthNetWorthEntry.debts}`
+        );
+      }
+
       last6Months.push({
         month: date.toLocaleDateString("en-US", { month: "short" }),
         income,
         expenses,
-        net: income - expenses,
+        netWorth,
       });
     }
     return last6Months;
   };
 
-  const trendData = getTrendData();
+  // Load trend data
+  useEffect(() => {
+    const loadTrendData = async () => {
+      if (user) {
+        // Initialize net worth if no entries exist
+        const netWorthEntries = await getUserNetWorthEntries(user.uid);
+        if (netWorthEntries.length === 0) {
+          console.log("No net worth entries found, initializing...");
+          await updateNetWorthFromAssetsAndDebts(user.uid);
+        }
+
+        const data = await getTrendData();
+        setTrendData(data);
+        console.log("Loaded trend data:", data);
+      }
+    };
+    loadTrendData();
+  }, [user, transactions, assets, debts]); // Added assets and debts as dependencies
+
+  // Prepare data for line chart
+  const chartData = trendData.map((month) => ({
+    x: month.month,
+    y: month.income,
+  }));
+
+  const expensesData = trendData.map((month) => ({
+    x: month.month,
+    y: month.expenses,
+  }));
+
+  const netWorthData = trendData.map((month) => ({
+    x: month.month,
+    y: month.netWorth,
+  }));
+
+  // Debug: Log the data being passed to the chart
+  console.log("Chart data:", {
+    chartData: chartData.map((d) => ({ x: d.x, y: d.y })),
+    expensesData: expensesData.map((d) => ({ x: d.x, y: d.y })),
+    netWorthData: netWorthData.map((d) => ({ x: d.x, y: d.y })),
+  });
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString(undefined, {
@@ -768,7 +860,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </View>
         )}
 
-        {/* 6-Month Trend - Simplified */}
+        {/* 6-Month Trend - Line Chart */}
         <View
           style={{
             backgroundColor: colors.surface,
@@ -793,59 +885,72 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             6-Month Trend
           </Text>
 
-          {trendData.map((month, index) => (
-            <View
-              key={`trend-${month.month}-${index}`}
+          <CustomTrendChart
+            incomeData={chartData}
+            expensesData={expensesData}
+            netWorthData={netWorthData}
+            height={250}
+          />
+
+          {/* Test buttons */}
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
+            <TouchableOpacity
               style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 12,
-                paddingVertical: 8,
-                borderBottomWidth: index < trendData.length - 1 ? 1 : 0,
-                borderBottomColor: colors.border,
+                backgroundColor: colors.primary,
+                borderRadius: 8,
+                padding: 12,
+                flex: 1,
+                alignItems: "center",
+              }}
+              onPress={async () => {
+                if (user) {
+                  console.log("Manually updating net worth...");
+                  await updateNetWorthFromAssetsAndDebts(user.uid);
+                  // Reload trend data
+                  const data = await getTrendData();
+                  setTrendData(data);
+                  console.log("Updated trend data:", data);
+                }
               }}
             >
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: colors.textSecondary,
-                  width: 40,
-                  fontWeight: "500",
-                }}
-              >
-                {month.month}
+              <Text style={{ color: colors.buttonText, fontWeight: "600" }}>
+                Update Net Worth
               </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: "#16a34a",
-                  width: 80,
-                  fontWeight: "600",
-                }}
-              >
-                {formatCurrency(month.income)}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.error,
+                borderRadius: 8,
+                padding: 12,
+                flex: 1,
+                alignItems: "center",
+              }}
+              onPress={() => {
+                const totalAssets = assets.reduce(
+                  (sum: number, asset: any) => sum + asset.balance,
+                  0
+                );
+                const totalDebts = debts.reduce(
+                  (sum: number, debt: any) => sum + debt.balance,
+                  0
+                );
+                const netWorth = totalAssets - totalDebts;
+                console.log("Current net worth calculation:", {
+                  totalAssets,
+                  totalDebts,
+                  netWorth,
+                });
+                alert(
+                  `Current Net Worth: $${netWorth.toLocaleString()}\nAssets: $${totalAssets.toLocaleString()}\nDebts: $${totalDebts.toLocaleString()}`
+                );
+              }}
+            >
+              <Text style={{ color: colors.buttonText, fontWeight: "600" }}>
+                Show Net Worth
               </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: "#dc2626",
-                  width: 80,
-                  fontWeight: "600",
-                }}
-              >
-                {formatCurrency(month.expenses)}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "700",
-                  color: month.net >= 0 ? "#16a34a" : "#dc2626",
-                }}
-              >
-                {formatCurrency(month.net)}
-              </Text>
-            </View>
-          ))}
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
