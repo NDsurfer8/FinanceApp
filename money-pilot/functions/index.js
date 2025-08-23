@@ -354,44 +354,15 @@ Your style:
 - Keep responses concise but helpful
 - Use plain text (no markdown headers like ### or **bold**)
 
-Always be encouraging and supportive while giving practical financial guidance.`;
+IMPORTANT CONVERSATION RULES:
+- Maintain conversation continuity - don't start responses with "Hey there!" or "Hello!" if you're continuing a conversation
+- If the user asks follow-up questions or wants you to "dive deeper", continue naturally from where you left off
+- Don't repeat introductions or greetings in follow-up responses
+- Keep the conversation flowing naturally as if you're having a real conversation
+- If you offered to "dive deeper" on a topic and they accept, go straight into the detailed explanation
 
-const APP_FEATURES_DOC = `VectorFi App Features & Navigation:
-
-📱 Main Screens (Bottom Tabs):
-- Dashboard: Financial overview, quick actions, spending insights
-- Budget: Set savings/debt payoff percentages, view budget summary
-- Goals: Create and track financial goals, monitor progress
-- Assets/Debts: Manage assets, debts, view net worth
-- Settings: App preferences, profile, subscription, AI chatbot toggle
-
-💡 Key Features:
-- Income and Expense tracking with categories and recurring patterns
-- Asset and debt management with net worth calculation
-- Goal setting with progress tracking and timelines
-- Shared finance groups for family/friends
-- AI financial advisor (floating button on every screen!)
-- Dark/light mode toggle
-- Bank account integration (Plaid)
-- Budget percentage settings for savings and debt payoff
-
-🔧 How to Navigate:
-- Bottom tabs for main sections (Dashboard, Budget, Goals, Assets/Debts, Settings)
-- Dashboard → Quick Actions → Add Transaction/Asset/Debt/Goal
-- Settings → App Settings → Toggle AI Chatbot, Dark Mode, etc.
-- Floating AI button (bottom-right) → Ask financial questions from any screen
-- Goals → Create new financial goals with target amounts
-- Assets/Debts → Add assets or debts with balances and rates
-- Budget → Set savings percentage and debt payoff percentage and add income and expenses with categories and recurring patterns and view budget summary.
-
-🎯 Quick Actions (Dashboard):
-- Add Transaction: Log income or expenses
-- Add Asset: Track savings, investments, property
-- Add Debt: Monitor credit cards, loans, mortgages
-- Add Goal: Set financial targets with timelines
-- Bank Data: View connected bank transactions
-
-I can help you find any feature or explain how to use the app!`;
+Always be encouraging and supportive while giving practical financial guidance.
+You also know that the user is currently on the VectorFi app and you are helping them with their financial questions and anything else they may need help with.`;
 
 const FIN_PLAN_RULES = `When generating financial plans, follow this exact 6-section structure:
 
@@ -415,9 +386,9 @@ const FIN_PLAN_RULES = `When generating financial plans, follow this exact 6-sec
 - 3-4 specific actionable recommendations
 - Focus on high-impact actions
 
-6. Encouragement
-- Motivational closing message
-- Positive reinforcement
+6. Overview
+- Provide a brief overview of the financial plan and the steps they need to take to achieve their goals.
+
 
 Use bullet points and emojis, no markdown headers.`;
 
@@ -441,24 +412,6 @@ function buildSystemPrompt(
     systemPrompt += " Use a casual, friendly tone.";
   }
 
-  // Add app features doc if user asks about app
-  const appKeywords = [
-    "app",
-    "feature",
-    "screen",
-    "navigate",
-    "find",
-    "where",
-    "how to",
-  ];
-  const isAppQuestion = appKeywords.some((keyword) =>
-    userQuestion.toLowerCase().includes(keyword)
-  );
-
-  if (isAppQuestion) {
-    systemPrompt += "\n\n" + APP_FEATURES_DOC;
-  }
-
   // Add financial plan rules if it's a plan request
   if (isPlanRequest) {
     systemPrompt += "\n\n" + FIN_PLAN_RULES;
@@ -473,6 +426,65 @@ function isPlanRequest(userQuestion) {
   return planKeywords.some((keyword) =>
     userQuestion.toLowerCase().includes(keyword)
   );
+}
+
+// Helper function to detect follow-up questions
+function detectFollowUpQuestion(currentMessage, conversationHistory) {
+  if (!conversationHistory || conversationHistory.length === 0) {
+    return false;
+  }
+
+  const lowerMessage = currentMessage.toLowerCase();
+
+  // Keywords that indicate follow-up questions
+  const followUpKeywords = [
+    "yes",
+    "no",
+    "sure",
+    "okay",
+    "ok",
+    "yeah",
+    "yep",
+    "nope",
+    "dive deeper",
+    "tell me more",
+    "explain",
+    "how",
+    "what about",
+    "what else",
+    "and",
+    "also",
+    "too",
+    "as well",
+    "additionally",
+    "furthermore",
+    "moreover",
+    "besides",
+    "in addition",
+    "can you",
+    "could you",
+    "would you",
+    "will you",
+    "please",
+    "thanks",
+    "thank you",
+    "thx",
+  ];
+
+  // Check if current message contains follow-up keywords
+  const hasFollowUpKeywords = followUpKeywords.some((keyword) =>
+    lowerMessage.includes(keyword)
+  );
+
+  // Check if message is short (likely a follow-up)
+  const isShortMessage = currentMessage.length < 50;
+
+  // Check if it's a direct response to a question (yes/no)
+  const isDirectResponse = /^(yes|no|sure|okay|ok|yeah|yep|nope)$/i.test(
+    currentMessage.trim()
+  );
+
+  return hasFollowUpKeywords || isShortMessage || isDirectResponse;
 }
 
 // Helper function to analyze question type
@@ -592,7 +604,12 @@ exports.aiChat = onCall(async (data, context) => {
       : [],
   });
 
-  const { message, financialData, userPreferences = {} } = actualData;
+  const {
+    message,
+    financialData,
+    userPreferences = {},
+    conversationHistory = [],
+  } = actualData;
 
   if (!message) {
     console.error("Message is missing from data:", actualData);
@@ -632,12 +649,34 @@ exports.aiChat = onCall(async (data, context) => {
 
     console.log("Calling OpenAI API...");
     const openaiClient = getOpenAIClient();
+
+    // Build messages array with conversation history
+    const messages = [{ role: "system", content: systemPrompt }];
+
+    // Only add conversation history for follow-up questions
+    const isFollowUpQuestion = detectFollowUpQuestion(
+      message,
+      conversationHistory
+    );
+
+    if (
+      isFollowUpQuestion &&
+      conversationHistory &&
+      conversationHistory.length > 0
+    ) {
+      const recentHistory = conversationHistory.slice(-3); // Keep last 3 messages for follow-ups
+      messages.push(...recentHistory);
+      console.log("Using conversation history for follow-up question");
+    } else {
+      console.log("No conversation history needed - new question");
+    }
+
+    // Add current user message
+    messages.push({ role: "user", content: userMessage });
+
     const response = await openaiClient.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
-      ],
+      messages: messages,
       max_tokens: 1000,
       temperature: 0.7,
     });

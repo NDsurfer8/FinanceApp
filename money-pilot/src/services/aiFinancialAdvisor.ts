@@ -38,7 +38,8 @@ class AIFinancialAdvisorService {
     userQuestion: string,
     snapshot: FinancialSnapshot,
     isPlanRequest: boolean = false,
-    userPreferences?: any
+    userPreferences?: any,
+    conversationHistory?: Array<{ role: string; content: string }>
   ): Promise<string> {
     try {
       console.log("Using backend AI... sending snapshot to backend");
@@ -75,7 +76,8 @@ class AIFinancialAdvisorService {
       const result = await callBackendAI(
         userQuestion,
         financialData,
-        userPreferences
+        userPreferences,
+        conversationHistory
       );
       return result.response;
     } catch (error) {

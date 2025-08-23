@@ -34,6 +34,178 @@ import {
 import { VectraAvatar } from "../components/VectraAvatar";
 import { sendBackendAIFeedback } from "../services/backendAI";
 
+// Local responses for common app questions (no API call needed)
+const APP_NAVIGATION_RESPONSES = {
+  // Budget screen questions
+  "budget add income": {
+    response:
+      "Perfect! Since you're already on the Budget screen, just tap the 'Add Income' button right there on your screen. You'll see it - it's designed to make adding income super easy! 💰",
+    isLocal: true,
+  },
+  "budget add expense": {
+    response:
+      "Great! You're already on the Budget screen, so just tap the 'Add Expense' button right there. It's that simple! 📝",
+    isLocal: true,
+  },
+  "budget how to": {
+    response:
+      "You're on the Budget screen! Here's what you can do:\n\n• Tap 'Add Income' to add new income\n• Tap 'Add Expense' to add new expenses\n• Use the percentage sliders to adjust savings/debt payoff\n• Check the Budget Summary card for your overview\n\nEverything you need is right there on your screen! 📊",
+    isLocal: true,
+  },
+
+  // Dashboard questions
+  "dashboard add transaction": {
+    response:
+      "You're on the Dashboard! Use the Quick Actions section - tap 'Add Transaction' to log income or expenses. It's right there in the quick actions! ⚡",
+    isLocal: true,
+  },
+  "dashboard add asset": {
+    response:
+      "You're on the Dashboard! Use the Quick Actions section - tap 'Add Asset' to track savings, investments, or property. Quick and easy! 💎",
+    isLocal: true,
+  },
+  "dashboard add debt": {
+    response:
+      "You're on the Dashboard! Use the Quick Actions section - tap 'Add Debt' to monitor credit cards, loans, or mortgages. Right there in quick actions! 📋",
+    isLocal: true,
+  },
+  "dashboard add goal": {
+    response:
+      "You're on the Dashboard! Use the Quick Actions section - tap 'Add Goal' to set financial targets. It's in the quick actions area! 🎯",
+    isLocal: true,
+  },
+
+  // Goals screen questions
+  "goals add goal": {
+    response:
+      "Perfect! You're already on the Goals screen, so just tap the 'Add Goal' button right there. Set your target amount and timeline - super simple! 🎯",
+    isLocal: true,
+  },
+  "goals how to": {
+    response:
+      "You're on the Goals screen! Here's what you can do:\n\n• Tap 'Add Goal' to create new financial goals\n• View your goal progress with visual bars\n• Check target amounts and timelines\n\nEverything for goal tracking is right here! 🎯",
+    isLocal: true,
+  },
+
+  // Assets/Debts screen questions
+  "assets add asset": {
+    response:
+      "You're on the Assets/Debts screen! Tap the 'Add Asset' button to add savings, investments, or property. Track your net worth easily! 💰",
+    isLocal: true,
+  },
+  "debts add debt": {
+    response:
+      "You're on the Assets/Debts screen! Tap the 'Add Debt' button to add credit cards, loans, or mortgages. Keep track of what you owe! 📊",
+    isLocal: true,
+  },
+
+  // Settings questions
+  "settings ai chatbot": {
+    response:
+      "You're in Settings! Go to 'App Settings' and you'll see the 'AI Chatbot' toggle to show/hide the floating AI button. Easy control! ⚙️",
+    isLocal: true,
+  },
+  "settings dark mode": {
+    response:
+      "You're in Settings! Go to 'App Settings' and you'll find the 'Dark Mode' toggle. Switch between light and dark themes! 🌙",
+    isLocal: true,
+  },
+
+  // General app questions
+  "how to use app": {
+    response:
+      "Here's how to use VectorFi:\n\n📊 Dashboard: Overview and quick actions\n💰 Budget: Add income/expenses, set percentages\n🎯 Goals: Create and track financial goals\n📈 Assets/Debts: Manage your net worth\n⚙️ Settings: App preferences and profile\n\nPlus the floating AI button (bottom-right) for questions from any screen! 🚀",
+    isLocal: true,
+  },
+  "app features": {
+    response:
+      "VectorFi features:\n\n• Income & expense tracking with categories\n• Asset and debt management\n• Goal setting with progress tracking\n• Budget percentage settings\n• Bank account integration (Plaid)\n• AI financial advisor (floating button)\n• Dark/light mode\n• Shared finance groups\n\nEverything you need for smart money management! 💡",
+    isLocal: true,
+  },
+};
+
+// Function to check if question can be answered locally
+function getLocalResponse(
+  userQuestion: string
+): { response: string; isLocal: boolean } | null {
+  const lowerQuestion = userQuestion.toLowerCase();
+
+  // Check for exact matches first
+  for (const [key, value] of Object.entries(APP_NAVIGATION_RESPONSES)) {
+    if (lowerQuestion.includes(key)) {
+      return value;
+    }
+  }
+
+  // Check for common patterns
+  if (
+    lowerQuestion.includes("budget") &&
+    (lowerQuestion.includes("add") || lowerQuestion.includes("how"))
+  ) {
+    if (lowerQuestion.includes("income")) {
+      return APP_NAVIGATION_RESPONSES["budget add income"];
+    }
+    if (lowerQuestion.includes("expense")) {
+      return APP_NAVIGATION_RESPONSES["budget add expense"];
+    }
+    return APP_NAVIGATION_RESPONSES["budget how to"];
+  }
+
+  if (lowerQuestion.includes("dashboard") && lowerQuestion.includes("add")) {
+    if (lowerQuestion.includes("transaction")) {
+      return APP_NAVIGATION_RESPONSES["dashboard add transaction"];
+    }
+    if (lowerQuestion.includes("asset")) {
+      return APP_NAVIGATION_RESPONSES["dashboard add asset"];
+    }
+    if (lowerQuestion.includes("debt")) {
+      return APP_NAVIGATION_RESPONSES["dashboard add debt"];
+    }
+    if (lowerQuestion.includes("goal")) {
+      return APP_NAVIGATION_RESPONSES["dashboard add goal"];
+    }
+  }
+
+  if (
+    lowerQuestion.includes("goal") &&
+    (lowerQuestion.includes("add") || lowerQuestion.includes("how"))
+  ) {
+    return APP_NAVIGATION_RESPONSES["goals add goal"];
+  }
+
+  if (lowerQuestion.includes("asset") && lowerQuestion.includes("add")) {
+    return APP_NAVIGATION_RESPONSES["assets add asset"];
+  }
+
+  if (lowerQuestion.includes("debt") && lowerQuestion.includes("add")) {
+    return APP_NAVIGATION_RESPONSES["debts add debt"];
+  }
+
+  if (
+    lowerQuestion.includes("setting") &&
+    (lowerQuestion.includes("ai") || lowerQuestion.includes("chatbot"))
+  ) {
+    return APP_NAVIGATION_RESPONSES["settings ai chatbot"];
+  }
+
+  if (lowerQuestion.includes("setting") && lowerQuestion.includes("dark")) {
+    return APP_NAVIGATION_RESPONSES["settings dark mode"];
+  }
+
+  if (
+    lowerQuestion.includes("how to use") ||
+    lowerQuestion.includes("app help")
+  ) {
+    return APP_NAVIGATION_RESPONSES["how to use app"];
+  }
+
+  if (lowerQuestion.includes("feature") || lowerQuestion.includes("what can")) {
+    return APP_NAVIGATION_RESPONSES["app features"];
+  }
+
+  return null;
+}
+
 interface Message {
   id: string;
   text: string;
@@ -310,8 +482,24 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
 
       let aiResponse;
 
-      // Use cached response if available and valid
-      if (isCacheValid && !isPlanRequest) {
+      // Convert messages to conversation history format for AI context
+      const conversationHistory = messages
+        .filter((msg) => !msg.isLoading) // Exclude loading messages
+        .map((msg) => ({
+          role: msg.isUser ? "user" : "assistant",
+          content: msg.text,
+        }))
+        .slice(-5); // Keep last 5 messages for context
+
+      // Check for local responses first (no API call needed)
+      const localResponse = getLocalResponse(userMessage.text);
+      if (localResponse) {
+        console.log(
+          "Using local response (no API call) for:",
+          userMessage.text
+        );
+        aiResponse = localResponse.response;
+      } else if (isCacheValid && !isPlanRequest) {
         console.log("Using cached response for:", userMessage.text);
         aiResponse = cachedResponse.response;
       } else if (isPlanRequest && user) {
@@ -355,7 +543,8 @@ Requirements:
             optimizedPlanPrompt,
             snapshot,
             true, // isPlanRequest
-            userPreferences
+            userPreferences,
+            conversationHistory
           );
           aiResponse += `\n\n💾 Would you like to save this plan to your account?`;
         } catch (planError) {
@@ -364,7 +553,8 @@ Requirements:
             userMessage.text,
             snapshot,
             false, // isPlanRequest
-            userPreferences
+            userPreferences,
+            conversationHistory
           );
         }
       } else {
@@ -376,7 +566,8 @@ Requirements:
           optimizedPrompt,
           snapshot,
           false, // isPlanRequest
-          userPreferences
+          userPreferences,
+          conversationHistory
         );
 
         // Clean up markdown formatting from AI responses
