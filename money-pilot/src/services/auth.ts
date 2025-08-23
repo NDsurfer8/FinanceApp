@@ -7,6 +7,7 @@ import {
   AuthError,
   updateProfile,
   sendPasswordResetEmail,
+  sendEmailVerification,
   OAuthProvider,
   signInWithCredential,
 } from "firebase/auth";
@@ -247,6 +248,24 @@ export const signIn = async (
   password: string
 ): Promise<UserData> => {
   try {
+    // First, try to refresh any existing session
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      try {
+        await currentUser.reload();
+        // If reload succeeds, user might already be signed in
+        if (currentUser.email === email) {
+          return {
+            uid: currentUser.uid,
+            email: currentUser.email,
+            displayName: currentUser.displayName || undefined,
+          };
+        }
+      } catch (reloadError) {
+        console.log("Session reload failed, proceeding with new sign in");
+      }
+    }
+
     const userCredential = await signInWithEmailAndPassword(
       auth,
       email,
@@ -263,6 +282,20 @@ export const signIn = async (
   } catch (error) {
     console.error("Firebase auth error:", error);
     const authError = error as AuthError;
+
+    // Handle specific invalid credential errors
+    if (
+      authError.code === "auth/invalid-credential" ||
+      authError.code === "auth/invalid-login-credentials"
+    ) {
+      // Try to clear any stale session
+      try {
+        await signOut(auth);
+      } catch (signOutError) {
+        console.log("Error clearing session:", signOutError);
+      }
+    }
+
     throw {
       code: authError.code || "unknown",
       message:
@@ -286,6 +319,38 @@ export const forgotPassword = async (email: string): Promise<void> => {
         getAuthErrorMessage(authError.code) ||
         authError.message ||
         "An error occurred while sending password reset email",
+    } as AuthErrorType;
+  }
+};
+
+// Send email verification
+export const sendEmailVerificationLink = async (): Promise<void> => {
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw {
+        code: "auth/no-user",
+        message: "No user is currently signed in.",
+      } as AuthErrorType;
+    }
+
+    if (currentUser.emailVerified) {
+      throw {
+        code: "auth/email-already-verified",
+        message: "Email is already verified.",
+      } as AuthErrorType;
+    }
+
+    await sendEmailVerification(currentUser);
+  } catch (error) {
+    console.error("Firebase email verification error:", error);
+    const authError = error as AuthError;
+    throw {
+      code: authError.code || "unknown",
+      message:
+        getAuthErrorMessage(authError.code) ||
+        authError.message ||
+        "An error occurred while sending email verification",
     } as AuthErrorType;
   }
 };
@@ -342,6 +407,40 @@ export const reloadCurrentUser = async (): Promise<User | null> => {
   }
 };
 
+// Refresh user token and validate session
+export const refreshUserToken = async (): Promise<boolean> => {
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      return false;
+    }
+
+    // Force token refresh
+    await currentUser.getIdToken(true);
+    return true;
+  } catch (error) {
+    console.error("Error refreshing user token:", error);
+    return false;
+  }
+};
+
+// Check if user session is valid
+export const isUserSessionValid = async (): Promise<boolean> => {
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      return false;
+    }
+
+    // Try to get a fresh token
+    const token = await currentUser.getIdToken(true);
+    return !!token;
+  } catch (error) {
+    console.error("Error validating user session:", error);
+    return false;
+  }
+};
+
 // Listen to auth state changes
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
   return onAuthStateChanged(auth, callback);
@@ -366,6 +465,20 @@ const getAuthErrorMessage = (errorCode: string): string => {
       return "Incorrect password.";
     case "auth/too-many-requests":
       return "Too many failed attempts. Please try again later.";
+    case "auth/invalid-credential":
+      return "Invalid email or password. Please check your credentials and try again.";
+    case "auth/invalid-login-credentials":
+      return "Invalid email or password. Please check your credentials and try again.";
+    case "auth/user-token-expired":
+      return "Your session has expired. Please sign in again.";
+    case "auth/user-token-revoked":
+      return "Your session has been revoked. Please sign in again.";
+    case "auth/requires-recent-login":
+      return "This action requires recent authentication. Please sign in again.";
+    case "auth/email-already-verified":
+      return "Email is already verified.";
+    case "auth/no-user":
+      return "No user is currently signed in.";
     case "auth/network-request-failed":
       return "Network error. Please check your internet connection.";
     default:

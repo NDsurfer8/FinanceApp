@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
 import { useUser } from "../context/UserContext";
+import { sendEmailVerificationLink } from "../services/auth";
 import { PlaidLinkComponent } from "../components/PlaidLinkComponent";
 import { usePaywall } from "../hooks/usePaywall";
 import { useSubscription } from "../contexts/SubscriptionContext";
@@ -55,6 +56,39 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     accounts: any[];
   } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [emailVerificationLoading, setEmailVerificationLoading] =
+    useState(false);
+
+  // Function to handle email verification
+  const handleEmailVerification = async () => {
+    if (!currentUser?.email) {
+      Alert.alert("Error", "No email address found for this account.");
+      return;
+    }
+
+    if (currentUser.emailVerified) {
+      Alert.alert("Already Verified", "Your email is already verified.");
+      return;
+    }
+
+    setEmailVerificationLoading(true);
+    try {
+      await sendEmailVerificationLink();
+      Alert.alert(
+        "Verification Email Sent",
+        `We've sent a verification email to ${currentUser.email}. Please check your inbox and click the verification link.`,
+        [{ text: "OK" }]
+      );
+    } catch (error: any) {
+      console.error("Email verification error:", error);
+      Alert.alert(
+        "Verification Failed",
+        error.message || "Failed to send verification email. Please try again."
+      );
+    } finally {
+      setEmailVerificationLoading(false);
+    }
+  };
 
   // Function to format display name for long names
   const formatDisplayName = (displayName: string | null | undefined) => {
@@ -435,6 +469,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               >
                 Verified
               </Text>
+              {!currentUser?.emailVerified && currentUser?.email && (
+                <TouchableOpacity
+                  onPress={handleEmailVerification}
+                  disabled={emailVerificationLoading}
+                  style={{
+                    marginTop: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    backgroundColor: colors.primary,
+                    borderRadius: 8,
+                    opacity: emailVerificationLoading ? 0.6 : 1,
+                  }}
+                >
+                  {emailVerificationLoading ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 10,
+                        fontWeight: "600",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Verify Email
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
