@@ -1160,7 +1160,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               <Text
                 style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
               >
-                Income
+                {translate("income", isFriendlyMode)}
               </Text>
             </View>
             <TouchableOpacity onPress={handleAddIncome}>
@@ -1357,7 +1357,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               <Text
                 style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
               >
-                Expenses
+                {translate("expenses", isFriendlyMode)}
               </Text>
             </View>
             <TouchableOpacity onPress={handleAddExpense}>
@@ -1706,7 +1706,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   fontWeight: "500",
                 }}
               >
-                Discretionary Income
+                {translate("discretionaryIncome", isFriendlyMode)}
               </Text>
               <Text
                 style={{ fontSize: 16, fontWeight: "700", color: "#f59e0b" }}
@@ -1733,7 +1733,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     fontWeight: "500",
                   }}
                 >
-                  Debt Payoff (
+                  Pay Debt % (
                 </Text>
                 <TextInput
                   style={{
