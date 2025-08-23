@@ -199,10 +199,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             borderRadius: 20,
             padding: 24,
             shadowColor: colors.shadow,
-            shadowOpacity: 0.06,
+            shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
+            elevation: 4,
             marginBottom: 20,
           }}
         >
