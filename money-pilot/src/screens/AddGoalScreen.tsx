@@ -48,6 +48,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
   const { presentPaywall } = usePaywall();
   const { editMode, goal } = route.params as RouteParams;
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const goalCategories = [
     {
@@ -222,34 +223,46 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
       return;
     }
 
-    Alert.alert(
-      "Delete Confirmation",
-      "Are you sure you want to delete this goal? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // Optimistic update
-              const updatedGoals = goals.filter((g) => g.id !== goal.id);
-              updateDataOptimistically({ goals: updatedGoals });
+    setDeleteLoading(true);
 
-              // Delete from database
-              await removeGoal(user.uid, goal.id!);
+    try {
+      Alert.alert(
+        "Delete Confirmation",
+        "Are you sure you want to delete this goal? This action cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Optimistic update
+                const updatedGoals = goals.filter((g) => g.id !== goal.id);
+                updateDataOptimistically({ goals: updatedGoals });
 
-              Alert.alert("Success", "Goal deleted successfully!", [
-                { text: "OK", onPress: () => navigation.goBack() },
-              ]);
-            } catch (error) {
-              console.error("Error deleting goal:", error);
-              Alert.alert("Error", "Failed to delete goal. Please try again.");
-            }
+                // Delete from database
+                await removeGoal(user.uid, goal.id!);
+
+                Alert.alert("Success", "Goal deleted successfully!", [
+                  { text: "OK", onPress: () => navigation.goBack() },
+                ]);
+              } catch (error) {
+                console.error("Error deleting goal:", error);
+                Alert.alert(
+                  "Error",
+                  "Failed to delete goal. Please try again."
+                );
+              } finally {
+                setDeleteLoading(false);
+              }
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } catch (error) {
+      console.error("Error in delete confirmation:", error);
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -596,20 +609,39 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 padding: 16,
                 alignItems: "center",
                 marginTop: 12,
-                opacity: loading ? 0.6 : 1,
+                opacity: deleteLoading ? 0.6 : 1,
               }}
               onPress={handleDelete}
-              disabled={loading}
+              disabled={deleteLoading}
             >
-              <Text
-                style={{
-                  color: colors.buttonText,
-                  fontSize: 16,
-                  fontWeight: "600",
-                }}
-              >
-                Delete Goal
-              </Text>
+              {deleteLoading ? (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <ActivityIndicator
+                    size="small"
+                    color={colors.buttonText}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text
+                    style={{
+                      color: colors.buttonText,
+                      fontSize: 16,
+                      fontWeight: "600",
+                    }}
+                  >
+                    Deleting...
+                  </Text>
+                </View>
+              ) : (
+                <Text
+                  style={{
+                    color: colors.buttonText,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Delete Goal
+                </Text>
+              )}
             </TouchableOpacity>
           )}
         </ScrollView>

@@ -222,10 +222,7 @@ https://vectorfi.ai/
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={[
-              styles.backButton,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
+            style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -584,8 +581,9 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 20,
     padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0,
+    borderColor: "transparent",
+    backgroundColor: "transparent",
   },
   title: {
     fontSize: 26,

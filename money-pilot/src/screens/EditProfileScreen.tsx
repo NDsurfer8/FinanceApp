@@ -292,11 +292,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
             onPress={() => navigation.goBack()}
             style={{
               marginRight: 20,
-              backgroundColor: "#f8fafc",
               padding: 10,
-              borderRadius: 10,
-              borderWidth: 1,
-              borderColor: "#e2e8f0",
             }}
           >
             <Ionicons name="arrow-back" size={20} color="#475569" />

@@ -24,13 +24,7 @@ export const StandardHeader: React.FC<StandardHeaderProps> = ({
     <View style={styles.header}>
       <View style={styles.leftSection}>
         {showBackButton && onBack && (
-          <TouchableOpacity
-            onPress={onBack}
-            style={[
-              styles.backButton,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
         )}
@@ -66,8 +60,6 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 20,
     padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
   },
   titleContainer: {
     flex: 1,

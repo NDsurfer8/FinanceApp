@@ -64,6 +64,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
       editMode && type === "asset" ? asset?.type || "savings" : "savings", // For assets only
   });
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleSave = async () => {
     if (!formData.name || !formData.balance) {
@@ -203,57 +204,68 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
       return;
     }
 
-    Alert.alert(
-      "Delete Confirmation",
-      `Are you sure you want to delete this ${type}? This action cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              if (type === "asset" && asset) {
-                // Optimistic update
-                const updatedAssets = assets.filter((a) => a.id !== asset.id);
-                updateDataOptimistically({ assets: updatedAssets });
+    setDeleteLoading(true);
 
-                // Delete from database
-                await removeAsset(user.uid, asset.id);
+    try {
+      Alert.alert(
+        "Delete Confirmation",
+        `Are you sure you want to delete this ${type}? This action cannot be undone.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                if (type === "asset" && asset) {
+                  // Optimistic update
+                  const updatedAssets = assets.filter((a) => a.id !== asset.id);
+                  updateDataOptimistically({ assets: updatedAssets });
 
-                // Refresh context to ensure all data is in sync
+                  // Delete from database
+                  await removeAsset(user.uid, asset.id);
+
+                  // Refresh context to ensure all data is in sync
+                  refreshInBackground();
+                } else if (type === "debt" && debt) {
+                  // Optimistic update
+                  const updatedDebts = debts.filter((d) => d.id !== debt.id);
+                  updateDataOptimistically({ debts: updatedDebts });
+
+                  // Delete from database
+                  await removeDebt(user.uid, debt.id);
+
+                  // Refresh context to ensure all data is in sync
+                  refreshInBackground();
+                }
+
+                Alert.alert(
+                  "Success",
+                  `${
+                    type === "asset" ? "Asset" : "Debt"
+                  } deleted successfully!`,
+                  [{ text: "OK", onPress: () => navigation.goBack() }]
+                );
+              } catch (error) {
+                console.error(`Error deleting ${type}:`, error);
+                Alert.alert(
+                  "Error",
+                  `Failed to delete ${type}. Please try again.`
+                );
+
+                // Revert optimistic update on error
                 refreshInBackground();
-              } else if (type === "debt" && debt) {
-                // Optimistic update
-                const updatedDebts = debts.filter((d) => d.id !== debt.id);
-                updateDataOptimistically({ debts: updatedDebts });
-
-                // Delete from database
-                await removeDebt(user.uid, debt.id);
-
-                // Refresh context to ensure all data is in sync
-                refreshInBackground();
+              } finally {
+                setDeleteLoading(false);
               }
-
-              Alert.alert(
-                "Success",
-                `${type === "asset" ? "Asset" : "Debt"} deleted successfully!`,
-                [{ text: "OK", onPress: () => navigation.goBack() }]
-              );
-            } catch (error) {
-              console.error(`Error deleting ${type}:`, error);
-              Alert.alert(
-                "Error",
-                `Failed to delete ${type}. Please try again.`
-              );
-
-              // Revert optimistic update on error
-              refreshInBackground();
-            }
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } catch (error) {
+      console.error("Error in delete confirmation:", error);
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -580,20 +592,39 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 padding: 16,
                 alignItems: "center",
                 marginTop: 12,
-                opacity: loading ? 0.6 : 1,
+                opacity: deleteLoading ? 0.6 : 1,
               }}
               onPress={handleDelete}
-              disabled={loading}
+              disabled={deleteLoading}
             >
-              <Text
-                style={{
-                  color: colors.buttonText,
-                  fontSize: 16,
-                  fontWeight: "600",
-                }}
-              >
-                Delete {type === "asset" ? "Asset" : "Debt"}
-              </Text>
+              {deleteLoading ? (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <ActivityIndicator
+                    size="small"
+                    color={colors.buttonText}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text
+                    style={{
+                      color: colors.buttonText,
+                      fontSize: 16,
+                      fontWeight: "600",
+                    }}
+                  >
+                    Deleting...
+                  </Text>
+                </View>
+              ) : (
+                <Text
+                  style={{
+                    color: colors.buttonText,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Delete {type === "asset" ? "Asset" : "Debt"}
+                </Text>
+              )}
             </TouchableOpacity>
           )}
         </ScrollView>

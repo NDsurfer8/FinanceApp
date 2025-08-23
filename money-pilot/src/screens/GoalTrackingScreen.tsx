@@ -8,6 +8,7 @@ import {
   Alert,
   TextInput,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRoute } from "@react-navigation/native";
@@ -45,6 +46,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   const { presentPaywall } = usePaywall();
   const route = useRoute();
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null);
@@ -358,49 +360,63 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   const handleDeleteGoal = () => {
     if (!user || !editingGoal) return;
 
-    Alert.alert(
-      "Delete Goal",
-      "Are you sure you want to delete this goal? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // Optimistic update - remove from UI immediately
-              const updatedGoals = goals.filter((g) => g.id !== editingGoal.id);
-              updateDataOptimistically({ goals: updatedGoals });
+    setDeleteLoading(true);
 
-              // Delete from database in background
-              await removeGoal(user.uid, editingGoal.id!);
+    try {
+      Alert.alert(
+        "Delete Goal",
+        "Are you sure you want to delete this goal? This action cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Optimistic update - remove from UI immediately
+                const updatedGoals = goals.filter(
+                  (g) => g.id !== editingGoal.id
+                );
+                updateDataOptimistically({ goals: updatedGoals });
 
-              setShowAddModal(false);
-              setIsEditMode(false);
-              setEditingGoal(null);
-              setNewGoal({
-                name: "",
-                targetAmount: "",
-                currentAmount: "",
-                monthlyContribution: "",
-                targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-                  .toISOString()
-                  .split("T")[0],
-                category: "savings",
-                priority: "medium",
-              });
-              Alert.alert("Success", "Goal deleted successfully!");
-            } catch (error) {
-              console.error("Error deleting goal:", error);
-              Alert.alert("Error", "Failed to delete goal. Please try again.");
+                // Delete from database in background
+                await removeGoal(user.uid, editingGoal.id!);
 
-              // Revert optimistic update on error
-              await refreshInBackground();
-            }
+                setShowAddModal(false);
+                setIsEditMode(false);
+                setEditingGoal(null);
+                setNewGoal({
+                  name: "",
+                  targetAmount: "",
+                  currentAmount: "",
+                  monthlyContribution: "",
+                  targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                    .toISOString()
+                    .split("T")[0],
+                  category: "savings",
+                  priority: "medium",
+                });
+                Alert.alert("Success", "Goal deleted successfully!");
+              } catch (error) {
+                console.error("Error deleting goal:", error);
+                Alert.alert(
+                  "Error",
+                  "Failed to delete goal. Please try again."
+                );
+
+                // Revert optimistic update on error
+                await refreshInBackground();
+              } finally {
+                setDeleteLoading(false);
+              }
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } catch (error) {
+      console.error("Error in delete confirmation:", error);
+      setDeleteLoading(false);
+    }
   };
 
   const handleEditGoal = (goalId: string, field: string, value: string) => {
@@ -1339,18 +1355,45 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       borderRadius: 8,
                       backgroundColor: colors.error,
                       marginBottom: 24,
+                      opacity: deleteLoading ? 0.6 : 1,
                     }}
                     onPress={handleDeleteGoal}
+                    disabled={deleteLoading}
                   >
-                    <Text
-                      style={{
-                        textAlign: "center",
-                        color: colors.buttonText,
-                        fontWeight: "600",
-                      }}
-                    >
-                      Delete Goal
-                    </Text>
+                    {deleteLoading ? (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <ActivityIndicator
+                          size="small"
+                          color={colors.buttonText}
+                          style={{ marginRight: 8 }}
+                        />
+                        <Text
+                          style={{
+                            textAlign: "center",
+                            color: colors.buttonText,
+                            fontWeight: "600",
+                          }}
+                        >
+                          Deleting...
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text
+                        style={{
+                          textAlign: "center",
+                          color: colors.buttonText,
+                          fontWeight: "600",
+                        }}
+                      >
+                        Delete Goal
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 )}
               </ScrollView>

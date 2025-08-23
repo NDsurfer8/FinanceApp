@@ -514,10 +514,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={[
-              styles.backButton,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
+            style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -549,6 +546,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
               styles.securityDescription,
               { color: colors.textSecondary },
             ]}
+            numberOfLines={0}
           >
             Your account is protected with industry-standard encryption and
             security measures.
@@ -896,8 +894,9 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 20,
     padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0,
+    borderColor: "transparent",
+    backgroundColor: "transparent",
   },
   title: {
     fontSize: 26,
@@ -931,6 +930,7 @@ const styles = StyleSheet.create({
   securityDescription: {
     fontSize: 14,
     marginBottom: 16,
+    flexWrap: 'wrap',
   },
   securityStats: {
     flexDirection: "row",
@@ -985,6 +985,7 @@ const styles = StyleSheet.create({
   },
   settingDescription: {
     fontSize: 14,
+    flexWrap: 'wrap',
   },
   actionButton: {
     paddingVertical: 8,
