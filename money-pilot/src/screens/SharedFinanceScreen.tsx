@@ -991,7 +991,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                 >
                   <View
                     style={{
-                      backgroundColor: colors.primaryLight,
+                      backgroundColor: colors.infoLight,
                       width: 44,
                       height: 44,
                       borderRadius: 22,
@@ -1000,7 +1000,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       marginRight: 16,
                     }}
                   >
-                    <Ionicons name="cash" size={22} color={colors.primary} />
+                    <Ionicons name="cash" size={22} color={colors.info} />
                   </View>
                   <Text
                     style={{
@@ -1104,12 +1104,12 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               {/* View Group Goals Button */}
               <TouchableOpacity
                 style={{
-                  backgroundColor: "#f59e0b",
+                  backgroundColor: colors.primaryDark,
                   padding: 16,
                   borderRadius: 12,
                   alignItems: "center",
                   marginBottom: 12,
-                  shadowColor: "#f59e0b",
+                  shadowColor: colors.primaryDark,
                   shadowOpacity: 0.2,
                   shadowRadius: 8,
                   shadowOffset: { width: 0, height: 2 },
@@ -1117,10 +1117,10 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                 }}
                 onPress={() => loadGroupGoals(selectedGroup.id!)}
               >
-                <Ionicons name="flag" size={20} color="#fff" />
+                <Ionicons name="flag" size={20} color={colors.buttonText} />
                 <Text
                   style={{
-                    color: "#fff",
+                    color: colors.buttonText,
                     fontWeight: "600",
                     fontSize: 14,
                     marginTop: 4,
@@ -1133,12 +1133,12 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
               {/* Selective Sync Button */}
               <TouchableOpacity
                 style={{
-                  backgroundColor: "#6366f1",
+                  backgroundColor: colors.info,
                   padding: 16,
                   borderRadius: 12,
                   alignItems: "center",
                   marginBottom: 20,
-                  shadowColor: "#6366f1",
+                  shadowColor: colors.info,
                   shadowOpacity: 0.2,
                   shadowRadius: 8,
                   shadowOffset: { width: 0, height: 2 },
@@ -1146,10 +1146,10 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                 }}
                 onPress={() => openSelectiveSyncModal(selectedGroup.id!)}
               >
-                <Ionicons name="sync" size={20} color="#fff" />
+                <Ionicons name="sync" size={20} color={colors.buttonText} />
                 <Text
                   style={{
-                    color: "#fff",
+                    color: colors.buttonText,
                     fontWeight: "600",
                     fontSize: 14,
                     marginTop: 4,
@@ -1569,10 +1569,10 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     borderRadius: 8,
                     borderWidth: 1,
                     borderColor:
-                      inviteRole === role.key ? colors.primary : colors.border,
+                      inviteRole === role.key ? colors.info : colors.border,
                     backgroundColor:
                       inviteRole === role.key
-                        ? colors.primaryLight
+                        ? colors.infoLight
                         : colors.surface,
                   }}
                   onPress={() => setInviteRole(role.key as any)}
@@ -1583,7 +1583,7 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       fontWeight: "600",
                       color:
                         inviteRole === role.key
-                          ? colors.primary
+                          ? colors.info
                           : colors.textSecondary,
                     }}
                   >
@@ -1592,7 +1592,10 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                   <Text
                     style={{
                       fontSize: 10,
-                      color: inviteRole === role.key ? "#6366f1" : "#9ca3af",
+                      color:
+                        inviteRole === role.key
+                          ? colors.info
+                          : colors.textTertiary,
                       marginTop: 2,
                     }}
                   >
@@ -2435,12 +2438,12 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                         padding: 12,
                         borderWidth: 1,
                         borderColor: selectedGoals.includes(goal.id!)
-                          ? colors.primary
+                          ? colors.info
                           : colors.border,
                         borderRadius: 12,
                         marginBottom: 8,
                         backgroundColor: selectedGoals.includes(goal.id!)
-                          ? colors.primaryLight
+                          ? colors.infoLight
                           : colors.surface,
                       }}
                       onPress={() => toggleGoalSelection(goal.id!)}
@@ -2452,10 +2455,10 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                           borderRadius: 10,
                           borderWidth: 2,
                           borderColor: selectedGoals.includes(goal.id!)
-                            ? colors.primary
+                            ? colors.info
                             : colors.border,
                           backgroundColor: selectedGoals.includes(goal.id!)
-                            ? colors.primary
+                            ? colors.info
                             : colors.surface,
                           justifyContent: "center",
                           alignItems: "center",
