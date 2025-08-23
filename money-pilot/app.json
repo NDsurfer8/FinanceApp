@@ -17,7 +17,7 @@
       "bundleIdentifier": "com.ndsurf888.vectorfii",
       "usesAppleSignIn": true,
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": true,
+        "ITSAppUsesNonExemptEncryption": false,
         "NSFaceIDUsageDescription": "VectorFi uses Face ID to securely authenticate you and protect your financial data."
       }
     },
