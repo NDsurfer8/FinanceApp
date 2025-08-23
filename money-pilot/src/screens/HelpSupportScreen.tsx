@@ -204,11 +204,11 @@ ${user?.displayName || "VectorFi User"}`,
   };
 
   const openUserGuide = () => {
-    Linking.openURL("https://moneypilot.com/user-guide");
+    Linking.openURL("https://vectorfi.ai/");
   };
 
   const openVideoTutorials = () => {
-    Linking.openURL("https://moneypilot.com/tutorials");
+    Linking.openURL("https://vectorfi.ai/");
   };
 
   const reportBug = async () => {
@@ -720,7 +720,7 @@ ${user?.displayName || "VectorFi User"}`,
               <Text
                 style={[styles.contactText, { color: colors.textSecondary }]}
               >
-                support@vectorFi.com
+                support@vectorfi.ai
               </Text>
             </View>
             <View style={styles.contactItem}>

@@ -31,11 +31,11 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
   const appName = Constants.expoConfig?.name || "VectorFi";
 
   const openPrivacyPolicy = () => {
-    Linking.openURL("https://your-app.com/privacy-policy");
+    Linking.openURL("https://vectorfi.ai/");
   };
 
   const openTermsOfService = () => {
-    Linking.openURL("https://your-app.com/terms-of-service");
+    Linking.openURL("https://vectorfi.ai/");
   };
 
   const openSupportEmail = async () => {
@@ -101,7 +101,7 @@ ${user?.displayName || "VectorFi User"}`,
   };
 
   const openWebsite = () => {
-    Linking.openURL("https://moneypilot.com");
+    Linking.openURL("https://vectorfi.ai/");
   };
 
   const openGitHub = () => {
@@ -129,10 +129,10 @@ ${user?.displayName || "VectorFi User"}`,
         message: `Check out VectorFi - the smart finance app that helps you track expenses, set goals, and build wealth! 
 
 Download now and start your financial journey:
-https://vectorfi.com
+https://vectorfi.ai/
 
 #VectorFi #Finance #Budgeting #Investing`,
-        url: "https://vectorfi.com",
+        url: "https://vectorfi.ai/",
       };
 
       // Share the app using React Native's Share API
@@ -154,14 +154,14 @@ https://vectorfi.com
       try {
         const simpleShare = {
           message:
-            "Check out VectorFi - the smart finance app! https://vectorfi.com",
+            "Check out VectorFi - the smart finance app! https://vectorfi.ai/",
         };
         await Share.share(simpleShare);
       } catch (fallbackError) {
         console.error("Fallback share also failed:", fallbackError);
         Alert.alert(
           "Sharing Unavailable",
-          "Sharing is not available on this device. You can copy the link manually: https://vectorfi.com",
+          "Sharing is not available on this device. You can copy the link manually: https://vectorfi.ai/",
           [{ text: "OK" }]
         );
       }
