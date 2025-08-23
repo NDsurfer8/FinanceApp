@@ -207,22 +207,28 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            try {
-              if (type === "asset" && asset) {
-                // Optimistic update
-                const updatedAssets = assets.filter((a) => a.id !== asset.id);
-                updateDataOptimistically({ assets: updatedAssets });
+                          try {
+                if (type === "asset" && asset) {
+                  // Optimistic update
+                  const updatedAssets = assets.filter((a) => a.id !== asset.id);
+                  updateDataOptimistically({ assets: updatedAssets });
 
-                // Delete from database
-                await removeAsset(user.uid, asset.id);
-              } else if (type === "debt" && debt) {
-                // Optimistic update
-                const updatedDebts = debts.filter((d) => d.id !== debt.id);
-                updateDataOptimistically({ debts: updatedDebts });
+                  // Delete from database
+                  await removeAsset(user.uid, asset.id);
 
-                // Delete from database
-                await removeDebt(user.uid, debt.id);
-              }
+                  // Refresh context to ensure all data is in sync
+                  refreshInBackground();
+                } else if (type === "debt" && debt) {
+                  // Optimistic update
+                  const updatedDebts = debts.filter((d) => d.id !== debt.id);
+                  updateDataOptimistically({ debts: updatedDebts });
+
+                  // Delete from database
+                  await removeDebt(user.uid, debt.id);
+
+                  // Refresh context to ensure all data is in sync
+                  refreshInBackground();
+                }
 
               Alert.alert(
                 "Success",

@@ -30,7 +30,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { transactions, assets, debts, refreshInBackground } = useZeroLoading();
-  const { goals, budgetSettings } = useData();
+  const { goals, budgetSettings, refreshAssetsDebts } = useData();
   const {
     getTransactionLimitInfo,
     getIncomeSourceLimitInfo,
@@ -50,6 +50,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     React.useCallback(() => {
       if (user) {
         refreshInBackground();
+        // Also refresh trend data specifically with a small delay to ensure context is updated
+        const refreshTrendData = async () => {
+          // Small delay to ensure context has been updated
+          setTimeout(async () => {
+            const data = await getTrendData();
+            setTrendData(data);
+          }, 500); // Increased delay to ensure context is fully updated
+        };
+        refreshTrendData();
       }
     }, [user, refreshInBackground])
   );
@@ -369,6 +378,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             >
               Dashboard
             </Text>
+
             {shouldWrapName(user?.displayName || "User") ? (
               <View style={{ marginTop: 6 }}>
                 <Text
