@@ -41,7 +41,6 @@ export const NotificationSettingsScreen: React.FC<
   const [isLoading, setIsLoading] = useState(true);
 
   const [permissionGranted, setPermissionGranted] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     checkPermissions();
@@ -382,80 +381,6 @@ export const NotificationSettingsScreen: React.FC<
     }
   };
 
-  const testNotification = async (setting: NotificationSetting) => {
-    setLoading(true);
-    try {
-      switch (setting.type) {
-        case "budget":
-          if (user) {
-            // Get current budget status and schedule a test reminder
-            const budgetStatus =
-              await budgetReminderService.getCurrentBudgetStatus(user.uid);
-            console.log("Budget test notification data:", budgetStatus);
-            await notificationService.scheduleNotification({
-              id: `test-budget-${Date.now()}`,
-              title: "💰 Budget Test",
-              body: `Income: $${budgetStatus.totalIncome.toFixed(
-                2
-              )}, Expenses: $${budgetStatus.totalExpenses.toFixed(
-                2
-              )}, Remaining: $${budgetStatus.remainingBudget.toFixed(2)}`,
-              data: { type: "test-budget" },
-              trigger: { seconds: 5 } as any,
-            });
-          }
-          break;
-        case "bills":
-          if (user) {
-            // Schedule a test bill reminder for 10 seconds from now
-            const testDate = new Date();
-            testDate.setSeconds(testDate.getSeconds() + 10);
-            await billReminderService.scheduleBillReminder(
-              "Test Bill",
-              testDate,
-              150.0,
-              false,
-              0 // Due today
-            );
-          }
-          break;
-        case "goals":
-          await notificationService.scheduleGoalReminder(
-            "Test Goal",
-            10000,
-            7500
-          );
-          break;
-        case "balance":
-          await notificationService.scheduleLowBalanceAlert(
-            "Test Account",
-            500
-          );
-          break;
-        case "savings":
-          await notificationService.scheduleSavingsReminder(5000, 3000);
-          break;
-        default:
-          await notificationService.scheduleNotification({
-            id: `test-${Date.now()}`,
-            title: "🧪 Test Notification",
-            body: "This is a test notification from VectorFi!",
-            data: { type: "test" },
-            trigger: { seconds: 5 } as any,
-          });
-      }
-      Alert.alert(
-        "Success",
-        "Test notification scheduled! Check your device in 5 seconds."
-      );
-    } catch (error) {
-      console.error("Error testing notification:", error);
-      Alert.alert("Error", "Failed to send test notification");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const requestPermissions = async () => {
     const granted = await notificationService.requestPermissions();
     setPermissionGranted(granted);
@@ -581,31 +506,11 @@ export const NotificationSettingsScreen: React.FC<
                       styles.settingDescription,
                       { color: colors.textSecondary },
                     ]}
+                    numberOfLines={0}
                   >
                     {setting.description}
                   </Text>
                 </View>
-              </View>
-
-              <View style={styles.settingActions}>
-                <TouchableOpacity
-                  style={[
-                    styles.testButton,
-                    {
-                      backgroundColor: colors.surfaceSecondary,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                  onPress={() => testNotification(setting)}
-                  disabled={loading || !permissionGranted}
-                >
-                  <Text
-                    style={[styles.testButtonText, { color: colors.primary }]}
-                  >
-                    Test
-                  </Text>
-                </TouchableOpacity>
-
                 <Switch
                   value={setting.enabled}
                   onValueChange={() => toggleSetting(setting.id)}
@@ -728,6 +633,7 @@ const styles = StyleSheet.create({
   settingInfo: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 16,
   },
   settingIcon: {
@@ -737,6 +643,7 @@ const styles = StyleSheet.create({
   },
   settingText: {
     flex: 1,
+    marginRight: 16,
   },
   settingTitle: {
     fontSize: 16,
@@ -745,21 +652,6 @@ const styles = StyleSheet.create({
   },
   settingDescription: {
     fontSize: 14,
-  },
-  settingActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  testButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  testButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
   },
   quickActions: {
     marginBottom: 24,
