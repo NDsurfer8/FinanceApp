@@ -272,11 +272,10 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               <Switch
                 value={isFriendlyMode}
                 onValueChange={handleFriendlyModeToggle}
-                trackColor={{
-                  false: colors.surfaceSecondary,
-                  true: colors.primary,
-                }}
-                thumbColor={isFriendlyMode ? "#ffffff" : colors.textSecondary}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={
+                  isFriendlyMode ? colors.buttonText : colors.surfaceSecondary
+                }
               />
             </View>
           </View>
