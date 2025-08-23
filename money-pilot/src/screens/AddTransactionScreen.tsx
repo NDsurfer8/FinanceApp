@@ -543,7 +543,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             >
               {editMode
                 ? translate("edit", isFriendlyMode)
-                : translate("addTransaction", isFriendlyMode).split(" ")[0]}{" "}
+                : translate("addTransaction", isFriendlyMode).split(
+                    " "
+                  )[0]}{" "}
               {formData.type === "income"
                 ? translate("income", isFriendlyMode)
                 : translate("expenses", isFriendlyMode)}
@@ -736,7 +738,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   color: colors.text,
                 }}
               >
-                Amount
+                $ Amount
               </Text>
               <TextInput
                 style={{
@@ -861,9 +863,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 }}
               >
                 {formData.type === "expense"
-                  ? "Due Date"
+                  ? "Expense Due Date"
                   : formData.type === "income"
-                  ? "Payment Date"
+                  ? "Income Received Date"
                   : "Date"}
               </Text>
               <TextInput
@@ -880,7 +882,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   formData.type === "expense"
                     ? "Due Date (YYYY-MM-DD)"
                     : formData.type === "income"
-                    ? "Payment Date (YYYY-MM-DD)"
+                    ? "Income Received Date (YYYY-MM-DD)"
                     : "Date (YYYY-MM-DD)"
                 }
                 placeholderTextColor={colors.textSecondary}

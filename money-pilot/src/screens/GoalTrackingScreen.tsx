@@ -958,7 +958,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       marginBottom: 2,
                     }}
                   >
-                    Target Date
+                    Target Achievement Date
                   </Text>
                   <Text
                     style={{
@@ -1030,7 +1030,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       color: colors.text,
                     }}
                   >
-                    Goal Name *
+                    Goal Description *
                   </Text>
                   <TextInput
                     style={{
@@ -1114,7 +1114,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       color: colors.text,
                     }}
                   >
-                    Target Amount *
+                    Goal Target Amount *
                   </Text>
                   <TextInput
                     style={{
@@ -1147,7 +1147,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       color: colors.text,
                     }}
                   >
-                    Current Amount
+                    Current Amount Saved for Goal
                   </Text>
                   <TextInput
                     style={{
@@ -1180,7 +1180,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       color: colors.text,
                     }}
                   >
-                    Monthly Contribution *
+                    Planned Monthly Contribution *
                   </Text>
                   <TextInput
                     style={{
@@ -1266,7 +1266,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       color: colors.text,
                     }}
                   >
-                    Target Date
+                    Target Achievement Date
                   </Text>
                   <TextInput
                     style={{

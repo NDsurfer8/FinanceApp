@@ -304,7 +304,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                   color: colors.text,
                 }}
               >
-                Goal Name *
+                Goal Description *
               </Text>
               <TextInput
                 style={{
@@ -386,7 +386,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                   color: colors.text,
                 }}
               >
-                Target Amount *
+                Goal Target Amount *
               </Text>
               <TextInput
                 style={{
@@ -419,7 +419,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                   color: colors.text,
                 }}
               >
-                Current Amount *
+                Current Amount Saved for Goal *
               </Text>
               <TextInput
                 style={{
@@ -452,7 +452,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                   color: colors.text,
                 }}
               >
-                Monthly Contribution *
+                Planned Monthly Contribution *
               </Text>
               <TextInput
                 style={{
@@ -485,7 +485,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                   color: colors.text,
                 }}
               >
-                Target Date *
+                Target Achievement Date *
               </Text>
               <TextInput
                 style={{
