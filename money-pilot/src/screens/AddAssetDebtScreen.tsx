@@ -22,6 +22,7 @@ import {
   removeAsset,
   removeDebt,
 } from "../services/userData";
+import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
 
 interface AddAssetDebtScreenProps {
   navigation: any;
@@ -349,10 +350,11 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 }}
                 placeholder="0.00"
                 placeholderTextColor={colors.textSecondary}
-                value={formData.balance}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, balance: text })
-                }
+                value={formatNumberWithCommas(formData.balance)}
+                onChangeText={(text) => {
+                  const cleanValue = removeCommas(text);
+                  setFormData({ ...formData, balance: cleanValue });
+                }}
                 keyboardType="decimal-pad"
                 autoCorrect={false}
                 returnKeyType="next"

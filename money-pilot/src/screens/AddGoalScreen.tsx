@@ -20,6 +20,7 @@ import {
   removeGoal,
   FinancialGoal,
 } from "../services/userData";
+import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
 
@@ -395,10 +396,11 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 }}
                 placeholder="0.00"
                 placeholderTextColor={colors.textSecondary}
-                value={formData.targetAmount}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, targetAmount: text })
-                }
+                value={formatNumberWithCommas(formData.targetAmount)}
+                onChangeText={(text) => {
+                  const cleanValue = removeCommas(text);
+                  setFormData({ ...formData, targetAmount: cleanValue });
+                }}
                 keyboardType="decimal-pad"
               />
             </View>
@@ -427,10 +429,11 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 }}
                 placeholder="0.00"
                 placeholderTextColor={colors.textSecondary}
-                value={formData.currentAmount}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, currentAmount: text })
-                }
+                value={formatNumberWithCommas(formData.currentAmount)}
+                onChangeText={(text) => {
+                  const cleanValue = removeCommas(text);
+                  setFormData({ ...formData, currentAmount: cleanValue });
+                }}
                 keyboardType="decimal-pad"
               />
             </View>
@@ -459,10 +462,11 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 }}
                 placeholder="0.00"
                 placeholderTextColor={colors.textSecondary}
-                value={formData.monthlyContribution}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, monthlyContribution: text })
-                }
+                value={formatNumberWithCommas(formData.monthlyContribution)}
+                onChangeText={(text) => {
+                  const cleanValue = removeCommas(text);
+                  setFormData({ ...formData, monthlyContribution: cleanValue });
+                }}
                 keyboardType="decimal-pad"
               />
             </View>

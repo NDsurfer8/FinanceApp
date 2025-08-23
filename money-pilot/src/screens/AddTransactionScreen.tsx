@@ -22,6 +22,7 @@ import {
 import { billReminderService } from "../services/billReminders";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
+import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
 
 interface AddTransactionScreenProps {
   navigation: any;
@@ -742,10 +743,11 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 }}
                 placeholder="0.00"
                 placeholderTextColor={colors.textSecondary}
-                value={formData.amount}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, amount: text })
-                }
+                value={formatNumberWithCommas(formData.amount)}
+                onChangeText={(text) => {
+                  const cleanValue = removeCommas(text);
+                  setFormData({ ...formData, amount: cleanValue });
+                }}
                 keyboardType="decimal-pad"
                 autoCorrect={false}
                 returnKeyType="done"
