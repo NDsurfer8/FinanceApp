@@ -74,65 +74,65 @@ const lightColors = {
 };
 
 const darkColors = {
-  // Background colors
-  background: "#0f172a",
-  surface: "#1e293b",
-  surfaceSecondary: "#334155",
+  // Background colors - Deep financial blue
+  background: "#0a0e1a",
+  surface: "#1a1f2e",
+  surfaceSecondary: "#2a2f3e",
 
-  // Text colors
-  text: "#f8fafc",
-  textSecondary: "#cbd5e1",
-  textTertiary: "#94a3b8",
+  // Text colors - Professional whites and grays
+  text: "#ffffff",
+  textSecondary: "#b8c5d6",
+  textTertiary: "#8a9bb3",
 
-  // Primary colors
-  primary: "#818cf8",
-  primaryLight: "#a5b4fc",
-  primaryDark: "#6366f1",
+  // Primary colors - Financial green
+  primary: "#10b981",
+  primaryLight: "#34d399",
+  primaryDark: "#059669",
 
-  // Status colors
-  success: "#22c55e",
-  successLight: "#14532d",
-  warning: "#fbbf24",
+  // Status colors - Financial indicators
+  success: "#10b981",
+  successLight: "#064e3b",
+  warning: "#f59e0b",
   warningLight: "#451a03",
-  error: "#f87171",
+  error: "#ef4444",
   errorLight: "#450a0a",
-  info: "#38bdf8",
-  infoLight: "#0c4a6e",
+  info: "#3b82f6",
+  infoLight: "#1e3a8a",
 
-  // Border colors
-  border: "#334155",
-  borderLight: "#475569",
+  // Border colors - Subtle financial grays
+  border: "#374151",
+  borderLight: "#4b5563",
 
   // Shadow colors
   shadow: "#000000",
 
-  // Card colors
-  card: "#1e293b",
-  cardSecondary: "#334155",
+  // Card colors - Professional card backgrounds
+  card: "#1a1f2e",
+  cardSecondary: "#2a2f3e",
 
-  // Input colors
-  input: "#1e293b",
-  inputBorder: "#475569",
-  inputPlaceholder: "#64748b",
+  // Input colors - Clean input styling
+  input: "#1a1f2e",
+  inputBorder: "#374151",
+  inputPlaceholder: "#6b7280",
 
-  // Button colors
-  buttonPrimary: "#818cf8",
-  buttonSecondary: "#334155",
+  // Button colors - Financial green buttons
+  buttonPrimary: "#10b981",
+  buttonSecondary: "#374151",
   buttonText: "#ffffff",
-  buttonTextSecondary: "#f1f5f9",
+  buttonTextSecondary: "#f9fafb",
 
-  // Navigation colors
-  tabBar: "#1e293b",
-  tabBarInactive: "#64748b",
-  tabBarActive: "#818cf8",
+  // Navigation colors - Professional nav
+  tabBar: "#1a1f2e",
+  tabBarInactive: "#6b7280",
+  tabBarActive: "#10b981",
 
-  // Modal colors
-  modal: "#1e293b",
-  modalOverlay: "rgba(0, 0, 0, 0.7)",
+  // Modal colors - Professional modals
+  modal: "#1a1f2e",
+  modalOverlay: "rgba(0, 0, 0, 0.8)",
 
-  // Chart colors
-  chartGrid: "#334155",
-  chartText: "#94a3b8",
+  // Chart colors - Financial chart styling
+  chartGrid: "#374151",
+  chartText: "#8a9bb3",
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
