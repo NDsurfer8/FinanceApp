@@ -20,8 +20,6 @@ export const PLAID_CONFIG = {
   products: ["transactions"],
   countryCodes: ["US"],
   language: "en",
-  // Replace with your actual Plaid public key from your Plaid dashboard
-  publicKey: "517e1656f92ebdf1673fc199b1d239", // Copy your Sandbox public key here
 };
 
 export interface PlaidAccount {
@@ -71,35 +69,6 @@ class PlaidService {
   setUserId(userId: string) {
     this.userId = userId;
   }
-
-  // Initialize Plaid Link with modern create/open pattern
-  // async initializePlaidLink(): Promise<string> {
-  //   try {
-  //     if (!this.userId) {
-  //       throw new Error("User ID not set");
-  //     }
-
-  //     // Ensure user is authenticated
-  //     const currentUser = this.auth.currentUser;
-  //     if (!currentUser) {
-  //       throw new Error("User not authenticated");
-  //     }
-
-  //     console.log("Initializing Plaid Link for user:", this.userId);
-
-  //     // Call Firebase Cloud Function to create link token
-  //     const createLinkToken = httpsCallable(this.functions, "createLinkToken");
-  //     const result = await createLinkToken();
-
-  //     const { linkToken } = result.data as { linkToken: string };
-  //     console.log("Link token created:", linkToken);
-
-  //     return linkToken;
-  //   } catch (error) {
-  //     console.error("Error initializing Plaid Link:", error);
-  //     throw error;
-  //   }
-  // }
 
   async initializePlaidLink(): Promise<string> {
     if (!this.userId) throw new Error("User ID not set");
