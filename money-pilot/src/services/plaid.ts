@@ -4,6 +4,15 @@ import { db } from "../services/firebase";
 import { encryptFields, decryptFields } from "./encryption";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getAuth } from "firebase/auth";
+import {
+  create,
+  open,
+  destroy,
+  LinkSuccess,
+  LinkExit,
+  LinkLogLevel,
+  LinkIOSPresentationStyle,
+} from "react-native-plaid-link-sdk";
 
 // Plaid configuration - you'll need to get these from your Plaid dashboard
 export const PLAID_CONFIG = {
@@ -56,13 +65,14 @@ class PlaidService {
   private userId: string | null = null;
   private functions = getFunctions();
   private auth = getAuth();
+  private isLinkInitialized = false;
 
   // Set user ID for Firebase operations
   setUserId(userId: string) {
     this.userId = userId;
   }
 
-  // Initialize Plaid Link
+  // Initialize Plaid Link with modern create/open pattern
   async initializePlaidLink(): Promise<string> {
     try {
       if (!this.userId) {
@@ -91,13 +101,101 @@ class PlaidService {
     }
   }
 
-  // Handle successful link
-  async handlePlaidSuccess(publicToken: string, metadata: any): Promise<void> {
+  // Create Plaid Link session (preloads Link for better performance)
+  async createPlaidLinkSession(linkToken: string): Promise<void> {
     try {
-      if (!this.userId) {
-        throw new Error("User ID not set");
+      console.log("Creating Plaid Link session...");
+
+      // Destroy any existing session first (Android only)
+      try {
+        await destroy();
+      } catch (error) {
+        // Ignore errors if no session exists
+        console.log("No existing session to destroy");
       }
 
+      // Create new Link session
+      await create({
+        token: linkToken,
+        noLoadingState: false,
+        logLevel: LinkLogLevel.INFO,
+      });
+
+      this.isLinkInitialized = true;
+      console.log("Plaid Link session created successfully");
+    } catch (error) {
+      console.error("Error creating Plaid Link session:", error);
+      throw error;
+    }
+  }
+
+  // Open Plaid Link with enhanced error handling
+  async openPlaidLink(
+    onSuccess: (success: LinkSuccess) => void,
+    onExit: (exit: LinkExit) => void
+  ): Promise<void> {
+    try {
+      if (!this.isLinkInitialized) {
+        throw new Error(
+          "Plaid Link session not initialized. Call createPlaidLinkSession first."
+        );
+      }
+
+      console.log("Opening Plaid Link...");
+
+      await open({
+        onSuccess: (success: LinkSuccess) => {
+          console.log("Plaid Link success:", success);
+          onSuccess(success);
+        },
+        onExit: (exit: LinkExit) => {
+          console.log("Plaid Link exit:", exit);
+
+          // Enhanced error handling
+          if (exit.error) {
+            console.error("Plaid Link error:", exit.error);
+
+            // Handle specific error types
+            if (exit.error.errorCode) {
+              console.error("Error code:", exit.error.errorCode);
+              console.error("Error message:", exit.error.errorMessage);
+            }
+          }
+
+          onExit(exit);
+        },
+        iOSPresentationStyle: LinkIOSPresentationStyle.MODAL,
+        logLevel: LinkLogLevel.INFO,
+      });
+    } catch (error) {
+      console.error("Error opening Plaid Link:", error);
+      throw error;
+    }
+  }
+
+  // Complete Plaid Link flow with modern pattern
+  async startPlaidLinkFlow(
+    onSuccess: (success: LinkSuccess) => void,
+    onExit: (exit: LinkExit) => void
+  ): Promise<void> {
+    try {
+      // Get link token
+      const linkToken = await this.initializePlaidLink();
+
+      // Create Link session
+      await this.createPlaidLinkSession(linkToken);
+
+      // Open Link
+      await this.openPlaidLink(onSuccess, onExit);
+    } catch (error) {
+      console.error("Error in Plaid Link flow:", error);
+      throw error;
+    }
+  }
+
+  // Handle successful link with enhanced error handling
+  async handlePlaidSuccess(publicToken: string, metadata: any): Promise<void> {
+    try {
       console.log("Plaid link successful:", { publicToken, metadata });
 
       // Ensure user is authenticated
@@ -157,6 +255,9 @@ class PlaidService {
       this.accessToken = accessToken;
       this.itemId = itemId;
 
+      // Reset Link session state
+      this.isLinkInitialized = false;
+
       Alert.alert(
         "Success!",
         `Successfully connected to ${metadata.institution.name}`,
@@ -164,17 +265,49 @@ class PlaidService {
       );
     } catch (error) {
       console.error("Error handling Plaid success:", error);
+
+      // Reset Link session state on error
+      this.isLinkInitialized = false;
+
       Alert.alert("Error", "Failed to connect bank account");
+      throw error;
     }
   }
 
-  // Handle Plaid exit
+  // Handle Plaid exit with enhanced logging
   handlePlaidExit(error: any, metadata: any): void {
+    // Reset Link session state
+    this.isLinkInitialized = false;
+
     if (error) {
       console.error("Plaid exit with error:", error);
       Alert.alert("Error", "Failed to connect bank account");
     } else {
       console.log("Plaid exit without error:", metadata);
+    }
+  }
+
+  // Test method to verify Link pattern implementation
+  async testPlaidLinkFlow(): Promise<boolean> {
+    try {
+      console.log("Testing Plaid Link flow...");
+
+      // Test link token creation
+      const linkToken = await this.initializePlaidLink();
+      console.log("✅ Link token created successfully");
+
+      // Test session creation
+      await this.createPlaidLinkSession(linkToken);
+      console.log("✅ Link session created successfully");
+
+      // Reset session state
+      this.isLinkInitialized = false;
+
+      console.log("✅ Plaid Link flow test completed successfully");
+      return true;
+    } catch (error) {
+      console.error("❌ Plaid Link flow test failed:", error);
+      return false;
     }
   }
 

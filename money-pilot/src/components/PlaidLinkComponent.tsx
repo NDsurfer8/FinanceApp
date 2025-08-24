@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { plaidService } from "../services/plaid";
 import { fontFamily } from "../config/fonts";
 import { useAuth } from "../hooks/useAuth";
-import { create, open, usePlaidEmitter } from "react-native-plaid-link-sdk";
+import { LinkSuccess, LinkExit } from "react-native-plaid-link-sdk";
 
 interface PlaidLinkComponentProps {
   onSuccess?: () => void;
@@ -39,19 +39,13 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   const handleConnectBank = async () => {
     setIsLoading(true);
     try {
-      // Get link token from Firebase Cloud Function
-      const token = await plaidService.initializePlaidLink();
+      console.log("Starting Plaid Link flow...");
 
-      // Create Plaid Link configuration
-      create({
-        token: token,
-      });
-
-      // Open Plaid Link with handlers
-      open({
-        onSuccess: handlePlaidSuccess,
-        onExit: handlePlaidExit,
-      });
+      // Use the new modern pattern with better error handling
+      await plaidService.startPlaidLinkFlow(
+        handlePlaidSuccess,
+        handlePlaidExit
+      );
 
       setIsLoading(false);
     } catch (error) {
@@ -61,12 +55,15 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     }
   };
 
-  const handlePlaidSuccess = async (linkSuccess: any) => {
+  const handlePlaidSuccess = async (linkSuccess: LinkSuccess) => {
     try {
+      console.log("Plaid Link success received:", linkSuccess);
+
       await plaidService.handlePlaidSuccess(
         linkSuccess.publicToken,
         linkSuccess.metadata
       );
+
       await checkConnectionStatus();
       onSuccess?.();
     } catch (error) {
@@ -75,12 +72,35 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     }
   };
 
-  const handlePlaidExit = (linkExit: any) => {
+  const handlePlaidExit = (linkExit: LinkExit) => {
     setIsLoading(false);
+
+    console.log("Plaid Link exit:", linkExit);
 
     if (linkExit.error) {
       console.error("Plaid exit with error:", linkExit.error);
-      Alert.alert("Error", "Failed to connect bank account");
+
+      // Enhanced error messaging
+      let errorMessage = "Failed to connect bank account";
+
+      if (linkExit.error.errorCode) {
+        switch (linkExit.error.errorCode) {
+          case "INVALID_LINK_TOKEN":
+            errorMessage = "Connection session expired. Please try again.";
+            break;
+          case "ITEM_LOGIN_REQUIRED":
+            errorMessage = "Bank login required. Please try again.";
+            break;
+          case "INSTITUTION_DOWN":
+            errorMessage =
+              "Bank is temporarily unavailable. Please try again later.";
+            break;
+          default:
+            errorMessage = linkExit.error.errorMessage || errorMessage;
+        }
+      }
+
+      Alert.alert("Connection Error", errorMessage);
     } else {
       console.log("Plaid exit without error:", linkExit.metadata);
     }
@@ -98,8 +118,13 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
           text: "Disconnect",
           style: "destructive",
           onPress: async () => {
-            await plaidService.disconnectBank();
-            await checkConnectionStatus(); // Refresh connection status
+            try {
+              await plaidService.disconnectBank();
+              await checkConnectionStatus(); // Refresh connection status
+            } catch (error) {
+              console.error("Error disconnecting bank:", error);
+              Alert.alert("Error", "Failed to disconnect bank account");
+            }
           },
         },
       ]

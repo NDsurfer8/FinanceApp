@@ -9,9 +9,14 @@
 
 const { onCall } = require("firebase-functions/v2/https");
 const functions = require("firebase-functions");
+const { defineSecret } = require("firebase-functions/params");
 
 // Load environment variables
 require("dotenv").config();
+
+// Define secrets for Plaid
+const plaidClientId = defineSecret("PLAID_CLIENT_ID");
+const plaidSecret = defineSecret("PLAID_SECRET");
 
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
@@ -22,22 +27,25 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 // OpenAI API Functions
 const OpenAI = require("openai");
 
-// Initialize Plaid client
-const configuration = new Configuration({
-  basePath:
-    PlaidEnvironments[process.env.PLAID_ENV] || PlaidEnvironments.sandbox,
-  baseOptions: {
-    headers: {
-      "PLAID-CLIENT-ID":
-        process.env.PLAID_CLIENT_ID || "68a1a7b7c483650023cffde6",
-      "PLAID-SECRET":
-        process.env.PLAID_SECRET || "7a951d0a678269f8605176340bf071",
-      "Plaid-Version": "2020-09-14",
-    },
-  },
-});
+// Initialize Plaid client - will be configured per function
+let globalPlaidClient = null;
 
-const plaidClient = new PlaidApi(configuration);
+function getPlaidClient(clientId, secret) {
+  if (!globalPlaidClient) {
+    const configuration = new Configuration({
+      basePath: PlaidEnvironments.production, // Use production environment
+      baseOptions: {
+        headers: {
+          "PLAID-CLIENT-ID": clientId,
+          "PLAID-SECRET": secret,
+          "Plaid-Version": "2020-09-14",
+        },
+      },
+    });
+    globalPlaidClient = new PlaidApi(configuration);
+  }
+  return globalPlaidClient;
+}
 
 // Initialize OpenAI client (lazy initialization)
 let openai = null;
@@ -74,53 +82,70 @@ function getOpenAIClient() {
 }
 
 // Create link token
-exports.createLinkToken = onCall(async (data, context) => {
-  console.log("Function called with data:", data);
-  console.log("Function called with context:", context);
+exports.createLinkToken = onCall(
+  {
+    secrets: [plaidClientId, plaidSecret],
+  },
+  async (data, context) => {
+    console.log("Function called with data:", data);
+    console.log("Function called with context:", context);
 
-  // For testing purposes, use a default user ID if authentication is not available
-  let userId = "test_user";
-  if (context && context.auth) {
-    userId = context.auth.uid;
-    console.log("Using authenticated user ID:", userId);
-  } else {
-    console.log("No authentication context, using test user ID:", userId);
+    // For testing purposes, use a default user ID if authentication is not available
+    let userId = "test_user";
+    if (context && context.auth) {
+      userId = context.auth.uid;
+      console.log("Using authenticated user ID:", userId);
+    } else {
+      console.log("No authentication context, using test user ID:", userId);
+    }
+
+    try {
+      console.log("Creating link token for user:", userId);
+
+      // Get Plaid client with secrets
+      const client = getPlaidClient(plaidClientId.value(), plaidSecret.value());
+
+      console.log("Plaid configuration:", {
+        clientId: plaidClientId.value() ? "SET" : "NOT SET",
+        secret: plaidSecret.value() ? "***" : "NOT SET",
+        environment: "production",
+      });
+
+      // Validate Plaid client is available
+      if (!client) {
+        throw new Error("Plaid client is not initialized");
+      }
+
+      const request = {
+        user: { client_user_id: userId },
+        client_name: "VectorFi Finance App",
+        products: ["transactions", "auth", "identity"],
+        country_codes: ["US"],
+        language: "en",
+        // Enable update mode for returning users
+        update: {
+          account_selection_enabled: true,
+        },
+      };
+
+      console.log("Plaid request:", request);
+      const createTokenResponse = await client.linkTokenCreate(request);
+
+      return {
+        linkToken: createTokenResponse.data.link_token,
+        expiration: createTokenResponse.data.expiration,
+      };
+    } catch (error) {
+      console.error("Error creating link token:", error);
+      console.error("Error details:", error.response?.data || error.message);
+      console.error("Full error object:", JSON.stringify(error, null, 2));
+      throw new functions.https.HttpsError(
+        "internal",
+        `Failed to create link token: ${error.message}`
+      );
+    }
   }
-
-  try {
-    console.log("Creating link token for user:", userId);
-    console.log("Plaid configuration:", {
-      clientId: configuration.baseOptions.headers["PLAID-CLIENT-ID"],
-      secret: configuration.baseOptions.headers["PLAID-SECRET"]
-        ? "***"
-        : "NOT SET",
-    });
-
-    const request = {
-      user: { client_user_id: userId },
-      client_name: "VectorFi Finance App",
-      products: ["transactions", "auth", "identity"],
-      country_codes: ["US"],
-      language: "en",
-    };
-
-    console.log("Plaid request:", request);
-    const createTokenResponse = await plaidClient.linkTokenCreate(request);
-
-    return {
-      linkToken: createTokenResponse.data.link_token,
-      expiration: createTokenResponse.data.expiration,
-    };
-  } catch (error) {
-    console.error("Error creating link token:", error);
-    console.error("Error details:", error.response?.data || error.message);
-    console.error("Full error object:", JSON.stringify(error, null, 2));
-    throw new functions.https.HttpsError(
-      "internal",
-      `Failed to create link token: ${error.message}`
-    );
-  }
-});
+);
 
 // Exchange public token for access token
 exports.exchangePublicToken = onCall(async (data, context) => {
