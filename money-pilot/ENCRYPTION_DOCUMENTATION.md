@@ -5,7 +5,7 @@
 - **App Name**: VectorFi
 - **Bundle ID**: com.ndsurf888.vectorfii
 - **Platform**: iOS
-- **Version**: 1.0.8
+- **Version**: 1.0.9
 
 ## Encryption Overview
 
