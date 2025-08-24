@@ -208,6 +208,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     }
 
     // Check goal limits (only for new goals, not edits)
+    // TEMPORARILY DISABLED - Commented out subscription checks for goals
+    /*
     if (!isEditMode) {
       if (!canAddGoal()) {
         const limitInfo = getGoalLimitInfo();
@@ -227,6 +229,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
         return;
       }
     }
+    */
 
     try {
       if (isEditMode && editingGoal) {
@@ -519,6 +522,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
         />
 
         {/* Limit Indicator - Only show if not unlimited */}
+        {/* TEMPORARILY DISABLED - Commented out goal limit display
         {!getGoalLimitInfo().isUnlimited && (
           <View
             style={{
@@ -558,6 +562,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
             </TouchableOpacity>
           </View>
         )}
+        */}
 
         {/* Goals Summary */}
         {goals.length > 0 && (

@@ -73,32 +73,56 @@ class PlaidService {
   }
 
   // Initialize Plaid Link with modern create/open pattern
+  // async initializePlaidLink(): Promise<string> {
+  //   try {
+  //     if (!this.userId) {
+  //       throw new Error("User ID not set");
+  //     }
+
+  //     // Ensure user is authenticated
+  //     const currentUser = this.auth.currentUser;
+  //     if (!currentUser) {
+  //       throw new Error("User not authenticated");
+  //     }
+
+  //     console.log("Initializing Plaid Link for user:", this.userId);
+
+  //     // Call Firebase Cloud Function to create link token
+  //     const createLinkToken = httpsCallable(this.functions, "createLinkToken");
+  //     const result = await createLinkToken();
+
+  //     const { linkToken } = result.data as { linkToken: string };
+  //     console.log("Link token created:", linkToken);
+
+  //     return linkToken;
+  //   } catch (error) {
+  //     console.error("Error initializing Plaid Link:", error);
+  //     throw error;
+  //   }
+  // }
+
   async initializePlaidLink(): Promise<string> {
-    try {
-      if (!this.userId) {
-        throw new Error("User ID not set");
-      }
+    if (!this.userId) throw new Error("User ID not set");
+    if (!this.auth.currentUser) throw new Error("User not authenticated");
 
-      // Ensure user is authenticated
-      const currentUser = this.auth.currentUser;
-      if (!currentUser) {
-        throw new Error("User not authenticated");
-      }
+    console.log("Initializing Plaid Link for user:", this.userId);
 
-      console.log("Initializing Plaid Link for user:", this.userId);
+    // Typed callable
+    type Resp = { link_token: string; expiration?: string };
+    const callable = httpsCallable<unknown, Resp>(
+      this.functions,
+      "createLinkToken"
+    );
 
-      // Call Firebase Cloud Function to create link token
-      const createLinkToken = httpsCallable(this.functions, "createLinkToken");
-      const result = await createLinkToken();
+    const res = await callable(); // Optionally pass { platform: Platform.OS }
+    const linkToken = res?.data?.link_token; // <- snake_case
 
-      const { linkToken } = result.data as { linkToken: string };
-      console.log("Link token created:", linkToken);
-
-      return linkToken;
-    } catch (error) {
-      console.error("Error initializing Plaid Link:", error);
-      throw error;
+    if (typeof linkToken !== "string" || !linkToken.length) {
+      console.error("Bad createLinkToken response:", res?.data);
+      throw new Error("createLinkToken did not return link_token");
     }
+
+    return linkToken;
   }
 
   // Create Plaid Link session (preloads Link for better performance)

@@ -4,6 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { plaidService } from "../services/plaid";
 import { fontFamily } from "../config/fonts";
 import { useAuth } from "../hooks/useAuth";
+import { useSubscription } from "../contexts/SubscriptionContext";
+import { usePaywall } from "../hooks/usePaywall";
 import { LinkSuccess, LinkExit } from "react-native-plaid-link-sdk";
 
 interface PlaidLinkComponentProps {
@@ -18,6 +20,8 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
+  const { isFeatureAvailable, PREMIUM_FEATURES } = useSubscription();
+  const { presentPaywall } = usePaywall();
 
   useEffect(() => {
     // Set user ID for Plaid service
@@ -37,6 +41,19 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   };
 
   const handleConnectBank = async () => {
+    // Check if user has premium access for Plaid bank connection
+    if (!isFeatureAvailable(PREMIUM_FEATURES.PLAID_BANK_CONNECTION)) {
+      Alert.alert(
+        "Premium Feature",
+        "Bank connection is a premium feature. Upgrade to Premium to connect your bank account and automatically sync transactions!",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Upgrade to Premium", onPress: presentPaywall },
+        ]
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
       console.log("Starting Plaid Link flow...");

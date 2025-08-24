@@ -120,6 +120,8 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
     }
 
     // Check goal limits (only for new goals, not edits)
+    // TEMPORARILY DISABLED - Commented out subscription checks for goals
+    /*
     if (!editMode) {
       if (!canAddGoal()) {
         const limitInfo = getGoalLimitInfo();
@@ -136,6 +138,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
         return;
       }
     }
+    */
 
     try {
       setLoading(true);

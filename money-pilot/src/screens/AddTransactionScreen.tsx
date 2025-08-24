@@ -189,6 +189,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     }
 
     // Check transaction limits (only for new transactions, not edits)
+    // TEMPORARILY DISABLED - Commented out subscription checks for transactions
+    /*
     if (!editMode) {
       if (formData.type === "income") {
         if (!canAddIncomeSource()) {
@@ -226,6 +228,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         }
       }
     }
+    */
 
     try {
       setLoading(true);
@@ -695,6 +698,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           />
 
           {/* Limit Indicator - Only show if not unlimited */}
+          {/* TEMPORARILY DISABLED - Commented out all transaction limit displays
           {formData.type === "income"
             ? !getIncomeSourceLimitInfo().isUnlimited && (
                 <View
@@ -782,6 +786,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   </TouchableOpacity>
                 </View>
               )}
+          */}
 
           {/* Form Fields */}
           {/* Type Selection */}
