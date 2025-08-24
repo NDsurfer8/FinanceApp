@@ -276,7 +276,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
@@ -297,14 +297,18 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
               padding: 10,
             }}
           >
-            <Ionicons name="arrow-back" size={20} color="#475569" />
+            <Ionicons
+              name="arrow-back"
+              size={20}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
           <View>
             <Text
               style={{
                 fontSize: 26,
                 fontWeight: "700",
-                color: "#111827",
+                color: colors.text,
                 letterSpacing: -0.3,
               }}
             >
@@ -313,7 +317,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
             <Text
               style={{
                 fontSize: 16,
-                color: "#6b7280",
+                color: colors.textSecondary,
                 marginTop: 4,
                 fontWeight: "400",
               }}
@@ -326,22 +330,19 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
         {/* Profile Photo Section */}
         <View
           style={{
-            backgroundColor: "#fff",
-            borderRadius: 20,
+            backgroundColor: colors.card,
+            borderRadius: 16,
             padding: 24,
             marginBottom: 20,
-            shadowColor: "#000",
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
+            borderWidth: 1,
+            borderColor: colors.border,
           }}
         >
           <Text
             style={{
               fontSize: 18,
               fontWeight: "600",
-              color: "#111827",
+              color: colors.text,
               marginBottom: 20,
             }}
           >
@@ -355,7 +356,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
                   width: 120,
                   height: 120,
                   borderRadius: 60,
-                  backgroundColor: "#6366f1",
+                  backgroundColor: colors.primary,
                   alignItems: "center",
                   justifyContent: "center",
                   marginBottom: 16,
@@ -380,15 +381,15 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
             <TouchableOpacity
               onPress={showPhotoOptions}
               style={{
-                backgroundColor: "#f8fafc",
+                backgroundColor: colors.surfaceSecondary,
                 paddingHorizontal: 16,
                 paddingVertical: 8,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: "#e2e8f0",
+                borderColor: colors.border,
               }}
             >
-              <Text style={{ color: "#6366f1", fontWeight: "600" }}>
+              <Text style={{ color: colors.primary, fontWeight: "600" }}>
                 Change Photo
               </Text>
             </TouchableOpacity>
