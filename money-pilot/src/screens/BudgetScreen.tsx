@@ -1571,7 +1571,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 >
                   <View
                     style={{
-                      width: `${parseFloat(savingsPercentage) || 0}%`,
+                      width: `${Math.min(
+                        parseFloat(savingsPercentage) || 0,
+                        100
+                      )}%`,
                       height: 6,
                       backgroundColor: colors.success,
                       borderRadius: 3,
@@ -1754,7 +1757,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 >
                   <View
                     style={{
-                      width: `${parseFloat(debtPayoffPercentage) || 0}%`,
+                      width: `${Math.min(
+                        parseFloat(debtPayoffPercentage) || 0,
+                        100
+                      )}%`,
                       height: 6,
                       backgroundColor: colors.error,
                       borderRadius: 3,
