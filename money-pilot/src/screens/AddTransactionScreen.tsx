@@ -18,6 +18,7 @@ import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
 import { useZeroLoading } from "../hooks/useZeroLoading";
+import { useData } from "../contexts/DataContext";
 import {
   saveTransaction,
   updateTransaction,
@@ -54,6 +55,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const { transactions, updateDataOptimistically } = useZeroLoading();
+  const { refreshRecurringTransactions, refreshTransactions } = useData();
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const {
@@ -267,6 +269,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           await removeTransaction(user.uid, transaction.id);
           await createRecurringTransaction(recurringTransaction);
 
+          // Refresh DataContext to update other screens and ensure consistency
+          await Promise.all([
+            refreshTransactions(),
+            refreshRecurringTransactions(),
+          ]);
+
           Alert.alert(
             "Success",
             "Transaction converted to recurring successfully!",
@@ -295,6 +303,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           );
           updateDataOptimistically({ transactions: updatedTransactions });
 
+          console.log("Converted recurring to regular - removed from UI");
+
           // Delete recurring transaction and create regular one
           const { deleteRecurringTransaction } = await import(
             "../services/transactionService"
@@ -306,6 +316,11 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           await deleteRecurringTransaction(recurringTransactionId);
           const savedTransaction = await saveTransaction(newTransaction);
 
+          console.log(
+            "Converted recurring to regular - created new transaction with ID:",
+            savedTransaction
+          );
+
           // Add the new transaction to UI
           const finalTransactions = [
             ...updatedTransactions,
@@ -313,9 +328,96 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           ];
           updateDataOptimistically({ transactions: finalTransactions });
 
+          console.log(
+            "Converted recurring to regular - added new transaction to UI"
+          );
+
+          // Only refresh recurring transactions to update limits, preserve optimistic transaction updates
+          await refreshRecurringTransactions();
+
+          console.log(
+            "Converted recurring to regular - refreshed recurring transactions only"
+          );
+
           Alert.alert(
             "Success",
             "Recurring transaction converted to regular transaction!",
+            [{ text: "OK", onPress: () => navigation.goBack() }]
+          );
+        } else if (
+          formData.isRecurring &&
+          (transaction.isRecurring || transaction.recurringTransactionId)
+        ) {
+          // Update existing recurring transaction
+          const { updateRecurringTransaction } = await import(
+            "../services/transactionService"
+          );
+
+          // Get the recurring transaction ID
+          const recurringTransactionId =
+            transaction.recurringTransactionId || transaction.id;
+
+          // Get the current recurring transaction to update it
+          const { getUserRecurringTransactions } = await import(
+            "../services/userData"
+          );
+          const recurringTransactions = await getUserRecurringTransactions(
+            user.uid
+          );
+          const currentRecurringTransaction = recurringTransactions.find(
+            (rt) => rt.id === recurringTransactionId
+          );
+
+          if (!currentRecurringTransaction) {
+            Alert.alert("Error", "Recurring transaction not found");
+            return;
+          }
+
+          // Update the recurring transaction
+          const updatedRecurringTransaction = {
+            ...currentRecurringTransaction,
+            name: formData.description,
+            amount: parseFloat(removeCommas(formData.amount)),
+            type: formData.type as "income" | "expense",
+            category: formData.category,
+            frequency: formData.frequency,
+            startDate: new Date(formData.date).getTime(),
+            endDate:
+              formData.endDate && formData.endDate.trim() !== ""
+                ? new Date(formData.endDate).getTime()
+                : undefined,
+            updatedAt: Date.now(),
+          };
+
+          await updateRecurringTransaction(updatedRecurringTransaction);
+
+          // Optimistic update - update the transaction to reflect the new recurring transaction ID
+          const updatedTransactions = transactions.map((t) => {
+            if (t.id === transaction.id) {
+              return {
+                ...t,
+                description: formData.description,
+                amount: parseFloat(removeCommas(formData.amount)),
+                category: formData.category,
+                type: formData.type as "income" | "expense",
+                date: new Date(formData.date).getTime(),
+                recurringTransactionId: recurringTransactionId, // Keep the recurring transaction ID
+                updatedAt: Date.now(),
+              };
+            }
+            return t;
+          });
+          updateDataOptimistically({ transactions: updatedTransactions });
+
+          // Refresh DataContext to update both transactions and recurring transactions
+          await Promise.all([
+            refreshTransactions(),
+            refreshRecurringTransactions(),
+          ]);
+
+          Alert.alert(
+            "Success",
+            "Recurring transaction updated successfully!",
             [{ text: "OK", onPress: () => navigation.goBack() }]
           );
         } else {
@@ -367,6 +469,16 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         };
 
         await createRecurringTransaction(recurringTransaction);
+
+        // Refresh both to ensure the newly created transaction appears
+        await Promise.all([
+          refreshTransactions(),
+          refreshRecurringTransactions(),
+        ]);
+
+        console.log("Recurring transaction created, refreshing DataContext...");
+        console.log("Refreshed transactions and recurring transactions");
+
         Alert.alert("Success", "Recurring transaction created successfully!", [
           { text: "OK", onPress: () => navigation.goBack() },
         ]);
@@ -466,6 +578,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   );
                   await deleteRecurringTransaction(recurringTransactionId);
 
+                  // Refresh DataContext to update transaction limits and ensure consistency
+                  await Promise.all([
+                    refreshTransactions(),
+                    refreshRecurringTransactions(),
+                  ]);
+
                   Alert.alert(
                     "Success",
                     "Recurring transaction and all future occurrences deleted!",
@@ -506,6 +624,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
                   // Delete from database
                   await removeTransaction(user.uid, transaction.id);
+
+                  // Refresh DataContext to update transaction limits and ensure consistency
+                  await Promise.all([
+                    refreshTransactions(),
+                    refreshRecurringTransactions(),
+                  ]);
 
                   Alert.alert("Success", "Transaction deleted successfully!", [
                     { text: "OK", onPress: () => navigation.goBack() },

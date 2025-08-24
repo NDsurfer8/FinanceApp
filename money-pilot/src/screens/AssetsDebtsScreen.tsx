@@ -6,19 +6,12 @@ import {
   Text,
   Dimensions,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fontFamily } from "../config/fonts";
 import { AssetsDebtsChart } from "../components/AssetsDebtsChart";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
-import {
-  saveAsset,
-  saveDebt,
-  removeAsset,
-  removeDebt,
-} from "../services/userData";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
@@ -50,64 +43,6 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
       }
     }, [user, refreshInBackground])
   );
-
-  const handleDeleteAsset = async (assetId: string) => {
-    if (!user) return;
-
-    Alert.alert("Delete Asset", "Are you sure you want to delete this asset?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            // Optimistic update - remove from UI immediately
-            const updatedAssets = assets.filter((a) => a.id !== assetId);
-            updateDataOptimistically({ assets: updatedAssets });
-
-            // Delete from database in background
-            await removeAsset(user.uid, assetId);
-            Alert.alert("Success", "Asset deleted successfully");
-          } catch (error) {
-            console.error("Error deleting asset:", error);
-            Alert.alert("Error", "Failed to delete asset");
-
-            // Revert optimistic update on error
-            await refreshInBackground();
-          }
-        },
-      },
-    ]);
-  };
-
-  const handleDeleteDebt = async (debtId: string) => {
-    if (!user) return;
-
-    Alert.alert("Delete Debt", "Are you sure you want to delete this debt?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            // Optimistic update - remove from UI immediately
-            const updatedDebts = debts.filter((d) => d.id !== debtId);
-            updateDataOptimistically({ debts: updatedDebts });
-
-            // Delete from database in background
-            await removeDebt(user.uid, debtId);
-            Alert.alert("Success", "Debt deleted successfully");
-          } catch (error) {
-            console.error("Error deleting debt:", error);
-            Alert.alert("Error", "Failed to delete debt");
-
-            // Revert optimistic update on error
-            await refreshInBackground();
-          }
-        },
-      },
-    ]);
-  };
 
   const assetTotal = assets.reduce((sum, asset) => sum + asset.balance, 0);
   const totalDebt = debts.reduce((sum, debt) => sum + debt.balance, 0);

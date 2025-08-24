@@ -18,15 +18,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
-import {
-  saveTransaction,
-  removeTransaction,
-  updateTransaction,
-  saveBudgetSettings,
-  updateBudgetSettings,
-  getUserRecurringTransactions,
-  skipRecurringTransactionForMonth,
-} from "../services/userData";
+import { saveBudgetSettings, updateBudgetSettings } from "../services/userData";
 import { getProjectedTransactionsForMonth } from "../services/transactionService";
 import { billReminderService } from "../services/billReminders";
 
@@ -226,182 +218,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     loadProjectedTransactions(selectedMonth);
   }, [selectedMonth, user]);
 
-  // Handle delete transaction
-  const handleDeleteTransaction = async (transaction: any) => {
-    if (!user) return;
-
-    const isRecurring =
-      isRecurringTransaction(transaction) ||
-      transaction.id?.startsWith("projected-");
-
-    if (isRecurring) {
-      // For recurring transactions, show options
-      Alert.alert(
-        "Delete Recurring Transaction",
-        `"${transaction.description}" is a recurring transaction. What would you like to delete?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete This Occurrence Only",
-            style: "default",
-            onPress: async () => {
-              try {
-                // Optimistic update - remove from UI immediately
-                const updatedTransactions = transactions.filter(
-                  (t) => t.id !== transaction.id
-                );
-                updateDataOptimistically({ transactions: updatedTransactions });
-
-                // Also remove from projected transactions if it's a projected transaction
-                if (transaction.id?.startsWith("projected-")) {
-                  const updatedProjectedTransactions =
-                    projectedTransactions.filter(
-                      (t) => t.id !== transaction.id
-                    );
-                  setProjectedTransactions(updatedProjectedTransactions);
-                }
-
-                // Delete from database in background
-                await removeTransaction(user.uid, transaction.id);
-
-                // Find the recurring transaction and skip this month
-                let recurringTransaction;
-                if (transaction.recurringTransactionId) {
-                  // Use the direct reference if available
-                  recurringTransaction = recurringTransactions.find(
-                    (recurring) =>
-                      recurring.id === transaction.recurringTransactionId
-                  );
-                } else {
-                  // Fallback to the old method for backward compatibility
-                  recurringTransaction = recurringTransactions.find(
-                    (recurring) =>
-                      recurring.name === transaction.description &&
-                      recurring.amount === transaction.amount &&
-                      recurring.type === transaction.type &&
-                      recurring.isActive
-                  );
-                }
-
-                if (recurringTransaction?.id) {
-                  const monthKey = `${selectedMonth.getFullYear()}-${String(
-                    selectedMonth.getMonth() + 1
-                  ).padStart(2, "0")}`;
-                  await skipRecurringTransactionForMonth(
-                    recurringTransaction.id,
-                    monthKey
-                  );
-                }
-
-                Alert.alert(
-                  "Success",
-                  "Transaction occurrence deleted and skipped for this month!"
-                );
-              } catch (error) {
-                console.error("Error deleting transaction:", error);
-                Alert.alert("Error", "Failed to delete transaction");
-
-                // Revert optimistic update on error
-                await refreshInBackground();
-              }
-            },
-          },
-          {
-            text: "Delete All Future Occurrences",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                // Optimistic update - remove from UI immediately
-                const updatedTransactions = transactions.filter(
-                  (t) => t.id !== transaction.id
-                );
-                updateDataOptimistically({ transactions: updatedTransactions });
-
-                // Also remove from projected transactions if it's a projected transaction
-                if (transaction.id?.startsWith("projected-")) {
-                  const updatedProjectedTransactions =
-                    projectedTransactions.filter(
-                      (t) => t.id !== transaction.id
-                    );
-                  setProjectedTransactions(updatedProjectedTransactions);
-                }
-
-                // Find the recurring transaction and delete it
-                let recurringTransaction;
-                if (transaction.recurringTransactionId) {
-                  // Use the direct reference if available
-                  recurringTransaction = recurringTransactions.find(
-                    (recurring) =>
-                      recurring.id === transaction.recurringTransactionId
-                  );
-                } else {
-                  // Fallback to the old method for backward compatibility
-                  recurringTransaction = recurringTransactions.find(
-                    (recurring) =>
-                      recurring.name === transaction.description &&
-                      recurring.amount === transaction.amount &&
-                      recurring.type === transaction.type &&
-                      recurring.isActive
-                  );
-                }
-
-                if (recurringTransaction?.id) {
-                  const { deleteRecurringTransaction } = await import(
-                    "../services/transactionService"
-                  );
-                  await deleteRecurringTransaction(recurringTransaction.id);
-                }
-
-                Alert.alert(
-                  "Success",
-                  "Recurring transaction and all related transactions deleted!"
-                );
-              } catch (error) {
-                console.error("Error deleting transaction:", error);
-                Alert.alert("Error", "Failed to delete transaction");
-
-                // Revert optimistic update on error
-                await refreshInBackground();
-              }
-            },
-          },
-        ]
-      );
-    } else {
-      // For regular transactions, show simple delete confirmation
-      Alert.alert(
-        "Delete Transaction",
-        `Are you sure you want to delete "${transaction.description}"?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                // Optimistic update - remove from UI immediately
-                const updatedTransactions = transactions.filter(
-                  (t) => t.id !== transaction.id
-                );
-                updateDataOptimistically({ transactions: updatedTransactions });
-
-                // Delete from database in background
-                await removeTransaction(user.uid, transaction.id);
-                Alert.alert("Success", "Transaction deleted successfully");
-              } catch (error) {
-                console.error("Error deleting transaction:", error);
-                Alert.alert("Error", "Failed to delete transaction");
-
-                // Revert optimistic update on error
-                await refreshInBackground();
-              }
-            },
-          },
-        ]
-      );
-    }
-  };
-
   // Calculate totals
   const incomeTransactions = monthlyTransactions
     .filter((t) => t.type === "income")
@@ -517,14 +333,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     return date.toLocaleDateString();
   };
 
-  const formatMonthYear = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   const calculatePaymentsRemaining = (goal: any) => {
     if (goal.monthlyContribution <= 0) return "∞";
 
@@ -565,16 +373,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       type: "expense",
       selectedMonth: selectedMonth.getTime(),
     });
-  };
-
-  const handleMonthChange = async (direction: "prev" | "next") => {
-    const newDate = new Date(selectedMonth);
-    if (direction === "prev") {
-      newDate.setMonth(newDate.getMonth() - 1);
-    } else {
-      newDate.setMonth(newDate.getMonth() + 1);
-    }
-    setSelectedMonth(newDate);
   };
 
   const generateAvailableMonths = () => {
@@ -685,111 +483,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         updateDataOptimistically({ budgetSettings });
       }
     }
-  };
-
-  const handleEditTransaction = (transaction: any) => {
-    if (transaction.id?.startsWith("projected-")) {
-      Alert.alert(
-        "Projected Transaction",
-        "This is a projected transaction and cannot be edited directly.",
-        [{ text: "OK" }]
-      );
-      return;
-    }
-    setEditingTransactionId(transaction.id);
-    setEditingAmount(transaction.amount.toString());
-  };
-
-  const handleSaveTransactionEdit = async () => {
-    if (!user || !editingTransactionId) return;
-
-    const newAmount = parseFloat(editingAmount);
-    if (isNaN(newAmount) || newAmount <= 0) {
-      Alert.alert("Error", "Please enter a valid amount");
-      return;
-    }
-
-    try {
-      // Find the transaction to update
-      const transactionToUpdate = transactions.find(
-        (t) => t.id === editingTransactionId
-      );
-      if (!transactionToUpdate) {
-        Alert.alert("Error", "Transaction not found");
-        return;
-      }
-
-      // Check if this is a recurring transaction
-      const isRecurring = isRecurringTransaction(transactionToUpdate);
-
-      if (isRecurring) {
-        // Handle recurring transaction update
-        const { updateRecurringTransaction } = await import(
-          "../services/transactionService"
-        );
-
-        // Find the recurring transaction
-        const recurringTransaction = recurringTransactions.find(
-          (recurring) =>
-            recurring.name === transactionToUpdate.description &&
-            recurring.amount === transactionToUpdate.amount &&
-            recurring.type === transactionToUpdate.type &&
-            recurring.isActive
-        );
-
-        if (recurringTransaction?.id) {
-          const updatedRecurringTransaction = {
-            ...recurringTransaction,
-            amount: newAmount,
-            updatedAt: Date.now(),
-          };
-
-          // Optimistic update - update UI immediately
-          const updatedTransactions = transactions.map((t) =>
-            t.id === editingTransactionId ? { ...t, amount: newAmount } : t
-          );
-          updateDataOptimistically({ transactions: updatedTransactions });
-
-          // Save recurring transaction to database
-          await updateRecurringTransaction(updatedRecurringTransaction);
-        } else {
-          throw new Error("Recurring transaction not found");
-        }
-      } else {
-        // Handle regular transaction update
-        const updatedTransaction = {
-          ...transactionToUpdate,
-          amount: newAmount,
-          userId: user.uid,
-        };
-
-        // Optimistic update - update UI immediately
-        const updatedTransactions = transactions.map((t) =>
-          t.id === editingTransactionId ? updatedTransaction : t
-        );
-        updateDataOptimistically({ transactions: updatedTransactions });
-
-        // Save to database in background
-        await updateTransaction(updatedTransaction);
-      }
-
-      // Reset editing state
-      setEditingTransactionId(null);
-      setEditingAmount("");
-
-      Alert.alert("Success", "Transaction amount updated successfully!");
-    } catch (error) {
-      console.error("Error updating transaction:", error);
-      Alert.alert("Error", "Failed to update transaction amount");
-
-      // Revert optimistic update on error
-      await refreshInBackground();
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingTransactionId(null);
-    setEditingAmount("");
   };
 
   return (
