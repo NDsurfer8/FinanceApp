@@ -57,6 +57,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [savingsPercentage, setSavingsPercentage] = useState("20");
   const [debtPayoffPercentage, setDebtPayoffPercentage] = useState("5");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [editingTransactionId, setEditingTransactionId] = useState<
     string | null
   >(null);
@@ -68,6 +69,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     new Set()
   );
   const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [microFeedback, setMicroFeedback] = useState<{
+    message: string;
+    type: "income" | "expense";
+    amount: number;
+  } | null>(null);
   const monthPickerScrollRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
@@ -93,6 +99,26 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       }
     }
   }, [user, budgetSettings]);
+
+  // Track changes to enable/disable save button
+  useEffect(() => {
+    if (budgetSettings) {
+      const currentSavings = parseFloat(savingsPercentage) || 0;
+      const currentDebt = parseFloat(debtPayoffPercentage) || 0;
+      const savedSavings = budgetSettings.savingsPercentage;
+      const savedDebt = budgetSettings.debtPayoffPercentage;
+
+      const hasChanges =
+        currentSavings !== savedSavings || currentDebt !== savedDebt;
+      setHasUnsavedChanges(hasChanges);
+    } else {
+      // If no settings exist, any non-default values are changes
+      const currentSavings = parseFloat(savingsPercentage) || 0;
+      const currentDebt = parseFloat(debtPayoffPercentage) || 0;
+      const hasChanges = currentSavings !== 20 || currentDebt !== 5;
+      setHasUnsavedChanges(hasChanges);
+    }
+  }, [savingsPercentage, debtPayoffPercentage, budgetSettings]);
 
   // Get cache status for display
   const getCacheStatus = () => {
@@ -317,6 +343,20 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
   const handleDismissInsight = (insightId: string) => {
     setDismissedInsights((prev) => new Set([...prev, insightId]));
+  };
+
+  const showMicroFeedback = (type: "income" | "expense", amount: number) => {
+    const message =
+      type === "income"
+        ? `Available increased by ${formatCurrency(amount)}`
+        : `Available decreased by ${formatCurrency(amount)}`;
+
+    setMicroFeedback({ message, type, amount });
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      setMicroFeedback(null);
+    }, 3000);
   };
 
   const formatCurrency = (amount: number) => {
@@ -595,6 +635,64 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             </PanGestureHandler>
           }
         />
+
+        {/* Micro Feedback */}
+        {microFeedback && (
+          <View
+            style={{
+              backgroundColor:
+                microFeedback.type === "income"
+                  ? colors.successLight
+                  : colors.errorLight,
+              borderColor:
+                microFeedback.type === "income" ? colors.success : colors.error,
+              borderWidth: 1,
+              borderRadius: 12,
+              padding: 12,
+              marginBottom: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+            >
+              <Ionicons
+                name={
+                  microFeedback.type === "income"
+                    ? "trending-up"
+                    : "trending-down"
+                }
+                size={16}
+                color={
+                  microFeedback.type === "income"
+                    ? colors.success
+                    : colors.error
+                }
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                style={{
+                  color:
+                    microFeedback.type === "income"
+                      ? colors.success
+                      : colors.error,
+                  fontSize: 14,
+                  fontWeight: "600",
+                }}
+              >
+                {microFeedback.message}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setMicroFeedback(null)}
+              style={{ padding: 4 }}
+            >
+              <Ionicons name="close" size={16} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Premium Feature: Quick Setup */}
 
@@ -1000,119 +1098,82 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {incomeTransactions.length === 0 &&
-          projectedIncomeTransactions.length === 0 ? (
+          {/* Income Transactions List */}
+          {[
+            ...incomeTransactions,
+            ...(isFutureMonth
+              ? projectedTransactions.filter((t) => t.type === "income")
+              : []),
+          ].map((transaction, index, array) => (
             <TouchableOpacity
-              onPress={handleAddIncome}
+              key={transaction.id}
               style={{
-                padding: 20,
+                flexDirection: "row",
+                justifyContent: "space-between",
                 alignItems: "center",
-                backgroundColor: colors.surfaceSecondary,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderStyle: "dashed",
+                marginBottom: 12,
+                paddingVertical: 8,
+                borderBottomWidth: index === array.length - 1 ? 0 : 1,
+                borderBottomColor: colors.border,
               }}
+              onPress={() =>
+                navigation.navigate("AddTransaction", {
+                  type: "income",
+                  editMode: true,
+                  transaction: transaction,
+                })
+              }
             >
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  textAlign: "center",
-                  fontSize: 16,
-                }}
-              >
-                No income transactions for this month
-              </Text>
-              <Text
-                style={{
-                  color: "#16a34a",
-                  textAlign: "center",
-                  fontSize: 14,
-                  marginTop: 4,
-                  fontWeight: "500",
-                }}
-              >
-                Tap to add income
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: colors.text,
+                    fontWeight: "500",
+                  }}
+                >
+                  {transaction.description}
+                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginTop: 2,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                    {transaction.category} • {formatDate(transaction.date)}
+                  </Text>
+                  {(isRecurringTransaction(transaction) ||
+                    transaction.id?.startsWith("projected-")) && (
+                    <Ionicons
+                      name="repeat"
+                      size={12}
+                      color={colors.primary}
+                      style={{ marginLeft: 8 }}
+                    />
+                  )}
+                </View>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: colors.text,
+                    marginRight: 8,
+                  }}
+                >
+                  {formatCurrency(transaction.amount)}
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.textSecondary}
+                />
+              </View>
             </TouchableOpacity>
-          ) : (
-            // Combine actual and projected transactions for future months
-            [
-              ...incomeTransactions,
-              ...(isFutureMonth
-                ? projectedTransactions.filter((t) => t.type === "income")
-                : []),
-            ].map((transaction, index, array) => (
-              <TouchableOpacity
-                key={transaction.id}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 12,
-                  paddingVertical: 8,
-                  borderBottomWidth: index === array.length - 1 ? 0 : 1,
-                  borderBottomColor: colors.border,
-                }}
-                onPress={() =>
-                  navigation.navigate("AddTransaction", {
-                    type: "income",
-                    editMode: true,
-                    transaction: transaction,
-                  })
-                }
-              >
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: colors.text,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {transaction.description}
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginTop: 2,
-                    }}
-                  >
-                    <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                      {transaction.category} • {formatDate(transaction.date)}
-                    </Text>
-                    {(isRecurringTransaction(transaction) ||
-                      transaction.id?.startsWith("projected-")) && (
-                      <Ionicons
-                        name="repeat"
-                        size={12}
-                        color={colors.primary}
-                        style={{ marginLeft: 8 }}
-                      />
-                    )}
-                  </View>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "700",
-                      color: colors.text,
-                      marginRight: 8,
-                    }}
-                  >
-                    {formatCurrency(transaction.amount)}
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.textSecondary}
-                  />
-                </View>
-              </TouchableOpacity>
-            ))
-          )}
+          ))}
 
           {(incomeTransactions.length > 0 ||
             projectedIncomeTransactions.length > 0) && (
@@ -1151,6 +1212,35 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               </View>
             </View>
           )}
+
+          {/* Inline Add Income Button */}
+          <TouchableOpacity
+            onPress={handleAddIncome}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: 12,
+              marginTop: 16,
+              backgroundColor: colors.successLight,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: colors.success,
+              borderStyle: "dashed",
+            }}
+          >
+            <Ionicons name="add-circle" size={20} color={colors.success} />
+            <Text
+              style={{
+                color: colors.success,
+                fontSize: 14,
+                fontWeight: "600",
+                marginLeft: 8,
+              }}
+            >
+              Add Income
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Expenses Section */}
@@ -1202,119 +1292,82 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {expenseTransactions.length === 0 &&
-          projectedExpenseTransactions.length === 0 ? (
+          {/* Expense Transactions List */}
+          {[
+            ...expenseTransactions,
+            ...(isFutureMonth
+              ? projectedTransactions.filter((t) => t.type === "expense")
+              : []),
+          ].map((transaction, index, array) => (
             <TouchableOpacity
-              onPress={handleAddExpense}
+              key={transaction.id}
               style={{
-                padding: 20,
+                flexDirection: "row",
+                justifyContent: "space-between",
                 alignItems: "center",
-                backgroundColor: colors.surfaceSecondary,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderStyle: "dashed",
+                marginBottom: 12,
+                paddingVertical: 8,
+                borderBottomWidth: index === array.length - 1 ? 0 : 1,
+                borderBottomColor: colors.border,
               }}
+              onPress={() =>
+                navigation.navigate("AddTransaction", {
+                  type: "expense",
+                  editMode: true,
+                  transaction: transaction,
+                })
+              }
             >
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  textAlign: "center",
-                  fontSize: 16,
-                }}
-              >
-                No expenses for this month
-              </Text>
-              <Text
-                style={{
-                  color: "#dc2626",
-                  textAlign: "center",
-                  fontSize: 14,
-                  marginTop: 4,
-                  fontWeight: "500",
-                }}
-              >
-                Tap to add expense
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: colors.text,
+                    fontWeight: "500",
+                  }}
+                >
+                  {transaction.description}
+                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginTop: 2,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                    {transaction.category} • {formatDate(transaction.date)}
+                  </Text>
+                  {(isRecurringTransaction(transaction) ||
+                    transaction.id?.startsWith("projected-")) && (
+                    <Ionicons
+                      name="repeat"
+                      size={12}
+                      color={colors.primary}
+                      style={{ marginLeft: 8 }}
+                    />
+                  )}
+                </View>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: colors.text,
+                    marginRight: 8,
+                  }}
+                >
+                  {formatCurrency(transaction.amount)}
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.textSecondary}
+                />
+              </View>
             </TouchableOpacity>
-          ) : (
-            // Combine actual and projected transactions for future months
-            [
-              ...expenseTransactions,
-              ...(isFutureMonth
-                ? projectedTransactions.filter((t) => t.type === "expense")
-                : []),
-            ].map((transaction, index, array) => (
-              <TouchableOpacity
-                key={transaction.id}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 12,
-                  paddingVertical: 8,
-                  borderBottomWidth: index === array.length - 1 ? 0 : 1,
-                  borderBottomColor: colors.border,
-                }}
-                onPress={() =>
-                  navigation.navigate("AddTransaction", {
-                    type: "expense",
-                    editMode: true,
-                    transaction: transaction,
-                  })
-                }
-              >
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: colors.text,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {transaction.description}
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginTop: 2,
-                    }}
-                  >
-                    <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                      {transaction.category} • {formatDate(transaction.date)}
-                    </Text>
-                    {(isRecurringTransaction(transaction) ||
-                      transaction.id?.startsWith("projected-")) && (
-                      <Ionicons
-                        name="repeat"
-                        size={12}
-                        color={colors.primary}
-                        style={{ marginLeft: 8 }}
-                      />
-                    )}
-                  </View>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "700",
-                      color: colors.text,
-                      marginRight: 8,
-                    }}
-                  >
-                    {formatCurrency(transaction.amount)}
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.textSecondary}
-                  />
-                </View>
-              </TouchableOpacity>
-            ))
-          )}
+          ))}
 
           {(expenseTransactions.length > 0 ||
             projectedExpenseTransactions.length > 0) && (
@@ -1353,6 +1406,35 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               </View>
             </View>
           )}
+
+          {/* Inline Add Expense Button */}
+          <TouchableOpacity
+            onPress={handleAddExpense}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: 12,
+              marginTop: 16,
+              backgroundColor: colors.errorLight,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: colors.error,
+              borderStyle: "dashed",
+            }}
+          >
+            <Ionicons name="add-circle" size={20} color={colors.error} />
+            <Text
+              style={{
+                color: colors.error,
+                fontSize: 14,
+                fontWeight: "600",
+                marginLeft: 8,
+              }}
+            >
+              Add Expense
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Budget Summary */}
@@ -1425,7 +1507,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     fontWeight: "500",
                   }}
                 >
-                  {translate("savings", isFriendlyMode)} (
+                  {translate("savings", isFriendlyMode)}
                 </Text>
                 <TextInput
                   style={{
@@ -1451,7 +1533,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     fontWeight: "500",
                   }}
                 >
-                  % of NI)
+                  %
                 </Text>
               </View>
               <Text
@@ -1459,6 +1541,43 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               >
                 {formatCurrency(savingsAmount)}
               </Text>
+            </View>
+            {/* Visual Percentage Indicator */}
+            <View style={{ marginTop: 8 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 4,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    marginRight: 8,
+                  }}
+                >
+                  {savingsPercentage}%
+                </Text>
+                <View
+                  style={{
+                    flex: 1,
+                    height: 6,
+                    backgroundColor: colors.border,
+                    borderRadius: 3,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: `${parseFloat(savingsPercentage) || 0}%`,
+                      height: 6,
+                      backgroundColor: colors.success,
+                      borderRadius: 3,
+                    }}
+                  />
+                </View>
+              </View>
             </View>
           </View>
 
@@ -1570,7 +1689,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     fontWeight: "500",
                   }}
                 >
-                  Pay Debt % (
+                  Pay Debt
                 </Text>
                 <TextInput
                   style={{
@@ -1596,7 +1715,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     fontWeight: "500",
                   }}
                 >
-                  % of DI)
+                  %
                 </Text>
               </View>
               <Text
@@ -1604,6 +1723,43 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               >
                 {formatCurrency(debtPayoffAmount)}
               </Text>
+            </View>
+            {/* Visual Percentage Indicator */}
+            <View style={{ marginTop: 8 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 4,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    marginRight: 8,
+                  }}
+                >
+                  {debtPayoffPercentage}%
+                </Text>
+                <View
+                  style={{
+                    flex: 1,
+                    height: 6,
+                    backgroundColor: colors.border,
+                    borderRadius: 3,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: `${parseFloat(debtPayoffPercentage) || 0}%`,
+                      height: 6,
+                      backgroundColor: colors.error,
+                      borderRadius: 3,
+                    }}
+                  />
+                </View>
+              </View>
             </View>
           </View>
 
@@ -1666,26 +1822,36 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           {/* Save Settings Button */}
           <TouchableOpacity
             style={{
-              backgroundColor: colors.surfaceSecondary,
+              backgroundColor: hasUnsavedChanges
+                ? colors.primary
+                : colors.surfaceSecondary,
               borderRadius: 8,
               padding: 12,
               alignItems: "center",
               marginTop: 40,
               marginBottom: 20,
               borderWidth: 1,
-              borderColor: colors.border,
+              borderColor: hasUnsavedChanges ? colors.primary : colors.border,
+              opacity: hasUnsavedChanges ? 1 : 0.6,
             }}
-            onPress={handleSaveBudgetSettings}
+            onPress={hasUnsavedChanges ? handleSaveBudgetSettings : undefined}
+            disabled={!hasUnsavedChanges}
           >
             <Text
               style={{
-                color: colors.textSecondary,
+                color: hasUnsavedChanges
+                  ? colors.buttonText
+                  : colors.textSecondary,
                 fontSize: 14,
                 fontWeight: "500",
               }}
             >
-              {translate("save", isFriendlyMode)}{" "}
-              {translate("budget", isFriendlyMode)} Settings
+              {hasUnsavedChanges
+                ? `${translate("save", isFriendlyMode)} ${translate(
+                    "budget",
+                    isFriendlyMode
+                  )} Settings`
+                : `${translate("budget", isFriendlyMode)} Settings Saved`}
             </Text>
           </TouchableOpacity>
         </View>
