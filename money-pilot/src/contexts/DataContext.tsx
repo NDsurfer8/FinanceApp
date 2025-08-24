@@ -270,6 +270,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       transactions.length,
       "transactions"
     );
+
+    // Debug: Log first few transactions to see their amounts
+    console.log("DataContext: Sample transactions for debugging:");
+    transactions.slice(0, 5).forEach((t, i) => {
+      console.log(
+        `Transaction ${i + 1}: ${t.name} - Amount: ${t.amount} (${
+          t.amount > 0 ? "positive" : "negative"
+        })`
+      );
+    });
     const patterns: { [key: string]: any[] } = {};
     const suggestions: any[] = [];
 
@@ -308,6 +318,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         console.log("DataContext: Pattern", key, "frequency:", frequency);
 
         if (frequency) {
+          console.log("DataContext: Creating suggestion for pattern:", key);
+          console.log(
+            "DataContext: First transaction amount:",
+            firstTransaction.amount,
+            "Type:",
+            typeof firstTransaction.amount
+          );
+          console.log(
+            "DataContext: First transaction name:",
+            firstTransaction.name
+          );
+          console.log(
+            "DataContext: Number(firstTransaction.amount):",
+            Number(firstTransaction.amount)
+          );
+          console.log(
+            "DataContext: Determined type:",
+            Number(firstTransaction.amount) < 0 ? "income" : "expense"
+          );
+
           suggestions.push({
             name: firstTransaction.name,
             amount: Math.abs(firstTransaction.amount),
@@ -317,7 +347,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               sortedTransactions[sortedTransactions.length - 1].date
             ),
             occurrences: transactions.length,
-            type: firstTransaction.amount > 0 ? "income" : "expense",
+            type: Number(firstTransaction.amount) < 0 ? "income" : "expense",
           });
         }
       }
