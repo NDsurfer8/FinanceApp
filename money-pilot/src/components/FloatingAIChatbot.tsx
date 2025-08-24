@@ -123,7 +123,7 @@ export const FloatingAIChatbot: React.FC<FloatingAIChatbotProps> = ({
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 100, // Above the tab bar
+    bottom: 120, // Moved up to avoid overlap with totals
     right: 20,
     zIndex: 1000,
   },
