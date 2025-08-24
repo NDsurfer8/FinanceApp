@@ -93,7 +93,8 @@ export const deleteTransaction = async (
 // ===== RECURRING TRANSACTIONS CRUD =====
 
 export const createRecurringTransaction = async (
-  recurringTransaction: Omit<RecurringTransaction, "id">
+  recurringTransaction: Omit<RecurringTransaction, "id">,
+  targetMonth?: Date
 ): Promise<string> => {
   try {
     // Use the encrypted saveRecurringTransaction function from userData.ts
@@ -125,16 +126,16 @@ export const createRecurringTransaction = async (
 
     console.log("Recurring transaction created successfully");
 
-    // Create the first transaction for the current month if it should occur
-    const currentMonth = new Date();
+    // Create the first transaction for the target month (or current month if not specified) if it should occur
+    const targetMonthDate = targetMonth || new Date();
     const monthStart = new Date(
-      currentMonth.getFullYear(),
-      currentMonth.getMonth(),
+      targetMonthDate.getFullYear(),
+      targetMonthDate.getMonth(),
       1
     );
     const monthEnd = new Date(
-      currentMonth.getFullYear(),
-      currentMonth.getMonth() + 1,
+      targetMonthDate.getFullYear(),
+      targetMonthDate.getMonth() + 1,
       0,
       23,
       59,
@@ -143,8 +144,8 @@ export const createRecurringTransaction = async (
     );
     const startDate = new Date(recurringTransaction.startDate);
 
-    // Always create a transaction for the current month if the recurring transaction is active
-    // and the start date is not in the future
+    // Create a transaction for the target month if the recurring transaction is active
+    // and the start date is before or during the target month
     const shouldCreateFirstTransaction =
       recurringTransaction.isActive &&
       startDate.getTime() <= monthEnd.getTime();
@@ -156,6 +157,7 @@ export const createRecurringTransaction = async (
       shouldCreate: shouldCreateFirstTransaction,
       startDateTimestamp: recurringTransaction.startDate,
       isActive: recurringTransaction.isActive,
+      targetMonth: targetMonth?.toISOString(),
     });
 
     if (shouldCreateFirstTransaction) {

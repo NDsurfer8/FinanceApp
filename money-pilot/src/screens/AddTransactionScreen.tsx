@@ -267,7 +267,14 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
           // Delete original transaction and create recurring one
           await removeTransaction(user.uid, transaction.id);
-          await createRecurringTransaction(recurringTransaction);
+          // Pass the selected month to create a transaction for that month
+          const selectedMonthDate = selectedMonth
+            ? new Date(selectedMonth)
+            : undefined;
+          await createRecurringTransaction(
+            recurringTransaction,
+            selectedMonthDate
+          );
 
           // Refresh DataContext to update other screens and ensure consistency
           await Promise.all([
@@ -468,7 +475,14 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           updatedAt: Date.now(),
         };
 
-        await createRecurringTransaction(recurringTransaction);
+        // Pass the selected month to create a transaction for that month
+        const selectedMonthDate = selectedMonth
+          ? new Date(selectedMonth)
+          : undefined;
+        await createRecurringTransaction(
+          recurringTransaction,
+          selectedMonthDate
+        );
 
         // Refresh both to ensure the newly created transaction appears
         await Promise.all([
