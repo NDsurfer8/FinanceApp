@@ -38,8 +38,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app accesses your photos to let you share them with your friends.",
-          "cameraPermission": "The app accesses your camera to let you take profile photos."
+          "photosPermission": "The app accesses your photos to create a profile picture for you.",
+          "cameraPermission": "The app accesses your camera to take a profile picture for you."
         }
       ],
       [

@@ -17,11 +17,11 @@ import {
 // Plaid configuration - you'll need to get these from your Plaid dashboard
 export const PLAID_CONFIG = {
   clientName: "VectorFi",
-  products: ["transactions", "auth", "identity"],
+  products: ["transactions"],
   countryCodes: ["US"],
   language: "en",
   // Replace with your actual Plaid public key from your Plaid dashboard
-  publicKey: "7a951d0a678269f8605176340bf071", // Copy your Sandbox public key here
+  publicKey: "517e1656f92ebdf1673fc199b1d239", // Copy your Sandbox public key here
 };
 
 export interface PlaidAccount {
