@@ -17,13 +17,9 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
+import { useTransactionOperations } from "../hooks/useTransactionOperations";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useData } from "../contexts/DataContext";
-import {
-  saveTransaction,
-  updateTransaction,
-  removeTransaction,
-} from "../services/userData";
 import { billReminderService } from "../services/billReminders";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
@@ -54,9 +50,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const { user } = useAuth();
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
-  const { transactions, updateDataOptimistically } = useZeroLoading();
-  const { refreshRecurringTransactions, refreshTransactions } = useData();
-  const [loading, setLoading] = useState(false);
+  const { transactions } = useZeroLoading();
+  const { createTransaction, updateTransaction, deleteTransaction, loading } =
+    useTransactionOperations(user?.uid || "");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const {
     type: initialType,

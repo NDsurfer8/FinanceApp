@@ -7,7 +7,7 @@ export { LoginScreen } from "./LoginScreen";
 export { SignUpScreen } from "./SignUpScreen";
 export { ForgotPasswordScreen } from "./ForgotPasswordScreen";
 export { IntroSliderScreen } from "./IntroSliderScreen";
-export { AddTransactionScreen } from "./AddTransactionScreen";
+export { AddTransactionScreenNew as AddTransactionScreen } from "./AddTransactionScreenNew";
 export { AddAssetDebtScreen } from "./AddAssetDebtScreen";
 export { FinancialRiskScreen } from "./FinancialRiskScreen";
 export { default as SharedFinanceScreen } from "./SharedFinanceScreen";
