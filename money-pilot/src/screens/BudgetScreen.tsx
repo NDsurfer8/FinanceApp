@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import * as Haptics from "expo-haptics";
+import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useData } from "../contexts/DataContext";
@@ -406,8 +408,50 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       "BudgetScreen: Are they different?",
       month.getTime() !== selectedMonth.getTime()
     );
+
+    // Haptic feedback for month selection
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
+
     setSelectedMonth(month);
     setShowMonthPicker(false);
+  };
+
+  // Enhanced month navigation with haptic feedback
+  const navigateMonth = (direction: "prev" | "next") => {
+    const newMonth = new Date(selectedMonth);
+    if (direction === "prev") {
+      newMonth.setMonth(newMonth.getMonth() - 1);
+    } else {
+      newMonth.setMonth(newMonth.getMonth() + 1);
+    }
+
+    // Haptic feedback for month navigation
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    setSelectedMonth(newMonth);
+  };
+
+  // Handle swipe gestures for month navigation
+  const onGestureEvent = (event: any) => {
+    const { translationX, state } = event.nativeEvent;
+
+    if (state === State.END) {
+      const swipeThreshold = 50;
+
+      if (translationX > swipeThreshold) {
+        // Swipe right - go to previous month
+        navigateMonth("prev");
+      } else if (translationX < -swipeThreshold) {
+        // Swipe left - go to next month
+        navigateMonth("next");
+      }
+    }
+  };
+
+  // Handle long press for quick month picker
+  const handleLongPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setShowMonthPicker(true);
   };
 
   const scrollToCurrentMonth = () => {
@@ -494,37 +538,61 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         {/* Header */}
         <StandardHeader
           title={translate("budget", isFriendlyMode)}
-          subtitle="Plan your finances"
+          subtitle="Monthly Planning"
           showBackButton={false}
           rightComponent={
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <TouchableOpacity onPress={() => setShowMonthPicker(true)}>
-                <Ionicons
-                  name="chevron-back"
-                  size={24}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowMonthPicker(true)}>
-                <Text
+            <PanGestureHandler onGestureEvent={onGestureEvent}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <TouchableOpacity
+                  onPress={() => navigateMonth("prev")}
                   style={{
-                    fontSize: 18,
-                    fontWeight: "600",
-                    color: "#f97316",
-                    marginHorizontal: 12,
+                    padding: 8,
+                    borderRadius: 8,
                   }}
                 >
-                  {formatMonth(selectedMonth)}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowMonthPicker(true)}>
-                <Ionicons
-                  name="chevron-forward"
-                  size={24}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </View>
+                  <Ionicons
+                    name="chevron-back"
+                    size={24}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setShowMonthPicker(true)}
+                  onLongPress={handleLongPress}
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    minWidth: 120,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: "600",
+                      color: "#f97316",
+                    }}
+                  >
+                    {formatMonth(selectedMonth)}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => navigateMonth("next")}
+                  style={{
+                    padding: 8,
+                    borderRadius: 8,
+                  }}
+                >
+                  <Ionicons
+                    name="chevron-forward"
+                    size={24}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+            </PanGestureHandler>
           }
         />
 
@@ -1672,14 +1740,44 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               >
                 Select Month
               </Text>
-              <TouchableOpacity
-                onPress={() => setShowMonthPicker(false)}
-                style={{
-                  padding: 4,
-                }}
-              >
-                <Ionicons name="close" size={24} color={colors.textSecondary} />
-              </TouchableOpacity>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedMonth(new Date());
+                    setShowMonthPicker(false);
+                  }}
+                  style={{
+                    backgroundColor: colors.primary,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 8,
+                    marginRight: 12,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "600",
+                      color: colors.buttonText,
+                    }}
+                  >
+                    Current
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowMonthPicker(false)}
+                  style={{
+                    padding: 4,
+                  }}
+                >
+                  <Ionicons
+                    name="close"
+                    size={24}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
             <ScrollView
@@ -1708,7 +1806,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       borderRadius: 12,
                       backgroundColor: isSelected
                         ? colors.primary
+                        : isCurrentMonth
+                        ? colors.warningLight
                         : "transparent",
+                      borderWidth: isSelected ? 2 : isCurrentMonth ? 1 : 0,
+                      borderColor: isSelected ? colors.primary : colors.warning,
                       marginBottom: 4,
                     }}
                   >

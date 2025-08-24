@@ -31,7 +31,11 @@ export const StandardHeader: React.FC<StandardHeaderProps> = ({
         <View style={styles.titleContainer}>
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
           {subtitle && (
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            <Text
+              style={[styles.subtitle, { color: colors.textSecondary }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {subtitle}
             </Text>
           )}

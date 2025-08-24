@@ -347,7 +347,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         {/* Header */}
         <StandardHeader
           title={translate("dashboard", isFriendlyMode)}
-          subtitle={`Welcome back, ${user?.displayName || "User"} 👋`}
+          subtitle={`Welcome back, ${user?.displayName || "User"}`}
           showBackButton={false}
           rightComponent={
             <View style={{ flexDirection: "row", gap: 12 }}>
