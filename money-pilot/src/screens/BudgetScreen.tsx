@@ -1093,9 +1093,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 {translate("income", isFriendlyMode)}
               </Text>
             </View>
-            <TouchableOpacity onPress={handleAddIncome}>
-              <Ionicons name="add-circle" size={24} color={colors.text} />
-            </TouchableOpacity>
           </View>
 
           {/* Income Transactions List */}
@@ -1287,9 +1284,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 {translate("expenses", isFriendlyMode)}
               </Text>
             </View>
-            <TouchableOpacity onPress={handleAddExpense}>
-              <Ionicons name="add-circle" size={24} color={colors.text} />
-            </TouchableOpacity>
           </View>
 
           {/* Expense Transactions List */}
