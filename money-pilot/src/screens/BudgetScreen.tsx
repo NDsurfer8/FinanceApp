@@ -1234,6 +1234,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 fontWeight: "600",
                 marginLeft: 8,
               }}
+              allowFontScaling={true}
             >
               Add Income
             </Text>
@@ -1410,21 +1411,22 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               justifyContent: "center",
               paddingVertical: 12,
               marginTop: 16,
-              backgroundColor: colors.errorLight,
+              backgroundColor: colors.surfaceSecondary,
               borderRadius: 12,
               borderWidth: 1,
-              borderColor: colors.error,
+              borderColor: colors.primary,
               borderStyle: "dashed",
             }}
           >
-            <Ionicons name="add-circle" size={20} color={colors.error} />
+            <Ionicons name="add-circle" size={20} color={colors.primary} />
             <Text
               style={{
-                color: colors.error,
+                color: colors.primary,
                 fontSize: 14,
                 fontWeight: "600",
                 marginLeft: 8,
               }}
+              allowFontScaling={true}
             >
               Add Expense
             </Text>
@@ -1460,18 +1462,22 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
+                alignItems: "center",
                 marginBottom: 8,
               }}
             >
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: colors.textSecondary,
-                  fontWeight: "500",
-                }}
-              >
-                {translate("netIncome", isFriendlyMode)}
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ fontSize: 18, marginRight: 8 }}>💰</Text>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: colors.textSecondary,
+                    fontWeight: "500",
+                  }}
+                >
+                  {translate("netIncome", isFriendlyMode)}
+                </Text>
+              </View>
               <Text
                 style={{
                   fontSize: 16,
@@ -1494,6 +1500,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               }}
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ fontSize: 18, marginRight: 8 }}>💰</Text>
                 <Text
                   style={{
                     fontSize: 16,
@@ -1676,6 +1683,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               }}
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ fontSize: 18, marginRight: 8 }}>💳</Text>
                 <Text
                   style={{
                     fontSize: 16,
@@ -1761,14 +1769,14 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             style={{
               borderTopWidth: 1,
               borderTopColor: colors.border,
-              paddingTop: 20,
+              paddingTop: 12,
               position: "relative",
             }}
           >
             <View
               style={{
                 position: "absolute",
-                top: 0,
+                top: -8,
                 left: 0,
                 right: 0,
                 height: 1,
@@ -1778,7 +1786,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             <View
               style={{
                 position: "absolute",
-                top: 2,
+                top: -6,
                 left: 0,
                 right: 0,
                 height: 1,
@@ -1786,17 +1794,24 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               }}
             />
             <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
             >
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "800",
-                  color: colors.text,
-                }}
-              >
-                {translate("availableAmount", isFriendlyMode)}
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ fontSize: 20, marginRight: 8 }}>💸</Text>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "800",
+                    color: colors.text,
+                  }}
+                >
+                  {translate("availableAmount", isFriendlyMode)}
+                </Text>
+              </View>
               <Text
                 style={{
                   fontSize: 18,
@@ -1839,6 +1854,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 fontSize: 14,
                 fontWeight: "500",
               }}
+              allowFontScaling={true}
             >
               {hasUnsavedChanges
                 ? `${translate("save", isFriendlyMode)} ${translate(
