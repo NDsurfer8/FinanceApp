@@ -299,67 +299,161 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             </Text>
           </View>
 
-          {/* Form */}
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 16,
-              padding: 16,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.06,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 2,
-            }}
-          >
-            {/* Name */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Name *
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder={
-                  type === "asset"
-                    ? "e.g., Savings Account"
-                    : "e.g., Credit Card"
-                }
-                placeholderTextColor={colors.textSecondary}
-                value={formData.name}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, name: text })
-                }
-                autoCorrect={false}
-                returnKeyType="next"
-              />
-            </View>
+          {/* Form Fields */}
+          {/* Name */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Name
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              placeholder={
+                type === "asset" ? "e.g., Savings Account" : "e.g., Credit Card"
+              }
+              placeholderTextColor={colors.textSecondary}
+              value={formData.name}
+              onChangeText={(text) => setFormData({ ...formData, name: text })}
+            />
+          </View>
 
-            {/* Balance */}
-            <View style={{ marginBottom: 16 }}>
+          {/* Balance */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              {type === "asset" ? "Current Balance" : "Outstanding Balance"}
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              placeholder="0.00"
+              placeholderTextColor={colors.textSecondary}
+              value={formatNumberWithCommas(formData.balance)}
+              onChangeText={(text) => {
+                const cleanValue = removeCommas(text);
+                setFormData({ ...formData, balance: cleanValue });
+              }}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Asset Type (for assets only) */}
+          {type === "asset" && (
+            <View style={{ marginBottom: 20 }}>
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: 16,
                   fontWeight: "600",
-                  marginBottom: 8,
                   color: colors.text,
+                  marginBottom: 8,
                 }}
               >
-                {type === "asset" ? "Current Balance" : "Outstanding Balance"} *
+                Asset Type
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginBottom: 8 }}
+              >
+                {[
+                  { value: "savings", label: "Savings", icon: "💾" },
+                  { value: "checking", label: "Checking", icon: "🏦" },
+                  { value: "investment", label: "Investment", icon: "📈" },
+                  { value: "real_estate", label: "Real Estate", icon: "🏠" },
+                  { value: "vehicle", label: "Vehicle", icon: "🚗" },
+                  { value: "other", label: "Other", icon: "💼" },
+                ].map((assetType) => (
+                  <TouchableOpacity
+                    key={assetType.value}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 8,
+                      marginRight: 8,
+                      borderRadius: 20,
+                      borderWidth: 1,
+                      borderColor:
+                        formData.assetType === assetType.value
+                          ? colors.primary
+                          : colors.border,
+                      backgroundColor:
+                        formData.assetType === assetType.value
+                          ? colors.primary
+                          : "transparent",
+                      alignItems: "center",
+                      flexDirection: "row",
+                    }}
+                    onPress={() =>
+                      setFormData({ ...formData, assetType: assetType.value })
+                    }
+                  >
+                    <Text style={{ fontSize: 16, marginRight: 4 }}>
+                      {assetType.icon}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color:
+                          formData.assetType === assetType.value
+                            ? "white"
+                            : colors.text,
+                      }}
+                    >
+                      {assetType.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                  marginTop: 8,
+                }}
+              >
+                💡 Savings accounts are used for emergency fund calculations
+              </Text>
+            </View>
+          )}
+
+          {/* APR (for debts only) */}
+          {type === "debt" && (
+            <View style={{ marginBottom: 20 }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: colors.text,
+                  marginBottom: 8,
+                }}
+              >
+                APR (%)
               </Text>
               <TextInput
                 style={{
@@ -368,211 +462,80 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   borderRadius: 8,
                   padding: 12,
                   fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
                   color: colors.text,
+                  backgroundColor: colors.card,
                 }}
                 placeholder="0.00"
                 placeholderTextColor={colors.textSecondary}
-                value={formatNumberWithCommas(formData.balance)}
-                onChangeText={(text) => {
-                  const cleanValue = removeCommas(text);
-                  setFormData({ ...formData, balance: cleanValue });
-                }}
-                keyboardType="decimal-pad"
-                autoCorrect={false}
-                returnKeyType="next"
+                value={formData.rate}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, rate: text })
+                }
+                keyboardType="numeric"
               />
             </View>
+          )}
 
-            {/* Asset Type (for assets only) */}
-            {type === "asset" && (
-              <View style={{ marginBottom: 16 }}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "600",
-                    marginBottom: 8,
-                    color: colors.text,
-                  }}
-                >
-                  Asset Type *
-                </Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ paddingRight: 20 }}
-                >
-                  {[
-                    { value: "savings", label: "Savings", icon: "💾" },
-                    { value: "checking", label: "Checking", icon: "🏦" },
-                    { value: "investment", label: "Investment", icon: "📈" },
-                    { value: "real_estate", label: "Real Estate", icon: "🏠" },
-                    { value: "vehicle", label: "Vehicle", icon: "🚗" },
-                    { value: "other", label: "Other", icon: "💼" },
-                  ].map((assetType) => (
-                    <TouchableOpacity
-                      key={assetType.value}
-                      style={{
-                        minWidth: 90,
-                        maxWidth: 120,
-                        padding: 12,
-                        borderRadius: 8,
-                        borderWidth: 2,
-                        borderColor:
-                          formData.assetType === assetType.value
-                            ? colors.primary
-                            : colors.border,
-                        backgroundColor:
-                          formData.assetType === assetType.value
-                            ? colors.primary + "20"
-                            : colors.surfaceSecondary,
-                        alignItems: "center",
-                        marginRight: 8,
-                        flexShrink: 0,
-                      }}
-                      onPress={() =>
-                        setFormData({ ...formData, assetType: assetType.value })
-                      }
-                    >
-                      <Text style={{ fontSize: 16, marginBottom: 4 }}>
-                        {assetType.icon}
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          fontWeight: "600",
-                          color:
-                            formData.assetType === assetType.value
-                              ? colors.primary
-                              : colors.textSecondary,
-                          textAlign: "center",
-                        }}
-                        numberOfLines={2}
-                      >
-                        {assetType.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: colors.textSecondary,
-                    marginTop: 8,
-                  }}
-                >
-                  💡 Savings accounts are used for emergency fund calculations
-                </Text>
-              </View>
-            )}
-
-            {/* APR (for debts only) */}
-            {type === "debt" && (
-              <View style={{ marginBottom: 16 }}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "600",
-                    marginBottom: 8,
-                    color: colors.text,
-                  }}
-                >
-                  APR (%) *
-                </Text>
-                <TextInput
-                  style={{
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    borderRadius: 8,
-                    padding: 12,
-                    fontSize: 16,
-                    backgroundColor: colors.surfaceSecondary,
-                    color: colors.text,
-                  }}
-                  placeholder="0.00"
-                  placeholderTextColor={colors.textSecondary}
-                  value={formData.rate}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, rate: text })
-                  }
-                  keyboardType="decimal-pad"
-                  autoCorrect={false}
-                  returnKeyType="next"
-                />
-              </View>
-            )}
-
-            {/* Monthly Payment (for debts only) */}
-            {type === "debt" && (
-              <View style={{ marginBottom: 16 }}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "600",
-                    marginBottom: 8,
-                    color: colors.text,
-                  }}
-                >
-                  Monthly Payment *
-                </Text>
-                <TextInput
-                  style={{
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    borderRadius: 8,
-                    padding: 12,
-                    fontSize: 16,
-                    backgroundColor: colors.surfaceSecondary,
-                    color: colors.text,
-                  }}
-                  placeholder="0.00"
-                  placeholderTextColor={colors.textSecondary}
-                  value={formData.payment}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, payment: text })
-                  }
-                  keyboardType="decimal-pad"
-                  autoCorrect={false}
-                  returnKeyType="done"
-                />
-              </View>
-            )}
-          </View>
-
-          {/* Save Button */}
-          <TouchableOpacity
-            style={{
-              backgroundColor: colors.primary,
-              borderRadius: 12,
-              padding: 16,
-              alignItems: "center",
-              marginTop: 24,
-              opacity: loading ? 0.6 : 1,
-            }}
-            onPress={handleSave}
-            disabled={loading}
-          >
-            {loading ? (
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <ActivityIndicator
-                  size="small"
-                  color={colors.buttonText}
-                  style={{ marginRight: 8 }}
-                />
-                <Text
-                  style={{
-                    color: colors.buttonText,
-                    fontSize: 16,
-                    fontWeight: "600",
-                  }}
-                >
-                  {editMode ? "Updating..." : "Saving..."}
-                </Text>
-              </View>
-            ) : (
+          {/* Monthly Payment (for debts only) */}
+          {type === "debt" && (
+            <View style={{ marginBottom: 20 }}>
               <Text
                 style={{
-                  color: colors.buttonText,
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: colors.text,
+                  marginBottom: 8,
+                }}
+              >
+                Monthly Payment
+              </Text>
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: 8,
+                  padding: 12,
+                  fontSize: 16,
+                  color: colors.text,
+                  backgroundColor: colors.card,
+                }}
+                placeholder="0.00"
+                placeholderTextColor={colors.textSecondary}
+                value={formatNumberWithCommas(formData.payment)}
+                onChangeText={(text) => {
+                  const cleanValue = removeCommas(text);
+                  setFormData({ ...formData, payment: cleanValue });
+                }}
+                keyboardType="numeric"
+              />
+            </View>
+          )}
+
+          {/* Action Buttons */}
+          <View style={{ marginTop: 20, gap: 12 }}>
+            {/* Save Button */}
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.primary,
+                padding: 16,
+                borderRadius: 8,
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "center",
+              }}
+              onPress={handleSave}
+              disabled={loading}
+            >
+              {loading && (
+                <ActivityIndicator
+                  size="small"
+                  color="white"
+                  style={{ marginRight: 8 }}
+                />
+              )}
+              <Text
+                style={{
+                  color: "white",
                   fontSize: 16,
                   fontWeight: "600",
                 }}
@@ -580,53 +543,41 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 {editMode ? "Update" : "Save"}{" "}
                 {type === "asset" ? "Asset" : "Debt"}
               </Text>
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
 
-          {/* Delete Button (only show in edit mode) */}
-          {editMode && (
-            <TouchableOpacity
-              style={{
-                backgroundColor: colors.error,
-                borderRadius: 12,
-                padding: 16,
-                alignItems: "center",
-                marginTop: 12,
-                opacity: deleteLoading ? 0.6 : 1,
-              }}
-              onPress={handleDelete}
-              disabled={deleteLoading}
-            >
-              {deleteLoading ? (
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {/* Delete Button (only in edit mode) */}
+            {editMode && (
+              <TouchableOpacity
+                style={{
+                  backgroundColor: colors.error,
+                  padding: 16,
+                  borderRadius: 8,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                }}
+                onPress={handleDelete}
+                disabled={deleteLoading}
+              >
+                {deleteLoading && (
                   <ActivityIndicator
                     size="small"
-                    color={colors.buttonText}
+                    color="white"
                     style={{ marginRight: 8 }}
                   />
-                  <Text
-                    style={{
-                      color: colors.buttonText,
-                      fontSize: 16,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Deleting...
-                  </Text>
-                </View>
-              ) : (
+                )}
                 <Text
                   style={{
-                    color: colors.buttonText,
+                    color: "white",
                     fontSize: 16,
                     fontWeight: "600",
                   }}
                 >
                   Delete {type === "asset" ? "Asset" : "Debt"}
                 </Text>
-              )}
-            </TouchableOpacity>
-          )}
+              </TouchableOpacity>
+            )}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

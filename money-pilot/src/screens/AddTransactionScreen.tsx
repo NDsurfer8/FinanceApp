@@ -783,571 +783,438 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 </View>
               )}
 
-          {/* Form */}
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 16,
-              padding: 16,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.06,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 2,
-            }}
-          >
-            {/* Transaction Type */}
-            <View style={{ marginBottom: 20 }}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: "600",
-                  marginBottom: 12,
-                  color: colors.text,
-                }}
-              >
-                Transaction Type
-              </Text>
-              <View style={{ flexDirection: "row", gap: 12 }}>
-                <TouchableOpacity
-                  style={{
-                    flex: 1,
-                    padding: 12,
-                    borderRadius: 8,
-                    backgroundColor:
-                      formData.type === "expense"
-                        ? colors.error
-                        : colors.surfaceSecondary,
-                    alignItems: "center",
-                  }}
-                  onPress={() =>
-                    setFormData({
-                      ...formData,
-                      type: "expense",
-                      category: "",
-                    })
-                  }
-                >
-                  <Text
-                    style={{
-                      color:
-                        formData.type === "expense"
-                          ? colors.buttonText
-                          : colors.textSecondary,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Expense
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={{
-                    flex: 1,
-                    padding: 12,
-                    borderRadius: 8,
-                    backgroundColor:
-                      formData.type === "income"
-                        ? colors.success
-                        : colors.surfaceSecondary,
-                    alignItems: "center",
-                  }}
-                  onPress={() =>
-                    setFormData({ ...formData, type: "income", category: "" })
-                  }
-                >
-                  <Text
-                    style={{
-                      color:
-                        formData.type === "income"
-                          ? colors.buttonText
-                          : colors.textSecondary,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Income
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Amount */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                $ Amount
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="0.00"
-                placeholderTextColor={colors.textSecondary}
-                value={formatNumberWithCommas(formData.amount)}
-                onChangeText={(text) => {
-                  const cleanValue = removeCommas(text);
-                  setFormData({ ...formData, amount: cleanValue });
-                }}
-                keyboardType="decimal-pad"
-                autoCorrect={false}
-                returnKeyType="done"
-                blurOnSubmit={true}
-              />
-            </View>
-
-            {/* Category */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Category
-              </Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingRight: 16 }}
-              >
-                {categories.map((category) => (
-                  <TouchableOpacity
-                    key={category}
-                    style={{
-                      paddingHorizontal: 16,
-                      paddingVertical: 8,
-                      borderRadius: 20,
-                      backgroundColor:
-                        formData.category === category
-                          ? colors.primary
-                          : colors.surfaceSecondary,
-                      marginRight: 8,
-                      minWidth: 80,
-                      alignItems: "center",
-                    }}
-                    onPress={() => setFormData({ ...formData, category })}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          formData.category === category
-                            ? colors.buttonText
-                            : colors.text,
-                        fontSize: 14,
-                        fontWeight: "500",
-                      }}
-                    >
-                      {category}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* Description */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Description
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  minHeight: 80,
-                  textAlignVertical: "top",
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="Enter description..."
-                placeholderTextColor={colors.textSecondary}
-                value={formData.description}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, description: text })
-                }
-                autoCorrect={false}
-                multiline
-                returnKeyType="done"
-                blurOnSubmit={true}
-              />
-            </View>
-
-            {/* Date */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                {formData.type === "expense"
-                  ? "Expense Due Date"
-                  : formData.type === "income"
-                  ? "Income Received Date"
-                  : "Date"}
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder={
-                  formData.type === "expense"
-                    ? "Due Date (YYYY-MM-DD)"
-                    : formData.type === "income"
-                    ? "Income Received Date (YYYY-MM-DD)"
-                    : "Date (YYYY-MM-DD)"
-                }
-                placeholderTextColor={colors.textSecondary}
-                value={formData.date}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, date: text })
-                }
-                autoCorrect={false}
-                returnKeyType="done"
-                blurOnSubmit={true}
-              />
-
-              {/* Quick Date Buttons */}
-              <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-                <TouchableOpacity
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 6,
-                    backgroundColor: colors.surfaceSecondary,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  }}
-                  onPress={() =>
-                    setFormData({ ...formData, date: getInitialDate() })
-                  }
-                >
-                  <Text style={{ fontSize: 12, color: colors.text }}>
-                    Today
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 6,
-                    backgroundColor: colors.surfaceSecondary,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  }}
-                  onPress={() =>
-                    setFormData({ ...formData, date: getTomorrowDate() })
-                  }
-                >
-                  <Text style={{ fontSize: 12, color: colors.text }}>
-                    Tomorrow
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 6,
-                    backgroundColor: colors.surfaceSecondary,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  }}
-                  onPress={() => {
-                    const nextWeek = new Date();
-                    nextWeek.setDate(nextWeek.getDate() + 7);
-                    setFormData({
-                      ...formData,
-                      date: nextWeek.toISOString().split("T")[0],
-                    });
-                  }}
-                >
-                  <Text style={{ fontSize: 12, color: colors.text }}>
-                    Next Week
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Recurring Option */}
-            <View style={{ marginBottom: 20 }}>
+          {/* Form Fields */}
+          {/* Type Selection */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Type
+            </Text>
+            <View style={{ flexDirection: "row", gap: 12 }}>
               <TouchableOpacity
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingVertical: 12,
-                  paddingHorizontal: 16,
+                  flex: 1,
+                  padding: 12,
                   borderRadius: 8,
-                  backgroundColor: formData.isRecurring
-                    ? colors.primary
-                    : colors.background,
                   borderWidth: 1,
-                  borderColor: formData.isRecurring
-                    ? colors.primary
-                    : colors.border,
+                  borderColor:
+                    formData.type === "expense" ? colors.error : colors.border,
+                  backgroundColor:
+                    formData.type === "expense" ? colors.error : "transparent",
+                  alignItems: "center",
                 }}
                 onPress={() =>
                   setFormData({
                     ...formData,
-                    isRecurring: !formData.isRecurring,
+                    type: "expense",
+                    category: "",
                   })
                 }
               >
-                <Ionicons
-                  name="repeat"
-                  size={18}
-                  color={
-                    formData.isRecurring
-                      ? colors.buttonText
-                      : colors.textSecondary
-                  }
-                  style={{ marginRight: 8 }}
-                />
                 <Text
                   style={{
-                    fontSize: 16,
+                    color: formData.type === "expense" ? "white" : colors.text,
                     fontWeight: "600",
-                    color: formData.isRecurring
-                      ? colors.buttonText
-                      : colors.text,
                   }}
                 >
-                  {formData.isRecurring
-                    ? editMode &&
-                      (transaction?.isRecurring ||
-                        transaction?.recurringTransactionId)
-                      ? "Is Recurring"
-                      : "Recurring Transaction"
-                    : "Make Recurring"}
+                  Expense
                 </Text>
               </TouchableOpacity>
-
-              {formData.isRecurring && (
-                <View
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  padding: 12,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor:
+                    formData.type === "income" ? colors.primary : colors.border,
+                  backgroundColor:
+                    formData.type === "income" ? colors.primary : "transparent",
+                  alignItems: "center",
+                }}
+                onPress={() =>
+                  setFormData({ ...formData, type: "income", category: "" })
+                }
+              >
+                <Text
                   style={{
-                    marginTop: 16,
-                    paddingTop: 16,
-                    borderTopWidth: 1,
-                    borderTopColor: colors.border,
+                    color: formData.type === "income" ? "white" : colors.text,
+                    fontWeight: "600",
                   }}
                 >
-                  {/* Frequency Dropdown */}
-                  <View style={{ marginBottom: 16 }}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "500",
-                        marginBottom: 4,
-                        color: colors.textSecondary,
-                      }}
-                    >
-                      Frequency
-                    </Text>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        flexWrap: "wrap",
-                        gap: 6,
-                      }}
-                    >
-                      {["monthly"].map((freq) => (
-                        <TouchableOpacity
-                          key={freq}
-                          style={{
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 4,
-                            backgroundColor:
-                              formData.frequency === freq
-                                ? colors.primary
-                                : colors.surfaceSecondary,
-                          }}
-                          onPress={() =>
-                            setFormData({
-                              ...formData,
-                              frequency: freq as any,
-                            })
-                          }
-                        >
-                          <Text
-                            style={{
-                              color:
-                                formData.frequency === freq
-                                  ? colors.buttonText
-                                  : colors.text,
-                              fontSize: 12,
-                              fontWeight: "500",
-                            }}
-                          >
-                            {freq.charAt(0).toUpperCase() + freq.slice(1)}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* End Date (Optional) */}
-                  <View style={{ marginBottom: 16 }}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "500",
-                        marginBottom: 4,
-                        color: colors.textSecondary,
-                      }}
-                    >
-                      End Date (Optional)
-                    </Text>
-                    <TextInput
-                      style={{
-                        borderWidth: 1,
-                        borderColor: colors.border,
-                        borderRadius: 6,
-                        padding: 8,
-                        fontSize: 14,
-                        backgroundColor: colors.surfaceSecondary,
-                        color: colors.text,
-                      }}
-                      placeholder="YYYY-MM-DD (leave empty for no end date)"
-                      placeholderTextColor={colors.textSecondary}
-                      value={formData.endDate}
-                      onChangeText={(text) =>
-                        setFormData({ ...formData, endDate: text })
-                      }
-                      autoCorrect={false}
-                      returnKeyType="done"
-                      blurOnSubmit={true}
-                    />
-                  </View>
-                </View>
-              )}
+                  Income
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
-          {/* Save Button */}
-          <TouchableOpacity
-            style={{
-              backgroundColor: colors.primary,
-              borderRadius: 12,
-              padding: 16,
-              alignItems: "center",
-              marginTop: 24,
-              opacity: loading ? 0.6 : 1,
-            }}
-            onPress={handleSave}
-            disabled={loading}
-          >
-            {loading ? (
+          {/* Description */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Description
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              value={formData.description}
+              onChangeText={(text) =>
+                setFormData({ ...formData, description: text })
+              }
+              placeholder="Enter description"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+
+          {/* Amount */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              $ Amount
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              value={formatNumberWithCommas(formData.amount)}
+              onChangeText={(text) => {
+                const cleanValue = removeCommas(text);
+                setFormData({ ...formData, amount: cleanValue });
+              }}
+              placeholder="0.00"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Category */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Category
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ marginBottom: 8 }}
+            >
+              {categories.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    marginRight: 8,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor:
+                      formData.category === category
+                        ? colors.primary
+                        : colors.border,
+                    backgroundColor:
+                      formData.category === category
+                        ? colors.primary
+                        : "transparent",
+                  }}
+                  onPress={() => setFormData({ ...formData, category })}
+                >
+                  <Text
+                    style={{
+                      color:
+                        formData.category === category ? "white" : colors.text,
+                      fontSize: 14,
+                    }}
+                  >
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Date */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Date
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              value={formData.date}
+              onChangeText={(text) => setFormData({ ...formData, date: text })}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+
+          {/* Recurring Transaction Toggle */}
+          <View style={{ marginBottom: 20 }}>
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: 12,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                backgroundColor: colors.card,
+              }}
+              onPress={() =>
+                setFormData({ ...formData, isRecurring: !formData.isRecurring })
+              }
+            >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <ActivityIndicator
-                  size="small"
-                  color={colors.buttonText}
-                  style={{ marginRight: 8 }}
+                <Ionicons
+                  name="repeat"
+                  size={20}
+                  color={
+                    formData.isRecurring ? colors.primary : colors.textSecondary
+                  }
                 />
                 <Text
                   style={{
-                    color: colors.buttonText,
+                    marginLeft: 8,
                     fontSize: 16,
                     fontWeight: "600",
+                    color: colors.text,
                   }}
                 >
-                  {editMode ? "Updating..." : "Saving..."}
+                  Recurring Transaction
                 </Text>
               </View>
-            ) : (
+              <View
+                style={{
+                  width: 40,
+                  height: 24,
+                  borderRadius: 12,
+                  backgroundColor: formData.isRecurring
+                    ? colors.primary
+                    : colors.border,
+                  justifyContent: "center",
+                  alignItems: formData.isRecurring ? "flex-end" : "flex-start",
+                  paddingHorizontal: 2,
+                }}
+              >
+                <View
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    backgroundColor: "white",
+                  }}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Recurring Options */}
+          {formData.isRecurring && (
+            <>
+              {/* Frequency */}
+              <View style={{ marginBottom: 20 }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: colors.text,
+                    marginBottom: 8,
+                  }}
+                >
+                  Frequency
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {["weekly", "biweekly", "monthly", "quarterly", "yearly"].map(
+                    (frequency) => (
+                      <TouchableOpacity
+                        key={frequency}
+                        style={{
+                          paddingHorizontal: 16,
+                          paddingVertical: 8,
+                          marginRight: 8,
+                          borderRadius: 20,
+                          borderWidth: 1,
+                          borderColor:
+                            formData.frequency === frequency
+                              ? colors.primary
+                              : colors.border,
+                          backgroundColor:
+                            formData.frequency === frequency
+                              ? colors.primary
+                              : "transparent",
+                        }}
+                        onPress={() =>
+                          setFormData({ ...formData, frequency: frequency })
+                        }
+                      >
+                        <Text
+                          style={{
+                            color:
+                              formData.frequency === frequency
+                                ? "white"
+                                : colors.text,
+                            fontSize: 14,
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          {frequency}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  )}
+                </ScrollView>
+              </View>
+
+              {/* End Date */}
+              <View style={{ marginBottom: 20 }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: colors.text,
+                    marginBottom: 8,
+                  }}
+                >
+                  End Date (Optional)
+                </Text>
+                <TextInput
+                  style={{
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 8,
+                    padding: 12,
+                    fontSize: 16,
+                    color: colors.text,
+                    backgroundColor: colors.card,
+                  }}
+                  value={formData.endDate}
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, endDate: text })
+                  }
+                  placeholder="YYYY-MM-DD (leave empty for no end date)"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+            </>
+          )}
+
+          {/* Action Buttons */}
+          <View style={{ marginTop: 20, gap: 12 }}>
+            {/* Save Button */}
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.primary,
+                padding: 16,
+                borderRadius: 8,
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "center",
+              }}
+              onPress={handleSave}
+              disabled={loading}
+            >
+              {loading && (
+                <ActivityIndicator
+                  size="small"
+                  color="white"
+                  style={{ marginRight: 8 }}
+                />
+              )}
               <Text
                 style={{
-                  color: colors.buttonText,
+                  color: "white",
                   fontSize: 16,
                   fontWeight: "600",
                 }}
               >
-                {editMode
-                  ? "Update"
-                  : formData.isRecurring
-                  ? "Create Recurring"
-                  : "Save"}{" "}
-                {formData.type === "income" ? "Income" : "Expense"}
+                {editMode ? "Update" : "Save"} Transaction
               </Text>
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
 
-          {/* Delete Button (only show in edit mode) */}
-          {editMode && (
-            <TouchableOpacity
-              style={{
-                backgroundColor: colors.error,
-                borderRadius: 12,
-                padding: 16,
-                alignItems: "center",
-                marginTop: 12,
-                opacity: deleteLoading ? 0.6 : 1,
-              }}
-              onPress={handleDelete}
-              disabled={deleteLoading}
-            >
-              {deleteLoading ? (
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {/* Delete Button (only in edit mode) */}
+            {editMode && (
+              <TouchableOpacity
+                style={{
+                  backgroundColor: colors.error,
+                  padding: 16,
+                  borderRadius: 8,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                }}
+                onPress={handleDelete}
+                disabled={deleteLoading}
+              >
+                {deleteLoading && (
                   <ActivityIndicator
                     size="small"
-                    color={colors.buttonText}
+                    color="white"
                     style={{ marginRight: 8 }}
                   />
-                  <Text
-                    style={{
-                      color: colors.buttonText,
-                      fontSize: 16,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Deleting...
-                  </Text>
-                </View>
-              ) : (
+                )}
                 <Text
                   style={{
-                    color: colors.buttonText,
+                    color: "white",
                     fontSize: 16,
                     fontWeight: "600",
                   }}
                 >
-                  Delete {formData.type === "income" ? "Income" : "Expense"}
+                  Delete Transaction
                 </Text>
-              )}
-            </TouchableOpacity>
-          )}
+              </TouchableOpacity>
+            )}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -281,369 +281,348 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
             onBack={() => navigation.goBack()}
           />
 
-          {/* Form */}
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 16,
-              padding: 16,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.06,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 2,
-            }}
-          >
-            {/* Goal Name */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Goal Description *
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="e.g., Emergency Fund"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.name}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, name: text })
-                }
-              />
-            </View>
+          {/* Form Fields */}
+          {/* Goal Description */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Goal Description
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              placeholder="e.g., Emergency Fund"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.name}
+              onChangeText={(text) => setFormData({ ...formData, name: text })}
+            />
+          </View>
 
-            {/* Category */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Category *
-              </Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {goalCategories.map((category) => (
-                  <TouchableOpacity
-                    key={category.key}
-                    style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 8,
-                      borderRadius: 8,
-                      backgroundColor:
-                        formData.category === category.key
-                          ? category.color + "20"
-                          : colors.surfaceSecondary,
-                      borderWidth: 1,
-                      borderColor:
-                        formData.category === category.key
-                          ? category.color
-                          : colors.border,
-                    }}
-                    onPress={() =>
-                      setFormData({ ...formData, category: category.key })
+          {/* Category */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Category
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ marginBottom: 8 }}
+            >
+              {goalCategories.map((category) => (
+                <TouchableOpacity
+                  key={category.key}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    marginRight: 8,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor:
+                      formData.category === category.key
+                        ? category.color
+                        : colors.border,
+                    backgroundColor:
+                      formData.category === category.key
+                        ? category.color
+                        : "transparent",
+                    alignItems: "center",
+                    flexDirection: "row",
+                  }}
+                  onPress={() =>
+                    setFormData({ ...formData, category: category.key })
+                  }
+                >
+                  <Ionicons
+                    name={category.icon as any}
+                    size={16}
+                    color={
+                      formData.category === category.key
+                        ? "white"
+                        : category.color
                     }
-                  >
-                    <Text
-                      style={{
-                        color:
-                          formData.category === category.key
-                            ? category.color
-                            : colors.text,
-                        fontSize: 14,
-                        fontWeight: "500",
-                      }}
-                    >
-                      {category.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Target Amount */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Goal Target Amount *
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="0.00"
-                placeholderTextColor={colors.textSecondary}
-                value={formatNumberWithCommas(formData.targetAmount)}
-                onChangeText={(text) => {
-                  const cleanValue = removeCommas(text);
-                  setFormData({ ...formData, targetAmount: cleanValue });
-                }}
-                keyboardType="decimal-pad"
-              />
-            </View>
-
-            {/* Current Amount */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Current Amount Saved for Goal *
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="0.00"
-                placeholderTextColor={colors.textSecondary}
-                value={formatNumberWithCommas(formData.currentAmount)}
-                onChangeText={(text) => {
-                  const cleanValue = removeCommas(text);
-                  setFormData({ ...formData, currentAmount: cleanValue });
-                }}
-                keyboardType="decimal-pad"
-              />
-            </View>
-
-            {/* Monthly Contribution */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Planned Monthly Contribution *
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="0.00"
-                placeholderTextColor={colors.textSecondary}
-                value={formatNumberWithCommas(formData.monthlyContribution)}
-                onChangeText={(text) => {
-                  const cleanValue = removeCommas(text);
-                  setFormData({ ...formData, monthlyContribution: cleanValue });
-                }}
-                keyboardType="decimal-pad"
-              />
-            </View>
-
-            {/* Target Date */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Target Achievement Date *
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.targetDate}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, targetDate: text })
-                }
-              />
-            </View>
-
-            {/* Priority */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Priority *
-              </Text>
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                {(["low", "medium", "high"] as const).map((priority) => (
-                  <TouchableOpacity
-                    key={priority}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text
                     style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 8,
-                      borderRadius: 8,
-                      backgroundColor:
-                        formData.priority === priority
-                          ? priorityColors[priority] + "20"
-                          : colors.surfaceSecondary,
-                      borderWidth: 1,
-                      borderColor:
-                        formData.priority === priority
-                          ? priorityColors[priority]
-                          : colors.border,
+                      fontSize: 14,
+                      color:
+                        formData.category === category.key
+                          ? "white"
+                          : colors.text,
                     }}
-                    onPress={() => setFormData({ ...formData, priority })}
                   >
-                    <Text
-                      style={{
-                        color:
-                          formData.priority === priority
-                            ? priorityColors[priority]
-                            : colors.text,
-                        fontSize: 14,
-                        fontWeight: "500",
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {priority}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                    {category.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Target Amount */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Goal Target Amount
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              placeholder="0.00"
+              placeholderTextColor={colors.textSecondary}
+              value={formatNumberWithCommas(formData.targetAmount)}
+              onChangeText={(text) => {
+                const cleanValue = removeCommas(text);
+                setFormData({ ...formData, targetAmount: cleanValue });
+              }}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Current Amount */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Current Amount Saved for Goal
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              placeholder="0.00"
+              placeholderTextColor={colors.textSecondary}
+              value={formatNumberWithCommas(formData.currentAmount)}
+              onChangeText={(text) => {
+                const cleanValue = removeCommas(text);
+                setFormData({ ...formData, currentAmount: cleanValue });
+              }}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Monthly Contribution */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Planned Monthly Contribution
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              placeholder="0.00"
+              placeholderTextColor={colors.textSecondary}
+              value={formatNumberWithCommas(formData.monthlyContribution)}
+              onChangeText={(text) => {
+                const cleanValue = removeCommas(text);
+                setFormData({ ...formData, monthlyContribution: cleanValue });
+              }}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Target Date */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Target Achievement Date
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.targetDate}
+              onChangeText={(text) =>
+                setFormData({ ...formData, targetDate: text })
+              }
+            />
+          </View>
+
+          {/* Priority */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Priority
+            </Text>
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              {(["low", "medium", "high"] as const).map((priority) => (
+                <TouchableOpacity
+                  key={priority}
+                  style={{
+                    flex: 1,
+                    padding: 12,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor:
+                      formData.priority === priority
+                        ? priorityColors[priority]
+                        : colors.border,
+                    backgroundColor:
+                      formData.priority === priority
+                        ? priorityColors[priority]
+                        : "transparent",
+                    alignItems: "center",
+                  }}
+                  onPress={() => setFormData({ ...formData, priority })}
+                >
+                  <Text
+                    style={{
+                      color:
+                        formData.priority === priority ? "white" : colors.text,
+                      fontSize: 14,
+                      fontWeight: "600",
+                      textTransform: "capitalize",
+                    }}
+                  >
+                    {priority}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
-          {/* Save Button */}
-          <TouchableOpacity
-            style={{
-              backgroundColor: colors.primary,
-              borderRadius: 12,
-              padding: 16,
-              alignItems: "center",
-              marginTop: 24,
-              opacity: loading ? 0.6 : 1,
-            }}
-            onPress={handleSave}
-            disabled={loading}
-          >
-            {loading ? (
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {/* Action Buttons */}
+          <View style={{ marginTop: 20, gap: 12 }}>
+            {/* Save Button */}
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.primary,
+                padding: 16,
+                borderRadius: 8,
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "center",
+              }}
+              onPress={handleSave}
+              disabled={loading}
+            >
+              {loading && (
                 <ActivityIndicator
                   size="small"
-                  color={colors.buttonText}
+                  color="white"
                   style={{ marginRight: 8 }}
                 />
-                <Text
-                  style={{
-                    color: colors.buttonText,
-                    fontSize: 16,
-                    fontWeight: "600",
-                  }}
-                >
-                  {editMode ? "Updating..." : "Saving..."}
-                </Text>
-              </View>
-            ) : (
+              )}
               <Text
                 style={{
-                  color: colors.buttonText,
+                  color: "white",
                   fontSize: 16,
                   fontWeight: "600",
                 }}
               >
                 {editMode ? "Update" : "Save"} Goal
               </Text>
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
 
-          {/* Delete Button (only show in edit mode) */}
-          {editMode && (
-            <TouchableOpacity
-              style={{
-                backgroundColor: colors.error,
-                borderRadius: 12,
-                padding: 16,
-                alignItems: "center",
-                marginTop: 12,
-                opacity: deleteLoading ? 0.6 : 1,
-              }}
-              onPress={handleDelete}
-              disabled={deleteLoading}
-            >
-              {deleteLoading ? (
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {/* Delete Button (only in edit mode) */}
+            {editMode && (
+              <TouchableOpacity
+                style={{
+                  backgroundColor: colors.error,
+                  padding: 16,
+                  borderRadius: 8,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                }}
+                onPress={handleDelete}
+                disabled={deleteLoading}
+              >
+                {deleteLoading && (
                   <ActivityIndicator
                     size="small"
-                    color={colors.buttonText}
+                    color="white"
                     style={{ marginRight: 8 }}
                   />
-                  <Text
-                    style={{
-                      color: colors.buttonText,
-                      fontSize: 16,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Deleting...
-                  </Text>
-                </View>
-              ) : (
+                )}
                 <Text
                   style={{
-                    color: colors.buttonText,
+                    color: "white",
                     fontSize: 16,
                     fontWeight: "600",
                   }}
                 >
                   Delete Goal
                 </Text>
-              )}
-            </TouchableOpacity>
-          )}
+              </TouchableOpacity>
+            )}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
