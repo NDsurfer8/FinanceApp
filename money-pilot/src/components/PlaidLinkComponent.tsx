@@ -154,7 +154,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
         <TouchableOpacity
           onPress={handleDisconnectBank}
           style={{
-            backgroundColor: "#ef4444",
+            backgroundColor: "#16a34a",
             paddingVertical: 12,
             paddingHorizontal: 14,
             borderRadius: 12,
