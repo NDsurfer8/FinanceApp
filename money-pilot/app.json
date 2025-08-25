@@ -2,9 +2,9 @@
   "expo": {
     "name": "VectorFi",
     "slug": "money-pilot",
-    "version": "1.1.1",
+    "version": "1.0.9",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/ios/icon-1024.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -16,6 +16,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.ndsurf888.vectorfii",
       "usesAppleSignIn": true,
+      "icon": "./assets/ios/icon-1024.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSFaceIDUsageDescription": "VectorFi uses Face ID to securely log you into your account and protect your financial information."

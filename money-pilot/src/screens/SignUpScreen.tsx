@@ -138,8 +138,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
             </TouchableOpacity>
             <View style={styles.logoContainer}>
               <Image
-                source={require("../../assets/icon.png")}
-                style={styles.logoImage}
+                source={require("../../assets/ios/icon-1024.png")}
+                style={styles.logo}
                 resizeMode="contain"
               />
             </View>
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 16,
   },
-  logoImage: {
+  logo: {
     width: 60,
     height: 60,
     borderRadius: 30,

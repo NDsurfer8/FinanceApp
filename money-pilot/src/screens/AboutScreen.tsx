@@ -250,7 +250,7 @@ https://vectorfi.ai/
             >
               <Image
                 source={require("../../assets/appstore.png")}
-                style={{ width: 48, height: 48, borderRadius: 8 }}
+                style={styles.appStoreIcon}
                 resizeMode="contain"
               />
             </View>
@@ -614,6 +614,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+  },
+  appStoreIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
   },
   appName: {
     fontSize: 24,

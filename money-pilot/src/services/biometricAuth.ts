@@ -104,7 +104,6 @@ export class BiometricAuthService {
         cancelLabel: "Cancel",
         fallbackLabel: "Use Passcode",
         disableDeviceFallback: false,
-        requireAuthentication: true,
       });
 
       if (result.success) {
