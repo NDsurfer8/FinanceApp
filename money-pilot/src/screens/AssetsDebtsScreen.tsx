@@ -37,11 +37,6 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
-  // Filter loan accounts from Plaid
-  const loanAccounts = bankAccounts.filter(
-    (account: any) => account.type === "loan"
-  );
-
   // Background refresh when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
@@ -78,6 +73,23 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           title={translate("assetsDebts", isFriendlyMode)}
           subtitle="Manage your net worth"
           showBackButton={false}
+          rightComponent={
+            <TouchableOpacity
+              onPress={() => navigation.navigate("BankTransactions")}
+              style={{
+                backgroundColor: colors.primary,
+                padding: 12,
+                borderRadius: 12,
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 2 },
+                elevation: 4,
+              }}
+            >
+              <Ionicons name="card" size={20} color={colors.buttonText} />
+            </TouchableOpacity>
+          }
         />
 
         {/* Assets Section */}
@@ -365,113 +377,6 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             </>
           )}
         </View>
-
-        {/* Connected Loan Accounts Section */}
-        {loanAccounts.length > 0 && (
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 24,
-              marginBottom: 20,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 20,
-              }}
-            >
-              <Ionicons
-                name="link"
-                size={20}
-                color={colors.primary}
-                style={{ marginRight: 8 }}
-              />
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "700",
-                  color: colors.text,
-                }}
-              >
-                Connected Loan Accounts
-              </Text>
-            </View>
-
-            {loanAccounts.map((account: any) => (
-              <View
-                key={account.id}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  paddingVertical: 12,
-                  borderBottomWidth: 1,
-                  borderBottomColor: colors.border,
-                }}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: colors.text,
-                      fontWeight: "600",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {account.name}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: colors.textSecondary,
-                    }}
-                  >
-                    {account.subtype} • {account.mask}
-                  </Text>
-                </View>
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text
-                    style={{
-                      fontSize: 18,
-                      fontWeight: "700",
-                      color: "#dc2626",
-                    }}
-                  >
-                    ${Math.abs(account.balances.current).toLocaleString()}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: colors.textSecondary,
-                      marginTop: 2,
-                    }}
-                  >
-                    Remaining Balance
-                  </Text>
-                </View>
-              </View>
-            ))}
-
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.textSecondary,
-                marginTop: 12,
-                fontStyle: "italic",
-              }}
-            >
-              Connected loan accounts are automatically synced from your bank
-            </Text>
-          </View>
-        )}
 
         {/* Action Buttons */}
         <View

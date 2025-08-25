@@ -38,6 +38,11 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
       account.type === "depository" &&
       ["checking", "savings"].includes(account.subtype)
   );
+
+  // Filter loan accounts from Plaid
+  const loanAccounts = bankAccounts.filter(
+    (account: any) => account.type === "loan"
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isUsingRealData, setIsUsingRealData] = useState(false);
@@ -467,6 +472,118 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
             </View>
           ))}
         </View>
+
+        {/* Connected Loan Accounts Section */}
+        {loanAccounts.length > 0 && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 20,
+              marginBottom: 16,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <Ionicons
+                name="link"
+                size={20}
+                color={colors.primary}
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
+                Connected Loan Accounts
+              </Text>
+            </View>
+
+            {loanAccounts.map((account: any) => (
+              <View
+                key={account.id}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  borderBottomWidth:
+                    account.id === loanAccounts[loanAccounts.length - 1].id
+                      ? 0
+                      : 1,
+                  borderBottomColor: colors.border,
+                }}
+              >
+                <View style={{ flex: 1, marginRight: 12 }}>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "600",
+                      color: colors.text,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {account.name}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {account.subtype} • ****{account.mask}
+                  </Text>
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: "#dc2626",
+                    }}
+                  >
+                    {formatCurrency(Math.abs(account.balances.current))}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    Remaining Balance
+                  </Text>
+                </View>
+              </View>
+            ))}
+
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+                marginTop: 12,
+                fontStyle: "italic",
+              }}
+            >
+              Connected loan accounts are automatically synced from your bank
+            </Text>
+          </View>
+        )}
 
         {/* Recent Transactions */}
         <View
