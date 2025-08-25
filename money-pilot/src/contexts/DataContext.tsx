@@ -31,6 +31,8 @@ interface DataContextType {
   // Bank Data
   bankTransactions: any[];
   bankRecurringSuggestions: any[];
+  bankAccounts: any[];
+  selectedBankAccount: string | null;
   isBankConnected: boolean;
   bankDataLastUpdated: Date | null;
   isBankDataLoading: boolean;
@@ -57,6 +59,8 @@ interface DataContextType {
   setBudgetSettings: (settings: any) => void;
   setGoals: (goals: any[]) => void;
   setRecurringTransactions: (transactions: any[]) => void;
+  setBankAccounts: (accounts: any[]) => void;
+  setSelectedBankAccount: (accountId: string | null) => void;
 
   // Optimistic update methods
   updateTransactionsOptimistically: (transactions: any[]) => void;
@@ -97,6 +101,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [bankRecurringSuggestions, setBankRecurringSuggestions] = useState<
     any[]
   >([]);
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [selectedBankAccount, setSelectedBankAccount] = useState<string | null>(
+    null
+  );
   const [isBankConnected, setIsBankConnected] = useState(false);
   const [bankDataLastUpdated, setBankDataLastUpdated] = useState<Date | null>(
     null
@@ -402,6 +410,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           const parsedData = JSON.parse(cachedData);
           setBankTransactions(parsedData.transactions);
           setBankRecurringSuggestions(parsedData.suggestions);
+          setBankAccounts(parsedData.accounts || []);
           setBankDataLastUpdated(new Date(timestamp));
           console.log(
             "Loaded cached bank data, age:",
@@ -419,11 +428,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   }, []);
 
   const saveBankDataToCache = useCallback(
-    async (transactions: any[], suggestions: any[]) => {
+    async (transactions: any[], suggestions: any[], accounts: any[]) => {
       try {
         const cacheData = {
           transactions,
           suggestions,
+          accounts,
           timestamp: Date.now(),
         };
 
@@ -536,10 +546,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           return;
         }
 
-        const transactions = await plaidService.getTransactions(
-          startDate,
-          endDate
-        );
+        const [transactions, accounts] = await Promise.all([
+          plaidService.getTransactions(startDate, endDate),
+          plaidService.getAccounts(),
+        ]);
+
+        setBankAccounts(accounts);
 
         if (fetchStrategy === "incremental" && transactions.length === 0) {
           console.log("✅ No new transactions found, keeping existing cache");
@@ -578,7 +590,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         setBankDataLastUpdated(new Date());
 
         // Save to cache
-        await saveBankDataToCache(allTransactions, suggestions);
+        await saveBankDataToCache(allTransactions, suggestions, accounts);
 
         console.log(
           `✅ ${
@@ -717,6 +729,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     recurringTransactions,
     bankTransactions,
     bankRecurringSuggestions,
+    bankAccounts,
+    selectedBankAccount,
     isBankConnected,
     bankDataLastUpdated,
     isBankDataLoading,
@@ -735,6 +749,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setBudgetSettings,
     setGoals,
     setRecurringTransactions,
+    setBankAccounts,
+    setSelectedBankAccount,
     updateTransactionsOptimistically,
     updateBudgetSettingsOptimistically,
     updateGoalsOptimistically,

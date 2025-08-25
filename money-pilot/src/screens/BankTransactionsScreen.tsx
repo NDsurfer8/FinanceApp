@@ -11,7 +11,9 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
+import { useData } from "../contexts/DataContext";
 import { plaidService } from "../services/plaid";
+import { AccountSelector } from "../components/AccountSelector";
 import { PlaidAccount, PlaidTransaction } from "../services/plaid";
 
 interface BankTransactionsScreenProps {
@@ -23,11 +25,21 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
-  const [accounts, setAccounts] = useState<PlaidAccount[]>([]);
-  const [transactions, setTransactions] = useState<PlaidTransaction[]>([]);
+  const {
+    bankAccounts,
+    bankTransactions,
+    setSelectedBankAccount,
+    selectedBankAccount,
+  } = useData();
+
+  // Filter accounts to only show checking/savings accounts (not loans)
+  const checkingAccounts = bankAccounts.filter(
+    (account: any) =>
+      account.type === "depository" &&
+      ["checking", "savings"].includes(account.subtype)
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [isUsingRealData, setIsUsingRealData] = useState(false);
 
   useEffect(() => {
@@ -55,8 +67,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
           ),
         ]);
 
-        setAccounts(accountsData);
-        setTransactions(transactionsData);
+        // Accounts and transactions are now managed globally in DataContext
         return;
       }
 
@@ -73,8 +84,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
         ),
       ]);
 
-      setAccounts(accountsData);
-      setTransactions(transactionsData);
+      // Accounts and transactions are now managed globally in DataContext
     } catch (error) {
       console.error("Error loading bank data:", error);
       // Don't show error alert, just log it
@@ -147,12 +157,12 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     return "#6b7280";
   };
 
-  const filteredTransactions = selectedAccount
-    ? transactions.filter((t) => t.account_id === selectedAccount)
-    : transactions;
+  const filteredTransactions = selectedBankAccount
+    ? bankTransactions.filter((t: any) => t.account_id === selectedBankAccount)
+    : bankTransactions;
 
-  const totalBalance = accounts.reduce(
-    (sum, account) => sum + account.balances.current,
+  const totalBalance = checkingAccounts.reduce(
+    (sum: number, account: any) => sum + account.balances.current,
     0
   );
 
@@ -273,12 +283,13 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
               marginTop: 2,
             }}
           >
-            Across {accounts.length} account{accounts.length !== 1 ? "s" : ""}
+            Across {checkingAccounts.length} account
+            {checkingAccounts.length !== 1 ? "s" : ""}
           </Text>
         </View>
 
         {/* Account Selector */}
-        {accounts.length > 1 && (
+        {checkingAccounts.length > 1 && (
           <View
             style={{
               backgroundColor: colors.surface,
@@ -308,13 +319,13 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
               contentContainerStyle={{ gap: 8 }}
             >
               <TouchableOpacity
-                onPress={() => setSelectedAccount(null)}
+                onPress={() => setSelectedBankAccount(null)}
                 style={{
                   paddingHorizontal: 14,
                   paddingVertical: 8,
                   borderRadius: 20,
                   backgroundColor:
-                    selectedAccount === null
+                    selectedBankAccount === null
                       ? colors.primary
                       : colors.surfaceSecondary,
                 }}
@@ -324,7 +335,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     fontSize: 13,
                     fontWeight: "600",
                     color:
-                      selectedAccount === null
+                      selectedBankAccount === null
                         ? colors.buttonText
                         : colors.text,
                   }}
@@ -332,16 +343,16 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   All Accounts
                 </Text>
               </TouchableOpacity>
-              {accounts.map((account) => (
+              {checkingAccounts.map((account: any) => (
                 <TouchableOpacity
                   key={account.id}
-                  onPress={() => setSelectedAccount(account.id)}
+                  onPress={() => setSelectedBankAccount(account.id)}
                   style={{
                     paddingHorizontal: 14,
                     paddingVertical: 8,
                     borderRadius: 20,
                     backgroundColor:
-                      selectedAccount === account.id
+                      selectedBankAccount === account.id
                         ? colors.primary
                         : colors.surfaceSecondary,
                   }}
@@ -351,7 +362,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       fontSize: 13,
                       fontWeight: "600",
                       color:
-                        selectedAccount === account.id
+                        selectedBankAccount === account.id
                           ? colors.buttonText
                           : colors.text,
                     }}
@@ -389,7 +400,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
           >
             Account Balances
           </Text>
-          {accounts.map((account) => (
+          {checkingAccounts.map((account: any) => (
             <View
               key={account.id}
               style={{
@@ -398,7 +409,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                 alignItems: "center",
                 paddingVertical: 12,
                 borderBottomWidth:
-                  account.id === accounts[accounts.length - 1].id ? 0 : 1,
+                  account.id ===
+                  checkingAccounts[checkingAccounts.length - 1].id
+                    ? 0
+                    : 1,
                 borderBottomColor: colors.border,
               }}
             >

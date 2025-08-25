@@ -20,6 +20,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
+import { AccountSelector } from "../components/AccountSelector";
 import { saveBudgetSettings, updateBudgetSettings } from "../services/userData";
 import { getProjectedTransactionsForMonth } from "../services/transactionService";
 import { billReminderService } from "../services/billReminders";
@@ -46,6 +47,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const {
     bankTransactions,
     bankRecurringSuggestions: recurringSuggestions,
+    bankAccounts,
     isBankConnected,
     bankDataLastUpdated,
     isBankDataLoading,
@@ -69,6 +71,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     new Set()
   );
   const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [selectedBankAccount, setSelectedBankAccount] = useState<string | null>(
+    null
+  );
   const [microFeedback, setMicroFeedback] = useState<{
     message: string;
     type: "income" | "expense";
@@ -77,6 +82,24 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const monthPickerScrollRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
+
+  // Filter accounts to only show checking/savings accounts (not loans)
+  const checkingAccounts = bankAccounts.filter(
+    (account) =>
+      account.type === "depository" &&
+      ["checking", "savings"].includes(account.subtype)
+  );
+
+  // Filter bank suggestions by selected account
+  const filteredBankSuggestions = selectedBankAccount
+    ? recurringSuggestions.filter((suggestion) =>
+        bankTransactions.some(
+          (transaction) =>
+            transaction.account_id === selectedBankAccount &&
+            transaction.name === suggestion.name
+        )
+      )
+    : recurringSuggestions;
 
   useEffect(() => {
     if (user) {
@@ -873,9 +896,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       color: colors.textSecondary,
                     }}
                   >
-                    {recurringSuggestions.length > 0
-                      ? `${recurringSuggestions.length} suggestions found`
-                      : "No recurring patterns found"}
+                    {filteredBankSuggestions.length > 0
+                      ? `${filteredBankSuggestions.length} suggestions`
+                      : "No patterns found"}
                   </Text>
                 </View>
               </View>
@@ -915,6 +938,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             {/* Expandable Content */}
             {showBankSuggestions && (
               <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
+                <AccountSelector
+                  selectedAccountId={selectedBankAccount}
+                  onAccountSelect={setSelectedBankAccount}
+                  accounts={checkingAccounts}
+                  style={{ marginBottom: 16 }}
+                />
                 <View
                   style={{
                     borderTopWidth: 1,
@@ -948,97 +977,99 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   )}
                 </View>
 
-                {recurringSuggestions.slice(0, 5).map((suggestion, index) => (
-                  <TouchableOpacity
-                    key={`${suggestion.name}_${suggestion.amount}_${index}`}
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      paddingVertical: 12,
-                      paddingHorizontal: 16,
-                      backgroundColor: colors.surfaceSecondary,
-                      borderRadius: 12,
-                      marginBottom: 8,
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                    }}
-                    onPress={() => handleAddRecurringSuggestion(suggestion)}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          fontWeight: "600",
-                          color: colors.text,
-                          marginBottom: 2,
-                        }}
-                      >
-                        {suggestion.name}
-                      </Text>
-                      <View
-                        style={{ flexDirection: "row", alignItems: "center" }}
-                      >
+                {filteredBankSuggestions
+                  .slice(0, 5)
+                  .map((suggestion, index) => (
+                    <TouchableOpacity
+                      key={`${suggestion.name}_${suggestion.amount}_${index}`}
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        paddingVertical: 12,
+                        paddingHorizontal: 16,
+                        backgroundColor: colors.surfaceSecondary,
+                        borderRadius: 12,
+                        marginBottom: 8,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                      }}
+                      onPress={() => handleAddRecurringSuggestion(suggestion)}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            fontWeight: "600",
+                            color: colors.text,
+                            marginBottom: 2,
+                          }}
+                        >
+                          {suggestion.name}
+                        </Text>
+                        <View
+                          style={{ flexDirection: "row", alignItems: "center" }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              color: colors.textSecondary,
+                              marginRight: 8,
+                            }}
+                          >
+                            {suggestion.frequency} • {suggestion.occurrences}{" "}
+                            times
+                          </Text>
+                          <View
+                            style={{
+                              backgroundColor:
+                                suggestion.type === "income"
+                                  ? "#dcfce7"
+                                  : "#fee2e2",
+                              paddingHorizontal: 6,
+                              paddingVertical: 2,
+                              borderRadius: 4,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: 10,
+                                fontWeight: "600",
+                                color:
+                                  suggestion.type === "income"
+                                    ? "#16a34a"
+                                    : "#dc2626",
+                              }}
+                            >
+                              {suggestion.type}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                      <View style={{ alignItems: "flex-end" }}>
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: "700",
+                            color: colors.text,
+                          }}
+                        >
+                          {formatCurrency(suggestion.amount)}
+                        </Text>
                         <Text
                           style={{
                             fontSize: 12,
                             color: colors.textSecondary,
-                            marginRight: 8,
+                            marginTop: 2,
                           }}
                         >
-                          {suggestion.frequency} • {suggestion.occurrences}{" "}
-                          times
+                          {suggestion.category}
                         </Text>
-                        <View
-                          style={{
-                            backgroundColor:
-                              suggestion.type === "income"
-                                ? "#dcfce7"
-                                : "#fee2e2",
-                            paddingHorizontal: 6,
-                            paddingVertical: 2,
-                            borderRadius: 4,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 10,
-                              fontWeight: "600",
-                              color:
-                                suggestion.type === "income"
-                                  ? "#16a34a"
-                                  : "#dc2626",
-                            }}
-                          >
-                            {suggestion.type}
-                          </Text>
-                        </View>
                       </View>
-                    </View>
-                    <View style={{ alignItems: "flex-end" }}>
-                      <Text
-                        style={{
-                          fontSize: 16,
-                          fontWeight: "700",
-                          color: colors.text,
-                        }}
-                      >
-                        {formatCurrency(suggestion.amount)}
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          color: colors.textSecondary,
-                          marginTop: 2,
-                        }}
-                      >
-                        {suggestion.category}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                    </TouchableOpacity>
+                  ))}
 
-                {recurringSuggestions.length > 5 && (
+                {filteredBankSuggestions.length > 5 && (
                   <TouchableOpacity
                     style={{
                       paddingVertical: 12,
@@ -1061,7 +1092,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                         fontWeight: "600",
                       }}
                     >
-                      View All {recurringSuggestions.length} Suggestions
+                      View All {filteredBankSuggestions.length} Suggestions
                     </Text>
                   </TouchableOpacity>
                 )}
