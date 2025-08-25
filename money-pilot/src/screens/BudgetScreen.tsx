@@ -1080,9 +1080,14 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       )}
                     </View>
 
-                    {filteredBankSuggestions
-                      .slice(0, 5)
-                      .map((suggestion, index) => (
+                    <ScrollView
+                      style={{
+                        maxHeight: 320,
+                      }}
+                      showsVerticalScrollIndicator={false}
+                      nestedScrollEnabled={true}
+                    >
+                      {filteredBankSuggestions.map((suggestion, index) => (
                         <TouchableOpacity
                           key={`${suggestion.name}_${suggestion.amount}_${index}`}
                           style={{
@@ -1176,34 +1181,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                           </View>
                         </TouchableOpacity>
                       ))}
-
-                    {filteredBankSuggestions.length > 5 && (
-                      <TouchableOpacity
-                        style={{
-                          paddingVertical: 12,
-                          alignItems: "center",
-                          backgroundColor: colors.surfaceSecondary,
-                          borderRadius: 12,
-                          marginTop: 8,
-                        }}
-                        onPress={() =>
-                          navigation.navigate("AddTransaction", {
-                            showBankSuggestions: true,
-                            suggestions: recurringSuggestions,
-                          })
-                        }
-                      >
-                        <Text
-                          style={{
-                            color: colors.primary,
-                            fontSize: 14,
-                            fontWeight: "600",
-                          }}
-                        >
-                          View All {filteredBankSuggestions.length} Suggestions
-                        </Text>
-                      </TouchableOpacity>
-                    )}
+                    </ScrollView>
                   </>
                 ) : (
                   <>
@@ -1260,135 +1238,116 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                         </Text>
                       </View>
                     ) : (
-                      filteredNonRecurringTransactions
-                        .slice(0, 10)
-                        .map((transaction, index) => (
-                          <TouchableOpacity
-                            key={`${transaction.id}_${index}`}
-                            style={{
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              paddingVertical: 12,
-                              paddingHorizontal: 16,
-                              backgroundColor: colors.surfaceSecondary,
-                              borderRadius: 12,
-                              marginBottom: 8,
-                              borderWidth: 1,
-                              borderColor: colors.border,
-                            }}
-                            onPress={() =>
-                              handleAddNonRecurringTransaction(transaction)
-                            }
-                          >
-                            <View style={{ flex: 1 }}>
-                              <Text
-                                style={{
-                                  fontSize: 14,
-                                  fontWeight: "600",
-                                  color: colors.text,
-                                  marginBottom: 2,
-                                }}
-                              >
-                                {transaction.name}
-                              </Text>
-                              <View
-                                style={{
-                                  flexDirection: "row",
-                                  alignItems: "center",
-                                }}
-                              >
+                      <ScrollView
+                        style={{
+                          maxHeight: 320,
+                        }}
+                        showsVerticalScrollIndicator={false}
+                        nestedScrollEnabled={true}
+                      >
+                        {filteredNonRecurringTransactions.map(
+                          (transaction, index) => (
+                            <TouchableOpacity
+                              key={`${transaction.id}_${index}`}
+                              style={{
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                paddingVertical: 12,
+                                paddingHorizontal: 16,
+                                backgroundColor: colors.surfaceSecondary,
+                                borderRadius: 12,
+                                marginBottom: 8,
+                                borderWidth: 1,
+                                borderColor: colors.border,
+                              }}
+                              onPress={() =>
+                                handleAddNonRecurringTransaction(transaction)
+                              }
+                            >
+                              <View style={{ flex: 1 }}>
                                 <Text
                                   style={{
-                                    fontSize: 12,
-                                    color: colors.textSecondary,
-                                    marginRight: 8,
+                                    fontSize: 14,
+                                    fontWeight: "600",
+                                    color: colors.text,
+                                    marginBottom: 2,
                                   }}
                                 >
-                                  {new Date(
-                                    transaction.date
-                                  ).toLocaleDateString()}{" "}
-                                  •{" "}
-                                  {transaction.category?.[0] || "Uncategorized"}
+                                  {transaction.name}
                                 </Text>
                                 <View
                                   style={{
-                                    backgroundColor:
-                                      transaction.amount < 0
-                                        ? "#dcfce7"
-                                        : "#fee2e2",
-                                    paddingHorizontal: 6,
-                                    paddingVertical: 2,
-                                    borderRadius: 4,
+                                    flexDirection: "row",
+                                    alignItems: "center",
                                   }}
                                 >
                                   <Text
                                     style={{
-                                      fontSize: 10,
-                                      fontWeight: "600",
-                                      color:
-                                        transaction.amount < 0
-                                          ? "#16a34a"
-                                          : "#dc2626",
+                                      fontSize: 12,
+                                      color: colors.textSecondary,
+                                      marginRight: 8,
                                     }}
                                   >
-                                    {transaction.amount < 0
-                                      ? "income"
-                                      : "expense"}
+                                    {new Date(
+                                      transaction.date
+                                    ).toLocaleDateString()}{" "}
+                                    •{" "}
+                                    {transaction.category?.[0] ||
+                                      "Uncategorized"}
                                   </Text>
+                                  <View
+                                    style={{
+                                      backgroundColor:
+                                        transaction.amount < 0
+                                          ? "#dcfce7"
+                                          : "#fee2e2",
+                                      paddingHorizontal: 6,
+                                      paddingVertical: 2,
+                                      borderRadius: 4,
+                                    }}
+                                  >
+                                    <Text
+                                      style={{
+                                        fontSize: 10,
+                                        fontWeight: "600",
+                                        color:
+                                          transaction.amount < 0
+                                            ? "#16a34a"
+                                            : "#dc2626",
+                                      }}
+                                    >
+                                      {transaction.amount < 0
+                                        ? "income"
+                                        : "expense"}
+                                    </Text>
+                                  </View>
                                 </View>
                               </View>
-                            </View>
-                            <View style={{ alignItems: "flex-end" }}>
-                              <Text
-                                style={{
-                                  fontSize: 16,
-                                  fontWeight: "700",
-                                  color: colors.text,
-                                }}
-                              >
-                                {formatCurrency(Math.abs(transaction.amount))}
-                              </Text>
-                              <Text
-                                style={{
-                                  fontSize: 12,
-                                  color: colors.textSecondary,
-                                  marginTop: 2,
-                                }}
-                              >
-                                {transaction.account_id ? "Bank" : "Manual"}
-                              </Text>
-                            </View>
-                          </TouchableOpacity>
-                        ))
-                    )}
-
-                    {filteredNonRecurringTransactions.length > 10 && (
-                      <TouchableOpacity
-                        style={{
-                          paddingVertical: 12,
-                          alignItems: "center",
-                          backgroundColor: colors.surfaceSecondary,
-                          borderRadius: 12,
-                          marginTop: 8,
-                        }}
-                        onPress={() =>
-                          navigation.navigate("BankTransactions", {
-                            showNonRecurringOnly: true,
-                          })
-                        }
-                      >
-                        <Text
-                          style={{
-                            color: colors.primary,
-                            fontSize: 14,
-                            fontWeight: "600",
-                          }}
-                        >
-                          View All {filteredNonRecurringTransactions.length}{" "}
-                          Non-Recurring Transactions
-                        </Text>
-                      </TouchableOpacity>
+                              <View style={{ alignItems: "flex-end" }}>
+                                <Text
+                                  style={{
+                                    fontSize: 16,
+                                    fontWeight: "700",
+                                    color: colors.text,
+                                  }}
+                                >
+                                  {formatCurrency(Math.abs(transaction.amount))}
+                                </Text>
+                                <Text
+                                  style={{
+                                    fontSize: 12,
+                                    color: colors.textSecondary,
+                                    marginTop: 2,
+                                  }}
+                                >
+                                  {transaction.account_id ? "Bank" : "Manual"}
+                                </Text>
+                              </View>
+                            </TouchableOpacity>
+                          )
+                        )}
+                      </ScrollView>
                     )}
                   </>
                 )}
