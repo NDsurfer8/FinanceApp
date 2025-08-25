@@ -66,10 +66,26 @@ class PlaidService {
   private isLinkInitialized = false;
   private onBankConnectedCallbacks: (() => void)[] = [];
   private pendingTransactionsRequest: Promise<PlaidTransaction[]> | null = null;
+  private pendingAccountsRequest: Promise<PlaidAccount[]> | null = null;
+  private requestCache: Map<string, { data: any; timestamp: number }> =
+    new Map();
+  private readonly CACHE_DURATION = 30000; // 30 seconds
 
   // Set user ID for Firebase operations
   setUserId(userId: string) {
     this.userId = userId;
+  }
+
+  // Generate cache key for requests
+  private getCacheKey(endpoint: string, params: any): string {
+    return `${endpoint}_${JSON.stringify(params)}`;
+  }
+
+  // Check if cached data is still valid
+  private isCacheValid(cacheKey: string): boolean {
+    const cached = this.requestCache.get(cacheKey);
+    if (!cached) return false;
+    return Date.now() - cached.timestamp < this.CACHE_DURATION;
   }
 
   // Register callback for when bank is connected
@@ -264,6 +280,11 @@ class PlaidService {
       // Reset Link session state
       this.isLinkInitialized = false;
 
+      // Clear cache to ensure fresh data
+      this.requestCache.clear();
+      this.pendingTransactionsRequest = null;
+      this.pendingAccountsRequest = null;
+
       // Trigger callbacks to notify that bank is connected
       this.triggerBankConnectedCallbacks();
 
@@ -326,9 +347,46 @@ class PlaidService {
       throw new Error("No access token available");
     }
 
+    const cacheKey = this.getCacheKey("accounts", {
+      accessToken: this.accessToken,
+    });
+
+    // Check cache first
+    if (this.isCacheValid(cacheKey)) {
+      console.log("📦 Returning cached accounts data");
+      return this.requestCache.get(cacheKey)!.data;
+    }
+
+    // Check if there's already a pending request
+    if (this.pendingAccountsRequest) {
+      console.log("🔄 Reusing existing accounts request");
+      return this.pendingAccountsRequest;
+    }
+
     console.log("🔍 Attempting to fetch accounts with:");
     console.log("  - Access Token:", this.accessToken.substring(0, 20) + "...");
 
+    // Create the request promise
+    this.pendingAccountsRequest = this._fetchAccounts();
+
+    try {
+      const result = await this.pendingAccountsRequest;
+
+      // Cache the result
+      this.requestCache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now(),
+      });
+
+      return result;
+    } finally {
+      // Clear the pending request after completion
+      this.pendingAccountsRequest = null;
+    }
+  }
+
+  // Private method to actually fetch accounts
+  private async _fetchAccounts(): Promise<PlaidAccount[]> {
     try {
       const getAccounts = httpsCallable(this.functions, "getAccounts");
       console.log("📞 Calling Firebase Function: getAccounts");
@@ -368,6 +426,14 @@ class PlaidService {
       throw new Error("No access token available");
     }
 
+    const cacheKey = this.getCacheKey("transactions", { startDate, endDate });
+
+    // Check cache first
+    if (this.isCacheValid(cacheKey)) {
+      console.log("📦 Returning cached transactions data");
+      return this.requestCache.get(cacheKey)!.data;
+    }
+
     // Check if there's already a pending request
     if (this.pendingTransactionsRequest) {
       console.log("🔄 Reusing existing transactions request");
@@ -387,6 +453,13 @@ class PlaidService {
 
     try {
       const result = await this.pendingTransactionsRequest;
+
+      // Cache the result
+      this.requestCache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now(),
+      });
+
       return result;
     } finally {
       // Clear the pending request after completion
@@ -560,6 +633,11 @@ class PlaidService {
       // Clear local state
       this.accessToken = null;
       this.itemId = null;
+
+      // Clear cache and pending requests
+      this.requestCache.clear();
+      this.pendingTransactionsRequest = null;
+      this.pendingAccountsRequest = null;
 
       console.log("PlaidService: Bank disconnected successfully");
     } catch (error) {

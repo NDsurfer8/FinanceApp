@@ -608,15 +608,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       user &&
       isBankConnected &&
       bankRecurringSuggestions.length === 0 &&
-      !isBankDataLoading
+      !isBankDataLoading &&
+      bankTransactions.length === 0 // Only auto-load if we have no transactions at all
     ) {
-      console.log("DataContext: Bank connected but no data, auto-loading...");
+      console.log(
+        "DataContext: Bank connected but no transactions, auto-loading..."
+      );
       refreshBankData(true);
     }
   }, [
     user,
     isBankConnected,
     bankRecurringSuggestions.length,
+    bankTransactions.length,
     isBankDataLoading,
   ]);
 
