@@ -65,6 +65,7 @@ class PlaidService {
   private auth = getAuth();
   private isLinkInitialized = false;
   private onBankConnectedCallbacks: (() => void)[] = [];
+  private pendingTransactionsRequest: Promise<PlaidTransaction[]> | null = null;
 
   // Set user ID for Firebase operations
   setUserId(userId: string) {
@@ -367,11 +368,37 @@ class PlaidService {
       throw new Error("No access token available");
     }
 
+    // Check if there's already a pending request
+    if (this.pendingTransactionsRequest) {
+      console.log("🔄 Reusing existing transactions request");
+      return this.pendingTransactionsRequest;
+    }
+
     console.log("🔍 Attempting to fetch transactions with:");
     console.log("  - Access Token:", this.accessToken.substring(0, 20) + "...");
     console.log("  - Start Date:", startDate);
     console.log("  - End Date:", endDate);
 
+    // Create the request promise
+    this.pendingTransactionsRequest = this._fetchTransactions(
+      startDate,
+      endDate
+    );
+
+    try {
+      const result = await this.pendingTransactionsRequest;
+      return result;
+    } finally {
+      // Clear the pending request after completion
+      this.pendingTransactionsRequest = null;
+    }
+  }
+
+  // Private method to actually fetch transactions
+  private async _fetchTransactions(
+    startDate: string,
+    endDate: string
+  ): Promise<PlaidTransaction[]> {
     try {
       const getTransactions = httpsCallable(this.functions, "getTransactions");
       console.log("📞 Calling Firebase Function: getTransactions");
