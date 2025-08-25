@@ -18,7 +18,7 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSFaceIDUsageDescription": "VectorFi uses Face ID to securely authenticate you and protect your financial data."
+        "NSFaceIDUsageDescription": "VectorFi uses Face ID to securely log you into your account and protect your financial information."
       }
     },
     "android": {

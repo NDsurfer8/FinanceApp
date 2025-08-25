@@ -52,7 +52,9 @@ export class BiometricAuthService {
       });
     } catch (error) {
       console.error("Error initializing expo biometric auth:", error);
+      // Don't let biometric auth failure crash the app
       this.isAvailable = false;
+      this.biometryType = null;
     }
   }
 

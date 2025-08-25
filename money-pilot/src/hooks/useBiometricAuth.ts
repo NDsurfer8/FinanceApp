@@ -58,6 +58,11 @@ export const useBiometricAuth = (): UseBiometricAuthReturn => {
       setBiometryType(biometricAuthService.getBiometricTypeName());
     } catch (error) {
       console.error("Error checking biometric status:", error);
+      // Set safe defaults to prevent crashes
+      setIsBiometricEnabled(false);
+      setIsAutoLockEnabled(false);
+      setIsBiometricAvailable(false);
+      setBiometryType("");
     }
   };
 
