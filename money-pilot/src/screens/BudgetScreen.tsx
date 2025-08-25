@@ -103,14 +103,16 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       )
     : recurringSuggestions;
 
-  // Filter non-recurring transactions for the last 30 days
+  // Filter non-recurring transactions for the current month
   const getNonRecurringTransactions = () => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const currentMonth = selectedMonth.getMonth();
+    const currentYear = selectedMonth.getFullYear();
 
     return bankTransactions.filter((transaction) => {
       const transactionDate = new Date(transaction.date);
-      const isWithinLast30Days = transactionDate >= thirtyDaysAgo;
+      const isCurrentMonth =
+        transactionDate.getMonth() === currentMonth &&
+        transactionDate.getFullYear() === currentYear;
 
       // Check if this transaction is NOT in recurring suggestions
       const isRecurring = recurringSuggestions.some(
@@ -119,7 +121,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           Math.abs(suggestion.amount - Math.abs(transaction.amount)) < 0.01
       );
 
-      return isWithinLast30Days && !isRecurring;
+      return isCurrentMonth && !isRecurring;
     });
   };
 
@@ -1201,8 +1203,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                           marginBottom: 8,
                         }}
                       >
-                        Non-recurring transactions from the last 30 days. These
-                        are one-time transactions that don't follow a pattern.
+                        Non-recurring transactions for{" "}
+                        {formatMonth(selectedMonth)}. These are one-time
+                        transactions that don't follow a pattern.
                       </Text>
                       {bankDataLastUpdated && (
                         <Text
