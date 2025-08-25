@@ -171,21 +171,6 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
             >
               Real-time from your connected accounts
             </Text>
-            <Text
-              style={{
-                fontSize: 11,
-                color: isUsingRealData ? colors.success : colors.warning,
-                marginLeft: 46,
-                marginTop: 2,
-                fontWeight: "500",
-              }}
-            >
-              {isLoading
-                ? "Loading..."
-                : isUsingRealData
-                ? "Real sandbox data"
-                : "Demo mode - showing sample data"}
-            </Text>
           </View>
         </View>
 
