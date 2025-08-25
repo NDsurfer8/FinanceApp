@@ -8,6 +8,12 @@ import Constants from "expo-constants";
 
 const firebaseConfig = Constants.expoConfig?.extra?.firebase;
 
+if (!firebaseConfig) {
+  throw new Error(
+    "Firebase configuration not found. Please check your app.json extra.firebase configuration."
+  );
+}
+
 // Initialize Firebase
 export const app = getApps().length
   ? getApps()[0]!

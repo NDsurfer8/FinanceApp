@@ -18,10 +18,7 @@
     },
     "production": {
       "autoIncrement": true,
-      "node": "20.11.0",
-      "ios": {
-        "buildConfiguration": "Release"
-      }
+      "node": "20.11.0"
     }
   },
   "submit": {

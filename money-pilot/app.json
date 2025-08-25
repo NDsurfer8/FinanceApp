@@ -5,7 +5,7 @@
     "version": "1.0.9",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -17,10 +17,6 @@
       "bundleIdentifier": "com.ndsurf888.vectorfii",
       "buildNumber": "1",
       "usesAppleSignIn": true,
-      "entitlements": {
-        "com.apple.developer.applesignin": ["Default"],
-        "com.apple.developer.usernotifications.communication": true
-      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSFaceIDUsageDescription": "VectorFi uses Face ID to securely authenticate you and protect your financial data."
