@@ -161,6 +161,9 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     ? bankTransactions.filter((t: any) => t.account_id === selectedBankAccount)
     : bankTransactions;
 
+  // Limit to the last 30 transactions
+  const limitedTransactions = filteredTransactions.slice(0, 30);
+
   const totalBalance = checkingAccounts.reduce(
     (sum: number, account: any) => sum + account.balances.current,
     0
@@ -501,11 +504,12 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                 color: colors.textSecondary,
               }}
             >
-              {filteredTransactions.length} transactions
+              {limitedTransactions.length} of {filteredTransactions.length}{" "}
+              transactions
             </Text>
           </View>
 
-          {filteredTransactions.length === 0 ? (
+          {limitedTransactions.length === 0 ? (
             <View style={{ alignItems: "center", paddingVertical: 32 }}>
               <Ionicons
                 name="card-outline"
@@ -534,7 +538,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
               </Text>
             </View>
           ) : (
-            filteredTransactions.map((transaction) => (
+            limitedTransactions.map((transaction) => (
               <View
                 key={transaction.id}
                 style={{
@@ -543,7 +547,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   paddingVertical: 14,
                   borderBottomWidth:
                     transaction.id ===
-                    filteredTransactions[filteredTransactions.length - 1].id
+                    limitedTransactions[limitedTransactions.length - 1].id
                       ? 0
                       : 1,
                   borderBottomColor: colors.border,
