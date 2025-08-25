@@ -863,8 +863,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       color: colors.primary,
                       marginBottom: 4,
                     }}
+                    numberOfLines={1}
                   >
-                    Bank Recurring Suggestions
+                    Bank Suggestions
                   </Text>
                   <Text
                     style={{
