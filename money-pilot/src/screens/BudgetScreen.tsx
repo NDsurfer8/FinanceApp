@@ -164,6 +164,16 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     }
   }, [user]);
 
+  // Auto-load bank data when bank connection status changes
+  useEffect(() => {
+    if (user && isBankConnected && recurringSuggestions.length === 0) {
+      console.log(
+        "BudgetScreen: Bank connected but no suggestions, loading data"
+      );
+      refreshBankData(true);
+    }
+  }, [user, isBankConnected, recurringSuggestions.length]);
+
   // Scroll to current month when modal opens
   useEffect(() => {
     if (showMonthPicker) {

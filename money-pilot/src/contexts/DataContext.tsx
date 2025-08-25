@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { useAuth } from "../hooks/useAuth";
 import {
@@ -101,6 +102,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     null
   );
   const [isBankDataLoading, setIsBankDataLoading] = useState(false);
+  const isBankDataLoadingRef = useRef(false);
 
   // Bank Data Cache Keys
   const BANK_DATA_CACHE_KEY = `bank_data_${user?.uid || "anonymous"}`;
@@ -456,12 +458,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     async (forceRefresh = false) => {
       try {
         // Don't load if already loading
-        if (isBankDataLoading && !forceRefresh) {
+        if (isBankDataLoadingRef.current && !forceRefresh) {
           console.log("Bank data already loading, skipping...");
           return;
         }
 
         setIsBankDataLoading(true);
+        isBankDataLoadingRef.current = true;
 
         const connected = await plaidService.isBankConnected();
         console.log("DataContext: Bank connection status:", connected);
@@ -469,115 +472,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         if (!connected) {
           console.log(
-            "DataContext: No bank connected, loading mock data for testing"
+            "DataContext: No bank connected, skipping bank data load"
           );
-          // For testing purposes, load mock bank data
-          const mockTransactions = [
-            {
-              id: "mock_1",
-              account_id: "mock_account_1",
-              amount: -85.5,
-              date: new Date().toISOString().split("T")[0],
-              name: "Grocery Store",
-              merchant_name: "Whole Foods Market",
-              category: ["Food and Drink", "Restaurants"],
-              pending: false,
-            },
-            {
-              id: "mock_2",
-              account_id: "mock_account_1",
-              amount: -85.5,
-              date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0],
-              name: "Grocery Store",
-              merchant_name: "Whole Foods Market",
-              category: ["Food and Drink", "Restaurants"],
-              pending: false,
-            },
-            {
-              id: "mock_3",
-              account_id: "mock_account_1",
-              amount: -85.5,
-              date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0],
-              name: "Grocery Store",
-              merchant_name: "Whole Foods Market",
-              category: ["Food and Drink", "Restaurants"],
-              pending: false,
-            },
-            {
-              id: "mock_4",
-              account_id: "mock_account_1",
-              amount: -85.5,
-              date: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0],
-              name: "Grocery Store",
-              merchant_name: "Whole Foods Market",
-              category: ["Food and Drink", "Restaurants"],
-              pending: false,
-            },
-            {
-              id: "mock_5",
-              account_id: "mock_account_1",
-              amount: -85.5,
-              date: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0],
-              name: "Grocery Store",
-              merchant_name: "Whole Foods Market",
-              category: ["Food and Drink", "Restaurants"],
-              pending: false,
-            },
-            {
-              id: "mock_6",
-              account_id: "mock_account_1",
-              amount: -45.0,
-              date: new Date().toISOString().split("T")[0],
-              name: "Coffee Shop",
-              merchant_name: "Starbucks",
-              category: ["Food and Drink", "Restaurants"],
-              pending: false,
-            },
-            {
-              id: "mock_7",
-              account_id: "mock_account_1",
-              amount: -45.0,
-              date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0],
-              name: "Coffee Shop",
-              merchant_name: "Starbucks",
-              category: ["Food and Drink", "Restaurants"],
-              pending: false,
-            },
-            {
-              id: "mock_8",
-              account_id: "mock_account_1",
-              amount: -45.0,
-              date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0],
-              name: "Coffee Shop",
-              merchant_name: "Starbucks",
-              category: ["Food and Drink", "Restaurants"],
-              pending: false,
-            },
-          ];
-
-          setBankTransactions(mockTransactions);
-          const suggestions = analyzeRecurringPatterns(mockTransactions);
-          setBankRecurringSuggestions(suggestions);
-          setBankDataLastUpdated(new Date());
-          setIsBankConnected(true); // Set to true for testing
+          setIsBankConnected(false);
           setIsBankDataLoading(false);
-          console.log(
-            "DataContext: Mock bank data loaded with",
-            suggestions.length,
-            "recurring suggestions"
-          );
           return;
         }
 
@@ -692,14 +590,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         setIsBankConnected(false);
       } finally {
         setIsBankDataLoading(false);
+        isBankDataLoadingRef.current = false;
       }
     },
-    [
-      isBankDataLoading,
-      loadCachedBankData,
-      saveBankDataToCache,
-      analyzeRecurringPatterns,
-    ]
+    [loadCachedBankData, saveBankDataToCache, analyzeRecurringPatterns]
   );
 
   const isBankDataStale = useCallback(() => {
@@ -707,6 +601,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     const now = Date.now();
     return now - bankDataLastUpdated.getTime() > TRANSACTION_UPDATE_INTERVAL;
   }, [bankDataLastUpdated]);
+
+  // Auto-load bank data when connection status changes
+  useEffect(() => {
+    if (
+      user &&
+      isBankConnected &&
+      bankRecurringSuggestions.length === 0 &&
+      !isBankDataLoading
+    ) {
+      console.log("DataContext: Bank connected but no data, auto-loading...");
+      refreshBankData(true);
+    }
+  }, [
+    user,
+    isBankConnected,
+    bankRecurringSuggestions.length,
+    isBankDataLoading,
+  ]);
 
   const refreshData = useCallback(async () => {
     await loadAllData();
@@ -724,7 +636,35 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           console.log("DataContext: Starting bank data loading...");
           // Set user ID for PlaidService first
           plaidService.setUserId(user.uid);
-          await refreshBankData();
+
+          // Register callback for when bank is connected
+          plaidService.onBankConnected(async () => {
+            console.log("DataContext: Bank connected callback triggered");
+            setIsBankConnected(true);
+            await refreshBankData(true);
+          });
+
+          // Call refreshBankData directly without including it in dependencies
+          const connected = await plaidService.isBankConnected();
+          console.log("DataContext: Bank connection status:", connected);
+          setIsBankConnected(connected);
+
+          if (!connected) {
+            console.log(
+              "DataContext: No bank connected, skipping bank data load"
+            );
+            setIsBankConnected(false);
+            return;
+          }
+
+          // Try to load from cache first
+          const cacheLoaded = await loadCachedBankData();
+          if (cacheLoaded) {
+            return;
+          }
+
+          // Force refresh if no cache
+          await refreshBankData(true);
           console.log("DataContext: Bank data loading completed");
         } catch (error) {
           console.error("DataContext: Failed to load bank data:", error);
@@ -762,7 +702,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setIsBankConnected(false);
       setBankDataLastUpdated(null);
     }
-  }, [user]);
+  }, [user, loadAllData, loadCachedBankData]);
 
   const value: DataContextType = {
     transactions,

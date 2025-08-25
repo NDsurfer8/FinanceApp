@@ -42,9 +42,9 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     try {
       const isConnected = await plaidService.isBankConnected();
       if (!isConnected) {
-        console.log("No bank connected, showing demo data");
+        console.log("No bank connected, attempting to load data");
         setIsUsingRealData(false);
-        // For demo purposes, show mock data even without connection
+        // Try to load real data even without connection
         const [accountsData, transactionsData] = await Promise.all([
           plaidService.getAccounts(),
           plaidService.getTransactions(

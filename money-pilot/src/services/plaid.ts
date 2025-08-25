@@ -64,10 +64,22 @@ class PlaidService {
   private functions = getFunctions();
   private auth = getAuth();
   private isLinkInitialized = false;
+  private onBankConnectedCallbacks: (() => void)[] = [];
 
   // Set user ID for Firebase operations
   setUserId(userId: string) {
     this.userId = userId;
+  }
+
+  // Register callback for when bank is connected
+  onBankConnected(callback: () => void) {
+    this.onBankConnectedCallbacks.push(callback);
+  }
+
+  // Trigger bank connected callbacks
+  private triggerBankConnectedCallbacks() {
+    console.log("PlaidService: Triggering bank connected callbacks");
+    this.onBankConnectedCallbacks.forEach((callback) => callback());
   }
 
   async initializePlaidLink(): Promise<string> {
@@ -251,6 +263,9 @@ class PlaidService {
       // Reset Link session state
       this.isLinkInitialized = false;
 
+      // Trigger callbacks to notify that bank is connected
+      this.triggerBankConnectedCallbacks();
+
       Alert.alert(
         "Success!",
         `Successfully connected to ${metadata.institution.name}`,
@@ -339,32 +354,7 @@ class PlaidService {
     } catch (error) {
       console.error("❌ Error getting accounts:", error);
       console.log("Access token being used:", this.accessToken);
-      // Return mock data for development/testing
-      console.log("🔄 Returning mock account data due to error");
-      return [
-        {
-          id: "mock_account_1",
-          name: "Demo Checking Account",
-          mask: "1234",
-          type: "depository",
-          subtype: "checking",
-          balances: {
-            available: 5000,
-            current: 5000,
-          },
-        },
-        {
-          id: "mock_account_2",
-          name: "Demo Savings Account",
-          mask: "5678",
-          type: "depository",
-          subtype: "savings",
-          balances: {
-            available: 15000,
-            current: 15000,
-          },
-        },
-      ];
+      throw error; // Re-throw the error instead of returning mock data
     }
   }
 
@@ -409,54 +399,22 @@ class PlaidService {
       }));
     } catch (error) {
       console.error("❌ Error getting transactions:", error);
-      console.log("🔄 Returning mock transaction data due to error");
-      return [
-        {
-          id: "mock_transaction_1",
-          account_id: "mock_account_1",
-          amount: -85.5,
-          date: new Date().toISOString().split("T")[0],
-          name: "Grocery Store",
-          merchant_name: "Whole Foods Market",
-          category: ["Food and Drink", "Restaurants"],
-          pending: false,
-        },
-        {
-          id: "mock_transaction_2",
-          account_id: "mock_account_1",
-          amount: 2500.0,
-          date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0],
-          name: "Salary Deposit",
-          category: ["Transfer", "Payroll"],
-          pending: false,
-        },
-        {
-          id: "mock_transaction_3",
-          account_id: "mock_account_1",
-          amount: -45.0,
-          date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0],
-          name: "Gas Station",
-          merchant_name: "Shell",
-          category: ["Transportation", "Gas"],
-          pending: false,
-        },
-        {
-          id: "mock_transaction_4",
-          account_id: "mock_account_2",
-          amount: -120.0,
-          date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0],
-          name: "Online Shopping",
-          merchant_name: "Amazon",
-          category: ["Shopping", "Retail"],
-          pending: false,
-        },
-      ];
+
+      // Check if it's a rate limit error
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (
+        errorMessage.includes("rate limit") ||
+        errorMessage.includes("429") ||
+        errorMessage.includes("too many requests")
+      ) {
+        console.warn("⚠️ Rate limit detected, suggesting retry after delay");
+        throw new Error(
+          "Rate limit exceeded. Please try again in a few minutes."
+        );
+      }
+
+      throw error; // Re-throw the error instead of returning mock data
     }
   }
 
