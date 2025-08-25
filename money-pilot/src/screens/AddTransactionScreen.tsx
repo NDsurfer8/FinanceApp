@@ -165,6 +165,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         "Health",
         "Entertainment",
         "Shopping",
+        "Business",
         "Other",
       ];
     }
