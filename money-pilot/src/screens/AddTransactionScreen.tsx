@@ -44,7 +44,7 @@ interface RouteParams {
   amount?: string;
   category?: string;
   isRecurring?: boolean;
-  frequency?: string;
+  frequency?: "weekly" | "biweekly" | "monthly";
 }
 
 export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
@@ -101,12 +101,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       : false,
     frequency: editMode
       ? transaction?.frequency || "monthly"
-      : ("monthly" as
-          | "weekly"
-          | "biweekly"
-          | "monthly"
-          | "quarterly"
-          | "yearly"),
+      : ("monthly" as "weekly" | "biweekly" | "monthly"),
     endDate: editMode ? transaction?.endDate || "" : "",
   });
 
@@ -177,6 +172,30 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
   const categories = getCategories(formData.type);
 
+  // Calculate monthly equivalent amount based on frequency
+  const calculateMonthlyAmount = (
+    amount: string,
+    frequency: string
+  ): number => {
+    const numAmount = parseFloat(amount) || 0;
+    switch (frequency) {
+      case "weekly":
+        return numAmount * 4; // 4 weeks in a month
+      case "biweekly":
+        return numAmount * 2; // 2 bi-weekly periods in a month
+      case "monthly":
+        return numAmount; // No multiplication needed
+      default:
+        return numAmount;
+    }
+  };
+
+  // Get the monthly equivalent amount for display
+  const monthlyEquivalentAmount =
+    formData.isRecurring && formData.amount
+      ? calculateMonthlyAmount(formData.amount, formData.frequency)
+      : 0;
+
   const handleSave = async () => {
     if (!formData.description || !formData.amount || !formData.category) {
       Alert.alert("Error", "Please fill in all required fields");
@@ -245,9 +264,15 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             "../services/transactionService"
           );
 
+          // Calculate the monthly equivalent amount for recurring transactions
+          const monthlyAmount = calculateMonthlyAmount(
+            formData.amount,
+            formData.frequency
+          );
+
           const recurringTransaction = {
             name: formData.description,
-            amount: parseFloat(removeCommas(formData.amount)),
+            amount: monthlyAmount, // Save the monthly equivalent amount
             type: formData.type as "income" | "expense",
             category: formData.category,
             frequency: formData.frequency,
@@ -383,11 +408,17 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             return;
           }
 
+          // Calculate the monthly equivalent amount for recurring transactions
+          const monthlyAmount = calculateMonthlyAmount(
+            formData.amount,
+            formData.frequency
+          );
+
           // Update the recurring transaction
           const updatedRecurringTransaction = {
             ...currentRecurringTransaction,
             name: formData.description,
-            amount: parseFloat(removeCommas(formData.amount)),
+            amount: monthlyAmount, // Save the monthly equivalent amount
             type: formData.type as "income" | "expense",
             category: formData.category,
             frequency: formData.frequency,
@@ -407,7 +438,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               return {
                 ...t,
                 description: formData.description,
-                amount: parseFloat(removeCommas(formData.amount)),
+                amount: monthlyAmount, // Show the monthly equivalent amount
                 category: formData.category,
                 type: formData.type as "income" | "expense",
                 date: new Date(formData.date).getTime(),
@@ -461,9 +492,15 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           "../services/transactionService"
         );
 
+        // Calculate the monthly equivalent amount for recurring transactions
+        const monthlyAmount = calculateMonthlyAmount(
+          formData.amount,
+          formData.frequency
+        );
+
         const recurringTransaction = {
           name: formData.description,
-          amount: parseFloat(removeCommas(formData.amount)),
+          amount: monthlyAmount, // Save the monthly equivalent amount
           type: formData.type as "income" | "expense",
           category: formData.category,
           frequency: formData.frequency,
@@ -921,6 +958,57 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
             />
+
+            {/* Monthly Equivalent Amount Display */}
+            {formData.isRecurring &&
+              formData.amount &&
+              monthlyEquivalentAmount > 0 && (
+                <View
+                  style={{
+                    marginTop: 8,
+                    padding: 12,
+                    backgroundColor: colors.primary + "20",
+                    borderRadius: 8,
+                    borderLeftWidth: 4,
+                    borderLeftColor: colors.primary,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.primary,
+                      fontWeight: "600",
+                      marginBottom: 4,
+                    }}
+                  >
+                    📅 Monthly Equivalent
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: colors.text,
+                      fontWeight: "700",
+                    }}
+                  >
+                    $
+                    {formatNumberWithCommas(monthlyEquivalentAmount.toFixed(2))}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {formData.frequency === "weekly" &&
+                      `($${formData.amount} × 4 weeks)`}
+                    {formData.frequency === "biweekly" &&
+                      `($${formData.amount} × 2 bi-weekly periods)`}
+                    {formData.frequency === "monthly" &&
+                      `($${formData.amount} × 1 month)`}
+                  </Text>
+                </View>
+              )}
           </View>
 
           {/* Category */}
@@ -1080,44 +1168,42 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   Frequency
                 </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {["weekly", "biweekly", "monthly", "quarterly", "yearly"].map(
-                    (frequency) => (
-                      <TouchableOpacity
-                        key={frequency}
+                  {["weekly", "biweekly", "monthly"].map((frequency) => (
+                    <TouchableOpacity
+                      key={frequency}
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        marginRight: 8,
+                        borderRadius: 20,
+                        borderWidth: 1,
+                        borderColor:
+                          formData.frequency === frequency
+                            ? colors.primary
+                            : colors.border,
+                        backgroundColor:
+                          formData.frequency === frequency
+                            ? colors.primary
+                            : "transparent",
+                      }}
+                      onPress={() =>
+                        setFormData({ ...formData, frequency: frequency })
+                      }
+                    >
+                      <Text
                         style={{
-                          paddingHorizontal: 16,
-                          paddingVertical: 8,
-                          marginRight: 8,
-                          borderRadius: 20,
-                          borderWidth: 1,
-                          borderColor:
+                          color:
                             formData.frequency === frequency
-                              ? colors.primary
-                              : colors.border,
-                          backgroundColor:
-                            formData.frequency === frequency
-                              ? colors.primary
-                              : "transparent",
+                              ? "white"
+                              : colors.text,
+                          fontSize: 14,
+                          textTransform: "capitalize",
                         }}
-                        onPress={() =>
-                          setFormData({ ...formData, frequency: frequency })
-                        }
                       >
-                        <Text
-                          style={{
-                            color:
-                              formData.frequency === frequency
-                                ? "white"
-                                : colors.text,
-                            fontSize: 14,
-                            textTransform: "capitalize",
-                          }}
-                        >
-                          {frequency}
-                        </Text>
-                      </TouchableOpacity>
-                    )
-                  )}
+                        {frequency}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </ScrollView>
               </View>
 
