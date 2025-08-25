@@ -1519,7 +1519,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               }}
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={{ fontSize: 18, marginRight: 8 }}>💰</Text>
+                <Text style={{ fontSize: 18, marginRight: 8 }}>💵</Text>
                 <Text
                   style={{
                     fontSize: 16,
