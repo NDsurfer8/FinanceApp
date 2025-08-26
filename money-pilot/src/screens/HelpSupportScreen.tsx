@@ -479,35 +479,46 @@ ${user?.displayName || "VectorFi User"}`,
             Quick Support
           </Text>
 
-          <View style={styles.supportGrid}>
-            <TouchableOpacity
-              style={[
-                styles.supportCard,
-                { backgroundColor: colors.surface, shadowColor: colors.shadow },
-              ]}
-              onPress={openSupportEmail}
-            >
+          <TouchableOpacity
+            style={[
+              styles.emailSupportRow,
+              { backgroundColor: colors.surface, shadowColor: colors.shadow },
+            ]}
+            onPress={openSupportEmail}
+          >
+            <View style={styles.emailSupportContent}>
               <View
                 style={[
-                  styles.supportIcon,
+                  styles.emailSupportIcon,
                   { backgroundColor: colors.surfaceSecondary },
                 ]}
               >
                 <Ionicons name="mail" size={24} color="#6366f1" />
               </View>
-              <Text style={[styles.supportTitle, { color: colors.text }]}>
-                Email Support
-              </Text>
-              <Text
-                style={[
-                  styles.supportDescription,
-                  { color: colors.textSecondary },
-                ]}
-              >
-                Get help via email
-              </Text>
-            </TouchableOpacity>
+              <View style={styles.emailSupportText}>
+                <Text
+                  style={[styles.emailSupportTitle, { color: colors.text }]}
+                >
+                  Email Support
+                </Text>
+                <Text
+                  style={[
+                    styles.emailSupportDescription,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  Get help via email
+                </Text>
+              </View>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
 
+          {/* Live Chat - Commented out
             <TouchableOpacity
               style={[
                 styles.supportCard,
@@ -535,7 +546,9 @@ ${user?.displayName || "VectorFi User"}`,
                 Chat with support team
               </Text>
             </TouchableOpacity>
+            */}
 
+          {/* User Guide - Commented out
             <TouchableOpacity
               style={[
                 styles.supportCard,
@@ -563,7 +576,9 @@ ${user?.displayName || "VectorFi User"}`,
                 Detailed instructions
               </Text>
             </TouchableOpacity>
+            */}
 
+          {/* Video Tutorials - Commented out
             <TouchableOpacity
               style={[
                 styles.supportCard,
@@ -591,7 +606,7 @@ ${user?.displayName || "VectorFi User"}`,
                 Learn with videos
               </Text>
             </TouchableOpacity>
-          </View>
+            */}
         </View>
 
         {/* FAQ Section */}
@@ -838,6 +853,41 @@ const styles = StyleSheet.create({
   supportDescription: {
     fontSize: 12,
     textAlign: "center",
+  },
+  emailSupportRow: {
+    borderRadius: 16,
+    padding: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  emailSupportContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  emailSupportIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  emailSupportText: {
+    flex: 1,
+  },
+  emailSupportTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  emailSupportDescription: {
+    fontSize: 14,
   },
   faqItem: {
     borderRadius: 16,
