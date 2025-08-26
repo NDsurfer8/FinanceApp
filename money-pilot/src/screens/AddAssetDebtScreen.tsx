@@ -211,7 +211,13 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
         "Delete Confirmation",
         `Are you sure you want to delete this ${type}? This action cannot be undone.`,
         [
-          { text: "Cancel", style: "cancel" },
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => {
+              setDeleteLoading(false);
+            },
+          },
           {
             text: "Delete",
             style: "destructive",

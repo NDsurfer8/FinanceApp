@@ -370,7 +370,13 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
         "Delete Goal",
         "Are you sure you want to delete this goal? This action cannot be undone.",
         [
-          { text: "Cancel", style: "cancel" },
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => {
+              setDeleteLoading(false);
+            },
+          },
           {
             text: "Delete",
             style: "destructive",

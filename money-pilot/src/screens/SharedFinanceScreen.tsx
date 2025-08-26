@@ -101,6 +101,9 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
           {
             text: "Cancel",
             style: "cancel",
+            onPress: () => {
+              setDeleteLoading(null);
+            },
           },
           {
             text: "Delete",

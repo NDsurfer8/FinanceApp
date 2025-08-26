@@ -622,7 +622,13 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           "Delete Recurring Transaction",
           "This will delete the recurring transaction and all future occurrences. This action cannot be undone.",
           [
-            { text: "Cancel", style: "cancel" },
+            {
+              text: "Cancel",
+              style: "cancel",
+              onPress: () => {
+                setDeleteLoading(false);
+              },
+            },
             {
               text: "Delete Recurring & All Future",
               style: "destructive",
@@ -676,7 +682,13 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           "Delete Confirmation",
           "Are you sure you want to delete this transaction? This action cannot be undone.",
           [
-            { text: "Cancel", style: "cancel" },
+            {
+              text: "Cancel",
+              style: "cancel",
+              onPress: () => {
+                setDeleteLoading(false);
+              },
+            },
             {
               text: "Delete",
               style: "destructive",

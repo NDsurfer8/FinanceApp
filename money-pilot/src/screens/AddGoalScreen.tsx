@@ -233,7 +233,13 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
         "Delete Confirmation",
         "Are you sure you want to delete this goal? This action cannot be undone.",
         [
-          { text: "Cancel", style: "cancel" },
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => {
+              setDeleteLoading(false);
+            },
+          },
           {
             text: "Delete",
             style: "destructive",
