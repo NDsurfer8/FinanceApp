@@ -88,6 +88,9 @@ export class BiometricAuthService {
         }
       }
 
+      // Re-initialize to ensure we have the latest settings
+      await this.initialize();
+
       // Check if biometric sensor is available
       const isAvailable = await this.isBiometricAvailable();
 
@@ -149,6 +152,11 @@ export class BiometricAuthService {
       default:
         return "Biometric Authentication";
     }
+  }
+
+  // Force refresh biometric status
+  async refreshStatus(): Promise<void> {
+    await this.initialize();
   }
 }
 

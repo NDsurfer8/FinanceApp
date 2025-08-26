@@ -42,6 +42,24 @@ export const useBiometricAuth = (): UseBiometricAuthReturn => {
     };
   }, []);
 
+  // Add a focus listener to refresh biometric status when returning to the app
+  useEffect(() => {
+    const refreshOnFocus = () => {
+      checkBiometricStatus();
+    };
+
+    // Refresh biometric status when the app comes into focus
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        refreshOnFocus();
+      }
+    });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, []);
+
   const checkBiometricStatus = async () => {
     try {
       const [biometricEnabled, autoLockEnabled, isAvailable, type] =

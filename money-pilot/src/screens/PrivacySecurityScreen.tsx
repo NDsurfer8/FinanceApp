@@ -214,6 +214,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
               )
             );
 
+            // Refresh biometric status
+            await biometricAuthService.refreshStatus();
+
             Alert.alert(
               "Biometric Authentication Enabled",
               `${biometricAuthService.getBiometricTypeName()} has been enabled. You can now use biometric authentication to unlock the app.`,
@@ -241,6 +244,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                 onPress: async () => {
                   await setBiometricAuthEnabled(false);
                   await biometricAuthService.deleteKeys();
+                  await biometricAuthService.refreshStatus();
 
                   // Update the UI
                   setSettings((prevSettings) =>
