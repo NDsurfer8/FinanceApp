@@ -135,6 +135,16 @@ exports.createLinkToken = onCall(
       console.error("Error creating link token:", error);
       console.error("Error details:", error.response?.data || error.message);
       console.error("Full error object:", JSON.stringify(error, null, 2));
+
+      // Handle Plaid API rate limit errors specifically
+      if (error.response?.data?.error_code === "RATE_LIMIT") {
+        console.error("Plaid API rate limit exceeded");
+        throw new functions.https.HttpsError(
+          "resource-exhausted",
+          "Plaid API rate limit exceeded. Please wait a moment and try again."
+        );
+      }
+
       throw new functions.https.HttpsError(
         "internal",
         `Failed to create link token: ${error.message}`

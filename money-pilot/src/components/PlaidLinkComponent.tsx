@@ -158,9 +158,13 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
         linkSuccess.metadata
       );
 
-      // Keep loading until connection is confirmed
+      // Check connection status and stop loading
       await checkConnectionStatus();
       onSuccess?.();
+
+      // Stop loading after successful connection
+      setIsLoading(false);
+      onLoadingChange?.(false);
 
       // Start polling for connection confirmation
       pollConnectionStatus();
@@ -173,37 +177,56 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   };
 
   const handlePlaidExit = (linkExit: LinkExit) => {
-    // Don't stop loading here - let it continue until bank is actually connected
     console.log("Plaid Link exit:", linkExit);
 
-    if (linkExit.error) {
-      console.error("Plaid exit with error:", linkExit.error);
+    // Stop loading when user exits (cancels or completes)
+    setIsLoading(false);
+    onLoadingChange?.(false);
 
-      // Enhanced error messaging
-      let errorMessage = "Failed to connect bank account";
-
-      if (linkExit.error.errorCode) {
-        switch (linkExit.error.errorCode) {
-          case "INVALID_LINK_TOKEN":
-            errorMessage = "Connection session expired. Please try again.";
-            break;
-          case "ITEM_LOGIN_REQUIRED":
-            errorMessage = "Bank login required. Please try again.";
-            break;
-          case "INSTITUTION_DOWN":
-            errorMessage =
-              "Bank is temporarily unavailable. Please try again later.";
-            break;
-          default:
-            errorMessage = linkExit.error.errorMessage || errorMessage;
-        }
-      }
-
-      Alert.alert("Connection Error", errorMessage);
-    } else {
-      console.log("Plaid exit without error:", linkExit.metadata);
+    // Check if user cancelled (no error or empty error object means user cancelled)
+    if (
+      !linkExit.error ||
+      (typeof linkExit.error === "object" &&
+        Object.keys(linkExit.error).length === 0) ||
+      (linkExit.error &&
+        !linkExit.error.errorCode &&
+        !linkExit.error.errorMessage)
+    ) {
+      console.log("User cancelled Plaid Link flow");
+      console.log("Exit data:", JSON.stringify(linkExit, null, 2));
+      // Don't show any error message for user cancellation
+      onExit?.();
+      return;
     }
 
+    // Handle actual errors
+    console.error("Plaid exit with error:", linkExit.error);
+
+    // Enhanced error messaging
+    let errorMessage = "Failed to connect bank account";
+
+    if (linkExit.error.errorCode) {
+      switch (linkExit.error.errorCode) {
+        case "INVALID_LINK_TOKEN":
+          errorMessage = "Connection session expired. Please try again.";
+          break;
+        case "ITEM_LOGIN_REQUIRED":
+          errorMessage = "Bank login required. Please try again.";
+          break;
+        case "INSTITUTION_DOWN":
+          errorMessage =
+            "Bank is temporarily unavailable. Please try again later.";
+          break;
+        case "RATE_LIMIT":
+          errorMessage =
+            "Too many connection attempts. Please wait a moment and try again.";
+          break;
+        default:
+          errorMessage = linkExit.error.errorMessage || errorMessage;
+      }
+    }
+
+    Alert.alert("Connection Error", errorMessage);
     onExit?.();
   };
 

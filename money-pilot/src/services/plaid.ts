@@ -99,11 +99,32 @@ class PlaidService {
     this.onBankConnectedCallbacks.forEach((callback) => callback());
   }
 
+  // Debouncing for link token creation to prevent rate limiting
+  private lastLinkTokenCall = 0;
+  private readonly LINK_TOKEN_DEBOUNCE = 2000; // 2 seconds
+
   async initializePlaidLink(): Promise<string> {
     if (!this.userId) throw new Error("User ID not set");
     if (!this.auth.currentUser) throw new Error("User not authenticated");
 
     console.log("Initializing Plaid Link for user:", this.userId);
+
+    // Debouncing: prevent rapid successive calls
+    const now = Date.now();
+    const timeSinceLastCall = now - this.lastLinkTokenCall;
+
+    if (timeSinceLastCall < this.LINK_TOKEN_DEBOUNCE) {
+      const waitTime = Math.ceil(
+        (this.LINK_TOKEN_DEBOUNCE - timeSinceLastCall) / 1000
+      );
+      console.log(
+        `⏳ Rate limited: Please wait ${waitTime} seconds before trying again`
+      );
+      throw new Error(`Please wait ${waitTime} seconds before trying again`);
+    }
+
+    // Update last call time
+    this.lastLinkTokenCall = now;
 
     // Typed callable
     type Resp = { link_token: string; expiration?: string };
@@ -121,6 +142,27 @@ class PlaidService {
     }
 
     return linkToken;
+  }
+  catch(error: any) {
+    console.error("Error creating link token:", error);
+
+    // Handle Firebase Functions rate limiting errors
+    if (
+      error instanceof Error &&
+      error.message.includes("Plaid API rate limit exceeded")
+    ) {
+      throw new Error(error.message);
+    }
+
+    // Handle other Firebase function errors
+    if (
+      error instanceof Error &&
+      error.message.includes("Failed to create link token")
+    ) {
+      throw new Error(error.message);
+    }
+
+    throw error;
   }
 
   // Create Plaid Link session (preloads Link for better performance)
@@ -883,6 +925,9 @@ class PlaidService {
       this.accessToken = null;
       this.itemId = null;
       this.userId = null;
+
+      // Clear debounce timer
+      this.lastLinkTokenCall = 0;
 
       // Clear cache and pending requests
       this.requestCache.clear();
