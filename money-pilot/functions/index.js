@@ -369,6 +369,46 @@ exports.getTransactions = onCall(
       endDate,
     });
 
+    // Handle test token for simulation
+    if (accessToken === "test_access_token_12345") {
+      console.log("Detected test access token, returning mock transactions");
+      return {
+        transactions: [
+          {
+            transaction_id: "test_transaction_1",
+            account_id: "test_account_1",
+            amount: -50.0,
+            date: "2024-01-15",
+            name: "Test Grocery Store",
+            merchant_name: "Test Grocery Store",
+            category: ["Food and Drink", "Restaurants"],
+            pending: false,
+          },
+          {
+            transaction_id: "test_transaction_2",
+            account_id: "test_account_1",
+            amount: -25.0,
+            date: "2024-01-20",
+            name: "Test Gas Station",
+            merchant_name: "Test Gas Station",
+            category: ["Transportation", "Gas"],
+            pending: false,
+          },
+          {
+            transaction_id: "test_transaction_3",
+            account_id: "test_account_2",
+            amount: 2000.0,
+            date: "2024-01-01",
+            name: "Test Salary Deposit",
+            merchant_name: "Test Employer",
+            category: ["Transfer", "Deposit"],
+            pending: false,
+          },
+        ],
+        total_transactions: 3,
+      };
+    }
+
     try {
       console.log("Getting Plaid client...");
       const client = getPlaidClient(plaidClientId.value(), plaidSecret.value());
