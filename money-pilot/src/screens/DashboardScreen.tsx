@@ -451,7 +451,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  backgroundColor: "#dcfce7",
+                  backgroundColor: colors.surfaceSecondary,
                   padding: 12,
                   borderRadius: 12,
                   marginRight: 16,
@@ -461,7 +461,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   alignItems: "center",
                 }}
               >
-                <Ionicons name="trending-up" size={20} color="#16a34a" />
+                <Ionicons name="trending-up" size={20} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text
@@ -492,7 +492,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  backgroundColor: "#fee2e2",
+                  backgroundColor: colors.surfaceSecondary,
                   padding: 12,
                   borderRadius: 12,
                   marginRight: 16,
@@ -502,7 +502,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   alignItems: "center",
                 }}
               >
-                <Ionicons name="trending-down" size={20} color="#dc2626" />
+                <Ionicons
+                  name="trending-down"
+                  size={20}
+                  color={colors.primary}
+                />
               </View>
               <View style={{ flex: 1 }}>
                 <Text
@@ -533,7 +537,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  backgroundColor: availableAmount >= 0 ? "#dbeafe" : "#fef3c7",
+                  backgroundColor: colors.surfaceSecondary,
                   padding: 12,
                   borderRadius: 12,
                   marginRight: 16,
@@ -546,7 +550,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Ionicons
                   name={availableAmount >= 0 ? "wallet" : "alert-circle"}
                   size={20}
-                  color={availableAmount >= 0 ? "#2563eb" : "#d97706"}
+                  color={colors.primary}
                 />
               </View>
               <View style={{ flex: 1 }}>
