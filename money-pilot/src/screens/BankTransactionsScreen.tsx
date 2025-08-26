@@ -157,7 +157,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                 }}
                 numberOfLines={1}
               >
-                Bank Transactions
+                Accounts Overview
               </Text>
             </View>
             <Text
