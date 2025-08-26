@@ -361,6 +361,14 @@ https://vectorfi.ai/
                 Secure Data Encryption
               </Text>
             </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
+              <Text
+                style={[styles.featureText, { color: colors.textSecondary }]}
+              >
+                Vectra AI Financial Assistant
+              </Text>
+            </View>
           </View>
         </View>
 
