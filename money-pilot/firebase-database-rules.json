@@ -389,6 +389,152 @@
           ".validate": "newData.isNumber() && newData.val() > 0"
         }
       }
+    },
+
+    "plaidItems": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$itemId": {
+        ".read": "auth != null && data.child('userId').val() === auth.uid",
+        ".write": "auth != null && newData.child('userId').val() === auth.uid",
+        ".validate": "newData.hasChildren(['itemId', 'userId', 'accessToken', 'status', 'createdAt', 'updatedAt'])",
+        "itemId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "userId": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        "accessToken": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "accessTokenEncrypted": {
+          ".validate": "newData.isString()"
+        },
+        "status": {
+          ".validate": "newData.val() === 'good' || newData.val() === 'pending_expiration' || newData.val() === 'item_login_required' || newData.val() === 'pending_disconnect'"
+        },
+        "institutionId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "institutionName": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        }
+      }
+    },
+
+    "bankData": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$userId": {
+        ".read": "$userId === auth.uid",
+        ".write": "$userId === auth.uid",
+        "accounts": {
+          "$accountId": {
+            ".validate": "newData.hasChildren(['accountId', 'name', 'type', 'subtype', 'mask', 'userId'])",
+            "accountId": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+            },
+            "nameEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "type": {
+              ".validate": "newData.val() === 'depository' || newData.val() === 'credit' || newData.val() === 'loan' || newData.val() === 'investment'"
+            },
+            "subtype": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "mask": {
+              ".validate": "newData.isString() && newData.val().length <= 4"
+            },
+            "currentBalance": {
+              ".validate": "newData.isNumber()"
+            },
+            "currentBalanceEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "availableBalance": {
+              ".validate": "newData.isNumber()"
+            },
+            "availableBalanceEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "lastUpdated": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            }
+          }
+        },
+        "transactions": {
+          "$transactionId": {
+            ".validate": "newData.hasChildren(['transactionId', 'accountId', 'amount', 'date', 'name', 'userId'])",
+            "transactionId": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "accountId": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "amount": {
+              ".validate": "newData.isNumber()"
+            },
+            "amountEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "date": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+            },
+            "nameEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "category": {
+              ".validate": "newData.isString()"
+            },
+            "categoryEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "pending": {
+              ".validate": "newData.isBoolean()"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "lastUpdated": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            }
+          }
+        },
+        "status": {
+          ".validate": "newData.hasChildren(['hasNewAccounts', 'newAccounts', 'expirationWarning', 'disconnectWarning', 'lastWebhook'])",
+          "hasNewAccounts": {
+            ".validate": "newData.isBoolean()"
+          },
+          "newAccounts": {
+            ".validate": "newData.isString()"
+          },
+          "expirationWarning": {
+            ".validate": "newData.isBoolean()"
+          },
+          "disconnectWarning": {
+            ".validate": "newData.isBoolean()"
+          },
+          "lastWebhook": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          }
+        }
+      }
     }
   }
 }

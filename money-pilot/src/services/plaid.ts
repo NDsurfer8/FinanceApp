@@ -418,8 +418,10 @@ class PlaidService {
   }
 
   // Retry configuration for PRODUCT_NOT_READY errors
-  private readonly MAX_RETRIES = 3;
-  private readonly RETRY_DELAYS = [5000, 10000, 30000]; // 5s, 10s, 30s
+  private readonly MAX_RETRIES = 10; // Increased from 3 to 10 for more persistence
+  private readonly RETRY_DELAYS = [
+    5000, 10000, 15000, 20000, 30000, 45000, 60000, 90000, 120000, 180000,
+  ]; // Progressive delays up to 3 minutes
 
   // Get transactions from Plaid
   async getTransactions(
@@ -478,7 +480,49 @@ class PlaidService {
   ): Promise<PlaidTransaction[]> {
     for (let attempt = 0; attempt <= this.MAX_RETRIES; attempt++) {
       try {
-        return await this._fetchTransactions(startDate, endDate);
+        const transactions = await this._fetchTransactions(startDate, endDate);
+
+        // If we got transactions, check if we have enough data for 3 months
+        if (transactions.length > 0) {
+          const transactionDates = transactions.map((t) => new Date(t.date));
+          const earliestDate = new Date(
+            Math.min(...transactionDates.map((d) => d.getTime()))
+          );
+          const latestDate = new Date(
+            Math.max(...transactionDates.map((d) => d.getTime()))
+          );
+          const dateRangeInDays =
+            (latestDate.getTime() - earliestDate.getTime()) /
+            (1000 * 60 * 60 * 24);
+
+          console.log(
+            `📊 Transaction date range: ${dateRangeInDays.toFixed(1)} days (${
+              transactions.length
+            } transactions)`
+          );
+
+          // If we have at least 60 days of data or we're not requesting a full 3-month range, return the data
+          if (
+            dateRangeInDays >= 60 ||
+            !this._isRequestingFullRange(startDate, endDate)
+          ) {
+            console.log(
+              `✅ Sufficient transaction data found (${dateRangeInDays.toFixed(
+                1
+              )} days)`
+            );
+            return transactions;
+          } else {
+            console.log(
+              `⚠️ Insufficient transaction data (${dateRangeInDays.toFixed(
+                1
+              )} days), continuing to retry...`
+            );
+            // Continue retrying to get more data
+          }
+        }
+
+        return transactions;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
@@ -495,7 +539,9 @@ class PlaidService {
             errorMessage.includes("product_not_ready")) &&
           attempt < this.MAX_RETRIES
         ) {
-          const delay = this.RETRY_DELAYS[attempt];
+          const delay =
+            this.RETRY_DELAYS[attempt] ||
+            this.RETRY_DELAYS[this.RETRY_DELAYS.length - 1];
           console.log(
             `🔄 Product not ready, retrying in ${delay}ms (attempt ${
               attempt + 1
@@ -515,6 +561,14 @@ class PlaidService {
     }
 
     throw new Error("Max retries exceeded for transaction fetch");
+  }
+
+  // Helper method to check if we're requesting a full 3-month range
+  private _isRequestingFullRange(startDate: string, endDate: string): boolean {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const daysDiff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+    return daysDiff >= 80; // Consider it a full range if requesting 80+ days
   }
 
   // Private method to actually fetch transactions

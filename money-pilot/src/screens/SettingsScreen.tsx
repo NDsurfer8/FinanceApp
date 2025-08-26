@@ -60,9 +60,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     useState(false);
   const [bankConnectionLoading, setBankConnectionLoading] = useState(false);
 
-  // Monitor bank connection status and stop loading when connected
+  // Monitor bank connection status and stop loading when connected or disconnected
   useEffect(() => {
-    if (isBankConnected && bankConnectionLoading) {
+    if (bankConnectionLoading) {
+      // Stop loading when bank connection status changes (connected or disconnected)
       setBankConnectionLoading(false);
     }
   }, [isBankConnected, bankConnectionLoading]);

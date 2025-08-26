@@ -40,6 +40,13 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     }
   }, [user]);
 
+  // Cleanup effect to stop loading when component unmounts or connection status changes
+  useEffect(() => {
+    if (!isLoading) {
+      onLoadingChange?.(false);
+    }
+  }, [isLoading, onLoadingChange]);
+
   const checkConnectionStatus = async () => {
     try {
       const connected = await plaidService.isBankConnected();
@@ -69,6 +76,12 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       try {
         const connected = await plaidService.isBankConnected();
         setIsConnected(connected);
+
+        // Stop polling if we're no longer loading (user might have disconnected)
+        if (!isLoading) {
+          console.log("Polling stopped - loading state changed");
+          return;
+        }
 
         if (connected) {
           console.log(
@@ -205,6 +218,10 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
           style: "destructive",
           onPress: async () => {
             try {
+              // Stop any ongoing loading/polling
+              setIsLoading(false);
+              onLoadingChange?.(false);
+
               await plaidService.disconnectBank();
               await checkConnectionStatus(); // Refresh connection status
             } catch (error) {
