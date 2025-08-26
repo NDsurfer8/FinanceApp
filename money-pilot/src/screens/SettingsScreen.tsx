@@ -601,41 +601,36 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             marginBottom: 12,
           }}
         >
-          <Text
+          <View
             style={{
-              fontSize: 16,
-              fontWeight: "600",
+              flexDirection: "row",
+              alignItems: "center",
               marginBottom: 8,
-              color: colors.text,
             }}
           >
-            Premium
-          </Text>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+              }}
+            >
+              Premium
+            </Text>
+            {subscriptionStatus?.isPremium && (
+              <Ionicons
+                name="star"
+                size={16}
+                color="#f59e0b"
+                style={{ marginLeft: 6 }}
+              />
+            )}
+          </View>
 
           {subscriptionStatus?.isPremium ? (
             <View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 8,
-                }}
-              >
-                <Ionicons name="star" size={16} color="#f59e0b" />
-                <Text
-                  style={{
-                    color: "#16a34a",
-                    fontSize: 14,
-                    fontWeight: "600",
-                    marginLeft: 6,
-                  }}
-                >
-                  Premium Active
-                </Text>
-              </View>
               <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-                You have access to all premium features including unlimited
-                transactions, goals, and advanced analytics.
+                Premium + Plaid: review, label, add to budget.
               </Text>
               {subscriptionStatus.expirationDate && (
                 <Text
