@@ -636,17 +636,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Auto-load bank data when connection status changes
   useEffect(() => {
+    // Add startup coordination to prevent initialization cascade
     if (
       user &&
       isBankConnected &&
       bankRecurringSuggestions.length === 0 &&
       !isBankDataLoading &&
-      bankTransactions.length === 0 // Only auto-load if we have no transactions at all
+      bankTransactions.length === 0 && // Only auto-load if we have no transactions at all
+      !(refreshBankData as any).isInitializing // Prevent multiple simultaneous calls
     ) {
       console.log(
         "DataContext: Bank connected but no transactions, auto-loading..."
       );
-      refreshBankData(true);
+      (refreshBankData as any).isInitializing = true;
+      refreshBankData(true).finally(() => {
+        (refreshBankData as any).isInitializing = false;
+      });
     }
   }, [
     user,

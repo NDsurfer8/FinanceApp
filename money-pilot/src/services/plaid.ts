@@ -70,6 +70,12 @@ class PlaidService {
   private requestCache: Map<string, { data: any; timestamp: number }> =
     new Map();
   private readonly CACHE_DURATION = 30000; // 30 seconds
+  private readonly ACCOUNTS_CACHE_DURATION = 300000; // 5 minutes for accounts (more stable)
+  private readonly TRANSACTIONS_CACHE_DURATION = 60000; // 1 minute for transactions
+
+  // Request queue to prevent concurrent API calls
+  private requestQueue: Array<() => Promise<any>> = [];
+  private isProcessingQueue = false;
 
   // Set user ID for Firebase operations
   setUserId(userId: string) {
@@ -81,11 +87,51 @@ class PlaidService {
     return `${endpoint}_${JSON.stringify(params)}`;
   }
 
+  // Queue Plaid API requests to prevent concurrent calls
+  private async queueRequest<T>(request: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.requestQueue.push(async () => {
+        try {
+          const result = await request();
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      });
+      this.processQueue();
+    });
+  }
+
+  // Process the request queue sequentially
+  private async processQueue() {
+    if (this.isProcessingQueue || this.requestQueue.length === 0) {
+      return;
+    }
+
+    this.isProcessingQueue = true;
+
+    while (this.requestQueue.length > 0) {
+      const request = this.requestQueue.shift();
+      if (request) {
+        try {
+          await request();
+        } catch (error) {
+          console.error("Error processing queued request:", error);
+        }
+        // Add delay between requests to prevent rate limiting
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
+    this.isProcessingQueue = false;
+  }
+
   // Check if cached data is still valid
-  private isCacheValid(cacheKey: string): boolean {
+  private isCacheValid(cacheKey: string, customDuration?: number): boolean {
     const cached = this.requestCache.get(cacheKey);
     if (!cached) return false;
-    return Date.now() - cached.timestamp < this.CACHE_DURATION;
+    const duration = customDuration || this.CACHE_DURATION;
+    return Date.now() - cached.timestamp < duration;
   }
 
   // Register callback for when bank is connected
@@ -107,7 +153,10 @@ class PlaidService {
     if (!this.userId) throw new Error("User ID not set");
     if (!this.auth.currentUser) throw new Error("User not authenticated");
 
-    console.log("Initializing Plaid Link for user:", this.userId);
+    console.log(
+      `[${new Date().toISOString()}] Initializing Plaid Link for user:`,
+      this.userId
+    );
 
     // Debouncing: prevent rapid successive calls
     const now = Date.now();
@@ -280,6 +329,10 @@ class PlaidService {
         itemId: string;
       };
 
+      // Add delay between sequential API calls to prevent rate limiting
+      console.log("🔄 Adding delay between sequential API calls...");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Get accounts using the access token
       const getAccounts = httpsCallable(this.functions, "getAccounts");
       const accountsResult = await getAccounts({ accessToken });
@@ -393,8 +446,8 @@ class PlaidService {
       accessToken: this.accessToken,
     });
 
-    // Check cache first
-    if (this.isCacheValid(cacheKey)) {
+    // Check cache first with extended duration for accounts
+    if (this.isCacheValid(cacheKey, this.ACCOUNTS_CACHE_DURATION)) {
       console.log("📦 Returning cached accounts data");
       return this.requestCache.get(cacheKey)!.data;
     }
@@ -408,8 +461,10 @@ class PlaidService {
     console.log("🔍 Attempting to fetch accounts with:");
     console.log("  - Access Token:", this.accessToken.substring(0, 20) + "...");
 
-    // Create the request promise
-    this.pendingAccountsRequest = this._fetchAccounts();
+    // Create the request promise with queuing
+    this.pendingAccountsRequest = this.queueRequest(() =>
+      this._fetchAccounts()
+    );
 
     try {
       const result = await this.pendingAccountsRequest;
@@ -431,11 +486,20 @@ class PlaidService {
   private async _fetchAccounts(): Promise<PlaidAccount[]> {
     try {
       const getAccounts = httpsCallable(this.functions, "getAccounts");
+      console.log(
+        `[${new Date().toISOString()}] Plaid API: getAccounts for user: ${
+          this.userId
+        }`
+      );
       console.log("📞 Calling Firebase Function: getAccounts");
 
+      const startTime = Date.now();
       const result = await getAccounts({ accessToken: this.accessToken });
-
-      console.log("✅ Firebase Function returned:", result.data);
+      const duration = Date.now() - startTime;
+      console.log(
+        `✅ Firebase Function returned in ${duration}ms:`,
+        result.data
+      );
       const { accounts } = result.data as { accounts: any[] };
 
       console.log("📊 Found", accounts?.length || 0, "accounts");
@@ -460,10 +524,8 @@ class PlaidService {
   }
 
   // Retry configuration for PRODUCT_NOT_READY errors
-  private readonly MAX_RETRIES = 10; // Increased from 3 to 10 for more persistence
-  private readonly RETRY_DELAYS = [
-    5000, 10000, 15000, 20000, 30000, 45000, 60000, 90000, 120000, 180000,
-  ]; // Progressive delays up to 3 minutes
+  private readonly MAX_RETRIES = 5; // Reduced from 10 to 5 to prevent rate limiting
+  private readonly RETRY_DELAYS = [10000, 30000, 60000, 120000, 300000]; // Longer delays to be more conservative
 
   // Get transactions from Plaid
   async getTransactions(
@@ -476,8 +538,8 @@ class PlaidService {
 
     const cacheKey = this.getCacheKey("transactions", { startDate, endDate });
 
-    // Check cache first
-    if (this.isCacheValid(cacheKey)) {
+    // Check cache first with extended duration for transactions
+    if (this.isCacheValid(cacheKey, this.TRANSACTIONS_CACHE_DURATION)) {
       console.log("📦 Returning cached transactions data");
       return this.requestCache.get(cacheKey)!.data;
     }
@@ -493,10 +555,9 @@ class PlaidService {
     console.log("  - Start Date:", startDate);
     console.log("  - End Date:", endDate);
 
-    // Create the request promise with retry logic
-    this.pendingTransactionsRequest = this._fetchTransactionsWithRetry(
-      startDate,
-      endDate
+    // Create the request promise with retry logic and queuing
+    this.pendingTransactionsRequest = this.queueRequest(() =>
+      this._fetchTransactionsWithRetry(startDate, endDate)
     );
 
     try {
@@ -573,6 +634,24 @@ class PlaidService {
           `🔄 Retry attempt ${attempt + 1}: Error message: "${errorMessage}"`
         );
 
+        // Check for rate limit errors first
+        if (
+          errorMessage.includes("RATE_LIMIT") ||
+          errorMessage.includes("rate limit")
+        ) {
+          console.log(
+            `🚨 Rate limit detected, implementing exponential backoff`
+          );
+          const backoffTime = Math.min(30000 * Math.pow(2, attempt), 300000); // Max 5 minutes
+          console.log(
+            `🔄 Rate limit backoff: waiting ${backoffTime}ms (attempt ${
+              attempt + 1
+            }/${this.MAX_RETRIES})`
+          );
+          await new Promise((resolve) => setTimeout(resolve, backoffTime));
+          continue;
+        }
+
         // If it's a PRODUCT_NOT_READY error and we haven't exceeded retries
         if (
           (errorMessage.includes("400") ||
@@ -620,15 +699,24 @@ class PlaidService {
   ): Promise<PlaidTransaction[]> {
     try {
       const getTransactions = httpsCallable(this.functions, "getTransactions");
+      console.log(
+        `[${new Date().toISOString()}] Plaid API: getTransactions for user: ${
+          this.userId
+        }`
+      );
       console.log("📞 Calling Firebase Function: getTransactions");
 
+      const startTime = Date.now();
       const result = await getTransactions({
         accessToken: this.accessToken,
         startDate,
         endDate,
       });
-
-      console.log("✅ Firebase Function returned:", result.data);
+      const duration = Date.now() - startTime;
+      console.log(
+        `✅ Firebase Function returned in ${duration}ms:`,
+        result.data
+      );
       const { transactions } = result.data as { transactions: any[] };
 
       console.log("📊 Found", transactions?.length || 0, "transactions");
