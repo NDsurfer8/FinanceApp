@@ -31,11 +31,11 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
   const appName = Constants.expoConfig?.name || "VectorFi";
 
   const openPrivacyPolicy = () => {
-    Linking.openURL("https://vectorfi.ai/");
+    navigation.navigate("PrivacyPolicy");
   };
 
   const openTermsOfService = () => {
-    Linking.openURL("https://vectorfi.ai/");
+    navigation.navigate("TermsOfService");
   };
 
   const openSupportEmail = async () => {

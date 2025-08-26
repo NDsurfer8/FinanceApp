@@ -502,11 +502,11 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   };
 
   const openPrivacyPolicy = () => {
-    Linking.openURL("https://your-app.com/privacy-policy");
+    navigation.navigate("PrivacyPolicy");
   };
 
   const openTermsOfService = () => {
-    Linking.openURL("https://your-app.com/terms-of-service");
+    navigation.navigate("TermsOfService");
   };
 
   return (

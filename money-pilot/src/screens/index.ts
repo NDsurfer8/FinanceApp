@@ -21,3 +21,5 @@ export { default as SubscriptionScreen } from "./SubscriptionScreen";
 export { BankTransactionsScreen } from "./BankTransactionsScreen";
 export { AIFinancialAdvisorScreen } from "./AIFinancialAdvisorScreen";
 export { FinancialPlansScreen } from "./FinancialPlansScreen";
+export { PrivacyPolicyScreen } from "./PrivacyPolicyScreen";
+export { TermsOfServiceScreen } from "./TermsOfServiceScreen";

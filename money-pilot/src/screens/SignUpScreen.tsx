@@ -44,11 +44,11 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
 
   // Functions to open Terms of Service and Privacy Policy
   const openTermsOfService = () => {
-    Linking.openURL("https://vectorfi.ai/");
+    navigation.navigate("TermsOfService");
   };
 
   const openPrivacyPolicy = () => {
-    Linking.openURL("https://vectorfi.ai/");
+    navigation.navigate("PrivacyPolicy");
   };
 
   // Refs for input focus management

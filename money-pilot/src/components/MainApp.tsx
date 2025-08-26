@@ -50,6 +50,8 @@ import {
   AIFinancialAdvisorScreen,
   FinancialPlansScreen,
 } from "../screens";
+import { PrivacyPolicyScreen } from "../screens/PrivacyPolicyScreen";
+import { TermsOfServiceScreen } from "../screens/TermsOfServiceScreen";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const Stack = createStackNavigator();
@@ -532,6 +534,14 @@ export const MainApp: React.FC = () => {
                         <Stack.Screen
                           name="FinancialPlans"
                           component={FinancialPlansScreen}
+                        />
+                        <Stack.Screen
+                          name="PrivacyPolicy"
+                          component={PrivacyPolicyScreen}
+                        />
+                        <Stack.Screen
+                          name="TermsOfService"
+                          component={TermsOfServiceScreen}
                         />
                       </Stack.Navigator>
                     </NavigationContainer>
