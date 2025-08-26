@@ -147,10 +147,17 @@ class PlaidService {
 
   // Enhanced debouncing for link token creation to prevent rate limiting
   private lastLinkTokenCall = 0;
-  private readonly LINK_TOKEN_DEBOUNCE = 3000; // Increased to 3 seconds
-  private readonly MAX_LINK_ATTEMPTS = 3;
+  private readonly LINK_TOKEN_DEBOUNCE = 2000; // Reduced to 2 seconds for better UX
+  private readonly MAX_LINK_ATTEMPTS = 5; // Increased to 5 attempts for better UX
   private linkAttemptCount = 0;
   private readonly LINK_ATTEMPT_RESET_TIME = 60000; // 1 minute
+  private readonly GRACEFUL_DEGRADATION_TIME = 30000; // 30 seconds for graceful degradation
+
+  // Rate limiting for Plaid Link success flow
+  private lastSuccessFlowCall = 0;
+  private readonly SUCCESS_FLOW_DEBOUNCE = 3000; // 3 seconds between success flows
+  private successFlowAttemptCount = 0;
+  private readonly MAX_SUCCESS_FLOW_ATTEMPTS = 3; // 3 attempts per minute for success flow
 
   async initializePlaidLink(): Promise<string> {
     if (!this.userId) throw new Error("User ID not set");
@@ -170,15 +177,30 @@ class PlaidService {
       this.linkAttemptCount = 0;
     }
 
-    // Check if we've exceeded maximum attempts
+    // Check if we've exceeded maximum attempts with graceful degradation
     if (this.linkAttemptCount >= this.MAX_LINK_ATTEMPTS) {
-      const waitTime = Math.ceil(this.LINK_ATTEMPT_RESET_TIME / 1000);
-      console.log(
-        `🚨 Too many link attempts (${this.linkAttemptCount}/${this.MAX_LINK_ATTEMPTS}). Please wait ${waitTime} seconds.`
-      );
-      throw new Error(
-        `Too many connection attempts. Please wait ${waitTime} seconds and try again.`
-      );
+      const timeSinceFirstAttempt =
+        now -
+        (this.lastLinkTokenCall -
+          (this.MAX_LINK_ATTEMPTS - 1) * this.LINK_TOKEN_DEBOUNCE);
+
+      // If it's been more than 30 seconds since first attempt, allow one more try
+      if (timeSinceFirstAttempt > this.GRACEFUL_DEGRADATION_TIME) {
+        console.log(
+          `🔄 Graceful degradation: Allowing additional attempt after ${Math.ceil(
+            timeSinceFirstAttempt / 1000
+          )}s`
+        );
+        this.linkAttemptCount = Math.max(0, this.linkAttemptCount - 2); // Reset some attempts
+      } else {
+        const waitTime = Math.ceil(this.LINK_ATTEMPT_RESET_TIME / 1000);
+        console.log(
+          `🚨 Too many link attempts (${this.linkAttemptCount}/${this.MAX_LINK_ATTEMPTS}). Please wait ${waitTime} seconds.`
+        );
+        throw new Error(
+          `Too many connection attempts. Please wait ${waitTime} seconds and try again.`
+        );
+      }
     }
 
     // Check debouncing
@@ -203,15 +225,45 @@ class PlaidService {
       "createLinkToken"
     );
 
-    const res = await callable(); // Optionally pass { platform: Platform.OS }
-    const linkToken = res?.data?.link_token; // <- snake_case
+    try {
+      const res = await callable(); // Optionally pass { platform: Platform.OS }
+      const linkToken = res?.data?.link_token; // <- snake_case
 
-    if (typeof linkToken !== "string" || !linkToken.length) {
-      console.error("Bad createLinkToken response:", res?.data);
-      throw new Error("createLinkToken did not return link_token");
+      if (typeof linkToken !== "string" || !linkToken.length) {
+        console.error("Bad createLinkToken response:", res?.data);
+        throw new Error("createLinkToken did not return link_token");
+      }
+
+      console.log("✅ Link token created successfully");
+      return linkToken;
+    } catch (firebaseError: any) {
+      console.error("Firebase function error:", firebaseError);
+
+      // Check for Plaid API rate limit errors from Firebase function
+      if (
+        firebaseError.message &&
+        firebaseError.message.includes("RATE_LIMIT")
+      ) {
+        console.warn("⚠️ Plaid API rate limit detected from Firebase function");
+        throw new Error(
+          "Connection service is busy. Please try again in a moment."
+        );
+      }
+
+      // Check for other Plaid API errors
+      if (
+        firebaseError.message &&
+        firebaseError.message.includes("Plaid API")
+      ) {
+        console.warn("⚠️ Plaid API error detected from Firebase function");
+        throw new Error(
+          "Bank connection service is temporarily unavailable. Please try again."
+        );
+      }
+
+      // Re-throw the original error
+      throw firebaseError;
     }
-
-    return linkToken;
   }
   catch(error: any) {
     console.error("Error creating link token:", error);
@@ -332,6 +384,41 @@ class PlaidService {
     try {
       console.log("Plaid link successful:", { publicToken, metadata });
 
+      // Rate limiting for Plaid Link success flow
+      const now = Date.now();
+      const timeSinceLastSuccessFlow = now - this.lastSuccessFlowCall;
+
+      // Reset attempt count if enough time has passed
+      if (timeSinceLastSuccessFlow > this.LINK_ATTEMPT_RESET_TIME) {
+        this.successFlowAttemptCount = 0;
+      }
+
+      // Check if we've exceeded maximum attempts for success flow
+      if (this.successFlowAttemptCount >= this.MAX_SUCCESS_FLOW_ATTEMPTS) {
+        const waitTime = Math.ceil(this.LINK_ATTEMPT_RESET_TIME / 1000);
+        console.log(
+          `🚨 Too many success flow attempts (${this.successFlowAttemptCount}/${this.MAX_SUCCESS_FLOW_ATTEMPTS}). Please wait ${waitTime} seconds.`
+        );
+        throw new Error(
+          `Too many connection attempts. Please wait ${waitTime} seconds and try again.`
+        );
+      }
+
+      // Check debouncing for success flow
+      if (timeSinceLastSuccessFlow < this.SUCCESS_FLOW_DEBOUNCE) {
+        const waitTime = Math.ceil(
+          (this.SUCCESS_FLOW_DEBOUNCE - timeSinceLastSuccessFlow) / 1000
+        );
+        console.log(
+          `⏳ Success flow rate limited: Please wait ${waitTime} seconds before trying again`
+        );
+        throw new Error(`Please wait ${waitTime} seconds before trying again`);
+      }
+
+      // Update last call time and increment attempt count
+      this.lastSuccessFlowCall = now;
+      this.successFlowAttemptCount++;
+
       // Ensure user is authenticated
       const currentUser = this.auth.currentUser;
       if (!currentUser) {
@@ -343,12 +430,46 @@ class PlaidService {
         this.functions,
         "exchangePublicToken"
       );
-      const exchangeResult = await exchangePublicToken({ publicToken });
 
-      const { accessToken, itemId } = exchangeResult.data as {
-        accessToken: string;
-        itemId: string;
-      };
+      let accessToken: string;
+      let itemId: string;
+
+      try {
+        console.log("🔄 Exchanging public token for access token...");
+        const exchangeResult = await exchangePublicToken({ publicToken });
+
+        const result = exchangeResult.data as {
+          accessToken: string;
+          itemId: string;
+        };
+        accessToken = result.accessToken;
+        itemId = result.itemId;
+        console.log("✅ Public token exchanged successfully");
+      } catch (exchangeError: any) {
+        console.error("❌ Error exchanging public token:", exchangeError);
+
+        // Check for Plaid API rate limit errors
+        if (
+          exchangeError.message &&
+          exchangeError.message.includes("RATE_LIMIT")
+        ) {
+          throw new Error(
+            "Connection service is busy. Please try again in a moment."
+          );
+        }
+
+        // Check for other Plaid API errors
+        if (
+          exchangeError.message &&
+          exchangeError.message.includes("Plaid API")
+        ) {
+          throw new Error(
+            "Bank connection service is temporarily unavailable. Please try again."
+          );
+        }
+
+        throw new Error("Failed to connect bank account. Please try again.");
+      }
 
       // Add delay between sequential API calls to prevent rate limiting
       console.log("🔄 Adding delay between sequential API calls...");
@@ -356,9 +477,38 @@ class PlaidService {
 
       // Get accounts using the access token
       const getAccounts = httpsCallable(this.functions, "getAccounts");
-      const accountsResult = await getAccounts({ accessToken });
 
-      const { accounts } = accountsResult.data as { accounts: any[] };
+      let accounts: any[];
+      try {
+        console.log("🔄 Retrieving bank accounts...");
+        const accountsResult = await getAccounts({ accessToken });
+        accounts = (accountsResult.data as { accounts: any[] }).accounts;
+        console.log("✅ Bank accounts retrieved successfully");
+      } catch (accountsError: any) {
+        console.error("❌ Error retrieving accounts:", accountsError);
+
+        // Check for Plaid API rate limit errors
+        if (
+          accountsError.message &&
+          accountsError.message.includes("RATE_LIMIT")
+        ) {
+          throw new Error(
+            "Connection service is busy. Please try again in a moment."
+          );
+        }
+
+        // Check for other Plaid API errors
+        if (
+          accountsError.message &&
+          accountsError.message.includes("Plaid API")
+        ) {
+          throw new Error(
+            "Bank connection service is temporarily unavailable. Please try again."
+          );
+        }
+
+        throw new Error("Failed to retrieve bank accounts. Please try again.");
+      }
 
       // Store Plaid connection data in Firebase
       const plaidData = {
@@ -1060,6 +1210,8 @@ class PlaidService {
       // Clear debounce timer and rate limiting counters
       this.lastLinkTokenCall = 0;
       this.linkAttemptCount = 0;
+      this.lastSuccessFlowCall = 0;
+      this.successFlowAttemptCount = 0;
 
       // Clear cache and pending requests
       this.requestCache.clear();
@@ -1070,6 +1222,15 @@ class PlaidService {
     } catch (error) {
       console.error("PlaidService: Error handling logout:", error);
     }
+  }
+
+  // Method to reset rate limiting counters (for debugging or manual reset)
+  resetRateLimiting(): void {
+    console.log("PlaidService: Resetting rate limiting counters");
+    this.lastLinkTokenCall = 0;
+    this.linkAttemptCount = 0;
+    this.lastSuccessFlowCall = 0;
+    this.successFlowAttemptCount = 0;
   }
 
   // Enhanced disconnect with cleanup
