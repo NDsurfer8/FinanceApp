@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AppState, AppStateStatus } from "react-native";
 import {
   biometricAuthService,
+  biometricEventEmitter,
   BiometricAuthResult,
 } from "../services/biometricAuth";
 import {
@@ -39,6 +40,20 @@ export const useBiometricAuth = (): UseBiometricAuthReturn => {
 
     return () => {
       subscription?.remove();
+    };
+  }, []);
+
+  // Listen for biometric status changes from other components
+  useEffect(() => {
+    const handleBiometricChange = () => {
+      console.log("Biometric status changed, refreshing...");
+      checkBiometricStatus();
+    };
+
+    biometricEventEmitter.addListener(handleBiometricChange);
+
+    return () => {
+      biometricEventEmitter.removeListener(handleBiometricChange);
     };
   }, []);
 

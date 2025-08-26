@@ -7,6 +7,28 @@ export interface BiometricAuthResult {
   biometryType?: string;
 }
 
+// Simple event emitter for biometric status changes
+class BiometricEventEmitter {
+  private listeners: (() => void)[] = [];
+
+  addListener(callback: () => void) {
+    this.listeners.push(callback);
+  }
+
+  removeListener(callback: () => void) {
+    const index = this.listeners.indexOf(callback);
+    if (index > -1) {
+      this.listeners.splice(index, 1);
+    }
+  }
+
+  emit() {
+    this.listeners.forEach((callback) => callback());
+  }
+}
+
+export const biometricEventEmitter = new BiometricEventEmitter();
+
 export class BiometricAuthService {
   private static instance: BiometricAuthService;
   private isAvailable: boolean = false;
@@ -154,9 +176,11 @@ export class BiometricAuthService {
     }
   }
 
-  // Force refresh biometric status
+  // Force refresh biometric status and notify all listeners
   async refreshStatus(): Promise<void> {
     await this.initialize();
+    // Notify all components that biometric status has changed
+    biometricEventEmitter.emit();
   }
 }
 
