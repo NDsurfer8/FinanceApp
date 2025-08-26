@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Alert, Modal } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  Modal,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { plaidService } from "../services/plaid";
 import { fontFamily } from "../config/fonts";
@@ -11,11 +18,13 @@ import { LinkSuccess, LinkExit } from "react-native-plaid-link-sdk";
 interface PlaidLinkComponentProps {
   onSuccess?: () => void;
   onExit?: () => void;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   onSuccess,
   onExit,
+  onLoadingChange,
 }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,8 +44,61 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     try {
       const connected = await plaidService.isBankConnected();
       setIsConnected(connected);
+
+      // If we were loading and now we're connected, stop the loading
+      if (isLoading && connected) {
+        setIsLoading(false);
+        onLoadingChange?.(false);
+      }
     } catch (error) {
       console.error("Error checking connection status:", error);
+      // If there's an error checking status, stop loading
+      if (isLoading) {
+        setIsLoading(false);
+        onLoadingChange?.(false);
+      }
+    }
+  };
+
+  const pollConnectionStatus = async () => {
+    let attempts = 0;
+    const maxAttempts = 30; // 30 seconds max
+    const pollInterval = 1000; // 1 second
+
+    while (attempts < maxAttempts && isLoading) {
+      try {
+        const connected = await plaidService.isBankConnected();
+        setIsConnected(connected);
+
+        if (connected) {
+          console.log(
+            "Bank connection confirmed after",
+            attempts + 1,
+            "attempts"
+          );
+          setIsLoading(false);
+          onLoadingChange?.(false);
+          return;
+        }
+
+        attempts++;
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      } catch (error) {
+        console.error("Error polling connection status:", error);
+        attempts++;
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      }
+    }
+
+    // If we reach here, connection wasn't confirmed
+    if (isLoading) {
+      console.log(
+        "Bank connection not confirmed after",
+        maxAttempts,
+        "attempts"
+      );
+      setIsLoading(false);
+      onLoadingChange?.(false);
     }
   };
 
@@ -55,6 +117,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     }
 
     setIsLoading(true);
+    onLoadingChange?.(true);
     try {
       console.log("Starting Plaid Link flow...");
 
@@ -64,11 +127,12 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
         handlePlaidExit
       );
 
-      setIsLoading(false);
+      // Don't stop loading here - let it continue until bank is actually connected
     } catch (error) {
       console.error("Error connecting bank:", error);
       Alert.alert("Error", "Failed to connect bank account");
       setIsLoading(false);
+      onLoadingChange?.(false);
     }
   };
 
@@ -81,17 +145,22 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
         linkSuccess.metadata
       );
 
+      // Keep loading until connection is confirmed
       await checkConnectionStatus();
       onSuccess?.();
+
+      // Start polling for connection confirmation
+      pollConnectionStatus();
     } catch (error) {
       console.error("Error handling Plaid success:", error);
       Alert.alert("Error", "Failed to complete bank connection");
+      setIsLoading(false);
+      onLoadingChange?.(false);
     }
   };
 
   const handlePlaidExit = (linkExit: LinkExit) => {
-    setIsLoading(false);
-
+    // Don't stop loading here - let it continue until bank is actually connected
     console.log("Plaid Link exit:", linkExit);
 
     if (linkExit.error) {
@@ -196,9 +265,8 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
           }}
         >
           {isLoading ? (
-            <Ionicons
-              name="refresh"
-              size={16}
+            <ActivityIndicator
+              size="small"
               color="white"
               style={{ marginRight: 8 }}
             />

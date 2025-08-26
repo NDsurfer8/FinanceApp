@@ -58,6 +58,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [loading, setLoading] = useState(false);
   const [emailVerificationLoading, setEmailVerificationLoading] =
     useState(false);
+  const [bankConnectionLoading, setBankConnectionLoading] = useState(false);
+
+  // Monitor bank connection status and stop loading when connected
+  useEffect(() => {
+    if (isBankConnected && bankConnectionLoading) {
+      setBankConnectionLoading(false);
+    }
+  }, [isBankConnected, bankConnectionLoading]);
 
   // Function to handle email verification
   const handleEmailVerification = async () => {
@@ -548,6 +556,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             }}
             onExit={() => {
               console.log("Plaid link exited");
+              // Don't stop loading here - let it continue until connection is confirmed
+            }}
+            onLoadingChange={(loading) => {
+              setBankConnectionLoading(loading);
             }}
           />
           {isBankConnected ? (

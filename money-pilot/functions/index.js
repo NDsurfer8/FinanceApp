@@ -392,9 +392,11 @@ exports.getTransactions = onCall(
         console.error("Error response data:", error.response.data);
       }
 
+      // Preserve original error information for retry logic
+      const originalError = error.response?.data?.error_code || error.message;
       throw new functions.https.HttpsError(
         "internal",
-        `Failed to get transactions: ${error.message}`
+        `Failed to get transactions: ${error.message} (${originalError})`
       );
     }
   }

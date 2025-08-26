@@ -483,11 +483,16 @@ class PlaidService {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
 
+        console.log(
+          `🔄 Retry attempt ${attempt + 1}: Error message: "${errorMessage}"`
+        );
+
         // If it's a PRODUCT_NOT_READY error and we haven't exceeded retries
         if (
           (errorMessage.includes("400") ||
             errorMessage.includes("PRODUCT_NOT_READY") ||
-            errorMessage.includes("not yet ready")) &&
+            errorMessage.includes("not yet ready") ||
+            errorMessage.includes("product_not_ready")) &&
           attempt < this.MAX_RETRIES
         ) {
           const delay = this.RETRY_DELAYS[attempt];
@@ -498,6 +503,10 @@ class PlaidService {
           );
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
+        } else {
+          console.log(
+            `❌ Not retrying - error doesn't match retry criteria or max retries reached`
+          );
         }
 
         // For other errors or max retries reached, throw the error
