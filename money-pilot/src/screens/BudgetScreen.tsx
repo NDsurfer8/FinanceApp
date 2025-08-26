@@ -219,7 +219,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   // Handle refresh button press with debouncing
   const handleRefreshPress = () => {
     if (!isBankDataLoading) {
+      console.log("🔄 Manual refresh triggered by user");
       refreshBankData(true);
+    } else {
+      console.log("⏳ Refresh already in progress, skipping...");
     }
   };
 
@@ -232,7 +235,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     }
   }, [user]);
 
-  // Auto-load bank data when bank connection status changes
+  // Auto-load bank data when bank connection status changes (with debouncing)
   useEffect(() => {
     if (
       user &&
@@ -243,7 +246,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       console.log(
         "BudgetScreen: Bank connected but no transactions, loading data"
       );
-      refreshBankData(true);
+      // Add a small delay to prevent rapid successive calls
+      const timeoutId = setTimeout(() => {
+        refreshBankData(true);
+      }, 1000);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [
     user,

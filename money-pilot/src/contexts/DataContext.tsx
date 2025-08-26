@@ -466,12 +466,33 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const refreshBankData = useCallback(
     async (forceRefresh = false) => {
+      // Add debouncing property to the function
+      (refreshBankData as any).lastCallTime =
+        (refreshBankData as any).lastCallTime || 0;
       try {
+        // Enhanced debouncing: prevent rapid successive calls
+        const now = Date.now();
+        const lastCall = (refreshBankData as any).lastCallTime || 0;
+        const timeSinceLastCall = now - lastCall;
+
+        // Don't allow calls more frequent than 2 seconds apart (unless force refresh)
+        if (timeSinceLastCall < 2000 && !forceRefresh) {
+          console.log(
+            `⏳ Rate limited: Last call was ${Math.round(
+              timeSinceLastCall / 1000
+            )}s ago, skipping...`
+          );
+          return;
+        }
+
         // Don't load if already loading
         if (isBankDataLoadingRef.current && !forceRefresh) {
           console.log("Bank data already loading, skipping...");
           return;
         }
+
+        // Update last call time
+        (refreshBankData as any).lastCallTime = now;
 
         setIsBankDataLoading(true);
         isBankDataLoadingRef.current = true;
@@ -508,7 +529,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
 
         // Determine what data to fetch based on cache status
-        const now = Date.now();
         const lastFetch = bankDataLastUpdated?.getTime() || 0;
         const timeSinceLastFetch = now - lastFetch;
 
