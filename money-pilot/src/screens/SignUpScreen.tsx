@@ -12,6 +12,7 @@ import {
   ScrollView,
   Image,
   Linking,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -41,14 +42,20 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
+  const [showLegalModal, setShowLegalModal] = useState(false);
+  const [legalModalType, setLegalModalType] = useState<"privacy" | "terms">(
+    "privacy"
+  );
 
   // Functions to open Terms of Service and Privacy Policy
   const openTermsOfService = () => {
-    navigation.navigate("TermsOfService");
+    setLegalModalType("terms");
+    setShowLegalModal(true);
   };
 
   const openPrivacyPolicy = () => {
-    navigation.navigate("PrivacyPolicy");
+    setLegalModalType("privacy");
+    setShowLegalModal(true);
   };
 
   // Refs for input focus management
@@ -362,6 +369,228 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Legal Documents Modal */}
+      <Modal
+        visible={showLegalModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowLegalModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setShowLegalModal(false)}
+              style={styles.modalCloseButton}
+            >
+              <Ionicons name="close" size={24} color="#9ca3af" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>
+              {legalModalType === "privacy"
+                ? "Privacy Policy"
+                : "Terms of Service"}
+            </Text>
+            <View style={styles.modalSpacer} />
+          </View>
+
+          <ScrollView
+            style={styles.modalContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {legalModalType === "privacy" ? (
+              <View>
+                <Text style={styles.modalSectionTitle}>Privacy Policy</Text>
+                <Text style={styles.modalParagraph}>
+                  This privacy policy applies to the VectorFi app (hereby
+                  referred to as "Application") for mobile devices that was
+                  created by Noah Duran (hereby referred to as "Service
+                  Provider") as a Freemium service. This service is intended for
+                  use "AS IS".
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Information Collection and Use
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Application collects information when you download and use
+                  it. This information may include information such as your
+                  device's Internet Protocol address (e.g. IP address), the
+                  pages of the Application that you visit, the time and date of
+                  your visit, the time spent on those pages, the time spent on
+                  the Application, and the operating system you use on your
+                  mobile device.
+                </Text>
+
+                <Text style={styles.modalParagraph}>
+                  The Application does not gather precise information about the
+                  location of your mobile device.
+                </Text>
+
+                <Text style={styles.modalParagraph}>
+                  The Service Provider may use the information you provided to
+                  contact you from time to time to provide you with important
+                  information, required notices and marketing promotions.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>Third Party Access</Text>
+                <Text style={styles.modalParagraph}>
+                  Only aggregated, anonymized data is periodically transmitted
+                  to external services to aid the Service Provider in improving
+                  the Application and their service. The Service Provider may
+                  share your information with third parties in the ways that are
+                  described in this privacy statement.
+                </Text>
+
+                <Text style={styles.modalParagraph}>
+                  Please note that the Application utilizes third-party services
+                  that have their own Privacy Policy about handling data. Below
+                  are the links to the Privacy Policy of the third-party service
+                  providers used by the Application:
+                </Text>
+
+                <Text style={styles.modalBulletPoint}>• AdMob</Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Google Analytics for Firebase
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Firebase Crashlytics
+                </Text>
+                <Text style={styles.modalBulletPoint}>• Expo</Text>
+                <Text style={styles.modalBulletPoint}>• RevenueCat</Text>
+                <Text style={styles.modalBulletPoint}>• Plaid</Text>
+
+                <Text style={styles.modalSectionTitle}>Security</Text>
+                <Text style={styles.modalParagraph}>
+                  The Service Provider is concerned about safeguarding the
+                  confidentiality of your information. The Service Provider
+                  provides physical, electronic, and procedural safeguards to
+                  protect information the Service Provider processes and
+                  maintains.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>Changes</Text>
+                <Text style={styles.modalParagraph}>
+                  This Privacy Policy may be updated from time to time for any
+                  reason. The Service Provider will notify you of any changes to
+                  the Privacy Policy by updating this page with the new Privacy
+                  Policy. You are advised to consult this Privacy Policy
+                  regularly for any changes, as continued use is deemed approval
+                  of all changes.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>Contact Us</Text>
+                <Text style={styles.modalParagraph}>
+                  If you have any questions regarding privacy while using the
+                  Application, or have questions about the practices, please
+                  contact the Service Provider via email at support@vectorfi.ai
+                </Text>
+
+                <Text style={styles.modalEffectiveDate}>
+                  Effective as of 2025-08-24
+                </Text>
+              </View>
+            ) : (
+              <View>
+                <Text style={styles.modalSectionTitle}>Terms of Service</Text>
+                <Text style={styles.modalParagraph}>
+                  These terms and conditions apply to the VectorFi app (hereby
+                  referred to as "Application") for mobile devices that was
+                  created by Noah Duran (hereby referred to as "Service
+                  Provider") as a Freemium service.
+                </Text>
+
+                <Text style={styles.modalParagraph}>
+                  Upon downloading or utilizing the Application, you are
+                  automatically agreeing to the following terms. It is strongly
+                  advised that you thoroughly read and understand these terms
+                  prior to using the Application. Unauthorized copying,
+                  modification of the Application, any part of the Application,
+                  or our trademarks is strictly prohibited.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Service Modifications
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Service Provider is dedicated to ensuring that the
+                  Application is as beneficial and efficient as possible. As
+                  such, they reserve the right to modify the Application or
+                  charge for their services at any time and for any reason. The
+                  Service Provider assures you that any charges for the
+                  Application or its services will be clearly communicated to
+                  you.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Third Party Services
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  Please note that the Application utilizes third-party services
+                  that have their own Terms and Conditions. Below are the links
+                  to the Terms and Conditions of the third-party service
+                  providers used by the Application:
+                </Text>
+
+                <Text style={styles.modalBulletPoint}>• AdMob</Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Google Analytics for Firebase
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Firebase Crashlytics
+                </Text>
+                <Text style={styles.modalBulletPoint}>• Expo</Text>
+                <Text style={styles.modalBulletPoint}>• RevenueCat</Text>
+                <Text style={styles.modalBulletPoint}>• Plaid</Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Data Usage and Charges
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  If you are using the application outside of a Wi-Fi area,
+                  please be aware that your mobile network provider's agreement
+                  terms still apply. Consequently, you may incur charges from
+                  your mobile provider for data usage during the connection to
+                  the application, or other third-party charges.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Application Updates and Termination
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Service Provider may wish to update the application at
+                  some point. The application is currently available as per the
+                  requirements for the operating system (and for any additional
+                  systems they decide to extend the availability of the
+                  application to) may change, and you will need to download the
+                  updates if you want to continue using the application.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Changes to These Terms and Conditions
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Service Provider may periodically update their Terms and
+                  Conditions. Therefore, you are advised to review this page
+                  regularly for any changes. The Service Provider will notify
+                  you of any changes by posting the new Terms and Conditions on
+                  this page.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>Contact Us</Text>
+                <Text style={styles.modalParagraph}>
+                  If you have any questions or suggestions about the Terms and
+                  Conditions, please do not hesitate to contact the Service
+                  Provider at support@vectorfi.ai.
+                </Text>
+
+                <Text style={styles.modalEffectiveDate}>
+                  Effective as of 2025-08-24
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -565,5 +794,65 @@ const styles = StyleSheet.create({
   appleButton: {
     flex: 1,
     height: 56,
+  },
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "#000000",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#374151",
+  },
+  modalCloseButton: {
+    padding: 8,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#ffffff",
+    flex: 1,
+    textAlign: "center",
+  },
+  modalSpacer: {
+    width: 40,
+  },
+  modalContent: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+  modalSectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#ffffff",
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  modalParagraph: {
+    fontSize: 14,
+    color: "#d1d5db",
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  modalBulletPoint: {
+    fontSize: 14,
+    color: "#d1d5db",
+    lineHeight: 20,
+    marginBottom: 8,
+    paddingLeft: 16,
+  },
+  modalEffectiveDate: {
+    fontSize: 12,
+    color: "#9ca3af",
+    fontStyle: "italic",
+    marginTop: 24,
+    textAlign: "center",
   },
 });
