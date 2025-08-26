@@ -214,6 +214,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
           errorMessage = "Bank login required. Please try again.";
           break;
         case "INSTITUTION_DOWN":
+        case "INSTITUTION_NOT_RESPONDING":
           errorMessage =
             "Bank is temporarily unavailable. Please try again later.";
           break;
@@ -222,7 +223,37 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
             "Too many connection attempts. Please wait a moment and try again.";
           break;
         default:
-          errorMessage = linkExit.error.errorMessage || errorMessage;
+          // Check for common Plaid errors in the error message
+          if (linkExit.error.errorMessage) {
+            if (
+              linkExit.error.errorMessage.includes("RATE_LIMIT") ||
+              linkExit.error.errorMessage.includes("rate limit")
+            ) {
+              errorMessage =
+                "Too many connection attempts. Please wait a moment and try again.";
+            } else if (
+              linkExit.error.errorMessage.includes("PRODUCT_NOT_READY") ||
+              linkExit.error.errorMessage.includes("product not ready")
+            ) {
+              // Don't show error for PRODUCT_NOT_READY during link process
+              // This is handled by retry logic in the background
+              console.log(
+                "Product not ready during link - will retry in background"
+              );
+              onExit?.();
+              return;
+            } else if (
+              linkExit.error.errorMessage.includes("INSTITUTION_DOWN") ||
+              linkExit.error.errorMessage.includes("institution down")
+            ) {
+              errorMessage =
+                "Bank is temporarily unavailable. Please try again later.";
+            } else {
+              errorMessage = linkExit.error.errorMessage || errorMessage;
+            }
+          } else {
+            errorMessage = linkExit.error.errorMessage || errorMessage;
+          }
       }
     }
 

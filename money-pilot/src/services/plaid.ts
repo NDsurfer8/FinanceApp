@@ -145,9 +145,12 @@ class PlaidService {
     this.onBankConnectedCallbacks.forEach((callback) => callback());
   }
 
-  // Debouncing for link token creation to prevent rate limiting
+  // Enhanced debouncing for link token creation to prevent rate limiting
   private lastLinkTokenCall = 0;
-  private readonly LINK_TOKEN_DEBOUNCE = 2000; // 2 seconds
+  private readonly LINK_TOKEN_DEBOUNCE = 3000; // Increased to 3 seconds
+  private readonly MAX_LINK_ATTEMPTS = 3;
+  private linkAttemptCount = 0;
+  private readonly LINK_ATTEMPT_RESET_TIME = 60000; // 1 minute
 
   async initializePlaidLink(): Promise<string> {
     if (!this.userId) throw new Error("User ID not set");
@@ -158,10 +161,27 @@ class PlaidService {
       this.userId
     );
 
-    // Debouncing: prevent rapid successive calls
+    // Enhanced rate limiting: prevent rapid successive calls and track attempts
     const now = Date.now();
     const timeSinceLastCall = now - this.lastLinkTokenCall;
 
+    // Reset attempt count if enough time has passed
+    if (timeSinceLastCall > this.LINK_ATTEMPT_RESET_TIME) {
+      this.linkAttemptCount = 0;
+    }
+
+    // Check if we've exceeded maximum attempts
+    if (this.linkAttemptCount >= this.MAX_LINK_ATTEMPTS) {
+      const waitTime = Math.ceil(this.LINK_ATTEMPT_RESET_TIME / 1000);
+      console.log(
+        `🚨 Too many link attempts (${this.linkAttemptCount}/${this.MAX_LINK_ATTEMPTS}). Please wait ${waitTime} seconds.`
+      );
+      throw new Error(
+        `Too many connection attempts. Please wait ${waitTime} seconds and try again.`
+      );
+    }
+
+    // Check debouncing
     if (timeSinceLastCall < this.LINK_TOKEN_DEBOUNCE) {
       const waitTime = Math.ceil(
         (this.LINK_TOKEN_DEBOUNCE - timeSinceLastCall) / 1000
@@ -172,8 +192,9 @@ class PlaidService {
       throw new Error(`Please wait ${waitTime} seconds before trying again`);
     }
 
-    // Update last call time
+    // Update last call time and increment attempt count
     this.lastLinkTokenCall = now;
+    this.linkAttemptCount++;
 
     // Typed callable
     type Resp = { link_token: string; expiration?: string };
@@ -374,6 +395,10 @@ class PlaidService {
 
       // Reset Link session state
       this.isLinkInitialized = false;
+
+      // Reset rate limiting counters on successful connection
+      this.linkAttemptCount = 0;
+      this.lastLinkTokenCall = 0;
 
       // Clear cache to ensure fresh data
       this.requestCache.clear();
@@ -676,7 +701,21 @@ class PlaidService {
           );
         }
 
-        // For other errors or max retries reached, throw the error
+        // Only throw user-facing errors when retries are exhausted
+        // For PRODUCT_NOT_READY after max retries, provide a user-friendly message
+        if (
+          (errorMessage.includes("400") ||
+            errorMessage.includes("PRODUCT_NOT_READY") ||
+            errorMessage.includes("not yet ready") ||
+            errorMessage.includes("product_not_ready")) &&
+          attempt >= this.MAX_RETRIES
+        ) {
+          throw new Error(
+            "Bank data is still being processed. Please try refreshing in a few minutes."
+          );
+        }
+
+        // For other errors, throw the original error
         throw error;
       }
     }
@@ -734,15 +773,19 @@ class PlaidService {
     } catch (error) {
       console.error("❌ Error getting transactions:", error);
 
-      // Check if it's a rate limit error
+      // Check if it's a rate limit error (based on Plaid's official error codes)
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       if (
         errorMessage.includes("rate limit") ||
         errorMessage.includes("429") ||
-        errorMessage.includes("too many requests")
+        errorMessage.includes("too many requests") ||
+        errorMessage.includes("RATE_LIMIT") ||
+        errorMessage.includes("RATE_LIMIT_EXCEEDED")
       ) {
-        console.warn("⚠️ Rate limit detected, suggesting retry after delay");
+        console.warn(
+          "⚠️ Plaid rate limit detected, suggesting retry after delay"
+        );
         throw new Error(
           "Rate limit exceeded. Please try again in a few minutes."
         );
@@ -1014,8 +1057,9 @@ class PlaidService {
       this.itemId = null;
       this.userId = null;
 
-      // Clear debounce timer
+      // Clear debounce timer and rate limiting counters
       this.lastLinkTokenCall = 0;
+      this.linkAttemptCount = 0;
 
       // Clear cache and pending requests
       this.requestCache.clear();
