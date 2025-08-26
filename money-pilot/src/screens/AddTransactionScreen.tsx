@@ -118,6 +118,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         isRecurring: route.params.isRecurring || prev.isRecurring,
         frequency: route.params.frequency || prev.frequency,
       }));
+
+      // Note: Bank suggestions may have biweekly/weekly frequencies, but we'll convert to monthly
+      // when saving to ensure consistent monthly display and calculations
     }
   }, [route.params]);
 
@@ -415,6 +418,11 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             formData.frequency
           );
 
+          // For bank suggestions, always save as monthly frequency to ensure consistent display
+          const finalFrequency = route.params?.fromBankSuggestion
+            ? "monthly"
+            : formData.frequency;
+
           // Update the recurring transaction
           const updatedRecurringTransaction = {
             ...currentRecurringTransaction,
@@ -422,7 +430,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             amount: monthlyAmount, // Save the monthly equivalent amount
             type: formData.type as "income" | "expense",
             category: formData.category,
-            frequency: formData.frequency,
+            frequency: finalFrequency, // Use monthly for bank suggestions
             startDate: new Date(formData.date).getTime(),
             endDate:
               formData.endDate && formData.endDate.trim() !== ""
@@ -499,12 +507,17 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           formData.frequency
         );
 
+        // For bank suggestions, always save as monthly frequency to ensure consistent display
+        const finalFrequency = route.params?.fromBankSuggestion
+          ? "monthly"
+          : formData.frequency;
+
         const recurringTransaction = {
           name: formData.description,
           amount: monthlyAmount, // Save the monthly equivalent amount
           type: formData.type as "income" | "expense",
           category: formData.category,
-          frequency: formData.frequency,
+          frequency: finalFrequency, // Use monthly for bank suggestions
           startDate: new Date(formData.date).getTime(),
           endDate:
             formData.endDate && formData.endDate.trim() !== ""
