@@ -640,7 +640,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     marginTop: 4,
                   }}
                 >
-                  Expires:{" "}
+                  Renews:{" "}
                   {subscriptionStatus.expirationDate.toLocaleDateString()}
                 </Text>
               )}

@@ -552,7 +552,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             numberOfLines={0}
           >
             Your account is protected with industry-standard encryption and
-            security measures.
+            security measures. Powered by Plaid • We never see your credentials.
           </Text>
           <View style={styles.securityStats}>
             <View style={styles.statItem}>
