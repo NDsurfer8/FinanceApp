@@ -360,16 +360,21 @@ exports.getTransactions = onCall(
     });
 
     try {
+      console.log("Getting Plaid client...");
       const client = getPlaidClient(plaidClientId.value(), plaidSecret.value());
+      console.log("Plaid client obtained successfully");
+
+      console.log("Calling Plaid transactionsGet API...");
       const transactionsResponse = await client.transactionsGet({
         access_token: accessToken,
         start_date: startDate,
         end_date: endDate,
       });
 
-      console.log("Plaid API response:", {
+      console.log("Plaid API response received:", {
         transactionsCount: transactionsResponse.data.transactions?.length || 0,
         totalTransactions: transactionsResponse.data.total_transactions,
+        hasData: !!transactionsResponse.data,
       });
 
       return {
@@ -378,10 +383,18 @@ exports.getTransactions = onCall(
       };
     } catch (error) {
       console.error("Error getting transactions:", error);
-      console.error("Error details:", error.response?.data || error.message);
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+
+      if (error.response) {
+        console.error("Error response status:", error.response.status);
+        console.error("Error response data:", error.response.data);
+      }
+
       throw new functions.https.HttpsError(
         "internal",
-        "Failed to get transactions"
+        `Failed to get transactions: ${error.message}`
       );
     }
   }
@@ -839,3 +852,212 @@ exports.aiFeedback = onCall(async (data, context) => {
     );
   }
 });
+
+// Rate limiting for webhook processing
+const webhookProcessingTimes = new Map();
+const WEBHOOK_COOLDOWN = 10000; // 10 seconds per item_id
+
+// Simple Plaid Webhook Handler for Production
+exports.plaidWebhook = onCall(
+  {
+    secrets: [plaidClientId, plaidSecret],
+  },
+  async (data) => {
+    try {
+      console.log("Plaid webhook received:", data);
+
+      // Extract webhook data from the nested structure
+      const webhookData = data.data || data;
+      const { webhook_type, webhook_code, item_id, error, new_accounts } =
+        webhookData;
+
+      // Rate limiting: prevent processing same item_id too frequently
+      const now = Date.now();
+      const lastProcessed = webhookProcessingTimes.get(item_id) || 0;
+
+      if (now - lastProcessed < WEBHOOK_COOLDOWN) {
+        console.log(
+          `Rate limited: Skipping webhook for item_id ${item_id} (processed ${Math.round(
+            (now - lastProcessed) / 1000
+          )}s ago)`
+        );
+        return { success: true, rateLimited: true };
+      }
+
+      webhookProcessingTimes.set(item_id, now);
+
+      // Log the webhook event
+      console.log(
+        `Processing ${webhook_type} webhook: ${webhook_code} for item: ${item_id}`
+      );
+
+      // Import Firebase Admin SDK for database operations
+      const { initializeApp } = require("firebase-admin/app");
+      const { getDatabase } = require("firebase-admin/database");
+
+      // Initialize Firebase Admin if not already initialized
+      if (!global.firebaseAdminInitialized) {
+        initializeApp();
+        global.firebaseAdminInitialized = true;
+      }
+
+      const db = getDatabase();
+
+      // Find user by item_id (we'll need to store this mapping)
+      // For now, we'll update all users with this item_id
+      const usersRef = db.ref("users");
+      const snapshot = await usersRef.once("value");
+      const users = snapshot.val();
+
+      let userId = null;
+      if (users) {
+        for (const [uid, userData] of Object.entries(users)) {
+          if (userData.plaid && userData.plaid.itemId === item_id) {
+            userId = uid;
+            break;
+          }
+        }
+      }
+
+      if (!userId) {
+        console.log(`No user found for item_id: ${item_id}`);
+        return { success: true };
+      }
+
+      console.log(`Updating user ${userId} for webhook: ${webhook_code}`);
+
+      // Update Firebase based on webhook type
+      switch (webhook_type) {
+        case "ITEM":
+          await handleItemWebhook(db, userId, webhook_code, item_id, error);
+          break;
+        case "ACCOUNTS":
+          await handleAccountsWebhook(
+            db,
+            userId,
+            webhook_code,
+            item_id,
+            new_accounts
+          );
+          break;
+        case "INCOME":
+          await handleIncomeWebhook(db, userId, webhook_code);
+          break;
+        default:
+          console.log(`Unhandled webhook type: ${webhook_type}`);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error processing Plaid webhook:", error);
+      throw new Error("Failed to process webhook");
+    }
+  }
+);
+
+// Handle ITEM webhooks
+async function handleItemWebhook(db, userId, webhook_code, item_id, error) {
+  console.log(`Processing ITEM webhook: ${webhook_code} for user: ${userId}`);
+
+  const userPlaidRef = db.ref(`users/${userId}/plaid`);
+  const updates = {
+    lastUpdated: Date.now(),
+    lastWebhook: {
+      type: "ITEM",
+      code: webhook_code,
+      timestamp: Date.now(),
+    },
+  };
+
+  switch (webhook_code) {
+    case "ITEM_LOGIN_REQUIRED":
+      updates.status = "ITEM_LOGIN_REQUIRED";
+      updates.error = error || "Bank credentials expired";
+      break;
+    case "ITEM_PENDING_EXPIRATION":
+      updates.status = "PENDING_EXPIRATION";
+      updates.expirationWarning = true;
+      break;
+    case "ITEM_PENDING_DISCONNECT":
+      updates.status = "PENDING_DISCONNECT";
+      updates.disconnectWarning = true;
+      break;
+    case "ITEM_LOGIN_REPAIRED":
+      updates.status = "connected";
+      updates.error = null;
+      updates.expirationWarning = false;
+      updates.disconnectWarning = false;
+      break;
+    default:
+      console.log(`Unhandled ITEM webhook code: ${webhook_code}`);
+      return;
+  }
+
+  await userPlaidRef.update(updates);
+  console.log(`Updated user ${userId} plaid data for ${webhook_code}`);
+}
+
+// Handle ACCOUNTS webhooks
+async function handleAccountsWebhook(
+  db,
+  userId,
+  webhook_code,
+  item_id,
+  new_accounts
+) {
+  console.log(
+    `Processing ACCOUNTS webhook: ${webhook_code} for user: ${userId}`
+  );
+
+  const userPlaidRef = db.ref(`users/${userId}/plaid`);
+  const updates = {
+    lastUpdated: Date.now(),
+    lastWebhook: {
+      type: "ACCOUNTS",
+      code: webhook_code,
+      timestamp: Date.now(),
+    },
+  };
+
+  switch (webhook_code) {
+    case "NEW_ACCOUNTS_AVAILABLE":
+      updates.hasNewAccounts = true;
+      updates.newAccounts = new_accounts;
+      updates.newAccountsAvailableAt = Date.now();
+      break;
+    default:
+      console.log(`Unhandled ACCOUNTS webhook code: ${webhook_code}`);
+      return;
+  }
+
+  await userPlaidRef.update(updates);
+  console.log(`Updated user ${userId} plaid data for ${webhook_code}`);
+}
+
+// Handle INCOME webhooks
+async function handleIncomeWebhook(db, userId, webhook_code) {
+  console.log(`Processing INCOME webhook: ${webhook_code} for user: ${userId}`);
+
+  const userPlaidRef = db.ref(`users/${userId}/plaid`);
+  const updates = {
+    lastUpdated: Date.now(),
+    lastWebhook: {
+      type: "INCOME",
+      code: webhook_code,
+      timestamp: Date.now(),
+    },
+  };
+
+  switch (webhook_code) {
+    case "VERIFICATION_STATUS_PROCESSING_COMPLETE":
+      updates.incomeVerificationComplete = true;
+      updates.incomeVerificationCompletedAt = Date.now();
+      break;
+    default:
+      console.log(`Unhandled INCOME webhook code: ${webhook_code}`);
+      return;
+  }
+
+  await userPlaidRef.update(updates);
+  console.log(`Updated user ${userId} plaid data for ${webhook_code}`);
+}

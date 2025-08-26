@@ -1,5 +1,5 @@
 import { Alert } from "react-native";
-import { ref, set, get, remove } from "firebase/database";
+import { ref, set, get, remove, update } from "firebase/database";
 import { db } from "../services/firebase";
 import { encryptFields, decryptFields } from "./encryption";
 import { getFunctions, httpsCallable } from "firebase/functions";
@@ -417,6 +417,10 @@ class PlaidService {
     }
   }
 
+  // Retry configuration for PRODUCT_NOT_READY errors
+  private readonly MAX_RETRIES = 3;
+  private readonly RETRY_DELAYS = [5000, 10000, 30000]; // 5s, 10s, 30s
+
   // Get transactions from Plaid
   async getTransactions(
     startDate: string,
@@ -445,8 +449,8 @@ class PlaidService {
     console.log("  - Start Date:", startDate);
     console.log("  - End Date:", endDate);
 
-    // Create the request promise
-    this.pendingTransactionsRequest = this._fetchTransactions(
+    // Create the request promise with retry logic
+    this.pendingTransactionsRequest = this._fetchTransactionsWithRetry(
       startDate,
       endDate
     );
@@ -465,6 +469,43 @@ class PlaidService {
       // Clear the pending request after completion
       this.pendingTransactionsRequest = null;
     }
+  }
+
+  // Private method to fetch transactions with retry logic
+  private async _fetchTransactionsWithRetry(
+    startDate: string,
+    endDate: string
+  ): Promise<PlaidTransaction[]> {
+    for (let attempt = 0; attempt <= this.MAX_RETRIES; attempt++) {
+      try {
+        return await this._fetchTransactions(startDate, endDate);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
+        // If it's a PRODUCT_NOT_READY error and we haven't exceeded retries
+        if (
+          (errorMessage.includes("400") ||
+            errorMessage.includes("PRODUCT_NOT_READY") ||
+            errorMessage.includes("not yet ready")) &&
+          attempt < this.MAX_RETRIES
+        ) {
+          const delay = this.RETRY_DELAYS[attempt];
+          console.log(
+            `🔄 Product not ready, retrying in ${delay}ms (attempt ${
+              attempt + 1
+            }/${this.MAX_RETRIES})`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // For other errors or max retries reached, throw the error
+        throw error;
+      }
+    }
+
+    throw new Error("Max retries exceeded for transaction fetch");
   }
 
   // Private method to actually fetch transactions
@@ -511,6 +552,18 @@ class PlaidService {
         console.warn("⚠️ Rate limit detected, suggesting retry after delay");
         throw new Error(
           "Rate limit exceeded. Please try again in a few minutes."
+        );
+      }
+
+      // Check if it's a PRODUCT_NOT_READY error
+      if (
+        errorMessage.includes("400") ||
+        errorMessage.includes("PRODUCT_NOT_READY") ||
+        errorMessage.includes("not yet ready")
+      ) {
+        console.warn("⚠️ Product not ready, suggesting retry later");
+        throw new Error(
+          "Transaction data is still being processed. Please try again in a few minutes."
         );
       }
 
@@ -617,7 +670,169 @@ class PlaidService {
     }
   }
 
-  // Disconnect bank
+  // Rate limiting for update mode checks
+  private lastUpdateCheck = 0;
+  private readonly UPDATE_CHECK_COOLDOWN = 5000; // 5 seconds
+
+  // Update mode methods for handling webhook events
+  async checkUpdateModeStatus(): Promise<{
+    needsReauth: boolean;
+    hasNewAccounts: boolean;
+    credentialsExpiring: boolean;
+    isDisconnecting: boolean;
+    lastWebhook?: any;
+  }> {
+    try {
+      if (!this.userId) {
+        console.log("PlaidService: No user ID set");
+        return {
+          needsReauth: false,
+          hasNewAccounts: false,
+          credentialsExpiring: false,
+          isDisconnecting: false,
+        };
+      }
+
+      // Rate limiting: prevent excessive calls
+      const now = Date.now();
+      if (now - this.lastUpdateCheck < this.UPDATE_CHECK_COOLDOWN) {
+        console.log("PlaidService: Rate limited, skipping update check");
+        return {
+          needsReauth: false,
+          hasNewAccounts: false,
+          credentialsExpiring: false,
+          isDisconnecting: false,
+        };
+      }
+      this.lastUpdateCheck = now;
+
+      const plaidDataRef = ref(db, `users/${this.userId}/plaid`);
+      const snapshot = await get(plaidDataRef);
+      const plaidData = snapshot.val();
+
+      if (plaidData) {
+        return {
+          needsReauth: plaidData.status === "ITEM_LOGIN_REQUIRED",
+          hasNewAccounts: plaidData.hasNewAccounts === true,
+          credentialsExpiring: plaidData.status === "PENDING_EXPIRATION",
+          isDisconnecting: plaidData.status === "PENDING_DISCONNECT",
+          lastWebhook: plaidData.lastWebhook,
+        };
+      }
+
+      return {
+        needsReauth: false,
+        hasNewAccounts: false,
+        credentialsExpiring: false,
+        isDisconnecting: false,
+      };
+    } catch (error) {
+      console.error("PlaidService: Error checking update mode status:", error);
+      return {
+        needsReauth: false,
+        hasNewAccounts: false,
+        credentialsExpiring: false,
+        isDisconnecting: false,
+      };
+    }
+  }
+
+  // Handle reconnection for update mode
+  async reconnectBank(): Promise<void> {
+    try {
+      console.log("PlaidService: Starting bank reconnection...");
+
+      // Create a new link token for reconnection
+      const linkToken = await this.initializePlaidLink();
+
+      // Create Plaid Link session
+      await this.createPlaidLinkSession(linkToken);
+
+      // Open Plaid Link for reconnection
+      await this.openPlaidLink(
+        () => console.log("PlaidService: Reconnection successful"),
+        () => console.log("PlaidService: Reconnection cancelled")
+      );
+
+      console.log("PlaidService: Bank reconnection initiated");
+    } catch (error) {
+      console.error("PlaidService: Error reconnecting bank:", error);
+      throw error;
+    }
+  }
+
+  // Handle new accounts for update mode
+  async addNewAccounts(newAccounts: any[]): Promise<void> {
+    try {
+      console.log("PlaidService: Adding new accounts:", newAccounts);
+
+      // Create a new link token with account selection enabled
+      const linkToken = await this.initializePlaidLink();
+
+      // Create Plaid Link session
+      await this.createPlaidLinkSession(linkToken);
+
+      // Open Plaid Link for account selection
+      await this.openPlaidLink(
+        () => console.log("PlaidService: New accounts added successfully"),
+        () => console.log("PlaidService: New accounts selection cancelled")
+      );
+
+      console.log("PlaidService: New account selection initiated");
+    } catch (error) {
+      console.error("PlaidService: Error adding new accounts:", error);
+      throw error;
+    }
+  }
+
+  // Clear update mode flags after user action
+  async clearUpdateModeFlags(): Promise<void> {
+    try {
+      if (!this.userId) {
+        console.log("PlaidService: No user ID set for clearing flags");
+        return;
+      }
+
+      console.log("PlaidService: Clearing update mode flags...");
+
+      const plaidDataRef = ref(db, `users/${this.userId}/plaid`);
+      await update(plaidDataRef, {
+        hasNewAccounts: false,
+        newAccounts: null,
+        newAccountsAvailableAt: null,
+        expirationWarning: false,
+        disconnectWarning: false,
+        lastUpdated: Date.now(),
+      });
+
+      console.log("PlaidService: Update mode flags cleared");
+    } catch (error) {
+      console.error("PlaidService: Error clearing update mode flags:", error);
+    }
+  }
+
+  // Enhanced logout handling
+  async handleLogout(): Promise<void> {
+    try {
+      console.log("PlaidService: Handling logout...");
+
+      // Clear local state
+      this.accessToken = null;
+      this.itemId = null;
+      this.userId = null;
+
+      // Clear cache and pending requests
+      this.requestCache.clear();
+      this.pendingTransactionsRequest = null;
+      this.pendingAccountsRequest = null;
+
+      console.log("PlaidService: Logout handled successfully");
+    } catch (error) {
+      console.error("PlaidService: Error handling logout:", error);
+    }
+  }
+
+  // Enhanced disconnect with cleanup
   async disconnectBank(): Promise<void> {
     try {
       if (!this.userId) {

@@ -24,6 +24,7 @@ import { plaidService } from "../services/plaid";
 import { useBiometricAuth } from "../hooks/useBiometricAuth";
 import { BiometricAuthOverlay } from "./BiometricAuthOverlay";
 import { FloatingAIChatbot } from "./FloatingAIChatbot";
+import { PlaidUpdateMode } from "./PlaidUpdateMode";
 import {
   DashboardScreen,
   BudgetScreen,
@@ -78,6 +79,14 @@ export const MainApp: React.FC = () => {
     useState(false);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
 
+  // Plaid Update Mode state
+  const [showPlaidUpdateMode, setShowPlaidUpdateMode] = useState(false);
+  const [plaidUpdateType, setPlaidUpdateType] = useState<
+    "reauth" | "new_accounts" | "expiring" | "disconnect"
+  >("reauth");
+  const [plaidNewAccounts, setPlaidNewAccounts] = useState<any[]>([]);
+  const [plaidUpdateChecked, setPlaidUpdateChecked] = useState(false);
+
   useEffect(() => {
     initializeApp();
   }, []);
@@ -93,6 +102,34 @@ export const MainApp: React.FC = () => {
 
     return () => clearTimeout(fallbackTimeout);
   }, [isLoading]);
+
+  const checkPlaidUpdateMode = async () => {
+    try {
+      if (!user?.uid || plaidUpdateChecked) return;
+
+      console.log("Checking Plaid update mode status...");
+      const updateStatus = await plaidService.checkUpdateModeStatus();
+
+      if (updateStatus.needsReauth) {
+        setPlaidUpdateType("reauth");
+        setShowPlaidUpdateMode(true);
+      } else if (updateStatus.hasNewAccounts) {
+        setPlaidUpdateType("new_accounts");
+        setPlaidNewAccounts(updateStatus.lastWebhook?.newAccounts || []);
+        setShowPlaidUpdateMode(true);
+      } else if (updateStatus.credentialsExpiring) {
+        setPlaidUpdateType("expiring");
+        setShowPlaidUpdateMode(true);
+      } else if (updateStatus.isDisconnecting) {
+        setPlaidUpdateType("disconnect");
+        setShowPlaidUpdateMode(true);
+      }
+
+      setPlaidUpdateChecked(true);
+    } catch (error) {
+      console.error("Error checking Plaid update mode:", error);
+    }
+  };
 
   const initializeApp = async () => {
     try {
@@ -146,6 +183,10 @@ export const MainApp: React.FC = () => {
           await revenueCatService.setUser(user.uid);
           plaidService.setUserId(user.uid);
           console.log("User services configured in MainApp");
+
+          // Check for Plaid update mode status
+          setLoadingMessage("Checking bank connection status...");
+          await checkPlaidUpdateMode();
         } catch (error) {
           console.error("Failed to configure user services in MainApp:", error);
         }
@@ -164,6 +205,18 @@ export const MainApp: React.FC = () => {
       setupBillReminders();
     }
   }, [user, isAuthenticated]);
+
+  // Check for Plaid updates when user changes (with debouncing)
+  useEffect(() => {
+    if (user?.uid && isAuthenticated && !plaidUpdateChecked) {
+      // Add a small delay to prevent rapid calls
+      const timeoutId = setTimeout(() => {
+        checkPlaidUpdateMode();
+      }, 1000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [user, isAuthenticated, plaidUpdateChecked]);
 
   const setupBillReminders = async () => {
     if (!user) return;
@@ -498,6 +551,14 @@ export const MainApp: React.FC = () => {
                       setAppState("login");
                     }}
                   />
+
+                  {/* Plaid Update Mode Modal */}
+                  <PlaidUpdateMode
+                    visible={showPlaidUpdateMode}
+                    onClose={() => setShowPlaidUpdateMode(false)}
+                    updateType={plaidUpdateType}
+                    newAccounts={plaidNewAccounts}
+                  />
                 </FriendlyModeProvider>
               </ChatbotProvider>
             </SubscriptionProvider>
@@ -516,6 +577,9 @@ const MainTabNavigator = () => {
 
   const handleLogout = async () => {
     try {
+      // Handle Plaid logout cleanup
+      await plaidService.handleLogout();
+
       const { signOutUser } = await import("../services/auth");
       await signOutUser();
       // The auth state change will be handled by the useEffect in MainApp
