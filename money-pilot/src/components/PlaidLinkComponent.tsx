@@ -220,17 +220,18 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
           break;
         case "RATE_LIMIT":
           errorMessage =
-            "Too many connection attempts. Please wait a moment and try again.";
+            "Too many connection attempts. Please wait 2-3 minutes and try again.";
           break;
         default:
           // Check for common Plaid errors in the error message
           if (linkExit.error.errorMessage) {
             if (
               linkExit.error.errorMessage.includes("RATE_LIMIT") ||
+              linkExit.error.errorMessage.includes("RATE_LIMIT_EXCEEDED") ||
               linkExit.error.errorMessage.includes("rate limit")
             ) {
               errorMessage =
-                "Too many connection attempts. Please wait a moment and try again.";
+                "Too many connection attempts. Please wait 2-3 minutes and try again.";
             } else if (
               linkExit.error.errorMessage.includes("PRODUCT_NOT_READY") ||
               linkExit.error.errorMessage.includes("product not ready")

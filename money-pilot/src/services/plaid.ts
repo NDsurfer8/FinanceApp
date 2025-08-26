@@ -159,6 +159,13 @@ class PlaidService {
   private successFlowAttemptCount = 0;
   private readonly MAX_SUCCESS_FLOW_ATTEMPTS = 3; // 3 attempts per minute for success flow
 
+  // Enhanced rate limiting for Link-level rate limiting
+  private lastLinkFlowCall = 0;
+  private readonly LINK_FLOW_DEBOUNCE = 5000; // 5 seconds between Link flows
+  private linkFlowAttemptCount = 0;
+  private readonly MAX_LINK_FLOW_ATTEMPTS = 3; // 3 Link attempts per 2 minutes
+  private readonly LINK_FLOW_RESET_TIME = 120000; // 2 minutes
+
   async initializePlaidLink(): Promise<string> {
     if (!this.userId) throw new Error("User ID not set");
     if (!this.auth.currentUser) throw new Error("User not authenticated");
@@ -359,12 +366,51 @@ class PlaidService {
     }
   }
 
-  // Complete Plaid Link flow with modern pattern
+  // Complete Plaid Link flow with modern pattern and enhanced rate limiting
   async startPlaidLinkFlow(
     onSuccess: (success: LinkSuccess) => void,
     onExit: (exit: LinkExit) => void
   ): Promise<void> {
     try {
+      // Enhanced rate limiting for Link flow
+      const now = Date.now();
+      const timeSinceLastLinkFlow = now - this.lastLinkFlowCall;
+
+      // Reset attempt count if enough time has passed
+      if (timeSinceLastLinkFlow > this.LINK_FLOW_RESET_TIME) {
+        this.linkFlowAttemptCount = 0;
+      }
+
+      // Check if we've exceeded maximum Link flow attempts
+      if (this.linkFlowAttemptCount >= this.MAX_LINK_FLOW_ATTEMPTS) {
+        const waitTime = Math.ceil(this.LINK_FLOW_RESET_TIME / 1000);
+        console.log(
+          `🚨 Too many Link flow attempts (${this.linkFlowAttemptCount}/${this.MAX_LINK_FLOW_ATTEMPTS}). Please wait ${waitTime} seconds.`
+        );
+        throw new Error(
+          `Too many connection attempts. Please wait ${waitTime} seconds and try again.`
+        );
+      }
+
+      // Check debouncing for Link flow
+      if (timeSinceLastLinkFlow < this.LINK_FLOW_DEBOUNCE) {
+        const waitTime = Math.ceil(
+          (this.LINK_FLOW_DEBOUNCE - timeSinceLastLinkFlow) / 1000
+        );
+        console.log(
+          `⏳ Link flow rate limited: Please wait ${waitTime} seconds before trying again`
+        );
+        throw new Error(`Please wait ${waitTime} seconds before trying again`);
+      }
+
+      // Update last Link flow call time and increment attempt count
+      this.lastLinkFlowCall = now;
+      this.linkFlowAttemptCount++;
+
+      console.log(
+        `🔄 Starting Link flow attempt ${this.linkFlowAttemptCount}/${this.MAX_LINK_FLOW_ATTEMPTS}`
+      );
+
       // Get link token
       const linkToken = await this.initializePlaidLink();
 
@@ -1231,6 +1277,8 @@ class PlaidService {
     this.linkAttemptCount = 0;
     this.lastSuccessFlowCall = 0;
     this.successFlowAttemptCount = 0;
+    this.lastLinkFlowCall = 0;
+    this.linkFlowAttemptCount = 0;
   }
 
   // Enhanced disconnect with cleanup
