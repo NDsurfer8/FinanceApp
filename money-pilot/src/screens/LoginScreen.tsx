@@ -160,6 +160,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 placeholderTextColor="#9ca3af"
                 value={password}
                 onChangeText={setPassword}
+                secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="off"
@@ -168,7 +169,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 onSubmitEditing={handleLogin}
                 spellCheck={false}
               />
-              {/* Temporarily removed eye icon for testing */}
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={20}
+                  color="#9ca3af"
+                />
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity

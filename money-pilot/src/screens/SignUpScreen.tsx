@@ -236,6 +236,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 placeholderTextColor="#9ca3af"
                 value={password}
                 onChangeText={setPassword}
+                secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="off"
@@ -244,7 +245,16 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 onSubmitEditing={() => confirmPasswordRef.current?.focus()}
                 spellCheck={false}
               />
-              {/* Temporarily removed eye icon for testing */}
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={20}
+                  color="#9ca3af"
+                />
+              </TouchableOpacity>
             </View>
 
             {/* Confirm Password Field */}
@@ -262,6 +272,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 placeholderTextColor="#9ca3af"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="off"
@@ -270,7 +281,16 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 onSubmitEditing={handleSignUp}
                 spellCheck={false}
               />
-              {/* Temporarily removed eye icon for testing */}
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showConfirmPassword ? "eye-off" : "eye"}
+                  size={20}
+                  color="#9ca3af"
+                />
+              </TouchableOpacity>
             </View>
 
             {/* Terms Agreement */}
