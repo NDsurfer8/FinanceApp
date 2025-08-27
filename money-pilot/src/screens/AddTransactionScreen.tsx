@@ -117,6 +117,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         type: route.params.type || prev.type,
         isRecurring: route.params.isRecurring || prev.isRecurring,
         frequency: route.params.frequency || prev.frequency,
+        date: route.params.date || prev.date, // Use the date from bank transaction
       }));
 
       // Note: Bank suggestions may have biweekly/weekly frequencies, but we'll convert to monthly

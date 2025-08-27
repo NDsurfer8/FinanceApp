@@ -180,7 +180,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               borderColor: colors.surface,
               transform: [{ translateX: -8 }],
             }}
-            hitSlop={{ top: 30, bottom: 30, left: 30, right: 30 }}
+            hitSlop={{ top: 60, bottom: 60, left: 60, right: 60 }}
           />
         </PanGestureHandler>
         <TouchableOpacity
@@ -194,6 +194,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           }}
           onPress={handleSliderPress}
           activeOpacity={1}
+          hitSlop={{ top: 30, bottom: 30, left: 30, right: 30 }}
         />
       </View>
     );
@@ -320,12 +321,25 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
   // Handle adding a non-recurring transaction from bank data
   const handleAddNonRecurringTransaction = (transaction: any) => {
+    // Fix timezone issue by parsing the date in local timezone
+    const fixDateTimezone = (dateString: string) => {
+      try {
+        // Parse the date and create it in local timezone to avoid UTC conversion
+        const [year, month, day] = dateString.split("-").map(Number);
+        const localDate = new Date(year, month - 1, day); // month is 0-indexed
+        return localDate.toISOString().split("T")[0];
+      } catch (error) {
+        console.error("Error fixing date timezone:", error);
+        return dateString; // Return original if parsing fails
+      }
+    };
+
     navigation.navigate("AddTransaction", {
       type: transaction.amount < 0 ? "income" : "expense", // Plaid: negative = income, positive = expense
       description: transaction.name,
       amount: Math.abs(transaction.amount).toString(),
       category: transaction.category?.[0] || "Uncategorized",
-      date: transaction.date,
+      date: fixDateTimezone(transaction.date),
       fromBankSuggestion: true, // Use the same flag as recurring suggestions
     });
   };
