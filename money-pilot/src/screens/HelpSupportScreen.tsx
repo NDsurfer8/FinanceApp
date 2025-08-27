@@ -143,7 +143,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
         : "";
 
       const emailContent = {
-        recipients: ["support@vectorfi.com"],
+        recipients: ["support@vectorfi.ai"],
         subject: "VectorFi Support Request",
         body: `Hello VectorFi Support Team,
 
@@ -231,7 +231,7 @@ ${user?.displayName || "VectorFi User"}`,
         : "";
 
       const emailContent = {
-        recipients: ["bugs@vectorfi.com"],
+        recipients: ["support@vectorfi.ai"],
         subject: "VectorFi Bug Report",
         body: `Hello VectorFi Team,
 
@@ -302,7 +302,7 @@ ${user?.displayName || "VectorFi User"}`,
         : "";
 
       const emailContent = {
-        recipients: ["features@vectorfi.com"],
+        recipients: ["support@vectorfi.ai"],
         subject: "VectorFi Feature Request",
         body: `Hello VectorFi Team,
 
@@ -748,7 +748,7 @@ ${user?.displayName || "VectorFi User"}`,
               <Text
                 style={[styles.contactText, { color: colors.textSecondary }]}
               >
-                vectorfi.ai/support
+                www.vectorfi.ai
               </Text>
             </View>
           </View>

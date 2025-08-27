@@ -58,7 +58,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
         : "";
 
       const emailContent = {
-        recipients: ["support@vectorfi.com"],
+        recipients: ["support@vectorfi.ai"],
         subject: "VectorFi Support Request",
         body: `Hello VectorFi Support Team,
 
