@@ -735,14 +735,16 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 key={goal.id}
                 style={{
                   backgroundColor: colors.surface,
-                  borderRadius: 20,
+                  borderRadius: 24,
                   padding: 24,
-                  marginBottom: 20,
+                  marginBottom: 24,
                   shadowColor: colors.shadow,
-                  shadowOpacity: 0.08,
-                  shadowRadius: 12,
-                  shadowOffset: { width: 0, height: 4 },
-                  elevation: 4,
+                  shadowOpacity: 0.12,
+                  shadowRadius: 16,
+                  shadowOffset: { width: 0, height: 6 },
+                  elevation: 8,
+                  borderWidth: 1,
+                  borderColor: `${category?.color}15`,
                 }}
                 onPress={() => {
                   setEditingGoal(goal);
@@ -758,6 +760,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   });
                   setShowAddModal(true);
                 }}
+                activeOpacity={0.7}
               >
                 {/* Goal Header */}
                 <View
@@ -765,7 +768,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginBottom: 16,
+                    marginBottom: 20,
                   }}
                 >
                   <View
@@ -777,30 +780,41 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   >
                     <View
                       style={{
-                        backgroundColor: `${category?.color}20`,
-                        padding: 8,
-                        borderRadius: 10,
-                        marginRight: 12,
+                        backgroundColor: `${category?.color}15`,
+                        padding: 12,
+                        borderRadius: 16,
+                        marginRight: 16,
+                        shadowColor: category?.color,
+                        shadowOpacity: 0.2,
+                        shadowRadius: 8,
+                        shadowOffset: { width: 0, height: 2 },
+                        elevation: 4,
                       }}
                     >
                       <Ionicons
                         name={category?.icon as any}
-                        size={20}
+                        size={24}
                         color={category?.color}
                       />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text
                         style={{
-                          fontSize: 18,
-                          fontWeight: "700",
+                          fontSize: 20,
+                          fontWeight: "800",
                           color: colors.text,
+                          marginBottom: 4,
+                          letterSpacing: -0.5,
                         }}
                       >
                         {goal.name}
                       </Text>
                       <Text
-                        style={{ fontSize: 14, color: colors.textSecondary }}
+                        style={{
+                          fontSize: 14,
+                          color: colors.textSecondary,
+                          fontWeight: "500",
+                        }}
                       >
                         {category?.label}
                       </Text>
@@ -813,43 +827,63 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                           priorityColors[
                             goal.priority as keyof typeof priorityColors
                           ]
-                        }20`,
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 8,
-                        marginRight: 8,
+                        }15`,
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 12,
+                        marginRight: 12,
+                        borderWidth: 1,
+                        borderColor: `${
+                          priorityColors[
+                            goal.priority as keyof typeof priorityColors
+                          ]
+                        }30`,
                       }}
                     >
                       <Text
                         style={{
-                          fontSize: 12,
-                          fontWeight: "600",
+                          fontSize: 11,
+                          fontWeight: "700",
                           color:
                             priorityColors[
                               goal.priority as keyof typeof priorityColors
                             ],
                           textTransform: "uppercase",
+                          letterSpacing: 0.5,
                         }}
                       >
                         {goal.priority}
                       </Text>
                     </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
+                    <View
+                      style={{
+                        backgroundColor: colors.surfaceSecondary,
+                        padding: 8,
+                        borderRadius: 12,
+                      }}
+                    >
+                      <Ionicons
+                        name="chevron-forward"
+                        size={18}
+                        color={colors.textSecondary}
+                      />
+                    </View>
                   </View>
                 </View>
 
                 {/* Progress Bar */}
-                <View style={{ marginBottom: 16 }}>
+                <View style={{ marginBottom: 20 }}>
                   <View
                     style={{
-                      height: 8,
+                      height: 12,
                       backgroundColor: colors.surfaceSecondary,
-                      borderRadius: 4,
+                      borderRadius: 8,
                       overflow: "hidden",
+                      shadowColor: colors.shadow,
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      shadowOffset: { width: 0, height: 2 },
+                      elevation: 2,
                     }}
                   >
                     <View
@@ -857,52 +891,78 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         height: "100%",
                         backgroundColor: getProgressColor(progress),
                         width: `${Math.min(progress, 100)}%`,
+                        borderRadius: 8,
+                        shadowColor: getProgressColor(progress),
+                        shadowOpacity: 0.3,
+                        shadowRadius: 4,
+                        shadowOffset: { width: 0, height: 2 },
                       }}
                     />
                   </View>
-                </View>
 
-                {/* Progress Info */}
-                <View style={{ alignItems: "center", marginBottom: 20 }}>
-                  <Text
-                    style={{
-                      fontSize: 24,
-                      fontWeight: "800",
-                      color: getProgressColor(progress),
-                      marginBottom: 4,
-                    }}
-                  >
-                    {formatCurrency(goal.currentAmount)}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: colors.textSecondary,
-                      marginBottom: 8,
-                    }}
-                  >
-                    {getProgressStatus(progress)}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                    {progress.toFixed(1)}% of{" "}
-                    {formatCurrency(goal.targetAmount)}
-                  </Text>
+                  {/* Progress Arrow Indicator - Positioned below progress bar */}
+                  <View style={{ alignItems: "center", marginTop: 8 }}>
+                    <View
+                      style={{
+                        position: "relative",
+                        width: "100%",
+                        height: 20,
+                      }}
+                    >
+                      <View
+                        style={{
+                          position: "absolute",
+                          left: `${Math.min(progress, 100)}%`,
+                          transform: [{ translateX: -8 }], // Center the arrow
+                          alignItems: "center",
+                        }}
+                      >
+                        <Ionicons
+                          name="caret-down"
+                          size={16}
+                          color={getProgressColor(progress)}
+                          style={{ marginBottom: 4 }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            fontWeight: "700",
+                            color: getProgressColor(progress),
+                            backgroundColor: `${getProgressColor(progress)}15`,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 8,
+                            overflow: "hidden",
+                          }}
+                        >
+                          {progress.toFixed(0)}%
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
                 </View>
 
                 {/* Goal Details */}
                 <View
                   style={{
+                    display: "flex",
                     flexDirection: "row",
                     justifyContent: "space-between",
-                    marginBottom: 12,
+                    marginBottom: 16,
+                    backgroundColor: colors.surfaceSecondary,
+                    borderRadius: 16,
+                    padding: 16,
                   }}
                 >
                   <View style={{ alignItems: "center", flex: 1 }}>
                     <Text
                       style={{
-                        fontSize: 14,
+                        fontSize: 12,
                         color: colors.textSecondary,
-                        marginBottom: 4,
+                        marginBottom: 6,
+                        fontWeight: "600",
+                        textTransform: "uppercase",
+                        letterSpacing: 0.5,
                       }}
                     >
                       Target
@@ -910,8 +970,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     <Text
                       style={{
                         fontSize: 16,
-                        fontWeight: "700",
+                        fontWeight: "800",
                         color: colors.text,
+                        letterSpacing: -0.3,
                       }}
                     >
                       {formatCurrency(goal.targetAmount)}
@@ -920,9 +981,12 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   <View style={{ alignItems: "center", flex: 1 }}>
                     <Text
                       style={{
-                        fontSize: 14,
+                        fontSize: 12,
                         color: colors.textSecondary,
-                        marginBottom: 4,
+                        marginBottom: 6,
+                        fontWeight: "600",
+                        textTransform: "uppercase",
+                        letterSpacing: 0.5,
                       }}
                     >
                       Monthly
@@ -930,8 +994,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     <Text
                       style={{
                         fontSize: 16,
-                        fontWeight: "700",
+                        fontWeight: "800",
                         color: colors.success,
+                        letterSpacing: -0.3,
                       }}
                     >
                       {formatCurrency(goal.monthlyContribution)}
@@ -940,9 +1005,12 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   <View style={{ alignItems: "center", flex: 1 }}>
                     <Text
                       style={{
-                        fontSize: 14,
+                        fontSize: 12,
                         color: colors.textSecondary,
-                        marginBottom: 4,
+                        marginBottom: 6,
+                        fontWeight: "600",
+                        textTransform: "uppercase",
+                        letterSpacing: 0.5,
                       }}
                     >
                       Time Left
@@ -950,8 +1018,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     <Text
                       style={{
                         fontSize: 16,
-                        fontWeight: "700",
+                        fontWeight: "800",
                         color: colors.warning,
+                        letterSpacing: -0.3,
                       }}
                     >
                       {calculateTimeRemaining(goal)}
@@ -960,12 +1029,24 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 </View>
 
                 {/* Target Date */}
-                <View style={{ alignItems: "center" }}>
+                <View
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: `${colors.primary}08`,
+                    borderRadius: 12,
+                    padding: 12,
+                    borderWidth: 1,
+                    borderColor: `${colors.primary}20`,
+                  }}
+                >
                   <Text
                     style={{
-                      fontSize: 12,
+                      fontSize: 11,
                       color: colors.textSecondary,
-                      marginBottom: 2,
+                      marginBottom: 4,
+                      fontWeight: "600",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
                     }}
                   >
                     Target Achievement Date
@@ -973,8 +1054,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   <Text
                     style={{
                       fontSize: 14,
-                      fontWeight: "600",
+                      fontWeight: "700",
                       color: colors.primary,
+                      letterSpacing: -0.2,
                     }}
                   >
                     {goal.targetDate
