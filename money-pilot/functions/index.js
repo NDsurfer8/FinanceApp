@@ -30,15 +30,33 @@ const OpenAI = require("openai");
 // Initialize Plaid client - will be configured per function
 let globalPlaidClient = null;
 
+// Get Plaid client with environment validation
 function getPlaidClient(clientId, secret) {
+  if (!clientId || !secret) {
+    console.error("Plaid credentials not configured");
+    return null;
+  }
+
+  // Validate environment
+  const environment = process.env.PLAID_ENV || "production";
+  if (
+    environment !== "production" &&
+    environment !== "development" &&
+    environment !== "sandbox"
+  ) {
+    console.error(`Invalid Plaid environment: ${environment}`);
+    return null;
+  }
+
+  console.log(`Using Plaid environment: ${environment}`);
+
   if (!globalPlaidClient) {
     const configuration = new Configuration({
-      basePath: PlaidEnvironments.production, // Use production environment
+      basePath: PlaidEnvironments[environment],
       baseOptions: {
         headers: {
           "PLAID-CLIENT-ID": clientId,
           "PLAID-SECRET": secret,
-          "Plaid-Version": "2020-09-14",
         },
       },
     });

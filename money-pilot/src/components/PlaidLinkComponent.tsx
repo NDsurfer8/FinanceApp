@@ -28,6 +28,9 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+  const [lastTapTime, setLastTapTime] = useState(0);
+  const BUTTON_DEBOUNCE_TIME = 1000; // 1 second debounce between button taps
   const { user } = useAuth();
   const { isFeatureAvailable, PREMIUM_FEATURES } = useSubscription();
   const { presentPaywall } = usePaywall();
@@ -116,6 +119,28 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   };
 
   const handleConnectBank = async () => {
+    const now = Date.now();
+
+    // Enhanced debouncing: prevent rapid taps with time-based check
+    if (isButtonDisabled || isLoading) {
+      console.log("Button disabled or loading, ignoring tap");
+      return;
+    }
+
+    // Check if enough time has passed since last tap
+    if (now - lastTapTime < BUTTON_DEBOUNCE_TIME) {
+      const waitTime = Math.ceil(
+        (BUTTON_DEBOUNCE_TIME - (now - lastTapTime)) / 1000
+      );
+      console.log(
+        `Button debounced: Please wait ${waitTime} seconds before trying again`
+      );
+      return;
+    }
+
+    // Update last tap time
+    setLastTapTime(now);
+
     // Check if user has premium access for Plaid bank connection
     if (!isFeatureAvailable(PREMIUM_FEATURES.PLAID_BANK_CONNECTION)) {
       Alert.alert(
@@ -129,6 +154,8 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       return;
     }
 
+    // Disable button to prevent multiple taps
+    setIsButtonDisabled(true);
     setIsLoading(true);
     onLoadingChange?.(true);
     try {
@@ -146,6 +173,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       Alert.alert("Error", "Failed to connect bank account");
       setIsLoading(false);
       onLoadingChange?.(false);
+      setIsButtonDisabled(false); // Re-enable button
     }
   };
 
@@ -165,6 +193,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       // Stop loading after successful connection
       setIsLoading(false);
       onLoadingChange?.(false);
+      setIsButtonDisabled(false); // Re-enable button
 
       // Start polling for connection confirmation
       pollConnectionStatus();
@@ -182,6 +211,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     // Stop loading when user exits (cancels or completes)
     setIsLoading(false);
     onLoadingChange?.(false);
+    setIsButtonDisabled(false); // Re-enable button
 
     // Check if user cancelled (no error or empty error object means user cancelled)
     if (
@@ -220,7 +250,23 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
           break;
         case "RATE_LIMIT":
           errorMessage =
-            "Too many connection attempts. Please wait 2-3 minutes and try again.";
+            "There were too many connection attempts in a short time. For security, the bank has temporarily paused new logins. Try again in about an hour.";
+          // Log the request IDs for debugging
+          if (linkExit.metadata) {
+            console.log(
+              "Plaid request_id:",
+              linkExit.metadata.requestId,
+              "link_session_id:",
+              linkExit.metadata.linkSessionId
+            );
+          }
+          // Reset rate limiting counters when we hit a rate limit
+          plaidService.resetRateLimiting();
+          // Show more specific alert for RATE_LIMIT
+          Alert.alert(
+            "Please try again later",
+            "There were too many connection attempts in a short time. For security, the bank has temporarily paused new logins. Try again in about an hour."
+          );
           break;
         default:
           // Check for common Plaid errors in the error message
@@ -324,7 +370,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       ) : (
         <TouchableOpacity
           onPress={handleConnectBank}
-          disabled={isLoading}
+          disabled={isLoading || isButtonDisabled}
           style={{
             backgroundColor: "#111827",
             paddingVertical: 12,
@@ -333,8 +379,9 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
             alignSelf: "flex-start",
             flexDirection: "row",
             alignItems: "center",
-            opacity: isLoading ? 0.6 : 1,
+            opacity: isLoading || isButtonDisabled ? 0.6 : 1,
           }}
+          activeOpacity={0.7}
         >
           {isLoading ? (
             <ActivityIndicator

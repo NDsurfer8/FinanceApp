@@ -166,6 +166,11 @@ class PlaidService {
   private readonly MAX_LINK_FLOW_ATTEMPTS = 3; // 3 Link attempts per 2 minutes
   private readonly LINK_FLOW_RESET_TIME = 120000; // 2 minutes
 
+  // Exponential backoff for RATE_LIMIT errors
+  private rateLimitBackoffTime = 30000; // Start with 30 seconds
+  private readonly MAX_BACKOFF_TIME = 300000; // Max 5 minutes
+  private rateLimitAttempts = 0;
+
   async initializePlaidLink(): Promise<string> {
     if (!this.userId) throw new Error("User ID not set");
     if (!this.auth.currentUser) throw new Error("User not authenticated");
@@ -1279,6 +1284,33 @@ class PlaidService {
     this.successFlowAttemptCount = 0;
     this.lastLinkFlowCall = 0;
     this.linkFlowAttemptCount = 0;
+    this.rateLimitBackoffTime = 30000; // Reset backoff
+    this.rateLimitAttempts = 0; // Reset attempts
+  }
+
+  // Handle RATE_LIMIT backoff
+  private async handleRateLimitBackoff(): Promise<void> {
+    this.rateLimitAttempts++;
+
+    if (this.rateLimitAttempts > 3) {
+      console.log("🚨 Maximum RATE_LIMIT retry attempts reached. Stopping.");
+      throw new Error("Too many rate limit errors. Please try again later.");
+    }
+
+    console.log(
+      `🔄 RATE_LIMIT backoff: waiting ${
+        this.rateLimitBackoffTime / 1000
+      }s (attempt ${this.rateLimitAttempts}/3)`
+    );
+    await new Promise((resolve) =>
+      setTimeout(resolve, this.rateLimitBackoffTime)
+    );
+
+    // Exponential backoff: double the wait time, but cap at MAX_BACKOFF_TIME
+    this.rateLimitBackoffTime = Math.min(
+      this.rateLimitBackoffTime * 2,
+      this.MAX_BACKOFF_TIME
+    );
   }
 
   // Enhanced disconnect with cleanup
