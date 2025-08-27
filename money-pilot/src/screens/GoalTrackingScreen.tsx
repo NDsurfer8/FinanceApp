@@ -872,7 +872,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 </View>
 
                 {/* Progress Bar */}
-                <View style={{ marginBottom: 20 }}>
+                <View style={{ marginBottom: 30 }}>
                   <View
                     style={{
                       height: 12,
@@ -901,7 +901,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   </View>
 
                   {/* Progress Arrow Indicator - Positioned below progress bar */}
-                  <View style={{ alignItems: "center", marginTop: 8 }}>
+                  <View style={{ alignItems: "center", marginTop: 0 }}>
                     <View
                       style={{
                         position: "relative",
@@ -913,15 +913,15 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         style={{
                           position: "absolute",
                           left: `${Math.min(progress, 100)}%`,
-                          transform: [{ translateX: -8 }], // Center the arrow
+                          transform: [{ translateX: -22 }], // Center the arrow
                           alignItems: "center",
                         }}
                       >
                         <Ionicons
-                          name="caret-down"
+                          name="caret-up"
                           size={16}
                           color={getProgressColor(progress)}
-                          style={{ marginBottom: 4 }}
+                          style={{ marginBottom: 0 }}
                         />
                         <Text
                           style={{
