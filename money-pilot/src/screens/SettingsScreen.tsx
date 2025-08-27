@@ -52,7 +52,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { isDark, toggleTheme, colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const { isVisible: isChatbotVisible, toggleChatbot } = useChatbot();
-  const { refreshBankData } = useData();
+  const { refreshBankData, isBankDataLoading, bankTransactions } = useData();
   const [connectedBankInfo, setConnectedBankInfo] = useState<{
     name: string;
     accounts: any[];
@@ -69,6 +69,18 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       setBankConnectionLoading(false);
     }
   }, [isBankConnected, bankConnectionLoading]);
+
+  // Stop loading when bank data is loaded
+  useEffect(() => {
+    if (
+      bankConnectionLoading &&
+      !isBankDataLoading &&
+      bankTransactions.length > 0
+    ) {
+      console.log("SettingsScreen: Bank data loaded, stopping loading");
+      setBankConnectionLoading(false);
+    }
+  }, [bankConnectionLoading, isBankDataLoading, bankTransactions.length]);
 
   // Additional check to stop loading if bank is already connected on mount
   useEffect(() => {

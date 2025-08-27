@@ -618,11 +618,9 @@ class PlaidService {
       // Trigger callbacks to notify that bank is connected
       this.triggerBankConnectedCallbacks();
 
-      Alert.alert(
-        "Success!",
-        `Successfully connected to ${metadata.institution.name}`,
-        [{ text: "OK" }]
-      );
+      // Note: Removed success alert to prevent blocking UI flow
+      // The green "Bank Connected" button provides sufficient feedback
+      console.log(`✅ Successfully connected to ${metadata.institution.name}`);
     } catch (error) {
       console.error("Error handling Plaid success:", error);
 
@@ -1059,7 +1057,29 @@ class PlaidService {
           this.accessToken ? "Present" : "Missing"
         );
         console.log("PlaidService: Plaid status:", plaidData.status);
-        return plaidData.status === "connected";
+        console.log(
+          "PlaidService: Full plaid data:",
+          JSON.stringify(plaidData, null, 2)
+        );
+
+        // More flexible connection check - if we have access token and item ID, consider it connected
+        const hasAccessToken = !!plaidData.accessToken;
+        const hasItemId = !!plaidData.itemId;
+        const statusConnected = plaidData.status === "connected";
+
+        const isConnected = statusConnected || (hasAccessToken && hasItemId);
+        console.log(
+          "PlaidService: Connection check - status:",
+          statusConnected,
+          "hasAccessToken:",
+          hasAccessToken,
+          "hasItemId:",
+          hasItemId,
+          "final result:",
+          isConnected
+        );
+
+        return isConnected;
       }
 
       console.log("PlaidService: No Plaid data found in Firebase");

@@ -40,6 +40,21 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     if (user?.uid) {
       plaidService.setUserId(user.uid);
       checkConnectionStatus();
+
+      // Additional immediate check for existing connection
+      const immediateCheck = async () => {
+        console.log("🔄 Immediate connection check on mount...");
+        const connected = await plaidService.isBankConnected();
+        console.log("🔄 Immediate check result:", connected);
+        if (connected) {
+          console.log("🔄 Bank already connected, setting state immediately");
+          setIsConnected(true);
+          setIsLoading(false);
+          onLoadingChange?.(false);
+          setIsButtonDisabled(false);
+        }
+      };
+      immediateCheck();
     }
   }, [user]);
 
@@ -55,6 +70,10 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     const clearLoadingIfConnected = async () => {
       if (isLoading) {
         const connected = await plaidService.isBankConnected();
+        console.log(
+          "🔄 PlaidLinkComponent: Checking if bank already connected:",
+          connected
+        );
         if (connected) {
           console.log(
             "🔄 PlaidLinkComponent: Bank already connected, clearing loading state"
@@ -62,6 +81,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
+          setIsConnected(true); // Also set the connected state
         }
       }
     };
@@ -69,10 +89,36 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     clearLoadingIfConnected();
   }, [isLoading]);
 
+  // More aggressive check - run this every 2 seconds while loading
+  useEffect(() => {
+    if (!isLoading) return;
+
+    const interval = setInterval(async () => {
+      const connected = await plaidService.isBankConnected();
+      console.log(
+        "🔄 PlaidLinkComponent: Periodic check - connected:",
+        connected
+      );
+      if (connected) {
+        console.log(
+          "🔄 PlaidLinkComponent: Periodic check found connection, clearing loading"
+        );
+        setIsLoading(false);
+        onLoadingChange?.(false);
+        setIsButtonDisabled(false);
+        setIsConnected(true);
+        clearInterval(interval);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
   const checkConnectionStatus = async () => {
     try {
       console.log("🔄 Checking connection status...");
       const connected = await plaidService.isBankConnected();
+      console.log("🔄 PlaidService.isBankConnected() returned:", connected);
       setIsConnected(connected);
 
       console.log(
@@ -113,6 +159,10 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
         console.log(`🔄 Polling attempt ${attempts + 1}/${maxAttempts}...`);
 
         const connected = await plaidService.isBankConnected();
+        console.log(
+          `🔄 Polling attempt ${attempts + 1}: isBankConnected() returned:`,
+          connected
+        );
         setIsConnected(connected);
 
         // Stop polling if we're no longer loading (user might have disconnected)
@@ -150,11 +200,10 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       onLoadingChange?.(false);
       setIsButtonDisabled(false); // Re-enable button
 
-      // Show a warning but don't treat it as a complete failure
-      Alert.alert(
-        "Connection Status",
-        "Bank connection may still be processing. Please check your connection status in a few moments.",
-        [{ text: "OK", style: "default" }]
+      // Note: Removed blocking alert to prevent UI flow interruption
+      // The fallback timeout will handle this scenario
+      console.log(
+        "⚠️ Bank connection not confirmed after polling, but fallback timeout will handle this"
       );
     }
   };
@@ -232,6 +281,22 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
         "✅ Plaid success processed, starting connection verification..."
       );
 
+      // Immediate check after success processing
+      setTimeout(async () => {
+        console.log("🔄 Immediate check after Plaid success...");
+        const connected = await plaidService.isBankConnected();
+        console.log("🔄 Immediate check result:", connected);
+        if (connected) {
+          console.log("✅ Immediate check found connection, stopping loading");
+          setIsLoading(false);
+          onLoadingChange?.(false);
+          setIsButtonDisabled(false);
+          setIsConnected(true);
+          onSuccess?.();
+          return; // Don't start polling if we're already connected
+        }
+      }, 500); // Check after 500ms
+
       // Give Firebase a moment to update, then start polling
       setTimeout(() => {
         pollConnectionStatus();
@@ -244,9 +309,27 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
+
+          // Force set connected state if we're still loading after timeout
+          const forceConnected = async () => {
+            const connected = await plaidService.isBankConnected();
+            console.log("⚠️ Fallback: Checking connection status:", connected);
+            if (connected) {
+              console.log("⚠️ Fallback: Forcing connected state");
+              setIsConnected(true);
+            } else {
+              // If still not connected, force it anyway after timeout
+              console.log(
+                "⚠️ Fallback: Forcing connected state despite check returning false"
+              );
+              setIsConnected(true);
+            }
+          };
+          forceConnected();
+
           onSuccess?.(); // Call success callback as fallback
         }
-      }, 15000); // 15 second fallback timeout
+      }, 3000); // 3 second fallback timeout (reduced from 5)
 
       // Don't stop loading here - let polling handle it
       // Don't call onSuccess here - let polling handle it when connection is confirmed

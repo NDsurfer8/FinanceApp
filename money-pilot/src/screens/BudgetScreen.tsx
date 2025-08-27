@@ -226,39 +226,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     }
   };
 
-  // Load data once when component mounts
-  useEffect(() => {
-    if (user) {
-      console.log("BudgetScreen: Initial data load");
-      // Load bank data with smart caching strategy
-      refreshBankData();
-    }
-  }, [user]);
+  // Note: DataContext handles initial data loading
+  // This useEffect has been removed to prevent duplicate API calls
 
-  // Auto-load bank data when bank connection status changes (with debouncing)
-  useEffect(() => {
-    if (
-      user &&
-      isBankConnected &&
-      recurringSuggestions.length === 0 &&
-      bankTransactions.length === 0
-    ) {
-      console.log(
-        "BudgetScreen: Bank connected but no transactions, loading data"
-      );
-      // Add a small delay to prevent rapid successive calls
-      const timeoutId = setTimeout(() => {
-        refreshBankData(true);
-      }, 1000);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [
-    user,
-    isBankConnected,
-    recurringSuggestions.length,
-    bankTransactions.length,
-  ]);
+  // Note: DataContext handles auto-loading bank data when bank connects
+  // This useEffect has been removed to prevent duplicate API calls
 
   // Scroll to current month when modal opens
   useEffect(() => {

@@ -475,8 +475,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const lastCall = (refreshBankData as any).lastCallTime || 0;
         const timeSinceLastCall = now - lastCall;
 
-        // Don't allow calls more frequent than 2 seconds apart (unless force refresh)
-        if (timeSinceLastCall < 2000 && !forceRefresh) {
+        // Don't allow calls more frequent than 5 seconds apart (unless force refresh)
+        if (timeSinceLastCall < 5000 && !forceRefresh) {
           console.log(
             `⏳ Rate limited: Last call was ${Math.round(
               timeSinceLastCall / 1000
@@ -643,12 +643,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       bankRecurringSuggestions.length === 0 &&
       !isBankDataLoading &&
       bankTransactions.length === 0 && // Only auto-load if we have no transactions at all
-      !(refreshBankData as any).isInitializing // Prevent multiple simultaneous calls
+      !(refreshBankData as any).isInitializing && // Prevent multiple simultaneous calls
+      !(refreshBankData as any).hasAutoLoaded // Prevent multiple auto-loads
     ) {
       console.log(
         "DataContext: Bank connected but no transactions, auto-loading..."
       );
       (refreshBankData as any).isInitializing = true;
+      (refreshBankData as any).hasAutoLoaded = true;
       refreshBankData(true).finally(() => {
         (refreshBankData as any).isInitializing = false;
       });
@@ -660,6 +662,27 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     bankTransactions.length,
     isBankDataLoading,
   ]);
+
+  // Additional effect to handle bank connection changes
+  useEffect(() => {
+    const handleBankConnectionChange = async () => {
+      if (user && isBankConnected && !isBankDataLoading) {
+        console.log(
+          "DataContext: Bank connection status changed, checking data..."
+        );
+
+        // If we have no transactions but bank is connected, load data
+        if (bankTransactions.length === 0) {
+          console.log(
+            "DataContext: No transactions found, loading bank data..."
+          );
+          await refreshBankData(true);
+        }
+      }
+    };
+
+    handleBankConnectionChange();
+  }, [isBankConnected, user]);
 
   const refreshData = useCallback(async () => {
     await loadAllData();
