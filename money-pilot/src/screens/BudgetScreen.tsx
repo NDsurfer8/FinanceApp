@@ -838,6 +838,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   </Text>
                   <TouchableOpacity
                     onPress={() => handleDismissInsight(insight.id)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     style={{
                       padding: 4,
                       borderRadius: 12,
@@ -929,19 +930,23 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               </View>
 
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   onPress={(e) => {
                     e.stopPropagation();
                     handleRefreshPress();
                   }}
                   disabled={isBankDataLoading}
                   style={{
-                    padding: 6,
+                    padding: 12, // Increased from 6 to ensure minimum 44px touch target
                     borderRadius: 6,
                     backgroundColor: isBankDataLoading
                       ? colors.border
                       : colors.infoLight,
-                    marginRight: 8,
+                    marginRight: 15,
+                    minWidth: 38, // Ensure minimum width
+                    minHeight: 38, // Ensure minimum height
+                    justifyContent: "center",
+                    alignItems: "center",
                   }}
                 >
                   <Ionicons
@@ -951,7 +956,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       isBankDataLoading ? colors.textTertiary : colors.info
                     }
                   />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
                 <Ionicons
                   name={showBankSuggestions ? "chevron-up" : "chevron-down"}
                   size={20}
