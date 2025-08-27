@@ -344,16 +344,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     });
   };
 
-  // Handle refresh button press with debouncing
-  const handleRefreshPress = () => {
-    if (!isBankDataLoading) {
-      console.log("🔄 Manual refresh triggered by user");
-      refreshBankData(true);
-    } else {
-      console.log("⏳ Refresh already in progress, skipping...");
-    }
-  };
-
   // Note: DataContext handles initial data loading
   // This useEffect has been removed to prevent duplicate API calls
 
@@ -1058,33 +1048,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               </View>
 
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                {/* <TouchableOpacity
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    handleRefreshPress();
-                  }}
-                  disabled={isBankDataLoading}
-                  style={{
-                    padding: 12, // Increased from 6 to ensure minimum 44px touch target
-                    borderRadius: 6,
-                    backgroundColor: isBankDataLoading
-                      ? colors.border
-                      : colors.infoLight,
-                    marginRight: 15,
-                    minWidth: 38, // Ensure minimum width
-                    minHeight: 38, // Ensure minimum height
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Ionicons
-                    name={isBankDataLoading ? "refresh" : "refresh-outline"}
-                    size={14}
-                    color={
-                      isBankDataLoading ? colors.textTertiary : colors.info
-                    }
-                  />
-                </TouchableOpacity> */}
                 <Ionicons
                   name={showBankSuggestions ? "chevron-up" : "chevron-down"}
                   size={20}
