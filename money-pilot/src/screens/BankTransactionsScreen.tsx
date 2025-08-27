@@ -141,8 +141,12 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
                 style={{
-                  padding: 10,
+                  padding: 12, // Increased from 10 to ensure minimum 44px touch target
                   marginRight: 12,
+                  minWidth: 44, // Ensure minimum width
+                  minHeight: 44, // Ensure minimum height
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}
               >
                 <Ionicons name="arrow-back" size={18} color={colors.text} />
