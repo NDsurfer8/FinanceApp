@@ -267,103 +267,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   }, [user]);
 
   // Bank Data Methods
-  const analyzeRecurringPatterns = useCallback((transactions: any[]) => {
-    console.log(
-      "DataContext: Analyzing recurring patterns for",
-      transactions.length,
-      "transactions"
-    );
-
-    // Debug: Log first few transactions to see their amounts
-    console.log("DataContext: Sample transactions for debugging:");
-    transactions.slice(0, 5).forEach((t, i) => {
-      console.log(
-        `Transaction ${i + 1}: ${t.name} - Amount: ${t.amount} (${
-          t.amount > 0 ? "positive" : "negative"
-        })`
-      );
-    });
-    const patterns: { [key: string]: any[] } = {};
-    const suggestions: any[] = [];
-
-    // Group transactions by merchant name and amount
-    transactions.forEach((transaction) => {
-      const key = `${transaction.name}_${Math.abs(transaction.amount)}`;
-      if (!patterns[key]) {
-        patterns[key] = [];
-      }
-      patterns[key].push(transaction);
-    });
-
-    console.log(
-      "DataContext: Found",
-      Object.keys(patterns).length,
-      "unique transaction patterns"
-    );
-
-    // Find transactions that appear multiple times (potential recurring)
-    Object.entries(patterns).forEach(([key, transactions]) => {
-      console.log(
-        "DataContext: Pattern",
-        key,
-        "has",
-        transactions.length,
-        "occurrences"
-      );
-      if (transactions.length >= 2) {
-        const firstTransaction = transactions[0];
-        const sortedTransactions = transactions.sort(
-          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-        );
-
-        // Calculate frequency
-        const frequency = calculateFrequency(sortedTransactions);
-        console.log("DataContext: Pattern", key, "frequency:", frequency);
-
-        if (frequency) {
-          console.log("DataContext: Creating suggestion for pattern:", key);
-          console.log(
-            "DataContext: First transaction amount:",
-            firstTransaction.amount,
-            "Type:",
-            typeof firstTransaction.amount
-          );
-          console.log(
-            "DataContext: First transaction name:",
-            firstTransaction.name
-          );
-          console.log(
-            "DataContext: Number(firstTransaction.amount):",
-            Number(firstTransaction.amount)
-          );
-          console.log(
-            "DataContext: Determined type:",
-            Number(firstTransaction.amount) < 0 ? "income" : "expense"
-          );
-
-          suggestions.push({
-            name: firstTransaction.name,
-            amount: Math.abs(firstTransaction.amount),
-            category: firstTransaction.category?.[0] || "Other",
-            frequency,
-            lastOccurrence: new Date(
-              sortedTransactions[sortedTransactions.length - 1].date
-            ),
-            occurrences: transactions.length,
-            type: Number(firstTransaction.amount) < 0 ? "income" : "expense",
-          });
-        }
-      }
-    });
-
-    console.log(
-      "DataContext: Generated",
-      suggestions.length,
-      "recurring suggestions"
-    );
-    return suggestions.sort((a, b) => b.occurrences - a.occurrences);
-  }, []);
-
   const calculateFrequency = useCallback((transactions: any[]) => {
     if (transactions.length < 2) return null;
 
@@ -387,6 +290,51 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return null;
   }, []);
 
+  const analyzeRecurringPatterns = useCallback(
+    (transactions: any[]) => {
+      const patterns: { [key: string]: any[] } = {};
+      const suggestions: any[] = [];
+
+      // Group transactions by merchant name and amount
+      transactions.forEach((transaction) => {
+        const key = `${transaction.name}_${Math.abs(transaction.amount)}`;
+        if (!patterns[key]) {
+          patterns[key] = [];
+        }
+        patterns[key].push(transaction);
+      });
+
+      // Find transactions that appear multiple times (potential recurring)
+      Object.entries(patterns).forEach(([key, transactions]) => {
+        if (transactions.length >= 2) {
+          const firstTransaction = transactions[0];
+          const sortedTransactions = transactions.sort(
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+          );
+
+          // Calculate frequency
+          const frequency = calculateFrequency(sortedTransactions);
+
+          if (frequency) {
+            suggestions.push({
+              name: firstTransaction.name,
+              amount: Math.abs(firstTransaction.amount),
+              category: firstTransaction.category?.[0] || "Other",
+              frequency,
+              lastOccurrence: new Date(
+                sortedTransactions[sortedTransactions.length - 1].date
+              ),
+              occurrences: transactions.length,
+              type: Number(firstTransaction.amount) < 0 ? "income" : "expense",
+            });
+          }
+        }
+      });
+      return suggestions.sort((a, b) => b.occurrences - a.occurrences);
+    },
+    [calculateFrequency]
+  );
+
   const loadCachedBankData = useCallback(async () => {
     try {
       const cachedData = await AsyncStorage.getItem(BANK_DATA_CACHE_KEY);
@@ -405,11 +353,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           setBankRecurringSuggestions(parsedData.suggestions);
           setBankAccounts(parsedData.accounts || []);
           setBankDataLastUpdated(new Date(timestamp));
-          console.log(
-            "Loaded cached bank data, age:",
-            Math.round((now - timestamp) / 1000 / 60),
-            "minutes"
-          );
+
           return true;
         }
       }
@@ -448,8 +392,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             .split("T")[0];
           await AsyncStorage.setItem(LAST_TRANSACTION_DATE_KEY, latestDate);
         }
-
-        console.log("Saved bank data to cache");
       } catch (error) {
         console.error("Failed to save bank data to cache:", error);
       }
@@ -470,17 +412,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         // Don't allow calls more frequent than 5 seconds apart (unless force refresh)
         if (timeSinceLastCall < 5000 && !forceRefresh) {
-          console.log(
-            `⏳ Rate limited: Last call was ${Math.round(
-              timeSinceLastCall / 1000
-            )}s ago, skipping...`
-          );
           return;
         }
 
         // Don't load if already loading
         if (isBankDataLoadingRef.current && !forceRefresh) {
-          console.log("Bank data already loading, skipping...");
           return;
         }
 
@@ -491,13 +427,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         isBankDataLoadingRef.current = true;
 
         const connected = await plaidService.isBankConnected();
-        console.log("DataContext: Bank connection status:", connected);
         setIsBankConnected(connected);
 
         if (!connected) {
-          console.log(
-            "DataContext: No bank connected, skipping bank data load"
-          );
           setIsBankConnected(false);
           setIsBankDataLoading(false);
           return;
@@ -509,9 +441,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           if (cacheLoaded) {
             // Check if we have recurring suggestions in cache
             if (bankRecurringSuggestions.length === 0) {
-              console.log(
-                "DataContext: Cache loaded but no recurring suggestions, forcing refresh"
-              );
               // Force refresh to regenerate recurring suggestions
               forceRefresh = true;
             } else {
@@ -531,18 +460,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         if (forceRefresh || lastFetch === 0) {
           // First time or force refresh: get 3 months of data for recurring analysis
-          console.log(
-            "🔄 Full refresh: Fetching 3 months of data for recurring analysis..."
-          );
           startDate = new Date(Date.now() - 3 * 30 * 24 * 60 * 60 * 1000)
             .toISOString()
             .split("T")[0];
           fetchStrategy = "full";
         } else if (timeSinceLastFetch > TRANSACTION_UPDATE_INTERVAL) {
           // Check for new transactions (last 4 hours)
-          console.log(
-            "📈 Incremental update: Checking for new transactions..."
-          );
           const lastTransactionDate = await AsyncStorage.getItem(
             LAST_TRANSACTION_DATE_KEY
           );
@@ -554,7 +477,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           fetchStrategy = "incremental";
         } else {
           // Cache is fresh, no need to fetch
-          console.log("✅ Cache is fresh, no API call needed");
           setIsBankDataLoading(false);
           return;
         }
@@ -567,7 +489,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         setBankAccounts(accounts);
 
         if (fetchStrategy === "incremental" && transactions.length === 0) {
-          console.log("✅ No new transactions found, keeping existing cache");
           setIsBankDataLoading(false);
           return;
         }
@@ -589,9 +510,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             });
 
             allTransactions = Array.from(transactionMap.values());
-            console.log(
-              `🔄 Merged ${existingTransactions.length} existing + ${transactions.length} new = ${allTransactions.length} total transactions`
-            );
           }
         }
 
@@ -604,12 +522,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         // Save to cache
         await saveBankDataToCache(allTransactions, suggestions, accounts);
-
-        console.log(
-          `✅ ${
-            fetchStrategy === "full" ? "Full refresh" : "Incremental update"
-          } complete: ${suggestions.length} recurring suggestions found`
-        );
       } catch (error) {
         console.error("Failed to load bank data:", error);
         setIsBankConnected(false);
@@ -639,9 +551,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       !(refreshBankData as any).isInitializing && // Prevent multiple simultaneous calls
       !(refreshBankData as any).hasAutoLoaded // Prevent multiple auto-loads
     ) {
-      console.log(
-        "DataContext: Bank connected but no transactions, auto-loading..."
-      );
       (refreshBankData as any).isInitializing = true;
       (refreshBankData as any).hasAutoLoaded = true;
       refreshBankData(true).finally(() => {
@@ -660,15 +569,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   useEffect(() => {
     const handleBankConnectionChange = async () => {
       if (user && isBankConnected && !isBankDataLoading) {
-        console.log(
-          "DataContext: Bank connection status changed, checking data..."
-        );
-
         // If we have no transactions but bank is connected, load data
         if (bankTransactions.length === 0) {
-          console.log(
-            "DataContext: No transactions found, loading bank data..."
-          );
           await refreshBankData(true);
         }
       }
@@ -683,33 +585,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Load data when user changes
   useEffect(() => {
-    console.log("DataContext: useEffect triggered for user:", user?.uid);
     if (user) {
       loadAllData();
 
       // Load bank data
       const loadBankData = async () => {
         try {
-          console.log("DataContext: Starting bank data loading...");
           // Set user ID for PlaidService first
           plaidService.setUserId(user.uid);
 
           // Register callback for when bank is connected
           plaidService.onBankConnected(async () => {
-            console.log("DataContext: Bank connected callback triggered");
             setIsBankConnected(true);
             await refreshBankData(true);
           });
 
           // Call refreshBankData directly without including it in dependencies
           const connected = await plaidService.isBankConnected();
-          console.log("DataContext: Bank connection status:", connected);
           setIsBankConnected(connected);
 
           if (!connected) {
-            console.log(
-              "DataContext: No bank connected, skipping bank data load"
-            );
             setIsBankConnected(false);
             return;
           }
@@ -722,7 +617,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
           // Force refresh if no cache
           await refreshBankData(true);
-          console.log("DataContext: Bank data loading completed");
         } catch (error) {
           console.error("DataContext: Failed to load bank data:", error);
         }
@@ -734,7 +628,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         try {
           await revenueCatService.setUser(user.uid);
           await revenueCatService.checkSubscriptionStatus();
-          console.log("Subscription status loaded in DataContext");
         } catch (error) {
           console.error(
             "Failed to load subscription status in DataContext:",

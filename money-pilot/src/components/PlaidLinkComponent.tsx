@@ -125,32 +125,20 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     const pollInterval = 1000; // 1 second
     const initialDelay = 2000; // 2 seconds initial delay
 
-    console.log("🔄 Starting connection status polling...");
-
     // Initial delay to allow Firebase to update
     await new Promise((resolve) => setTimeout(resolve, initialDelay));
 
     while (attempts < maxAttempts && isLoading) {
       try {
-        console.log(`🔄 Polling attempt ${attempts + 1}/${maxAttempts}...`);
-
         const connected = await plaidService.isBankConnected();
-        console.log(
-          `🔄 Polling attempt ${attempts + 1}: isBankConnected() returned:`,
-          connected
-        );
         setIsConnected(connected);
 
         // Stop polling if we're no longer loading (user might have disconnected)
         if (!isLoading) {
-          console.log("🛑 Polling stopped - loading state changed");
           return;
         }
 
         if (connected) {
-          console.log(
-            `✅ Bank connection confirmed after ${attempts + 1} attempts`
-          );
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false); // Re-enable button
@@ -169,18 +157,9 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
     // If we reach here, connection wasn't confirmed
     if (isLoading) {
-      console.log(
-        `⚠️ Bank connection not confirmed after ${maxAttempts} attempts`
-      );
       setIsLoading(false);
       onLoadingChange?.(false);
       setIsButtonDisabled(false); // Re-enable button
-
-      // Note: Removed blocking alert to prevent UI flow interruption
-      // The fallback timeout will handle this scenario
-      console.log(
-        "⚠️ Bank connection not confirmed after polling, but fallback timeout will handle this"
-      );
     }
   };
 
@@ -189,18 +168,11 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
     // Enhanced debouncing: prevent rapid taps with time-based check
     if (isButtonDisabled || isLoading) {
-      console.log("Button disabled or loading, ignoring tap");
       return;
     }
 
     // Check if enough time has passed since last tap
     if (now - lastTapTime < BUTTON_DEBOUNCE_TIME) {
-      const waitTime = Math.ceil(
-        (BUTTON_DEBOUNCE_TIME - (now - lastTapTime)) / 1000
-      );
-      console.log(
-        `Button debounced: Please wait ${waitTime} seconds before trying again`
-      );
       return;
     }
 
@@ -253,17 +225,10 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
         linkSuccess.metadata
       );
 
-      console.log(
-        "✅ Plaid success processed, starting connection verification..."
-      );
-
       // Immediate check after success processing
       setTimeout(async () => {
-        console.log("🔄 Immediate check after Plaid success...");
         const connected = await plaidService.isBankConnected();
-        console.log("🔄 Immediate check result:", connected);
         if (connected) {
-          console.log("✅ Immediate check found connection, stopping loading");
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
@@ -281,7 +246,6 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       // Add a fallback timeout to stop loading if polling doesn't work
       setTimeout(() => {
         if (isLoading) {
-          console.log("⚠️ Fallback: Stopping loading after timeout");
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
@@ -289,15 +253,10 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
           // Force set connected state if we're still loading after timeout
           const forceConnected = async () => {
             const connected = await plaidService.isBankConnected();
-            console.log("⚠️ Fallback: Checking connection status:", connected);
             if (connected) {
-              console.log("⚠️ Fallback: Forcing connected state");
               setIsConnected(true);
             } else {
               // If still not connected, force it anyway after timeout
-              console.log(
-                "⚠️ Fallback: Forcing connected state despite check returning false"
-              );
               setIsConnected(true);
             }
           };
@@ -319,8 +278,6 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   };
 
   const handlePlaidExit = (linkExit: LinkExit) => {
-    console.log("Plaid Link exit:", linkExit);
-
     // Stop loading when user exits (cancels or completes)
     setIsLoading(false);
     onLoadingChange?.(false);
@@ -335,8 +292,6 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
         !linkExit.error.errorCode &&
         !linkExit.error.errorMessage)
     ) {
-      console.log("User cancelled Plaid Link flow");
-      console.log("Exit data:", JSON.stringify(linkExit, null, 2));
       // Don't show any error message for user cancellation
       onExit?.();
       return;

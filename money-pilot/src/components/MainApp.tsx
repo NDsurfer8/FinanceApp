@@ -97,7 +97,6 @@ export const MainApp: React.FC = () => {
   useEffect(() => {
     const fallbackTimeout = setTimeout(() => {
       if (isLoading) {
-        console.log("Fallback timeout reached, forcing app to proceed");
         setIsLoading(false);
       }
     }, 10000); // 10 seconds max
@@ -109,7 +108,6 @@ export const MainApp: React.FC = () => {
     try {
       if (!user?.uid || plaidUpdateChecked) return;
 
-      console.log("Checking Plaid update mode status...");
       const updateStatus = await plaidService.checkUpdateModeStatus();
 
       if (updateStatus.needsReauth) {
@@ -150,7 +148,7 @@ export const MainApp: React.FC = () => {
       }
 
       if (authWaitTime >= maxWaitTime) {
-        console.log("Auth loading timeout, proceeding anyway");
+        // Auth loading timeout, proceeding anyway
       }
 
       setLoadingMessage("Loading app settings...");
@@ -172,7 +170,6 @@ export const MainApp: React.FC = () => {
         try {
           await revenueCatService.setUser(user.uid);
           plaidService.setUserId(user.uid);
-          console.log("User services configured in MainApp");
 
           // Check for Plaid update mode status
           setLoadingMessage("Checking bank connection status...");
@@ -222,7 +219,6 @@ export const MainApp: React.FC = () => {
     // Load persisted badge count first
     try {
       await notificationService.loadPersistedBadgeCount();
-      console.log("Persisted badge count loaded");
     } catch (error) {
       console.error("Error loading persisted badge count:", error);
     }
@@ -230,7 +226,6 @@ export const MainApp: React.FC = () => {
     // Clear badge when app opens
     try {
       await notificationService.clearBadge();
-      console.log("Badge cleared on app open");
     } catch (error) {
       console.error("Error clearing badge on app open:", error);
     }
@@ -238,11 +233,10 @@ export const MainApp: React.FC = () => {
     // Setup notification listeners
     const cleanup = notificationService.setupNotificationListeners(
       (notification) => {
-        console.log("Notification received:", notification);
+        // Notification received
       },
       (response) => {
-        console.log("Notification response:", response);
-        // Handle navigation based on notification type
+        // Notification response
         const data = response.notification.request.content.data;
         // You can add navigation logic here based on notification type
       }
@@ -254,24 +248,12 @@ export const MainApp: React.FC = () => {
   // Handle app state changes for biometric authentication
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      console.log("App state changed to:", nextAppState);
-      console.log("Biometric state:", {
-        isBiometricEnabled,
-        isAutoLockEnabled,
-        wasPreviouslyAuthenticated,
-        isBiometricAuthenticated,
-        justLoggedIn,
-      });
-
       if (nextAppState === "background" || nextAppState === "inactive") {
         if (
           isBiometricEnabled &&
           isAutoLockEnabled &&
           wasPreviouslyAuthenticated
         ) {
-          console.log(
-            "App going to background, resetting biometric authentication"
-          );
           setBiometricAuthenticated(false);
         }
       } else if (nextAppState === "active") {
@@ -285,7 +267,6 @@ export const MainApp: React.FC = () => {
             !isBiometricAuthenticated &&
             !justLoggedIn // Don't show biometric overlay if user just logged in
           ) {
-            console.log("App became active, showing biometric overlay");
             setShowBiometricOverlay(true);
           }
         }, 1000); // 1 second delay to prevent double verification
