@@ -851,13 +851,16 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                 {selectedGroup.name} Overview
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   onPress={() => loadGroupData(selectedGroup)}
                   style={{ marginRight: 12 }}
                 >
-                  <Ionicons name="refresh" size={20} color={colors.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setSelectedGroup(null)}>
+                  <Ionicons name="refresh" size={30} color={colors.primary} />
+                </TouchableOpacity> */}
+                <TouchableOpacity
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  onPress={() => setSelectedGroup(null)}
+                >
                   <Ionicons
                     name="close"
                     size={24}
