@@ -43,11 +43,8 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
       // Additional immediate check for existing connection
       const immediateCheck = async () => {
-        console.log("🔄 Immediate connection check on mount...");
         const connected = await plaidService.isBankConnected();
-        console.log("🔄 Immediate check result:", connected);
         if (connected) {
-          console.log("🔄 Bank already connected, setting state immediately");
           setIsConnected(true);
           setIsLoading(false);
           onLoadingChange?.(false);
@@ -70,14 +67,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     const clearLoadingIfConnected = async () => {
       if (isLoading) {
         const connected = await plaidService.isBankConnected();
-        console.log(
-          "🔄 PlaidLinkComponent: Checking if bank already connected:",
-          connected
-        );
         if (connected) {
-          console.log(
-            "🔄 PlaidLinkComponent: Bank already connected, clearing loading state"
-          );
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
@@ -95,14 +85,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
     const interval = setInterval(async () => {
       const connected = await plaidService.isBankConnected();
-      console.log(
-        "🔄 PlaidLinkComponent: Periodic check - connected:",
-        connected
-      );
       if (connected) {
-        console.log(
-          "🔄 PlaidLinkComponent: Periodic check found connection, clearing loading"
-        );
         setIsLoading(false);
         onLoadingChange?.(false);
         setIsButtonDisabled(false);
@@ -116,18 +99,11 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
   const checkConnectionStatus = async () => {
     try {
-      console.log("🔄 Checking connection status...");
       const connected = await plaidService.isBankConnected();
-      console.log("🔄 PlaidService.isBankConnected() returned:", connected);
       setIsConnected(connected);
-
-      console.log(
-        `Connection status: ${connected ? "✅ Connected" : "❌ Not connected"}`
-      );
 
       // If we were loading and now we're connected, stop the loading
       if (isLoading && connected) {
-        console.log("✅ Connection confirmed, stopping loading state");
         setIsLoading(false);
         onLoadingChange?.(false);
         setIsButtonDisabled(false); // Re-enable button

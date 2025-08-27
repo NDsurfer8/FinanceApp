@@ -136,11 +136,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     try {
       setIsLoading(true);
-      console.log("DataContext: loadAllData called for user:", user.uid);
-      console.log(
-        "DataContext: loadAllData timestamp:",
-        new Date().toISOString()
-      );
 
       const [
         userTransactions,
@@ -165,8 +160,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setBudgetSettings(userBudgetSettings);
       setRecurringTransactions(userRecurringTransactions);
       setLastUpdated(new Date());
-
-      console.log("All data loaded successfully");
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {

@@ -162,20 +162,8 @@ export const MainApp: React.FC = () => {
       setLoadingMessage("Initializing RevenueCat...");
       try {
         await revenueCatService.initialize();
-        console.log("RevenueCat initialized successfully in MainApp");
-
-        // Log diagnostic information
-        const diagnosticInfo = revenueCatService.getDiagnosticInfo();
-        console.log("RevenueCat diagnostic info:", diagnosticInfo);
       } catch (error) {
         console.error("Failed to initialize RevenueCat in MainApp:", error);
-
-        // Log diagnostic information even on failure
-        const diagnosticInfo = revenueCatService.getDiagnosticInfo();
-        console.log(
-          "RevenueCat diagnostic info (after failure):",
-          diagnosticInfo
-        );
       }
 
       // Set up user for services (actual data loading will be handled by DataPreloader)
@@ -224,7 +212,6 @@ export const MainApp: React.FC = () => {
     if (!user) return;
 
     try {
-      console.log("Setting up bill reminders for user:", user.uid);
       await billReminderService.scheduleAllBillReminders(user.uid);
     } catch (error) {
       console.error("Error setting up bill reminders:", error);

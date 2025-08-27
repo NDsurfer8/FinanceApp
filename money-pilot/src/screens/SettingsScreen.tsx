@@ -65,7 +65,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   // Monitor bank connection status and stop loading when connected or disconnected
   useEffect(() => {
     if (bankConnectionLoading && isBankConnected) {
-      console.log("SettingsScreen: Bank connected, stopping loading");
       setBankConnectionLoading(false);
     }
   }, [isBankConnected, bankConnectionLoading]);
@@ -77,7 +76,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       !isBankDataLoading &&
       bankTransactions.length > 0
     ) {
-      console.log("SettingsScreen: Bank data loaded, stopping loading");
       setBankConnectionLoading(false);
     }
   }, [bankConnectionLoading, isBankDataLoading, bankTransactions.length]);
@@ -88,9 +86,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       if (bankConnectionLoading) {
         const connected = await plaidService.isBankConnected();
         if (connected) {
-          console.log(
-            "SettingsScreen: Bank already connected, stopping loading"
-          );
           setBankConnectionLoading(false);
         }
       }

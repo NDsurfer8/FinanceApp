@@ -26,22 +26,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Update current user when user changes
   useEffect(() => {
-    console.log("UserContext: User changed", {
-      oldPhotoURL: currentUser?.photoURL,
-      newPhotoURL: user?.photoURL,
-      oldDisplayName: currentUser?.displayName,
-      newDisplayName: user?.displayName,
-    });
     setCurrentUser(user);
   }, [user]);
 
   // Function to immediately update user state (for profile changes)
   const updateUserImmediately = useCallback(
     (updatedUser: User) => {
-      console.log("UserContext: Immediate update called", {
-        oldPhotoURL: currentUser?.photoURL,
-        newPhotoURL: updatedUser.photoURL,
-      });
       setCurrentUser(updatedUser);
     },
     [currentUser]
@@ -50,13 +40,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   // Function to refresh user data
   const refreshUser = async () => {
     try {
-      console.log("UserContext: Refreshing user data...");
       const freshUser = await reloadCurrentUser();
       if (freshUser) {
-        console.log("UserContext: Fresh user data received", {
-          photoURL: freshUser.photoURL,
-          displayName: freshUser.displayName,
-        });
         setCurrentUser(freshUser);
       }
     } catch (error) {
@@ -66,7 +51,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Function to force refresh (for immediate updates)
   const forceRefresh = async () => {
-    console.log("UserContext: Force refresh called");
     await refreshUser();
   };
 

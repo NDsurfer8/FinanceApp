@@ -50,21 +50,14 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
 
       // Add a timeout to prevent infinite loading
       const timeoutId = setTimeout(() => {
-        console.log("DataPreloader: Timeout reached, forcing completion");
         setIsPreloading(false);
       }, 10000); // 10 seconds timeout
 
       if (user) {
-        console.log("Preloading all data for instant navigation...");
-
         try {
           // Load main data if not already loaded
           if (!hasData) {
-            console.log("DataPreloader: Loading main data...");
             await refreshData();
-            console.log("DataPreloader: Main data loaded");
-          } else {
-            console.log("DataPreloader: Main data already available");
           }
 
           // Subscription status is loaded by DataContext when user changes
@@ -72,26 +65,17 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
           // Load bank data if connected
           if (isBankConnected && !hasBankData) {
             try {
-              console.log("DataPreloader: Loading bank data...");
               await refreshBankData();
-              console.log("Bank data loaded in DataPreloader");
             } catch (error) {
               console.error("Failed to load bank data:", error);
             }
-          } else {
-            console.log(
-              "DataPreloader: Bank data already available or not connected"
-            );
           }
         } catch (error) {
           console.error("DataPreloader: Error during preload:", error);
         }
-      } else {
-        console.log("DataPreloader: No user, skipping preload");
       }
 
       clearTimeout(timeoutId);
-      console.log("DataPreloader: Setting isPreloading to false");
       setIsPreloading(false);
     };
 
