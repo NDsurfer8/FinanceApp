@@ -383,7 +383,8 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           style={{
             flexDirection: "row",
             gap: 12,
-            marginTop: 16,
+            marginTop: 32,
+            marginBottom: 32,
             justifyContent: "center",
           }}
         >
