@@ -725,10 +725,11 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       setSelectedGroup(group);
                       setShowInviteModal(true);
                     }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
                     <Ionicons
                       name="person-add"
-                      size={20}
+                      size={30}
                       color={colors.primary}
                     />
                   </TouchableOpacity>
@@ -739,12 +740,16 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                     <TouchableOpacity
                       onPress={() => handleDeleteGroup(group)}
                       disabled={deleteLoading === group.id}
-                      style={{ opacity: deleteLoading === group.id ? 0.6 : 1 }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={{
+                        opacity: deleteLoading === group.id ? 0.6 : 1,
+                        marginLeft: 10,
+                      }}
                     >
                       {deleteLoading === group.id ? (
                         <ActivityIndicator size="small" color="#dc2626" />
                       ) : (
-                        <Ionicons name="trash" size={20} color="#dc2626" />
+                        <Ionicons name="trash" size={30} color="#dc2626" />
                       )}
                     </TouchableOpacity>
                   )}
