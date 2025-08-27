@@ -50,6 +50,25 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     }
   }, [isLoading, onLoadingChange]);
 
+  // Additional check to clear loading state if bank is already connected
+  useEffect(() => {
+    const clearLoadingIfConnected = async () => {
+      if (isLoading) {
+        const connected = await plaidService.isBankConnected();
+        if (connected) {
+          console.log(
+            "🔄 PlaidLinkComponent: Bank already connected, clearing loading state"
+          );
+          setIsLoading(false);
+          onLoadingChange?.(false);
+          setIsButtonDisabled(false);
+        }
+      }
+    };
+
+    clearLoadingIfConnected();
+  }, [isLoading]);
+
   const checkConnectionStatus = async () => {
     try {
       console.log("🔄 Checking connection status...");
@@ -217,6 +236,17 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       setTimeout(() => {
         pollConnectionStatus();
       }, 1000); // 1 second delay to allow Firebase to update
+
+      // Add a fallback timeout to stop loading if polling doesn't work
+      setTimeout(() => {
+        if (isLoading) {
+          console.log("⚠️ Fallback: Stopping loading after timeout");
+          setIsLoading(false);
+          onLoadingChange?.(false);
+          setIsButtonDisabled(false);
+          onSuccess?.(); // Call success callback as fallback
+        }
+      }, 15000); // 15 second fallback timeout
 
       // Don't stop loading here - let polling handle it
       // Don't call onSuccess here - let polling handle it when connection is confirmed

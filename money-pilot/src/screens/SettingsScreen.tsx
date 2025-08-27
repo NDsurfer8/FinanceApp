@@ -23,6 +23,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { useChatbot } from "../contexts/ChatbotContext";
+import { useData } from "../contexts/DataContext";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -51,6 +52,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { isDark, toggleTheme, colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const { isVisible: isChatbotVisible, toggleChatbot } = useChatbot();
+  const { refreshBankData } = useData();
   const [connectedBankInfo, setConnectedBankInfo] = useState<{
     name: string;
     accounts: any[];
@@ -62,11 +64,28 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   // Monitor bank connection status and stop loading when connected or disconnected
   useEffect(() => {
-    if (bankConnectionLoading) {
-      // Stop loading when bank connection status changes (connected or disconnected)
+    if (bankConnectionLoading && isBankConnected) {
+      console.log("SettingsScreen: Bank connected, stopping loading");
       setBankConnectionLoading(false);
     }
   }, [isBankConnected, bankConnectionLoading]);
+
+  // Additional check to stop loading if bank is already connected on mount
+  useEffect(() => {
+    const checkAndStopLoading = async () => {
+      if (bankConnectionLoading) {
+        const connected = await plaidService.isBankConnected();
+        if (connected) {
+          console.log(
+            "SettingsScreen: Bank already connected, stopping loading"
+          );
+          setBankConnectionLoading(false);
+        }
+      }
+    };
+
+    checkAndStopLoading();
+  }, [bankConnectionLoading]);
 
   // Function to handle email verification
   const handleEmailVerification = async () => {
@@ -151,6 +170,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         const connected = await plaidService.isBankConnected();
         setIsBankConnected(connected);
         console.log("SettingsScreen: Bank connection status:", connected);
+
+        // If bank is connected, stop any loading state
+        if (connected && bankConnectionLoading) {
+          console.log(
+            "SettingsScreen: Bank is connected, clearing loading state"
+          );
+          setBankConnectionLoading(false);
+        }
 
         if (connected) {
           const bankInfo = await plaidService.getConnectedBankInfo();
@@ -548,6 +575,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   "SettingsScreen: Bank info after connection:",
                   bankInfo
                 );
+
+                // Refresh bank data to load transactions
+                console.log("Refreshing bank data after connection...");
+                await refreshBankData(true);
+                console.log("Bank data refreshed successfully");
               } catch (error) {
                 console.error(
                   "Failed to get bank info after connection:",

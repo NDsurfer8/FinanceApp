@@ -438,7 +438,6 @@ exports.getTransactions = onCall(
         access_token: accessToken,
         start_date: startDate,
         end_date: endDate,
-        count: 100, // Use maximum count to reduce API calls per Plaid recommendations
       });
 
       console.log("Plaid API response received:", {
