@@ -2076,26 +2076,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           >
             <View
               style={{
-                position: "absolute",
-                top: -8,
-                left: 0,
-                right: 0,
-                height: 1,
-                backgroundColor: colors.border,
-              }}
-            />
-            <View
-              style={{
-                position: "absolute",
-                top: -6,
-                left: 0,
-                right: 0,
-                height: 1,
-                backgroundColor: colors.border,
-              }}
-            />
-            <View
-              style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
                 alignItems: "center",
