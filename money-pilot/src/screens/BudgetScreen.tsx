@@ -87,6 +87,118 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
+  // Custom Slider Component
+  const CustomSlider = ({
+    value,
+    onValueChange,
+    min = 0,
+    max = 100,
+    step = 1,
+    color = colors.primary,
+  }: {
+    value: number;
+    onValueChange: (value: number) => void;
+    min?: number;
+    max?: number;
+    step?: number;
+    color?: string;
+  }) => {
+    const [sliderWidth, setSliderWidth] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragValue, setDragValue] = useState(value);
+    const percentage =
+      (((isDragging ? dragValue : value) - min) / (max - min)) * 100;
+
+    const handleSliderPress = (event: any) => {
+      if (!isDragging) {
+        const { locationX } = event.nativeEvent;
+        const newPercentage = Math.max(
+          0,
+          Math.min(100, (locationX / sliderWidth) * 100)
+        );
+        const newValue = Math.round((newPercentage / 100) * (max - min) + min);
+        // Round to nearest 5
+        const roundedValue = Math.round(newValue / 5) * 5;
+        onValueChange(roundedValue);
+      }
+    };
+
+    const onGestureEvent = (event: any) => {
+      const { translationX, state } = event.nativeEvent;
+
+      if (state === State.BEGAN) {
+        setIsDragging(true);
+        setDragValue(value);
+      } else if (state === State.ACTIVE) {
+        const currentPercentage = ((value - min) / (max - min)) * 100;
+        const translationPercentage = (translationX / sliderWidth) * 100;
+        const newPercentage = Math.max(
+          0,
+          Math.min(100, currentPercentage + translationPercentage)
+        );
+        const newValue = Math.round((newPercentage / 100) * (max - min) + min);
+        // Round to nearest 5
+        const roundedValue = Math.round(newValue / 5) * 5;
+        setDragValue(roundedValue);
+      } else if (state === State.END || state === State.CANCELLED) {
+        setIsDragging(false);
+        onValueChange(dragValue);
+      }
+    };
+
+    return (
+      <View style={{ flex: 1 }}>
+        <View
+          style={{
+            height: 6,
+            backgroundColor: colors.border,
+            borderRadius: 3,
+            position: "relative",
+          }}
+          onLayout={(event) => setSliderWidth(event.nativeEvent.layout.width)}
+        >
+          <View
+            style={{
+              width: `${percentage}%`,
+              height: 6,
+              backgroundColor: color,
+              borderRadius: 3,
+            }}
+          />
+        </View>
+        <PanGestureHandler onGestureEvent={onGestureEvent}>
+          <View
+            style={{
+              position: "absolute",
+              left: `${percentage}%`,
+              top: -5,
+              width: 16,
+              height: 16,
+              backgroundColor: color,
+              borderRadius: 8,
+              borderWidth: 2,
+              borderColor: colors.surface,
+              transform: [{ translateX: -8 }],
+            }}
+            hitSlop={{ top: 30, bottom: 30, left: 30, right: 30 }}
+          />
+        </PanGestureHandler>
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "transparent",
+          }}
+          onPress={handleSliderPress}
+          activeOpacity={1}
+        />
+      </View>
+    );
+  };
+
   // Filter accounts to only show checking/savings accounts (not loans)
   const checkingAccounts = bankAccounts.filter(
     (account) =>
@@ -1837,31 +1949,15 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 >
                   {translate("savings", isFriendlyMode)}
                 </Text>
-                <TextInput
+                <Text
                   style={{
                     fontSize: 16,
                     color: "#16a34a",
                     fontWeight: "600",
-                    width: 35,
-                    textAlign: "center",
-                    borderBottomWidth: 1,
-                    borderBottomColor: "#16a34a",
-                    paddingHorizontal: 4,
-                  }}
-                  value={savingsPercentage}
-                  onChangeText={setSavingsPercentage}
-                  keyboardType="numeric"
-                  maxLength={3}
-                  placeholder="20"
-                />
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: colors.textSecondary,
-                    fontWeight: "500",
+                    marginLeft: 8,
                   }}
                 >
-                  %
+                  {Math.round(parseFloat(savingsPercentage) || 0)}%
                 </Text>
               </View>
               <Text
@@ -1870,45 +1966,17 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 {formatCurrency(savingsAmount)}
               </Text>
             </View>
-            {/* Visual Percentage Indicator */}
-            <View style={{ marginTop: 8 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 4,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: colors.textSecondary,
-                    marginRight: 8,
-                  }}
-                >
-                  {savingsPercentage}%
-                </Text>
-                <View
-                  style={{
-                    flex: 1,
-                    height: 6,
-                    backgroundColor: colors.border,
-                    borderRadius: 3,
-                  }}
-                >
-                  <View
-                    style={{
-                      width: `${Math.min(
-                        parseFloat(savingsPercentage) || 0,
-                        100
-                      )}%`,
-                      height: 6,
-                      backgroundColor: colors.success,
-                      borderRadius: 3,
-                    }}
-                  />
-                </View>
-              </View>
+            {/* Interactive Slider */}
+            <View style={{ marginTop: 12 }}>
+              <CustomSlider
+                value={parseFloat(savingsPercentage) || 0}
+                onValueChange={(value) =>
+                  setSavingsPercentage(value.toString())
+                }
+                min={0}
+                max={100}
+                color={colors.success}
+              />
             </View>
           </View>
 
@@ -2023,31 +2091,15 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 >
                   Pay Debt
                 </Text>
-                <TextInput
+                <Text
                   style={{
                     fontSize: 16,
                     color: "#dc2626",
                     fontWeight: "600",
-                    width: 35,
-                    textAlign: "center",
-                    borderBottomWidth: 1,
-                    borderBottomColor: "#dc2626",
-                    paddingHorizontal: 4,
-                  }}
-                  value={debtPayoffPercentage}
-                  onChangeText={setDebtPayoffPercentage}
-                  keyboardType="numeric"
-                  maxLength={3}
-                  placeholder="75"
-                />
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: colors.textSecondary,
-                    fontWeight: "500",
+                    marginLeft: 8,
                   }}
                 >
-                  %
+                  {Math.round(parseFloat(debtPayoffPercentage) || 0)}%
                 </Text>
               </View>
               <Text
@@ -2056,45 +2108,17 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 {formatCurrency(debtPayoffAmount)}
               </Text>
             </View>
-            {/* Visual Percentage Indicator */}
-            <View style={{ marginTop: 8 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 4,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: colors.textSecondary,
-                    marginRight: 8,
-                  }}
-                >
-                  {debtPayoffPercentage}%
-                </Text>
-                <View
-                  style={{
-                    flex: 1,
-                    height: 6,
-                    backgroundColor: colors.border,
-                    borderRadius: 3,
-                  }}
-                >
-                  <View
-                    style={{
-                      width: `${Math.min(
-                        parseFloat(debtPayoffPercentage) || 0,
-                        100
-                      )}%`,
-                      height: 6,
-                      backgroundColor: colors.error,
-                      borderRadius: 3,
-                    }}
-                  />
-                </View>
-              </View>
+            {/* Interactive Slider */}
+            <View style={{ marginTop: 12 }}>
+              <CustomSlider
+                value={parseFloat(debtPayoffPercentage) || 0}
+                onValueChange={(value) =>
+                  setDebtPayoffPercentage(value.toString())
+                }
+                min={0}
+                max={100}
+                color={colors.error}
+              />
             </View>
           </View>
 
