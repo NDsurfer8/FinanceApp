@@ -81,6 +81,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     type: "income" | "expense";
     amount: number;
   } | null>(null);
+  const [isIncomeCollapsed, setIsIncomeCollapsed] = useState(false);
+  const [isExpensesCollapsed, setIsExpensesCollapsed] = useState(false);
   const monthPickerScrollRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
@@ -1363,7 +1365,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: 20,
+              marginBottom: isIncomeCollapsed ? 0 : 20,
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -1381,91 +1383,106 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 style={{
                   fontSize: 20,
                   fontWeight: "700",
-                  marginBottom: 20,
                   color: colors.text,
                 }}
               >
                 {translate("income", isFriendlyMode)}
               </Text>
             </View>
+            <TouchableOpacity
+              onPress={() => setIsIncomeCollapsed(!isIncomeCollapsed)}
+              style={{
+                padding: 8,
+                borderRadius: 8,
+                backgroundColor: colors.surfaceSecondary,
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isIncomeCollapsed ? "chevron-down" : "chevron-up"}
+                size={20}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
           </View>
 
           {/* Income Transactions List */}
-          {[
-            ...incomeTransactions,
-            ...(isFutureMonth
-              ? projectedTransactions.filter((t) => t.type === "income")
-              : []),
-          ].map((transaction, index, array) => (
-            <TouchableOpacity
-              key={transaction.id}
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 12,
-                paddingVertical: 8,
-                borderBottomWidth: index === array.length - 1 ? 0 : 1,
-                borderBottomColor: colors.border,
-              }}
-              onPress={() =>
-                navigation.navigate("AddTransaction", {
-                  type: "income",
-                  editMode: true,
-                  transaction: transaction,
-                })
-              }
-            >
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: colors.text,
-                    fontWeight: "500",
-                  }}
-                >
-                  {transaction.description}
-                </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginTop: 2,
-                  }}
-                >
-                  <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                    {transaction.category} • {formatDate(transaction.date)}
+          {!isIncomeCollapsed &&
+            [
+              ...incomeTransactions,
+              ...(isFutureMonth
+                ? projectedTransactions.filter((t) => t.type === "income")
+                : []),
+            ].map((transaction, index, array) => (
+              <TouchableOpacity
+                key={transaction.id}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
+                  paddingVertical: 8,
+                  borderBottomWidth: index === array.length - 1 ? 0 : 1,
+                  borderBottomColor: colors.border,
+                }}
+                onPress={() =>
+                  navigation.navigate("AddTransaction", {
+                    type: "income",
+                    editMode: true,
+                    transaction: transaction,
+                  })
+                }
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: colors.text,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {transaction.description}
                   </Text>
-                  {(isRecurringTransaction(transaction) ||
-                    transaction.id?.startsWith("projected-")) && (
-                    <Ionicons
-                      name="repeat"
-                      size={12}
-                      color={colors.primary}
-                      style={{ marginLeft: 8 }}
-                    />
-                  )}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginTop: 2,
+                    }}
+                  >
+                    <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                      {transaction.category} • {formatDate(transaction.date)}
+                    </Text>
+                    {(isRecurringTransaction(transaction) ||
+                      transaction.id?.startsWith("projected-")) && (
+                      <Ionicons
+                        name="repeat"
+                        size={12}
+                        color={colors.primary}
+                        style={{ marginLeft: 8 }}
+                      />
+                    )}
+                  </View>
                 </View>
-              </View>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "700",
-                    color: colors.text,
-                    marginRight: 8,
-                  }}
-                >
-                  {formatCurrency(transaction.amount)}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={colors.textSecondary}
-                />
-              </View>
-            </TouchableOpacity>
-          ))}
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: colors.text,
+                      marginRight: 8,
+                    }}
+                  >
+                    {formatCurrency(transaction.amount)}
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={colors.textSecondary}
+                  />
+                </View>
+              </TouchableOpacity>
+            ))}
 
           {(incomeTransactions.length > 0 ||
             projectedIncomeTransactions.length > 0) && (
@@ -1555,7 +1572,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: 20,
+              marginBottom: isExpensesCollapsed ? 0 : 20,
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -1573,91 +1590,106 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 style={{
                   fontSize: 20,
                   fontWeight: "700",
-                  marginBottom: 20,
                   color: colors.text,
                 }}
               >
                 {translate("expenses", isFriendlyMode)}
               </Text>
             </View>
+            <TouchableOpacity
+              onPress={() => setIsExpensesCollapsed(!isExpensesCollapsed)}
+              style={{
+                padding: 8,
+                borderRadius: 8,
+                backgroundColor: colors.surfaceSecondary,
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isExpensesCollapsed ? "chevron-down" : "chevron-up"}
+                size={20}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
           </View>
 
           {/* Expense Transactions List */}
-          {[
-            ...expenseTransactions,
-            ...(isFutureMonth
-              ? projectedTransactions.filter((t) => t.type === "expense")
-              : []),
-          ].map((transaction, index, array) => (
-            <TouchableOpacity
-              key={transaction.id}
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 12,
-                paddingVertical: 8,
-                borderBottomWidth: index === array.length - 1 ? 0 : 1,
-                borderBottomColor: colors.border,
-              }}
-              onPress={() =>
-                navigation.navigate("AddTransaction", {
-                  type: "expense",
-                  editMode: true,
-                  transaction: transaction,
-                })
-              }
-            >
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: colors.text,
-                    fontWeight: "500",
-                  }}
-                >
-                  {transaction.description}
-                </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginTop: 2,
-                  }}
-                >
-                  <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                    {transaction.category} • {formatDate(transaction.date)}
+          {!isExpensesCollapsed &&
+            [
+              ...expenseTransactions,
+              ...(isFutureMonth
+                ? projectedTransactions.filter((t) => t.type === "expense")
+                : []),
+            ].map((transaction, index, array) => (
+              <TouchableOpacity
+                key={transaction.id}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
+                  paddingVertical: 8,
+                  borderBottomWidth: index === array.length - 1 ? 0 : 1,
+                  borderBottomColor: colors.border,
+                }}
+                onPress={() =>
+                  navigation.navigate("AddTransaction", {
+                    type: "expense",
+                    editMode: true,
+                    transaction: transaction,
+                  })
+                }
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: colors.text,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {transaction.description}
                   </Text>
-                  {(isRecurringTransaction(transaction) ||
-                    transaction.id?.startsWith("projected-")) && (
-                    <Ionicons
-                      name="repeat"
-                      size={12}
-                      color={colors.primary}
-                      style={{ marginLeft: 8 }}
-                    />
-                  )}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginTop: 2,
+                    }}
+                  >
+                    <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                      {transaction.category} • {formatDate(transaction.date)}
+                    </Text>
+                    {(isRecurringTransaction(transaction) ||
+                      transaction.id?.startsWith("projected-")) && (
+                      <Ionicons
+                        name="repeat"
+                        size={12}
+                        color={colors.primary}
+                        style={{ marginLeft: 8 }}
+                      />
+                    )}
+                  </View>
                 </View>
-              </View>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "700",
-                    color: colors.text,
-                    marginRight: 8,
-                  }}
-                >
-                  {formatCurrency(transaction.amount)}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={colors.textSecondary}
-                />
-              </View>
-            </TouchableOpacity>
-          ))}
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: colors.text,
+                      marginRight: 8,
+                    }}
+                  >
+                    {formatCurrency(transaction.amount)}
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={colors.textSecondary}
+                  />
+                </View>
+              </TouchableOpacity>
+            ))}
 
           {(expenseTransactions.length > 0 ||
             projectedExpenseTransactions.length > 0) && (
