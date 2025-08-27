@@ -87,14 +87,23 @@ class PlaidService {
     return `${endpoint}_${JSON.stringify(params)}`;
   }
 
-  // Queue Plaid API requests to prevent concurrent calls
-  private async queueRequest<T>(request: () => Promise<T>): Promise<T> {
+  // Queue Plaid API requests to prevent concurrent calls with timeout
+  private async queueRequest<T>(
+    request: () => Promise<T>,
+    timeoutMs: number = 30000
+  ): Promise<T> {
     return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error(`Request timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+
       this.requestQueue.push(async () => {
         try {
           const result = await request();
+          clearTimeout(timeoutId);
           resolve(result);
         } catch (error) {
+          clearTimeout(timeoutId);
           reject(error);
         }
       });

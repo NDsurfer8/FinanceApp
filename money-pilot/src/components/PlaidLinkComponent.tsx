@@ -52,20 +52,28 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
   const checkConnectionStatus = async () => {
     try {
+      console.log("🔄 Checking connection status...");
       const connected = await plaidService.isBankConnected();
       setIsConnected(connected);
 
+      console.log(
+        `Connection status: ${connected ? "✅ Connected" : "❌ Not connected"}`
+      );
+
       // If we were loading and now we're connected, stop the loading
       if (isLoading && connected) {
+        console.log("✅ Connection confirmed, stopping loading state");
         setIsLoading(false);
         onLoadingChange?.(false);
+        setIsButtonDisabled(false); // Re-enable button
       }
     } catch (error) {
-      console.error("Error checking connection status:", error);
+      console.error("❌ Error checking connection status:", error);
       // If there's an error checking status, stop loading
       if (isLoading) {
         setIsLoading(false);
         onLoadingChange?.(false);
+        setIsButtonDisabled(false); // Re-enable button
       }
     }
   };
@@ -74,33 +82,41 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     let attempts = 0;
     const maxAttempts = 30; // 30 seconds max
     const pollInterval = 1000; // 1 second
+    const initialDelay = 2000; // 2 seconds initial delay
+
+    console.log("🔄 Starting connection status polling...");
+
+    // Initial delay to allow Firebase to update
+    await new Promise((resolve) => setTimeout(resolve, initialDelay));
 
     while (attempts < maxAttempts && isLoading) {
       try {
+        console.log(`🔄 Polling attempt ${attempts + 1}/${maxAttempts}...`);
+
         const connected = await plaidService.isBankConnected();
         setIsConnected(connected);
 
         // Stop polling if we're no longer loading (user might have disconnected)
         if (!isLoading) {
-          console.log("Polling stopped - loading state changed");
+          console.log("🛑 Polling stopped - loading state changed");
           return;
         }
 
         if (connected) {
           console.log(
-            "Bank connection confirmed after",
-            attempts + 1,
-            "attempts"
+            `✅ Bank connection confirmed after ${attempts + 1} attempts`
           );
           setIsLoading(false);
           onLoadingChange?.(false);
+          setIsButtonDisabled(false); // Re-enable button
+          onSuccess?.(); // Call success callback now that connection is confirmed
           return;
         }
 
         attempts++;
         await new Promise((resolve) => setTimeout(resolve, pollInterval));
       } catch (error) {
-        console.error("Error polling connection status:", error);
+        console.error("❌ Error polling connection status:", error);
         attempts++;
         await new Promise((resolve) => setTimeout(resolve, pollInterval));
       }
@@ -109,12 +125,18 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     // If we reach here, connection wasn't confirmed
     if (isLoading) {
       console.log(
-        "Bank connection not confirmed after",
-        maxAttempts,
-        "attempts"
+        `⚠️ Bank connection not confirmed after ${maxAttempts} attempts`
       );
       setIsLoading(false);
       onLoadingChange?.(false);
+      setIsButtonDisabled(false); // Re-enable button
+
+      // Show a warning but don't treat it as a complete failure
+      Alert.alert(
+        "Connection Status",
+        "Bank connection may still be processing. Please check your connection status in a few moments.",
+        [{ text: "OK", style: "default" }]
+      );
     }
   };
 
@@ -181,27 +203,29 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     try {
       console.log("Plaid Link success received:", linkSuccess);
 
+      // Process the success first
       await plaidService.handlePlaidSuccess(
         linkSuccess.publicToken,
         linkSuccess.metadata
       );
 
-      // Check connection status and stop loading
-      await checkConnectionStatus();
-      onSuccess?.();
+      console.log(
+        "✅ Plaid success processed, starting connection verification..."
+      );
 
-      // Stop loading after successful connection
-      setIsLoading(false);
-      onLoadingChange?.(false);
-      setIsButtonDisabled(false); // Re-enable button
+      // Give Firebase a moment to update, then start polling
+      setTimeout(() => {
+        pollConnectionStatus();
+      }, 1000); // 1 second delay to allow Firebase to update
 
-      // Start polling for connection confirmation
-      pollConnectionStatus();
+      // Don't stop loading here - let polling handle it
+      // Don't call onSuccess here - let polling handle it when connection is confirmed
     } catch (error) {
       console.error("Error handling Plaid success:", error);
       Alert.alert("Error", "Failed to complete bank connection");
       setIsLoading(false);
       onLoadingChange?.(false);
+      setIsButtonDisabled(false); // Re-enable button
     }
   };
 
