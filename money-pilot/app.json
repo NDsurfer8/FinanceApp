@@ -13,13 +13,14 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.ndsurf888.vectorfii",
       "usesAppleSignIn": true,
       "icon": "./assets/ios/icon-1024.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSFaceIDUsageDescription": "VectorFi uses Face ID to securely log you into your account and protect your financial information."
+        "NSFaceIDUsageDescription": "VectorFi uses Face ID to securely log you into your account and protect your financial information.",
+        "UIDeviceFamily": [1]
       }
     },
     "android": {
