@@ -57,6 +57,7 @@ function getPlaidClient(clientId, secret) {
         headers: {
           "PLAID-CLIENT-ID": clientId,
           "PLAID-SECRET": secret,
+          "Plaid-Version": "2020-09-14", // Explicitly set latest stable API version
         },
       },
     });
@@ -437,6 +438,7 @@ exports.getTransactions = onCall(
         access_token: accessToken,
         start_date: startDate,
         end_date: endDate,
+        count: 100, // Use maximum count to reduce API calls per Plaid recommendations
       });
 
       console.log("Plaid API response received:", {
@@ -927,14 +929,32 @@ exports.aiFeedback = onCall(async (data, context) => {
 const webhookProcessingTimes = new Map();
 const WEBHOOK_COOLDOWN = 10000; // 10 seconds per item_id
 
+// Plaid webhook IP addresses for verification
+const PLAID_WEBHOOK_IPS = [
+  "52.21.26.131",
+  "52.21.47.157",
+  "52.41.247.19",
+  "52.88.82.239",
+];
+
 // Simple Plaid Webhook Handler for Production
 exports.plaidWebhook = onCall(
   {
     secrets: [plaidClientId, plaidSecret],
   },
-  async (data) => {
+  async (data, context) => {
     try {
       console.log("Plaid webhook received:", data);
+
+      // Verify webhook source (optional but recommended)
+      if (context && context.rawRequest) {
+        const clientIP =
+          context.rawRequest.ip || context.rawRequest.connection?.remoteAddress;
+        if (clientIP && !PLAID_WEBHOOK_IPS.includes(clientIP)) {
+          console.warn(`Webhook from unknown IP: ${clientIP}`);
+          // Note: We don't reject here as IPs can change, but we log for monitoring
+        }
+      }
 
       // Extract webhook data from the nested structure
       const webhookData = data.data || data;
@@ -1009,6 +1029,9 @@ exports.plaidWebhook = onCall(
             item_id,
             new_accounts
           );
+          break;
+        case "TRANSACTIONS":
+          await handleTransactionsWebhook(db, userId, webhook_code, item_id);
           break;
         case "INCOME":
           await handleIncomeWebhook(db, userId, webhook_code);
@@ -1097,6 +1120,55 @@ async function handleAccountsWebhook(
       break;
     default:
       console.log(`Unhandled ACCOUNTS webhook code: ${webhook_code}`);
+      return;
+  }
+
+  await userPlaidRef.update(updates);
+  console.log(`Updated user ${userId} plaid data for ${webhook_code}`);
+}
+
+// Handle TRANSACTIONS webhooks
+async function handleTransactionsWebhook(db, userId, webhook_code, item_id) {
+  console.log(
+    `Processing TRANSACTIONS webhook: ${webhook_code} for user: ${userId} (item: ${item_id})`
+  );
+
+  const userPlaidRef = db.ref(`users/${userId}/plaid`);
+  const updates = {
+    lastUpdated: Date.now(),
+    lastWebhook: {
+      type: "TRANSACTIONS",
+      code: webhook_code,
+      timestamp: Date.now(),
+    },
+  };
+
+  switch (webhook_code) {
+    case "SYNC_UPDATES_AVAILABLE":
+      // New transactions are available for sync
+      updates.transactionsSyncAvailable = true;
+      updates.lastTransactionsSync = Date.now();
+      console.log(`New transactions available for user ${userId}`);
+      break;
+    case "INITIAL_UPDATE":
+      // Initial transaction sync completed
+      updates.initialSyncComplete = true;
+      updates.initialSyncCompletedAt = Date.now();
+      console.log(`Initial transaction sync completed for user ${userId}`);
+      break;
+    case "HISTORICAL_UPDATE":
+      // Historical transaction sync completed
+      updates.historicalSyncComplete = true;
+      updates.historicalSyncCompletedAt = Date.now();
+      console.log(`Historical transaction sync completed for user ${userId}`);
+      break;
+    case "DEFAULT_UPDATE":
+      // Default transaction update
+      updates.lastTransactionUpdate = Date.now();
+      console.log(`Default transaction update for user ${userId}`);
+      break;
+    default:
+      console.log(`Unhandled TRANSACTIONS webhook code: ${webhook_code}`);
       return;
   }
 
