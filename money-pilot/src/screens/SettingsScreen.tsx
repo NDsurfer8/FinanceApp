@@ -210,34 +210,51 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   }, [currentUser?.photoURL]);
 
-  // Refresh user data when screen comes into focus
+  // Refresh user data when screen comes into focus (optimized)
   useFocusEffect(
     React.useCallback(() => {
-      console.log("SettingsScreen: Screen focused, refreshing user data...");
+      console.log("SettingsScreen: Screen focused, checking data freshness...");
 
-      // Force refresh user data immediately when screen comes into focus
-      forceRefresh();
+      // Only refresh user data if it's stale (older than 5 minutes)
+      const lastRefresh = (forceRefresh as any).lastCallTime || 0;
+      const timeSinceLastRefresh = Date.now() - lastRefresh;
+      const FIVE_MINUTES = 5 * 60 * 1000;
 
-      // Check bank connection status when screen comes into focus
-      const checkBankConnection = async () => {
-        try {
-          const connected = await plaidService.isBankConnected();
-          setIsBankConnected(connected);
+      if (timeSinceLastRefresh > FIVE_MINUTES) {
+        console.log("SettingsScreen: Data is stale, refreshing...");
+        forceRefresh();
+        (forceRefresh as any).lastCallTime = Date.now();
+      } else {
+        console.log("SettingsScreen: Data is fresh, skipping refresh");
+      }
 
-          if (connected) {
-            const bankInfo = await plaidService.getConnectedBankInfo();
-            setConnectedBankInfo(bankInfo);
-          } else {
+      // Check bank connection status only if not already checked recently
+      const lastBankCheck = (global as any).lastBankCheckTime || 0;
+      const timeSinceLastBankCheck = Date.now() - lastBankCheck;
+      const TWO_MINUTES = 2 * 60 * 1000;
+
+      if (timeSinceLastBankCheck > TWO_MINUTES) {
+        const checkBankConnection = async () => {
+          try {
+            const connected = await plaidService.isBankConnected();
+            setIsBankConnected(connected);
+
+            if (connected) {
+              const bankInfo = await plaidService.getConnectedBankInfo();
+              setConnectedBankInfo(bankInfo);
+            } else {
+              setConnectedBankInfo(null);
+            }
+            (global as any).lastBankCheckTime = Date.now();
+          } catch (error) {
+            console.error("Failed to check bank connection on focus:", error);
+            setIsBankConnected(false);
             setConnectedBankInfo(null);
           }
-        } catch (error) {
-          console.error("Failed to check bank connection on focus:", error);
-          setIsBankConnected(false);
-          setConnectedBankInfo(null);
-        }
-      };
+        };
 
-      checkBankConnection();
+        checkBankConnection();
+      }
     }, [forceRefresh])
   );
 

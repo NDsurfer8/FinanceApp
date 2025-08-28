@@ -539,7 +539,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return now - bankDataLastUpdated.getTime() > TRANSACTION_UPDATE_INTERVAL;
   }, [bankDataLastUpdated]);
 
-  // Auto-load bank data when connection status changes
+  // Auto-load bank data when connection status changes (optimized)
   useEffect(() => {
     // Add startup coordination to prevent initialization cascade
     if (
@@ -549,7 +549,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       !isBankDataLoading &&
       bankTransactions.length === 0 && // Only auto-load if we have no transactions at all
       !(refreshBankData as any).isInitializing && // Prevent multiple simultaneous calls
-      !(refreshBankData as any).hasAutoLoaded // Prevent multiple auto-loads
+      !(refreshBankData as any).hasAutoLoaded && // Prevent multiple auto-loads
+      !(refreshBankData as any).isAppStarting // Prevent app startup cascade
     ) {
       (refreshBankData as any).isInitializing = true;
       (refreshBankData as any).hasAutoLoaded = true;
@@ -565,19 +566,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     isBankDataLoading,
   ]);
 
-  // Additional effect to handle bank connection changes
-  useEffect(() => {
-    const handleBankConnectionChange = async () => {
-      if (user && isBankConnected && !isBankDataLoading) {
-        // If we have no transactions but bank is connected, load data
-        if (bankTransactions.length === 0) {
-          await refreshBankData(true);
-        }
-      }
-    };
-
-    handleBankConnectionChange();
-  }, [isBankConnected, user]);
+  // Remove the additional effect that was causing duplicate calls
+  // Bank connection changes are now handled in the main user effect
 
   const refreshData = useCallback(async () => {
     await loadAllData();

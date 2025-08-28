@@ -21,6 +21,7 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
     refreshBankData,
     isBankConnected,
     bankTransactions,
+    isBankDataLoading,
   } = useData();
 
   const [isPreloading, setIsPreloading] = useState(true);
@@ -55,15 +56,21 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
 
       if (user) {
         try {
-          // Load main data if not already loaded
-          if (!hasData) {
+          // DataContext already handles data loading when user changes
+          // Only preload if DataContext hasn't loaded anything yet
+          if (!hasData && !isLoading) {
+            console.log(
+              "DataPreloader: DataContext hasn't loaded data, triggering refresh"
+            );
             await refreshData();
           }
 
-          // Subscription status is loaded by DataContext when user changes
-
-          // Load bank data if connected
-          if (isBankConnected && !hasBankData) {
+          // Bank data is also handled by DataContext
+          // Only preload if DataContext hasn't loaded bank data yet
+          if (isBankConnected && !hasBankData && !isBankDataLoading) {
+            console.log(
+              "DataPreloader: DataContext hasn't loaded bank data, triggering refresh"
+            );
             try {
               await refreshBankData();
             } catch (error) {
@@ -84,6 +91,8 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
     user,
     hasData,
     hasBankData,
+    isLoading,
+    isBankDataLoading,
     refreshData,
     refreshBankData,
     isBankConnected,
