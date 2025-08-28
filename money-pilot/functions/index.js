@@ -55,7 +55,7 @@ function getPlaidClient(clientId, secret) {
         headers: {
           "PLAID-CLIENT-ID": clientId,
           "PLAID-SECRET": secret,
-          "Plaid-Version": "2020-09-14", // Explicitly set latest stable API version
+          "Plaid-Version": "2020-09-14", // Using stable API version - supports pagination
         },
       },
     });
@@ -302,12 +302,12 @@ exports.getTransactions = onCall(
       actualData = data.data;
     }
 
-    const { accessToken, startDate, endDate } = actualData;
+    const { accessToken, cursor } = actualData;
 
-    if (!accessToken || !startDate || !endDate) {
+    if (!accessToken) {
       throw new functions.https.HttpsError(
         "invalid-argument",
-        "Access token, start date, and end date are required"
+        "Access token is required"
       );
     }
 
@@ -352,15 +352,45 @@ exports.getTransactions = onCall(
 
     try {
       const client = getPlaidClient(plaidClientId.value(), plaidSecret.value());
-      const transactionsResponse = await client.transactionsGet({
-        access_token: accessToken,
-        start_date: startDate,
-        end_date: endDate,
-      });
+
+      // Fetch transactions using modern /transactions/sync endpoint
+      let allTransactions = [];
+      let hasMore = true;
+      let cursor = null;
+
+      while (hasMore) {
+        const syncRequest = {
+          access_token: accessToken,
+          options: {
+            include_personal_finance_category: true,
+          },
+        };
+
+        // Add cursor for pagination (except first request)
+        if (cursor) {
+          syncRequest.cursor = cursor;
+        }
+
+        const transactionsResponse = await client.transactionsSync(syncRequest);
+
+        const transactions = transactionsResponse.data.added || [];
+        allTransactions = allTransactions.concat(transactions);
+
+        // Update cursor and check if more data is available
+        cursor = transactionsResponse.data.next_cursor;
+        hasMore = transactionsResponse.data.has_more;
+
+        // Safety check to prevent infinite loops
+        if (allTransactions.length > 2000) {
+          console.warn("Transaction limit reached, stopping pagination");
+          break;
+        }
+      }
 
       return {
-        transactions: transactionsResponse.data.transactions,
-        total_transactions: transactionsResponse.data.total_transactions,
+        transactions: allTransactions,
+        total_transactions: allTransactions.length,
+        cursor: cursor, // Return cursor for future incremental updates
       };
     } catch (error) {
       console.error("Error getting transactions:", error);

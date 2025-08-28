@@ -812,6 +812,7 @@ class PlaidService {
         console.log(
           `🔄 Retry attempt ${attempt + 1}: Error message: "${errorMessage}"`
         );
+        console.log(`🔍 Full error object:`, error);
 
         // Check for rate limit errors first
         if (
@@ -836,7 +837,10 @@ class PlaidService {
           (errorMessage.includes("400") ||
             errorMessage.includes("PRODUCT_NOT_READY") ||
             errorMessage.includes("not yet ready") ||
-            errorMessage.includes("product_not_ready")) &&
+            errorMessage.includes("product_not_ready") ||
+            errorMessage.includes("Product not ready") ||
+            errorMessage.includes("product not ready") ||
+            errorMessage.includes("PRODUCT_NOT_READY")) &&
           attempt < this.MAX_RETRIES
         ) {
           const delay =
@@ -861,7 +865,9 @@ class PlaidService {
           (errorMessage.includes("400") ||
             errorMessage.includes("PRODUCT_NOT_READY") ||
             errorMessage.includes("not yet ready") ||
-            errorMessage.includes("product_not_ready")) &&
+            errorMessage.includes("product_not_ready") ||
+            errorMessage.includes("Product not ready") ||
+            errorMessage.includes("product not ready")) &&
           attempt >= this.MAX_RETRIES
         ) {
           throw new Error(
@@ -885,7 +891,7 @@ class PlaidService {
     return daysDiff >= 80; // Consider it a full range if requesting 80+ days
   }
 
-  // Private method to actually fetch transactions
+  // Private method to actually fetch transactions using /transactions/sync
   private async _fetchTransactions(
     startDate: string,
     endDate: string
@@ -893,17 +899,17 @@ class PlaidService {
     try {
       const getTransactions = httpsCallable(this.functions, "getTransactions");
       console.log(
-        `[${new Date().toISOString()}] Plaid API: getTransactions for user: ${
+        `[${new Date().toISOString()}] Plaid API: getTransactions (sync) for user: ${
           this.userId
         }`
       );
-      console.log("📞 Calling Firebase Function: getTransactions");
+      console.log("📞 Calling Firebase Function: getTransactions (sync)");
 
       const startTime = Date.now();
       const result = await getTransactions({
         accessToken: this.accessToken,
-        startDate,
-        endDate,
+        // Note: /transactions/sync doesn't use date parameters
+        // It fetches all available transactions and uses cursor-based pagination
       });
       const duration = Date.now() - startTime;
 
