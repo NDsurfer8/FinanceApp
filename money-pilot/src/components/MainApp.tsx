@@ -432,8 +432,8 @@ export const MainApp: React.FC = () => {
     return (
       <ThemeProvider>
         <UserProvider>
-          <DataProvider>
-            <SubscriptionProvider>
+          <SubscriptionProvider>
+            <DataProvider>
               <ChatbotProvider>
                 <FriendlyModeProvider>
                   <DataPreloader>
@@ -541,8 +541,8 @@ export const MainApp: React.FC = () => {
                   />
                 </FriendlyModeProvider>
               </ChatbotProvider>
-            </SubscriptionProvider>
-          </DataProvider>
+            </DataProvider>
+          </SubscriptionProvider>
         </UserProvider>
       </ThemeProvider>
     );
