@@ -75,14 +75,14 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
       type: "switch",
       enabled: true,
     },
-    {
-      id: "two-factor-auth",
-      title: "Two-Factor Authentication",
-      description: "Add an extra layer of security to your account",
-      icon: "key",
-      type: "button",
-      action: () => handleTwoFactorAuth(),
-    },
+    // {
+    //   id: "two-factor-auth",
+    //   title: "Two-Factor Authentication",
+    //   description: "Add an extra layer of security to your account",
+    //   icon: "key",
+    //   type: "button",
+    //   action: () => handleTwoFactorAuth(),
+    // },
     {
       id: "change-password",
       title: "Change Password",
@@ -301,13 +301,13 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
     }
   };
 
-  const handleTwoFactorAuth = () => {
-    Alert.alert(
-      "Two-Factor Authentication",
-      "This feature will be available in a future update. For now, ensure you have a strong password and enable biometric authentication for added security.",
-      [{ text: "OK" }]
-    );
-  };
+  // const handleTwoFactorAuth = () => {
+  //   Alert.alert(
+  //     "Two-Factor Authentication",
+  //     "This feature will be available in a future update. For now, ensure you have a strong password and enable biometric authentication for added security.",
+  //     [{ text: "OK" }]
+  //   );
+  // };
 
   const handleChangePassword = () => {
     Alert.prompt(
