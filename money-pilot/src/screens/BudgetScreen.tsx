@@ -993,9 +993,13 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       color: colors.textSecondary,
                     }}
                   >
-                    {filteredBankSuggestions.length > 0
-                      ? `${filteredBankSuggestions.length} suggestions`
-                      : "No patterns found"}
+                    {!showNonRecurringTransactions
+                      ? filteredBankSuggestions.length > 0
+                        ? `${filteredBankSuggestions.length} suggestions`
+                        : "No patterns found"
+                      : filteredNonRecurringTransactions.length > 0
+                      ? `${filteredNonRecurringTransactions.length} transactions`
+                      : "No transactions"}
                   </Text>
                 </View>
               </View>
@@ -1105,8 +1109,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                             fontStyle: "italic",
                           }}
                         >
-                          {getCacheStatus()} • {bankTransactions.length}{" "}
-                          transactions
+                          {getCacheStatus()}
                         </Text>
                       )}
                     </View>
