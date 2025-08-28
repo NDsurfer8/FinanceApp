@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AppState, AppStateStatus } from "react-native";
 import {
   biometricAuthService,
+  biometricEventEmitter,
   BiometricAuthResult,
 } from "../services/biometricAuth";
 import {
@@ -42,6 +43,38 @@ export const useBiometricAuth = (): UseBiometricAuthReturn => {
     };
   }, []);
 
+  // Listen for biometric status changes from other components
+  useEffect(() => {
+    const handleBiometricChange = () => {
+      console.log("Biometric status changed, refreshing...");
+      checkBiometricStatus();
+    };
+
+    biometricEventEmitter.addListener(handleBiometricChange);
+
+    return () => {
+      biometricEventEmitter.removeListener(handleBiometricChange);
+    };
+  }, []);
+
+  // Add a focus listener to refresh biometric status when returning to the app
+  useEffect(() => {
+    const refreshOnFocus = () => {
+      checkBiometricStatus();
+    };
+
+    // Refresh biometric status when the app comes into focus
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        refreshOnFocus();
+      }
+    });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, []);
+
   const checkBiometricStatus = async () => {
     try {
       const [biometricEnabled, autoLockEnabled, isAvailable, type] =
@@ -58,6 +91,11 @@ export const useBiometricAuth = (): UseBiometricAuthReturn => {
       setBiometryType(biometricAuthService.getBiometricTypeName());
     } catch (error) {
       console.error("Error checking biometric status:", error);
+      // Set safe defaults to prevent crashes
+      setIsBiometricEnabled(false);
+      setIsAutoLockEnabled(false);
+      setIsBiometricAvailable(false);
+      setBiometryType("");
     }
   };
 

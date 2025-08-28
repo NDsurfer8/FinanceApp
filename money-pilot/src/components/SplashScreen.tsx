@@ -60,7 +60,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
         {/* App Logo/Icon */}
         <View style={styles.logoContainer}>
           <Image
-            source={require("../../assets/icon.png")}
+            source={require("../../assets/ios/icon-1024.png")}
             style={styles.logo}
             resizeMode="contain"
           />

@@ -7,6 +7,28 @@ export interface BiometricAuthResult {
   biometryType?: string;
 }
 
+// Simple event emitter for biometric status changes
+class BiometricEventEmitter {
+  private listeners: (() => void)[] = [];
+
+  addListener(callback: () => void) {
+    this.listeners.push(callback);
+  }
+
+  removeListener(callback: () => void) {
+    const index = this.listeners.indexOf(callback);
+    if (index > -1) {
+      this.listeners.splice(index, 1);
+    }
+  }
+
+  emit() {
+    this.listeners.forEach((callback) => callback());
+  }
+}
+
+export const biometricEventEmitter = new BiometricEventEmitter();
+
 export class BiometricAuthService {
   private static instance: BiometricAuthService;
   private isAvailable: boolean = false;
@@ -52,7 +74,9 @@ export class BiometricAuthService {
       });
     } catch (error) {
       console.error("Error initializing expo biometric auth:", error);
+      // Don't let biometric auth failure crash the app
       this.isAvailable = false;
+      this.biometryType = null;
     }
   }
 
@@ -86,6 +110,9 @@ export class BiometricAuthService {
         }
       }
 
+      // Re-initialize to ensure we have the latest settings
+      await this.initialize();
+
       // Check if biometric sensor is available
       const isAvailable = await this.isBiometricAvailable();
 
@@ -102,7 +129,6 @@ export class BiometricAuthService {
         cancelLabel: "Cancel",
         fallbackLabel: "Use Passcode",
         disableDeviceFallback: false,
-        requireAuthentication: true,
       });
 
       if (result.success) {
@@ -148,6 +174,13 @@ export class BiometricAuthService {
       default:
         return "Biometric Authentication";
     }
+  }
+
+  // Force refresh biometric status and notify all listeners
+  async refreshStatus(): Promise<void> {
+    await this.initialize();
+    // Notify all components that biometric status has changed
+    biometricEventEmitter.emit();
   }
 }
 

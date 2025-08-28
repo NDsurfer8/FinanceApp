@@ -75,14 +75,14 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
       type: "switch",
       enabled: true,
     },
-    {
-      id: "two-factor-auth",
-      title: "Two-Factor Authentication",
-      description: "Add an extra layer of security to your account",
-      icon: "key",
-      type: "button",
-      action: () => handleTwoFactorAuth(),
-    },
+    // {
+    //   id: "two-factor-auth",
+    //   title: "Two-Factor Authentication",
+    //   description: "Add an extra layer of security to your account",
+    //   icon: "key",
+    //   type: "button",
+    //   action: () => handleTwoFactorAuth(),
+    // },
     {
       id: "change-password",
       title: "Change Password",
@@ -214,6 +214,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
               )
             );
 
+            // Refresh biometric status
+            await biometricAuthService.refreshStatus();
+
             Alert.alert(
               "Biometric Authentication Enabled",
               `${biometricAuthService.getBiometricTypeName()} has been enabled. You can now use biometric authentication to unlock the app.`,
@@ -241,6 +244,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                 onPress: async () => {
                   await setBiometricAuthEnabled(false);
                   await biometricAuthService.deleteKeys();
+                  await biometricAuthService.refreshStatus();
 
                   // Update the UI
                   setSettings((prevSettings) =>
@@ -297,13 +301,13 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
     }
   };
 
-  const handleTwoFactorAuth = () => {
-    Alert.alert(
-      "Two-Factor Authentication",
-      "This feature will be available in a future update. For now, ensure you have a strong password and enable biometric authentication for added security.",
-      [{ text: "OK" }]
-    );
-  };
+  // const handleTwoFactorAuth = () => {
+  //   Alert.alert(
+  //     "Two-Factor Authentication",
+  //     "This feature will be available in a future update. For now, ensure you have a strong password and enable biometric authentication for added security.",
+  //     [{ text: "OK" }]
+  //   );
+  // };
 
   const handleChangePassword = () => {
     Alert.prompt(
@@ -498,11 +502,11 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   };
 
   const openPrivacyPolicy = () => {
-    Linking.openURL("https://your-app.com/privacy-policy");
+    navigation.navigate("PrivacyPolicy");
   };
 
   const openTermsOfService = () => {
-    Linking.openURL("https://your-app.com/terms-of-service");
+    navigation.navigate("TermsOfService");
   };
 
   return (
@@ -514,18 +518,18 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={[
-              styles.backButton,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
+            style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={[styles.title, { color: colors.text }]}>
               Privacy & Security
             </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            <Text
+              style={[styles.subtitle, { color: colors.textSecondary }]}
+              numberOfLines={0}
+            >
               Manage your account security and data privacy
             </Text>
           </View>
@@ -549,9 +553,10 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
               styles.securityDescription,
               { color: colors.textSecondary },
             ]}
+            numberOfLines={0}
           >
             Your account is protected with industry-standard encryption and
-            security measures.
+            security measures. Powered by Plaid • We never see your credentials.
           </Text>
           <View style={styles.securityStats}>
             <View style={styles.statItem}>
@@ -617,42 +622,45 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                       styles.settingDescription,
                       { color: colors.textSecondary },
                     ]}
+                    numberOfLines={0}
                   >
                     {setting.description}
                   </Text>
                 </View>
-              </View>
-
-              {setting.type === "switch" ? (
-                <Switch
-                  value={setting.enabled}
-                  onValueChange={() => toggleSetting(setting.id)}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor={
-                    setting.enabled
-                      ? colors.buttonText
-                      : colors.surfaceSecondary
-                  }
-                />
-              ) : (
-                <TouchableOpacity
-                  style={[
-                    styles.actionButton,
-                    {
-                      backgroundColor: colors.surfaceSecondary,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                  onPress={setting.action}
-                  disabled={loading}
-                >
-                  <Text
-                    style={[styles.actionButtonText, { color: colors.primary }]}
+                {setting.type === "switch" ? (
+                  <Switch
+                    value={setting.enabled}
+                    onValueChange={() => toggleSetting(setting.id)}
+                    trackColor={{ false: colors.border, true: colors.primary }}
+                    thumbColor={
+                      setting.enabled
+                        ? colors.buttonText
+                        : colors.surfaceSecondary
+                    }
+                  />
+                ) : (
+                  <TouchableOpacity
+                    style={[
+                      styles.actionButton,
+                      {
+                        backgroundColor: colors.surfaceSecondary,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                    onPress={setting.action}
+                    disabled={loading}
                   >
-                    {loading ? "Loading..." : "Manage"}
-                  </Text>
-                </TouchableOpacity>
-              )}
+                    <Text
+                      style={[
+                        styles.actionButtonText,
+                        { color: colors.primary },
+                      ]}
+                    >
+                      {loading ? "Loading..." : "Manage"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           ))}
         </View>
@@ -693,29 +701,29 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                       styles.settingDescription,
                       { color: colors.textSecondary },
                     ]}
+                    numberOfLines={0}
                   >
                     {setting.description}
                   </Text>
                 </View>
-              </View>
-
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  {
-                    backgroundColor: colors.surfaceSecondary,
-                    borderColor: colors.border,
-                  },
-                ]}
-                onPress={setting.action}
-                disabled={loading}
-              >
-                <Text
-                  style={[styles.actionButtonText, { color: colors.primary }]}
+                <TouchableOpacity
+                  style={[
+                    styles.actionButton,
+                    {
+                      backgroundColor: colors.surfaceSecondary,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                  onPress={setting.action}
+                  disabled={loading}
                 >
-                  {loading ? "Loading..." : "Manage"}
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[styles.actionButtonText, { color: colors.primary }]}
+                  >
+                    {loading ? "Loading..." : "Manage"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           ))}
         </View>
@@ -896,8 +904,9 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 20,
     padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0,
+    borderColor: "transparent",
+    backgroundColor: "transparent",
   },
   title: {
     fontSize: 26,
@@ -968,6 +977,7 @@ const styles = StyleSheet.create({
   settingInfo: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 16,
   },
   settingIcon: {
@@ -977,6 +987,7 @@ const styles = StyleSheet.create({
   },
   settingText: {
     flex: 1,
+    marginRight: 16,
   },
   settingTitle: {
     fontSize: 16,

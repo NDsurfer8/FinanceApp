@@ -7,17 +7,23 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
 import { useUser } from "../context/UserContext";
+import { sendEmailVerificationLink } from "../services/auth";
 import { PlaidLinkComponent } from "../components/PlaidLinkComponent";
 import { usePaywall } from "../hooks/usePaywall";
 import { useSubscription } from "../contexts/SubscriptionContext";
 import { plaidService } from "../services/plaid";
 import { useTheme } from "../contexts/ThemeContext";
+import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { translate } from "../services/translations";
+import { useChatbot } from "../contexts/ChatbotContext";
+import { useData } from "../contexts/DataContext";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -32,13 +38,96 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { currentUser, forceRefresh } = useUser();
   const [photoKey, setPhotoKey] = useState(Date.now());
   const { presentPaywall } = usePaywall();
-  const { subscriptionStatus } = useSubscription();
-  const [isBankConnected, setIsBankConnected] = useState(false);
+
+  const handlePaywallPress = async () => {
+    setLoading(true);
+    try {
+      await presentPaywall();
+    } finally {
+      setLoading(false);
+    }
+  };
+  const { subscriptionStatus, isEligibleForIntroOffer } = useSubscription();
   const { isDark, toggleTheme, colors } = useTheme();
+  const { isFriendlyMode } = useFriendlyMode();
+  const { isVisible: isChatbotVisible, toggleChatbot } = useChatbot();
+  const {
+    refreshBankData,
+    isBankDataLoading,
+    bankTransactions,
+    isBankConnected,
+  } = useData();
   const [connectedBankInfo, setConnectedBankInfo] = useState<{
     name: string;
     accounts: any[];
   } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [emailVerificationLoading, setEmailVerificationLoading] =
+    useState(false);
+  const [bankConnectionLoading, setBankConnectionLoading] = useState(false);
+
+  // Monitor bank connection status and stop loading when connected or disconnected
+  useEffect(() => {
+    if (bankConnectionLoading && isBankConnected) {
+      setBankConnectionLoading(false);
+    }
+  }, [isBankConnected, bankConnectionLoading]);
+
+  // Stop loading when bank data is loaded
+  useEffect(() => {
+    if (
+      bankConnectionLoading &&
+      !isBankDataLoading &&
+      bankTransactions.length > 0
+    ) {
+      setBankConnectionLoading(false);
+    }
+  }, [bankConnectionLoading, isBankDataLoading, bankTransactions.length]);
+
+  // Additional check to stop loading if bank is already connected on mount
+  useEffect(() => {
+    const checkAndStopLoading = async () => {
+      if (bankConnectionLoading) {
+        const connected = await plaidService.isBankConnected();
+        if (connected) {
+          setBankConnectionLoading(false);
+        }
+      }
+    };
+
+    checkAndStopLoading();
+  }, [bankConnectionLoading]);
+
+  // Function to handle email verification
+  const handleEmailVerification = async () => {
+    if (!currentUser?.email) {
+      Alert.alert("Error", "No email address found for this account.");
+      return;
+    }
+
+    if (currentUser.emailVerified) {
+      Alert.alert("Already Verified", "Your email is already verified.");
+      return;
+    }
+
+    setEmailVerificationLoading(true);
+    try {
+      await sendEmailVerificationLink();
+      Alert.alert(
+        "Verification Email Sent",
+        `We've sent a verification email to ${currentUser.email}. Please check your inbox and click the verification link.`,
+        [{ text: "OK" }]
+      );
+    } catch (error: any) {
+      console.error("Email verification error:", error);
+      Alert.alert(
+        "Verification Failed",
+        error.message || "Failed to send verification email. Please try again."
+      );
+    } finally {
+      setEmailVerificationLoading(false);
+    }
+  };
 
   // Function to format display name for long names
   const formatDisplayName = (displayName: string | null | undefined) => {
@@ -60,9 +149,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     return { firstName: displayName, lastName: "" };
   };
 
-  // Check if user is eligible for introductory offers based on subscription status
-  const isEligibleForIntroOffer =
-    !subscriptionStatus?.isPremium && !subscriptionStatus?.isActive;
+  // Get introductory offer eligibility from RevenueCat
+  const introOfferEligible = isEligibleForIntroOffer();
 
   // Debug logging
   useEffect(() => {
@@ -82,28 +170,33 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       features: subscriptionStatus?.features,
       expirationDate: subscriptionStatus?.expirationDate,
       productId: subscriptionStatus?.productId,
-      isEligibleForIntroOffer,
+      isEligibleForIntroOffer: introOfferEligible,
     });
-  }, [subscriptionStatus, isEligibleForIntroOffer]);
+  }, [subscriptionStatus, introOfferEligible]);
 
   // Check bank connection status
   useEffect(() => {
     const checkBankConnection = async () => {
       try {
         const connected = await plaidService.isBankConnected();
-        setIsBankConnected(connected);
         console.log("SettingsScreen: Bank connection status:", connected);
+
+        // If bank is connected, stop any loading state
+        if (connected && bankConnectionLoading) {
+          console.log(
+            "SettingsScreen: Bank is connected, clearing loading state"
+          );
+          setBankConnectionLoading(false);
+        }
 
         if (connected) {
           const bankInfo = await plaidService.getConnectedBankInfo();
           setConnectedBankInfo(bankInfo);
-          console.log("SettingsScreen: Connected bank info:", bankInfo);
         } else {
           setConnectedBankInfo(null);
         }
       } catch (error) {
         console.error("Failed to check bank connection:", error);
-        setIsBankConnected(false);
         setConnectedBankInfo(null);
       }
     };
@@ -119,42 +212,49 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   }, [currentUser?.photoURL]);
 
-  // Refresh user data when screen comes into focus
+  // Refresh user data when screen comes into focus (optimized)
   useFocusEffect(
     React.useCallback(() => {
-      console.log("SettingsScreen: Screen focused, refreshing user data...");
+      console.log("SettingsScreen: Screen focused, checking data freshness...");
 
-      // Force refresh user data immediately when screen comes into focus
-      forceRefresh();
+      // Only refresh user data if it's stale (older than 5 minutes)
+      const lastRefresh = (forceRefresh as any).lastCallTime || 0;
+      const timeSinceLastRefresh = Date.now() - lastRefresh;
+      const FIVE_MINUTES = 5 * 60 * 1000;
 
-      // Check bank connection status when screen comes into focus
-      const checkBankConnection = async () => {
-        try {
-          const connected = await plaidService.isBankConnected();
-          setIsBankConnected(connected);
-          console.log(
-            "SettingsScreen: Bank connection status on focus:",
-            connected
-          );
+      if (timeSinceLastRefresh > FIVE_MINUTES) {
+        console.log("SettingsScreen: Data is stale, refreshing...");
+        forceRefresh();
+        (forceRefresh as any).lastCallTime = Date.now();
+      } else {
+        console.log("SettingsScreen: Data is fresh, skipping refresh");
+      }
 
-          if (connected) {
-            const bankInfo = await plaidService.getConnectedBankInfo();
-            setConnectedBankInfo(bankInfo);
-            console.log(
-              "SettingsScreen: Connected bank info on focus:",
-              bankInfo
-            );
-          } else {
+      // Check bank connection status only if not already checked recently
+      const lastBankCheck = (global as any).lastBankCheckTime || 0;
+      const timeSinceLastBankCheck = Date.now() - lastBankCheck;
+      const TWO_MINUTES = 2 * 60 * 1000;
+
+      if (timeSinceLastBankCheck > TWO_MINUTES) {
+        const checkBankConnection = async () => {
+          try {
+            const connected = await plaidService.isBankConnected();
+
+            if (connected) {
+              const bankInfo = await plaidService.getConnectedBankInfo();
+              setConnectedBankInfo(bankInfo);
+            } else {
+              setConnectedBankInfo(null);
+            }
+            (global as any).lastBankCheckTime = Date.now();
+          } catch (error) {
+            console.error("Failed to check bank connection on focus:", error);
             setConnectedBankInfo(null);
           }
-        } catch (error) {
-          console.error("Failed to check bank connection on focus:", error);
-          setIsBankConnected(false);
-          setConnectedBankInfo(null);
-        }
-      };
+        };
 
-      checkBankConnection();
+        checkBankConnection();
+      }
     }, [forceRefresh])
   );
 
@@ -194,10 +294,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             borderRadius: 20,
             padding: 24,
             shadowColor: colors.shadow,
-            shadowOpacity: 0.06,
+            shadowOpacity: 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
+            elevation: 4,
             marginBottom: 20,
           }}
         >
@@ -320,16 +420,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </View>
             <TouchableOpacity
               style={{
-                backgroundColor: colors.surfaceSecondary,
-                padding: 12,
+                backgroundColor: colors.primary,
                 borderRadius: 12,
-                borderWidth: 1,
-                borderColor: colors.border,
+                borderColor: colors.primary,
                 alignSelf: "flex-start",
+                shadowColor: colors.primary,
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 4,
+                minWidth: 40,
+                minHeight: 40,
+                justifyContent: "center",
+                alignItems: "center",
               }}
               onPress={() => navigation.navigate("EditProfile")}
+              activeOpacity={0.8}
             >
-              <Ionicons name="create" size={20} color={colors.primary} />
+              <Ionicons name="create" size={30} color={colors.buttonText} />
             </TouchableOpacity>
           </View>
 
@@ -420,6 +528,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               >
                 Verified
               </Text>
+              {!currentUser?.emailVerified && currentUser?.email && (
+                <TouchableOpacity
+                  onPress={handleEmailVerification}
+                  disabled={emailVerificationLoading}
+                  style={{
+                    marginTop: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    backgroundColor: colors.primary,
+                    borderRadius: 8,
+                    opacity: emailVerificationLoading ? 0.6 : 1,
+                  }}
+                >
+                  {emailVerificationLoading ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 10,
+                        fontWeight: "600",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Verify Email
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
@@ -451,16 +588,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <PlaidLinkComponent
             onSuccess={async () => {
               console.log("Bank connected successfully");
-              setIsBankConnected(true);
 
               // Get the bank information after successful connection
               try {
                 const bankInfo = await plaidService.getConnectedBankInfo();
                 setConnectedBankInfo(bankInfo);
-                console.log(
-                  "SettingsScreen: Bank info after connection:",
-                  bankInfo
-                );
+
+                // Refresh bank data to load transactions
+                console.log("Refreshing bank data after connection...");
+                await refreshBankData(true);
+                console.log("Bank data refreshed successfully");
               } catch (error) {
                 console.error(
                   "Failed to get bank info after connection:",
@@ -470,6 +607,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             }}
             onExit={() => {
               console.log("Plaid link exited");
+              // Don't stop loading here - let it continue until connection is confirmed
+            }}
+            onLoadingChange={(loading) => {
+              setBankConnectionLoading(loading);
             }}
           />
           {isBankConnected ? (
@@ -510,41 +651,36 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             marginBottom: 12,
           }}
         >
-          <Text
+          <View
             style={{
-              fontSize: 16,
-              fontWeight: "600",
+              flexDirection: "row",
+              alignItems: "center",
               marginBottom: 8,
-              color: colors.text,
             }}
           >
-            Premium
-          </Text>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+              }}
+            >
+              Premium
+            </Text>
+            {subscriptionStatus?.isPremium && (
+              <Ionicons
+                name="star"
+                size={16}
+                color="#f59e0b"
+                style={{ marginLeft: 6 }}
+              />
+            )}
+          </View>
 
           {subscriptionStatus?.isPremium ? (
             <View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 8,
-                }}
-              >
-                <Ionicons name="star" size={16} color="#f59e0b" />
-                <Text
-                  style={{
-                    color: "#16a34a",
-                    fontSize: 14,
-                    fontWeight: "600",
-                    marginLeft: 6,
-                  }}
-                >
-                  Premium Active
-                </Text>
-              </View>
               <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-                You have access to all premium features including unlimited
-                transactions, goals, and advanced analytics.
+                Premium + Plaid: review, label, add to budget.
               </Text>
               {subscriptionStatus.expirationDate && (
                 <Text
@@ -554,7 +690,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     marginTop: 4,
                   }}
                 >
-                  Expires:{" "}
+                  Renews:{" "}
                   {subscriptionStatus.expirationDate.toLocaleDateString()}
                 </Text>
               )}
@@ -562,7 +698,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           ) : (
             <View>
               <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>
-                {isEligibleForIntroOffer
+                {introOfferEligible
                   ? "Start your free trial and unlock auto-import, AI budgeting, and unlimited accounts."
                   : "Unlock auto-import, AI budgeting, and unlimited accounts."}
               </Text>
@@ -573,12 +709,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   paddingHorizontal: 14,
                   borderRadius: 12,
                   alignSelf: "flex-start",
+                  opacity: loading ? 0.6 : 1,
                 }}
-                onPress={presentPaywall}
+                onPress={handlePaywallPress}
+                disabled={loading}
               >
-                <Text style={{ color: "white", fontWeight: "700" }}>
-                  {isEligibleForIntroOffer ? "Start Free Trial" : "Get Premium"}
-                </Text>
+                {loading ? (
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <ActivityIndicator
+                      size="small"
+                      color="white"
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={{ color: "white", fontWeight: "700" }}>
+                      Loading...
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={{ color: "white", fontWeight: "700" }}>
+                    {introOfferEligible ? "Start Free Trial" : "Get Premium"}
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           )}
@@ -606,7 +757,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               color: colors.text,
             }}
           >
-            App Settings
+            {translate("settings", isFriendlyMode)}
           </Text>
 
           {/* Dark Mode Toggle */}
@@ -654,6 +805,59 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     borderRadius: 10,
                     backgroundColor: "#fff",
                     transform: [{ translateX: isDark ? 20 : 0 }],
+                  }}
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          {/* AI Chatbot Toggle */}
+          <TouchableOpacity
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
+            onPress={toggleChatbot}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="chatbubble-ellipses"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                AI Chatbot
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  marginRight: 8,
+                  fontSize: 14,
+                }}
+              >
+                {isChatbotVisible ? "On" : "Off"}
+              </Text>
+              <View
+                style={{
+                  width: 44,
+                  height: 24,
+                  borderRadius: 12,
+                  backgroundColor: isChatbotVisible
+                    ? colors.primary
+                    : colors.border,
+                  padding: 2,
+                }}
+              >
+                <View
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    backgroundColor: "#fff",
+                    transform: [{ translateX: isChatbotVisible ? 20 : 0 }],
                   }}
                 />
               </View>

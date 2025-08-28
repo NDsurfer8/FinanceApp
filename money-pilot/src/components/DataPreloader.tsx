@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { useData } from "../contexts/DataContext";
 import { useAuth } from "../hooks/useAuth";
 
@@ -21,6 +21,7 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
     refreshBankData,
     isBankConnected,
     bankTransactions,
+    isBankDataLoading,
   } = useData();
 
   const [isPreloading, setIsPreloading] = useState(true);
@@ -50,60 +51,43 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
 
       // Add a timeout to prevent infinite loading
       const timeoutId = setTimeout(() => {
-        console.log("DataPreloader: Timeout reached, forcing completion");
         setIsPreloading(false);
       }, 10000); // 10 seconds timeout
 
       if (user) {
-        console.log("Preloading all data for instant navigation...");
-
         try {
-          // Load main data if not already loaded
-          if (!hasData) {
-            console.log("DataPreloader: Loading main data...");
+          // DataContext already handles data loading when user changes
+          // Only preload if DataContext hasn't loaded anything yet
+          if (!hasData && !isLoading) {
+            console.log(
+              "DataPreloader: DataContext hasn't loaded data, triggering refresh"
+            );
             await refreshData();
-            console.log("DataPreloader: Main data loaded");
-          } else {
-            console.log("DataPreloader: Main data already available");
           }
 
-          // Subscription status is loaded by DataContext when user changes
-
-          // Load bank data if connected
-          if (isBankConnected && !hasBankData) {
+          // Bank data is also handled by DataContext
+          // Only preload if DataContext hasn't loaded bank data yet
+          if (isBankConnected && !hasBankData && !isBankDataLoading) {
+            console.log(
+              "DataPreloader: DataContext hasn't loaded bank data, triggering refresh"
+            );
             try {
-              console.log("DataPreloader: Loading bank data...");
               await refreshBankData();
-              console.log("Bank data loaded in DataPreloader");
             } catch (error) {
               console.error("Failed to load bank data:", error);
             }
-          } else {
-            console.log(
-              "DataPreloader: Bank data already available or not connected"
-            );
           }
         } catch (error) {
           console.error("DataPreloader: Error during preload:", error);
         }
-      } else {
-        console.log("DataPreloader: No user, skipping preload");
       }
 
       clearTimeout(timeoutId);
-      console.log("DataPreloader: Setting isPreloading to false");
       setIsPreloading(false);
     };
 
     preloadData();
-  }, [
-    user,
-    hasData,
-    hasBankData,
-    refreshData,
-    refreshBankData,
-    isBankConnected,
-  ]);
+  }, [user]); // Only depend on user changes to prevent infinite loops
 
   // Show children immediately if no user or if preloading is complete
   if (!user || !isPreloading) {
@@ -113,7 +97,7 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
   // Show minimal loading indicator only during initial preload
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Loading your financial data...</Text>
+      <ActivityIndicator size="large" color="#10b981" />
     </View>
   );
 };
@@ -123,11 +107,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
-  },
-  text: {
-    fontSize: 16,
-    color: "#6b7280",
-    textAlign: "center",
+    backgroundColor: "#000000",
   },
 });

@@ -15,11 +15,12 @@ import {
   Clipboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { useChatbot } from "../contexts/ChatbotContext";
 import {
   aiFinancialAdvisorService,
   FinancialSnapshot,
@@ -32,6 +33,222 @@ import {
 } from "../services/userData";
 import { VectraAvatar } from "../components/VectraAvatar";
 import { sendBackendAIFeedback } from "../services/backendAI";
+
+// Local responses for common app questions (no API call needed)
+const APP_NAVIGATION_RESPONSES = {
+  // Budget screen questions
+  "budget add income": {
+    response:
+      "Perfect! Since you're already on the Budget screen, just tap the 'Add Income' button right there on your screen. You'll see it - it's designed to make adding income super easy! 💰",
+    isLocal: true,
+  },
+  "budget add expense": {
+    response:
+      "Great! You're already on the Budget screen, so just tap the 'Add Expense' button right there. It's that simple! 📝",
+    isLocal: true,
+  },
+  "budget how to": {
+    response:
+      "You're on the Budget screen! Here's what you can do:\n\n• Tap 'Add Income' to add new income\n• Tap 'Add Expense' to add new expenses\n• Use the percentage sliders to adjust savings/debt payoff\n• Check the Budget Summary card for your overview\n\nEverything you need is right there on your screen! 📊",
+    isLocal: true,
+  },
+
+  // Dashboard questions
+  "dashboard add transaction": {
+    response:
+      "You're on the Dashboard! Use the Quick Actions section - tap 'Add Transaction' to log income or expenses. It's right there in the quick actions! ⚡",
+    isLocal: true,
+  },
+  "dashboard add asset": {
+    response:
+      "You're on the Dashboard! Use the Quick Actions section - tap 'Add Asset' to track savings, investments, or property. Quick and easy! 💎",
+    isLocal: true,
+  },
+  "dashboard add debt": {
+    response:
+      "You're on the Dashboard! Use the Quick Actions section - tap 'Add Debt' to monitor credit cards, loans, or mortgages. Right there in quick actions! 📋",
+    isLocal: true,
+  },
+  "dashboard add goal": {
+    response:
+      "You're on the Dashboard! Use the Quick Actions section - tap 'Add Goal' to set financial targets. It's in the quick actions area! 🎯",
+    isLocal: true,
+  },
+
+  // Goals screen questions
+  "goals add goal": {
+    response:
+      "Perfect! You're already on the Goals screen, so just tap the 'Add Goal' button right there. Set your target amount and timeline - super simple! 🎯",
+    isLocal: true,
+  },
+  "goals how to": {
+    response:
+      "You're on the Goals screen! Here's what you can do:\n\n• Tap 'Add Goal' to create new financial goals\n• View your goal progress with visual bars\n• Check target amounts and timelines\n\nEverything for goal tracking is right here! 🎯",
+    isLocal: true,
+  },
+
+  // Assets/Debts screen questions
+  "assets add asset": {
+    response:
+      "You're on the Assets/Debts screen! Tap the 'Add Asset' button to add savings, investments, or property. Track your net worth easily! 💰",
+    isLocal: true,
+  },
+  "debts add debt": {
+    response:
+      "You're on the Assets/Debts screen! Tap the 'Add Debt' button to add credit cards, loans, or mortgages. Keep track of what you owe! 📊",
+    isLocal: true,
+  },
+
+  // Settings questions
+  "settings ai chatbot": {
+    response:
+      "You're in Settings! Go to 'App Settings' and you'll see the 'AI Chatbot' toggle to show/hide the floating AI button. Easy control! ⚙️",
+    isLocal: true,
+  },
+  "settings dark mode": {
+    response:
+      "You're in Settings! Go to 'App Settings' and you'll find the 'Dark Mode' toggle. Switch between light and dark themes! 🌙",
+    isLocal: true,
+  },
+
+  // General app questions
+  "how to use app": {
+    response:
+      "Here's how to use VectorFi:\n\n📊 Dashboard: Overview and quick actions\n💰 Budget: Add income/expenses, set percentages\n🎯 Goals: Create and track financial goals\n📈 Assets/Debts: Manage your net worth\n⚙️ Settings: App preferences and profile\n\nPlus the floating AI button (bottom-right) for questions from any screen! 🚀",
+    isLocal: true,
+  },
+  "app features": {
+    response:
+      "VectorFi features:\n\n• Income & expense tracking with categories\n• Asset and debt management\n• Goal setting with progress tracking\n• Budget percentage settings\n• Bank account integration (Plaid)\n• AI financial advisor (floating button)\n• Dark/light mode\n• Shared finance groups\n\nEverything you need for smart money management! 💡",
+    isLocal: true,
+  },
+
+  // Shared goals questions
+  "shared goals": {
+    response:
+      "To view shared goals, go to the Dashboard and tap the people icon in the top right corner! 👥 That's where you can see and manage your shared financial goals with family or friends.",
+    isLocal: true,
+  },
+  "shared finance": {
+    response:
+      "To access shared finance features, go to the Dashboard and tap the people icon in the top right corner! 👥 There you can view shared goals and manage group finances.",
+    isLocal: true,
+  },
+  "people icon": {
+    response:
+      "The people icon is in the top right corner of the Dashboard! 👥 Tap it to view shared goals and manage group finances.",
+    isLocal: true,
+  },
+  groups: {
+    response:
+      "To access Groups, go to the Dashboard and tap the people icon in the top right corner! 👥 There you can view and manage your shared financial groups.",
+    isLocal: true,
+  },
+};
+
+// Function to check if question can be answered locally
+function getLocalResponse(
+  userQuestion: string
+): { response: string; isLocal: boolean } | null {
+  const lowerQuestion = userQuestion.toLowerCase();
+
+  // Check for exact matches first
+  for (const [key, value] of Object.entries(APP_NAVIGATION_RESPONSES)) {
+    if (lowerQuestion.includes(key)) {
+      return value;
+    }
+  }
+
+  // Check for common patterns
+  if (
+    lowerQuestion.includes("budget") &&
+    (lowerQuestion.includes("add") || lowerQuestion.includes("how"))
+  ) {
+    if (lowerQuestion.includes("income")) {
+      return APP_NAVIGATION_RESPONSES["budget add income"];
+    }
+    if (lowerQuestion.includes("expense")) {
+      return APP_NAVIGATION_RESPONSES["budget add expense"];
+    }
+    return APP_NAVIGATION_RESPONSES["budget how to"];
+  }
+
+  if (lowerQuestion.includes("dashboard") && lowerQuestion.includes("add")) {
+    if (lowerQuestion.includes("transaction")) {
+      return APP_NAVIGATION_RESPONSES["dashboard add transaction"];
+    }
+    if (lowerQuestion.includes("asset")) {
+      return APP_NAVIGATION_RESPONSES["dashboard add asset"];
+    }
+    if (lowerQuestion.includes("debt")) {
+      return APP_NAVIGATION_RESPONSES["dashboard add debt"];
+    }
+    if (lowerQuestion.includes("goal")) {
+      return APP_NAVIGATION_RESPONSES["dashboard add goal"];
+    }
+  }
+
+  if (
+    lowerQuestion.includes("goal") &&
+    (lowerQuestion.includes("add") || lowerQuestion.includes("how"))
+  ) {
+    return APP_NAVIGATION_RESPONSES["goals add goal"];
+  }
+
+  if (lowerQuestion.includes("asset") && lowerQuestion.includes("add")) {
+    return APP_NAVIGATION_RESPONSES["assets add asset"];
+  }
+
+  if (lowerQuestion.includes("debt") && lowerQuestion.includes("add")) {
+    return APP_NAVIGATION_RESPONSES["debts add debt"];
+  }
+
+  if (
+    lowerQuestion.includes("setting") &&
+    (lowerQuestion.includes("ai") || lowerQuestion.includes("chatbot"))
+  ) {
+    return APP_NAVIGATION_RESPONSES["settings ai chatbot"];
+  }
+
+  if (lowerQuestion.includes("setting") && lowerQuestion.includes("dark")) {
+    return APP_NAVIGATION_RESPONSES["settings dark mode"];
+  }
+
+  if (
+    lowerQuestion.includes("how to use") ||
+    lowerQuestion.includes("app help")
+  ) {
+    return APP_NAVIGATION_RESPONSES["how to use app"];
+  }
+
+  if (lowerQuestion.includes("feature") || lowerQuestion.includes("what can")) {
+    return APP_NAVIGATION_RESPONSES["app features"];
+  }
+
+  // Shared goals and finance questions
+  if (
+    lowerQuestion.includes("shared") &&
+    (lowerQuestion.includes("goal") || lowerQuestion.includes("finance"))
+  ) {
+    if (lowerQuestion.includes("goal")) {
+      return APP_NAVIGATION_RESPONSES["shared goals"];
+    }
+    return APP_NAVIGATION_RESPONSES["shared finance"];
+  }
+
+  if (
+    lowerQuestion.includes("people") ||
+    lowerQuestion.includes("group") ||
+    lowerQuestion.includes("family")
+  ) {
+    if (lowerQuestion.includes("group") && !lowerQuestion.includes("shared")) {
+      return APP_NAVIGATION_RESPONSES["groups"];
+    }
+    return APP_NAVIGATION_RESPONSES["people icon"];
+  }
+
+  return null;
+}
 
 interface Message {
   id: string;
@@ -52,6 +269,7 @@ const CHAT_HISTORY_KEY = "ai_financial_advisor_chat_history";
 export const AIFinancialAdvisorScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
+  const { hideChatbot, showChatbot } = useChatbot();
   const {
     transactions,
     assets,
@@ -94,6 +312,19 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       setResponseCache({});
     }
   }, [user?.uid]);
+
+  // Hide floating AI button when on this screen, show when leaving
+  useFocusEffect(
+    React.useCallback(() => {
+      // Hide when entering this screen
+      hideChatbot();
+
+      // Show when leaving this screen
+      return () => {
+        showChatbot();
+      };
+    }, [hideChatbot, showChatbot])
+  );
   const scrollViewRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const headerOpacity = useRef(new Animated.Value(1)).current;
@@ -101,7 +332,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   // Get welcome message
   const getWelcomeMessage = (): Message => ({
     id: "1",
-    text: "Aloha! I’m Vectra, your personalAI Financial Advisor. I can help with budgeting, goals, debt, investing, and side hustles — what’s on your mind today? 🤙",
+    text: "Aloha! I’m Vectra, your personal AI Financial Advisor. I can help with budgeting, goals, debt, investing, and side hustles — what’s on your mind today? 🤙",
     isUser: false,
     timestamp: new Date(),
   });
@@ -295,8 +526,24 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
 
       let aiResponse;
 
-      // Use cached response if available and valid
-      if (isCacheValid && !isPlanRequest) {
+      // Convert messages to conversation history format for AI context
+      const conversationHistory = messages
+        .filter((msg) => !msg.isLoading) // Exclude loading messages
+        .map((msg) => ({
+          role: msg.isUser ? "user" : "assistant",
+          content: msg.text,
+        }))
+        .slice(-5); // Keep last 5 messages for context
+
+      // Check for local responses first (no API call needed)
+      const localResponse = getLocalResponse(userMessage.text);
+      if (localResponse) {
+        console.log(
+          "Using local response (no API call) for:",
+          userMessage.text
+        );
+        aiResponse = localResponse.response;
+      } else if (isCacheValid && !isPlanRequest) {
         console.log("Using cached response for:", userMessage.text);
         aiResponse = cachedResponse.response;
       } else if (isPlanRequest && user) {
@@ -340,7 +587,8 @@ Requirements:
             optimizedPlanPrompt,
             snapshot,
             true, // isPlanRequest
-            userPreferences
+            userPreferences,
+            conversationHistory
           );
           aiResponse += `\n\n💾 Would you like to save this plan to your account?`;
         } catch (planError) {
@@ -349,7 +597,8 @@ Requirements:
             userMessage.text,
             snapshot,
             false, // isPlanRequest
-            userPreferences
+            userPreferences,
+            conversationHistory
           );
         }
       } else {
@@ -361,7 +610,8 @@ Requirements:
           optimizedPrompt,
           snapshot,
           false, // isPlanRequest
-          userPreferences
+          userPreferences,
+          conversationHistory
         );
 
         // Clean up markdown formatting from AI responses
@@ -856,84 +1106,6 @@ Requirements:
     return suggestions;
   };
 
-  // Update budget settings with confirmation
-  const updateBudgetSettingsWithConfirmation = async (
-    savingsPercentage?: number,
-    debtPayoffPercentage?: number
-  ) => {
-    if (!user?.uid || !budgetSettings) return;
-
-    const currentSavings = budgetSettings.savingsPercentage;
-    const currentDebt = budgetSettings.debtPayoffPercentage;
-    const snapshot = generateFinancialSnapshot();
-    const netIncome = snapshot.netIncome;
-
-    const hasChanges =
-      (savingsPercentage && savingsPercentage !== currentSavings) ||
-      (debtPayoffPercentage && debtPayoffPercentage !== currentDebt);
-
-    if (!hasChanges) return;
-
-    let message = `Would you like me to update your budget settings?\n\n`;
-
-    if (savingsPercentage && savingsPercentage !== currentSavings) {
-      const savingsAmount = Math.round((savingsPercentage / 100) * netIncome);
-      message += `• Savings: ${currentSavings}% → ${savingsPercentage}% ($${savingsAmount}/month)\n`;
-    }
-
-    if (debtPayoffPercentage && debtPayoffPercentage !== currentDebt) {
-      const debtAmount = Math.round((debtPayoffPercentage / 100) * netIncome);
-      message += `• Debt Payoff: ${currentDebt}% → ${debtPayoffPercentage}% ($${debtAmount}/month)\n`;
-    }
-
-    Alert.alert("Update Budget Settings?", message, [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Update",
-        onPress: async () => {
-          try {
-            const updatedSettings = {
-              ...budgetSettings,
-              savingsPercentage: savingsPercentage || currentSavings,
-              debtPayoffPercentage: debtPayoffPercentage || currentDebt,
-              updatedAt: Date.now(),
-            };
-
-            if (budgetSettings?.id) {
-              // Update existing settings
-              await updateBudgetSettings({
-                ...updatedSettings,
-                id: budgetSettings.id,
-              });
-            } else {
-              // Create new settings
-              await saveBudgetSettings(updatedSettings);
-            }
-
-            // Refresh budget settings to ensure consistency
-            await refreshBudgetSettings();
-
-            Alert.alert(
-              "Success!",
-              "Your budget settings have been updated. You can see the changes in the Budget screen.",
-              [{ text: "OK" }]
-            );
-          } catch (error) {
-            console.error("Failed to update budget settings:", error);
-            Alert.alert(
-              "Error",
-              "Failed to update budget settings. Please try again.",
-              [{ text: "OK" }]
-            );
-          }
-        },
-      },
-    ]);
-  };
-
   // Generate optimized prompt based on user preferences
   const generateOptimizedPrompt = (basePrompt: string) => {
     const styleInstructions = {
@@ -1120,7 +1292,7 @@ Original Request: ${basePrompt}
     }
   };
 
-  // Generate CSV from AI message
+  // Generate CSV from AI message with improved parsing
   const generateCSVFromAIMessage = (
     messageText: string,
     planName: string
@@ -1149,10 +1321,15 @@ Original Request: ${basePrompt}
         continue;
       }
 
-      // Detect subsection headers (with emojis)
+      // Detect subsection headers (with emojis or bold text)
       if (
-        trimmedLine.match(/^[🎯📊📅💰🛡️🚗🚀💳]/) &&
-        trimmedLine.includes(":")
+        (trimmedLine.match(/^[🎯📊📅💰🛡️🚗🚀💳]/) &&
+          trimmedLine.includes(":")) ||
+        (trimmedLine.includes(":") &&
+          (trimmedLine.includes("Plan") ||
+            trimmedLine.includes("Steps") ||
+            trimmedLine.includes("Options") ||
+            trimmedLine.includes("Recommendations")))
       ) {
         const subsection = trimmedLine
           .replace(/^[🎯📊📅💰🛡️🚗🚀💳]\s*/, "")
@@ -1164,8 +1341,9 @@ Original Request: ${basePrompt}
 
       // Extract financial data (lines with dollar amounts or percentages)
       if (trimmedLine.includes("$") || trimmedLine.includes("%")) {
+        // Improved regex to handle various formats
         const match = trimmedLine.match(
-          /^[•\-\s]*([^:]+):\s*([^$%]+[$%][^$%]*)/
+          /^[•\-\s]*([^:]+):\s*([^$%]+[$%][^$%]*)/i
         );
         if (match) {
           const item = match[1].trim();
@@ -1177,7 +1355,7 @@ Original Request: ${basePrompt}
       // Extract action steps (bullet points in Step-by-Step Action Plan)
       if (
         trimmedLine.startsWith("•") &&
-        currentSection.includes("Action Plan")
+        (currentSection.includes("Action") || currentSection.includes("Steps"))
       ) {
         const stepText = trimmedLine.replace(/^•\s*/, "").trim();
 
@@ -1209,6 +1387,13 @@ Original Request: ${basePrompt}
       ) {
         const recText = trimmedLine.replace(/^•\s*/, "").trim();
         csvRows.push(`"${currentSection}","Recommendation","${recText}",""`);
+      }
+
+      // Extract pros/cons from options
+      if (trimmedLine.includes("Pros:") || trimmedLine.includes("Cons:")) {
+        const type = trimmedLine.includes("Pros:") ? "Pros" : "Cons";
+        const content = trimmedLine.replace(/^(Pros|Cons):\s*/, "").trim();
+        csvRows.push(`"${currentSection}","${type}","${content}",""`);
       }
     }
 
@@ -1257,47 +1442,6 @@ Original Request: ${basePrompt}
               Vectra
             </Text>
           </View>
-
-          <TouchableOpacity
-            onPress={() => {
-              // Show current preferences and optimization status
-              const feedbackCount = Object.keys(feedbackStates).length;
-              const preferenceInfo = `
-🎯 Vectra Learning Status
-
-Current Preferences:
-• Style: ${userPreferences.preferredStyle}
-• Tone: ${userPreferences.preferredTone}
-• Focus: ${userPreferences.preferredFocus}
-
-Learning Data:
-• Feedback given: ${feedbackCount} responses
-• System: ${feedbackCount > 0 ? "Active" : "Learning from your feedback"}
-
-How it works:
-• 👍 Like responses you prefer
-• 👎 Dislike responses you don't like
-• Vectra learns your style and adapts
-• Responses get better over time
-
-Try giving feedback on a few responses to see the system in action!
-              `;
-
-              Alert.alert("Vectra Learning Status", preferenceInfo, [
-                { text: "OK" },
-              ]);
-            }}
-            style={{
-              padding: 8,
-              borderRadius: 6,
-            }}
-          >
-            <Ionicons
-              name="information-circle-outline"
-              size={18}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => {
@@ -1574,46 +1718,6 @@ Try giving feedback on a few responses to see the system in action!
                                   </Text>
                                 </TouchableOpacity>
                               )}
-                              {/* Budget Update Button - only show if budget suggestions are detected */}
-                              {message.budgetSuggestions &&
-                                (message.budgetSuggestions.savingsPercentage ||
-                                  message.budgetSuggestions
-                                    .debtPayoffPercentage) && (
-                                  <TouchableOpacity
-                                    onPress={() =>
-                                      updateBudgetSettingsWithConfirmation(
-                                        message.budgetSuggestions
-                                          ?.savingsPercentage,
-                                        message.budgetSuggestions
-                                          ?.debtPayoffPercentage
-                                      )
-                                    }
-                                    style={{
-                                      paddingHorizontal: 12,
-                                      paddingVertical: 6,
-                                      borderRadius: 8,
-                                      backgroundColor: colors.primary,
-                                      borderWidth: 1,
-                                      borderColor: colors.primary,
-                                      marginLeft: "auto",
-                                      shadowColor: colors.text,
-                                      shadowOffset: { width: 0, height: 1 },
-                                      shadowOpacity: 0.1,
-                                      shadowRadius: 2,
-                                      elevation: 2,
-                                    }}
-                                  >
-                                    <Text
-                                      style={{
-                                        fontSize: 12,
-                                        color: "#fff",
-                                        fontWeight: "600",
-                                      }}
-                                    >
-                                      📊 Update Budget
-                                    </Text>
-                                  </TouchableOpacity>
-                                )}
                             </View>
                           )}
                         </View>

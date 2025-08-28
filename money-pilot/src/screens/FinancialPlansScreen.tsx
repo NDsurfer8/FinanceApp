@@ -89,7 +89,13 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
       "Delete Plan",
       "Are you sure you want to delete this financial plan? This action cannot be undone.",
       [
-        { text: "Cancel", style: "cancel" },
+        {
+          text: "Cancel",
+          style: "cancel",
+          onPress: () => {
+            // No loading state to reset in this screen
+          },
+        },
         {
           text: "Delete",
           style: "destructive",

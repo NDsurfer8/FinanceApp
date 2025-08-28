@@ -9,10 +9,12 @@ import {
   Alert,
   Image,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../contexts/ThemeContext";
 import { updateProfile } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../services/firebase";
@@ -26,6 +28,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const { forceRefresh, updateUserImmediately } = useUser();
   const [loading, setLoading] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || "");
@@ -273,7 +276,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
@@ -291,21 +294,21 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
             onPress={() => navigation.goBack()}
             style={{
               marginRight: 20,
-              backgroundColor: "#f8fafc",
               padding: 10,
-              borderRadius: 10,
-              borderWidth: 1,
-              borderColor: "#e2e8f0",
             }}
           >
-            <Ionicons name="arrow-back" size={20} color="#475569" />
+            <Ionicons
+              name="arrow-back"
+              size={20}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
           <View>
             <Text
               style={{
                 fontSize: 26,
                 fontWeight: "700",
-                color: "#111827",
+                color: colors.text,
                 letterSpacing: -0.3,
               }}
             >
@@ -314,7 +317,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
             <Text
               style={{
                 fontSize: 16,
-                color: "#6b7280",
+                color: colors.textSecondary,
                 marginTop: 4,
                 fontWeight: "400",
               }}
@@ -327,22 +330,19 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
         {/* Profile Photo Section */}
         <View
           style={{
-            backgroundColor: "#fff",
-            borderRadius: 20,
+            backgroundColor: colors.card,
+            borderRadius: 16,
             padding: 24,
             marginBottom: 20,
-            shadowColor: "#000",
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
+            borderWidth: 1,
+            borderColor: colors.border,
           }}
         >
           <Text
             style={{
               fontSize: 18,
               fontWeight: "600",
-              color: "#111827",
+              color: colors.text,
               marginBottom: 20,
             }}
           >
@@ -356,7 +356,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
                   width: 120,
                   height: 120,
                   borderRadius: 60,
-                  backgroundColor: "#6366f1",
+                  backgroundColor: colors.primary,
                   alignItems: "center",
                   justifyContent: "center",
                   marginBottom: 16,
@@ -381,210 +381,200 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
             <TouchableOpacity
               onPress={showPhotoOptions}
               style={{
-                backgroundColor: "#f8fafc",
+                backgroundColor: colors.surfaceSecondary,
                 paddingHorizontal: 16,
                 paddingVertical: 8,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: "#e2e8f0",
+                borderColor: colors.border,
               }}
             >
-              <Text style={{ color: "#6366f1", fontWeight: "600" }}>
+              <Text style={{ color: colors.primary, fontWeight: "600" }}>
                 Change Photo
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Profile Information */}
-        <View
-          style={{
-            backgroundColor: "#fff",
-            borderRadius: 20,
-            padding: 24,
-            marginBottom: 20,
-            shadowColor: "#000",
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
-          }}
-        >
+        {/* Form Fields */}
+        {/* Display Name */}
+        <View style={{ marginBottom: 20 }}>
           <Text
             style={{
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: "600",
-              color: "#111827",
-              marginBottom: 20,
+              color: colors.text,
+              marginBottom: 8,
             }}
           >
-            Profile Information
+            Display Name
           </Text>
+          <TextInput
+            style={{
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 8,
+              padding: 12,
+              fontSize: 16,
+              color: colors.text,
+              backgroundColor: colors.card,
+            }}
+            value={displayName}
+            onChangeText={setDisplayName}
+            placeholder="Enter your display name"
+            placeholderTextColor={colors.textSecondary}
+          />
+        </View>
 
-          {/* Display Name */}
-          <View style={{ marginBottom: 20 }}>
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "600",
-                color: "#374151",
-                marginBottom: 8,
-              }}
-            >
-              Display Name
+        {/* Email (Read-only) */}
+        <View style={{ marginBottom: 20 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              color: colors.text,
+              marginBottom: 8,
+            }}
+          >
+            Email Address
+          </Text>
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 8,
+              padding: 12,
+              backgroundColor: colors.surfaceSecondary,
+            }}
+          >
+            <Text style={{ fontSize: 16, color: colors.textSecondary }}>
+              {email}
             </Text>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: "#d1d5db",
-                borderRadius: 12,
-                padding: 16,
-                fontSize: 16,
-                backgroundColor: "#f9fafb",
-              }}
-              value={displayName}
-              onChangeText={setDisplayName}
-              placeholder="Enter your display name"
-              placeholderTextColor="#9ca3af"
-            />
           </View>
+          <Text
+            style={{
+              fontSize: 12,
+              color: colors.textSecondary,
+              marginTop: 4,
+            }}
+          >
+            Email cannot be changed from this screen
+          </Text>
+        </View>
 
-          {/* Email (Read-only) */}
-          <View style={{ marginBottom: 20 }}>
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "600",
-                color: "#374151",
-                marginBottom: 8,
-              }}
-            >
-              Email Address
-            </Text>
+        {/* Account Info */}
+        <View style={{ marginBottom: 20 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              color: colors.text,
+              marginBottom: 8,
+            }}
+          >
+            Account Information
+          </Text>
+          <View
+            style={{
+              backgroundColor: colors.card,
+              borderRadius: 8,
+              padding: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
             <View
               style={{
-                borderWidth: 1,
-                borderColor: "#e5e7eb",
-                borderRadius: 12,
-                padding: 16,
-                backgroundColor: "#f3f4f6",
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12,
               }}
             >
-              <Text style={{ fontSize: 16, color: "#6b7280" }}>{email}</Text>
+              <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                Member Since
+              </Text>
+              <Text
+                style={{ fontSize: 14, fontWeight: "600", color: colors.text }}
+              >
+                {user?.metadata?.creationTime
+                  ? new Date(user.metadata.creationTime).toLocaleDateString(
+                      "en-US",
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      }
+                    )
+                  : "Recently"}
+              </Text>
             </View>
-            <Text
-              style={{
-                fontSize: 12,
-                color: "#6b7280",
-                marginTop: 4,
-              }}
-            >
-              Email cannot be changed from this screen
-            </Text>
-          </View>
-
-          {/* Account Info */}
-          <View style={{ marginBottom: 20 }}>
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "600",
-                color: "#374151",
-                marginBottom: 8,
-              }}
-            >
-              Account Information
-            </Text>
             <View
               style={{
-                backgroundColor: "#f8fafc",
-                borderRadius: 12,
-                padding: 16,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
               }}
             >
+              <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                Email Verified
+              </Text>
               <View
                 style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 12,
+                  backgroundColor: user?.emailVerified
+                    ? colors.successLight
+                    : colors.errorLight,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 8,
                 }}
               >
-                <Text style={{ fontSize: 14, color: "#6b7280" }}>
-                  Member Since
-                </Text>
                 <Text
-                  style={{ fontSize: 14, fontWeight: "600", color: "#111827" }}
-                >
-                  {user?.metadata?.creationTime
-                    ? new Date(user.metadata.creationTime).toLocaleDateString(
-                        "en-US",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }
-                      )
-                    : "Recently"}
-                </Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ fontSize: 14, color: "#6b7280" }}>
-                  Email Verified
-                </Text>
-                <View
                   style={{
-                    backgroundColor: user?.emailVerified
-                      ? "#dcfce7"
-                      : "#fee2e2",
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: "600",
+                    color: user?.emailVerified ? colors.success : colors.error,
                   }}
                 >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "600",
-                      color: user?.emailVerified ? "#16a34a" : "#dc2626",
-                    }}
-                  >
-                    {user?.emailVerified ? "Verified" : "Not Verified"}
-                  </Text>
-                </View>
+                  {user?.emailVerified ? "Verified" : "Not Verified"}
+                </Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Save Button */}
-        <TouchableOpacity
-          style={{
-            backgroundColor: "#6366f1",
-            padding: 16,
-            borderRadius: 16,
-            alignItems: "center",
-            marginTop: 20,
-          }}
-          onPress={handleSave}
-          disabled={loading}
-        >
-          <Text
+        {/* Action Buttons */}
+        <View style={{ marginTop: 20 }}>
+          <TouchableOpacity
             style={{
-              color: "white",
-              fontSize: 16,
-              fontWeight: "600",
+              backgroundColor: colors.primary,
+              padding: 16,
+              borderRadius: 8,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
             }}
+            onPress={handleSave}
+            disabled={loading}
           >
-            {loading ? "Saving..." : "Save Changes"}
-          </Text>
-        </TouchableOpacity>
+            {loading && (
+              <ActivityIndicator
+                size="small"
+                color="white"
+                style={{ marginRight: 8 }}
+              />
+            )}
+            <Text
+              style={{
+                color: "white",
+                fontSize: 16,
+                fontWeight: "600",
+              }}
+            >
+              Save Changes
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

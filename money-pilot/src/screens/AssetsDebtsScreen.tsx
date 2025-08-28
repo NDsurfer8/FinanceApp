@@ -6,22 +6,19 @@ import {
   Text,
   Dimensions,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fontFamily } from "../config/fonts";
 import { AssetsDebtsChart } from "../components/AssetsDebtsChart";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
-import {
-  saveAsset,
-  saveDebt,
-  removeAsset,
-  removeDebt,
-} from "../services/userData";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
+import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { translate } from "../services/translations";
+import { StandardHeader } from "../components/StandardHeader";
 import { getAssetTypeLabel } from "../utils/assetMigration";
+import { useData } from "../contexts/DataContext";
 
 interface AssetsDebtsScreenProps {
   navigation: any;
@@ -35,8 +32,10 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   const { user } = useAuth();
   const { assets, debts, updateDataOptimistically, refreshInBackground } =
     useZeroLoading();
+  const { bankAccounts } = useData();
   const [loading, setLoading] = useState(false);
   const { colors } = useTheme();
+  const { isFriendlyMode } = useFriendlyMode();
 
   // Background refresh when screen comes into focus
   useFocusEffect(
@@ -46,64 +45,6 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
       }
     }, [user, refreshInBackground])
   );
-
-  const handleDeleteAsset = async (assetId: string) => {
-    if (!user) return;
-
-    Alert.alert("Delete Asset", "Are you sure you want to delete this asset?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            // Optimistic update - remove from UI immediately
-            const updatedAssets = assets.filter((a) => a.id !== assetId);
-            updateDataOptimistically({ assets: updatedAssets });
-
-            // Delete from database in background
-            await removeAsset(user.uid, assetId);
-            Alert.alert("Success", "Asset deleted successfully");
-          } catch (error) {
-            console.error("Error deleting asset:", error);
-            Alert.alert("Error", "Failed to delete asset");
-
-            // Revert optimistic update on error
-            await refreshInBackground();
-          }
-        },
-      },
-    ]);
-  };
-
-  const handleDeleteDebt = async (debtId: string) => {
-    if (!user) return;
-
-    Alert.alert("Delete Debt", "Are you sure you want to delete this debt?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            // Optimistic update - remove from UI immediately
-            const updatedDebts = debts.filter((d) => d.id !== debtId);
-            updateDataOptimistically({ debts: updatedDebts });
-
-            // Delete from database in background
-            await removeDebt(user.uid, debtId);
-            Alert.alert("Success", "Debt deleted successfully");
-          } catch (error) {
-            console.error("Error deleting debt:", error);
-            Alert.alert("Error", "Failed to delete debt");
-
-            // Revert optimistic update on error
-            await refreshInBackground();
-          }
-        },
-      },
-    ]);
-  };
 
   const assetTotal = assets.reduce((sum, asset) => sum + asset.balance, 0);
   const totalDebt = debts.reduce((sum, debt) => sum + debt.balance, 0);
@@ -128,46 +69,52 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View
-          style={{
-            marginBottom: 16,
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: fontFamily.bold,
-              fontSize: 28,
-              fontWeight: "700",
-              color: colors.text,
-            }}
-          >
-            Assets & Debts
-          </Text>
-        </View>
+        <StandardHeader
+          title={translate("assetsDebts", isFriendlyMode)}
+          subtitle="Manage your net worth"
+          showBackButton={false}
+          rightComponent={
+            <TouchableOpacity
+              onPress={() => navigation.navigate("BankTransactions")}
+              style={{
+                backgroundColor: colors.primary,
+                padding: 12,
+                borderRadius: 12,
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 2 },
+                elevation: 4,
+              }}
+            >
+              <Ionicons name="card" size={20} color={colors.buttonText} />
+            </TouchableOpacity>
+          }
+        />
 
         {/* Assets Section */}
         <View
           style={{
             backgroundColor: colors.surface,
-            borderRadius: 16,
-            padding: 16,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
             shadowColor: colors.shadow,
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
+            elevation: 4,
           }}
         >
           <Text
             style={{
-              fontFamily: fontFamily.semiBold,
-              fontSize: 18,
-              fontWeight: "600",
-              marginBottom: 12,
+              fontSize: 20,
+              fontWeight: "700",
+              marginBottom: 20,
               color: colors.text,
             }}
           >
-            Assets
+            {translate("assets", isFriendlyMode)}
           </Text>
 
           {assets.length === 0 ? (
@@ -186,7 +133,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   fontSize: 16,
                 }}
               >
-                No assets yet
+                No {translate("assets", isFriendlyMode).toLowerCase()} yet
               </Text>
             </View>
           ) : (
@@ -292,26 +239,25 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         <View
           style={{
             backgroundColor: colors.surface,
-            borderRadius: 16,
-            padding: 16,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
             shadowColor: colors.shadow,
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
-            marginTop: 16,
+            elevation: 4,
           }}
         >
           <Text
             style={{
-              fontFamily: fontFamily.semiBold,
-              fontSize: 18,
-              fontWeight: "600",
-              marginBottom: 12,
+              fontSize: 20,
+              fontWeight: "700",
+              marginBottom: 20,
               color: colors.text,
             }}
           >
-            Debts
+            {translate("debt", isFriendlyMode)}
           </Text>
 
           {debts.length === 0 ? (
@@ -330,7 +276,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   fontSize: 16,
                 }}
               >
-                No debts yet
+                No {translate("debt", isFriendlyMode).toLowerCase()} yet
               </Text>
             </View>
           ) : (
@@ -438,6 +384,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             flexDirection: "row",
             gap: 12,
             marginTop: 16,
+            marginBottom: 16,
             justifyContent: "center",
           }}
         >

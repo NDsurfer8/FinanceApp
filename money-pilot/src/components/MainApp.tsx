@@ -15,12 +15,16 @@ import { UserProvider } from "../context/UserContext";
 import { DataProvider } from "../contexts/DataContext";
 import { SubscriptionProvider } from "../contexts/SubscriptionContext";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
+import { ChatbotProvider } from "../contexts/ChatbotContext";
+import { FriendlyModeProvider } from "../contexts/FriendlyModeContext";
 import { DataPreloader } from "./DataPreloader";
 import { SplashScreen } from "./SplashScreen";
 import revenueCatService from "../services/revenueCat";
 import { plaidService } from "../services/plaid";
 import { useBiometricAuth } from "../hooks/useBiometricAuth";
 import { BiometricAuthOverlay } from "./BiometricAuthOverlay";
+import { FloatingAIChatbot } from "./FloatingAIChatbot";
+import { PlaidUpdateMode } from "./PlaidUpdateMode";
 import {
   DashboardScreen,
   BudgetScreen,
@@ -32,7 +36,7 @@ import {
   AddTransactionScreen,
   AddAssetDebtScreen,
   GoalTrackingScreen,
-  BalanceSheetScreen,
+  FinancialRiskScreen,
   SharedFinanceScreen,
   EditProfileScreen,
   NotificationSettingsScreen,
@@ -46,6 +50,8 @@ import {
   AIFinancialAdvisorScreen,
   FinancialPlansScreen,
 } from "../screens";
+import { PrivacyPolicyScreen } from "../screens/PrivacyPolicyScreen";
+import { TermsOfServiceScreen } from "../screens/TermsOfServiceScreen";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const Stack = createStackNavigator();
@@ -75,7 +81,17 @@ export const MainApp: React.FC = () => {
     useState(false);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
 
+  // Plaid Update Mode state
+  const [showPlaidUpdateMode, setShowPlaidUpdateMode] = useState(false);
+  const [plaidUpdateType, setPlaidUpdateType] = useState<
+    "reauth" | "new_accounts" | "expiring" | "disconnect"
+  >("reauth");
+  const [plaidNewAccounts, setPlaidNewAccounts] = useState<any[]>([]);
+  const [plaidUpdateChecked, setPlaidUpdateChecked] = useState(false);
+
   useEffect(() => {
+    // Set app start time for smart refresh detection
+    (global as any).appStartTime = Date.now();
     initializeApp();
   }, []);
 
@@ -83,13 +99,39 @@ export const MainApp: React.FC = () => {
   useEffect(() => {
     const fallbackTimeout = setTimeout(() => {
       if (isLoading) {
-        console.log("Fallback timeout reached, forcing app to proceed");
         setIsLoading(false);
       }
     }, 10000); // 10 seconds max
 
     return () => clearTimeout(fallbackTimeout);
   }, [isLoading]);
+
+  const checkPlaidUpdateMode = async () => {
+    try {
+      if (!user?.uid || plaidUpdateChecked) return;
+
+      const updateStatus = await plaidService.checkUpdateModeStatus();
+
+      if (updateStatus.needsReauth) {
+        setPlaidUpdateType("reauth");
+        setShowPlaidUpdateMode(true);
+      } else if (updateStatus.hasNewAccounts) {
+        setPlaidUpdateType("new_accounts");
+        setPlaidNewAccounts(updateStatus.lastWebhook?.newAccounts || []);
+        setShowPlaidUpdateMode(true);
+      } else if (updateStatus.credentialsExpiring) {
+        setPlaidUpdateType("expiring");
+        setShowPlaidUpdateMode(true);
+      } else if (updateStatus.isDisconnecting) {
+        setPlaidUpdateType("disconnect");
+        setShowPlaidUpdateMode(true);
+      }
+
+      setPlaidUpdateChecked(true);
+    } catch (error) {
+      console.error("Error checking Plaid update mode:", error);
+    }
+  };
 
   const initializeApp = async () => {
     try {
@@ -108,7 +150,7 @@ export const MainApp: React.FC = () => {
       }
 
       if (authWaitTime >= maxWaitTime) {
-        console.log("Auth loading timeout, proceeding anyway");
+        // Auth loading timeout, proceeding anyway
       }
 
       setLoadingMessage("Loading app settings...");
@@ -120,20 +162,8 @@ export const MainApp: React.FC = () => {
       setLoadingMessage("Initializing RevenueCat...");
       try {
         await revenueCatService.initialize();
-        console.log("RevenueCat initialized successfully in MainApp");
-
-        // Log diagnostic information
-        const diagnosticInfo = revenueCatService.getDiagnosticInfo();
-        console.log("RevenueCat diagnostic info:", diagnosticInfo);
       } catch (error) {
         console.error("Failed to initialize RevenueCat in MainApp:", error);
-
-        // Log diagnostic information even on failure
-        const diagnosticInfo = revenueCatService.getDiagnosticInfo();
-        console.log(
-          "RevenueCat diagnostic info (after failure):",
-          diagnosticInfo
-        );
       }
 
       // Set up user for services (actual data loading will be handled by DataPreloader)
@@ -142,7 +172,10 @@ export const MainApp: React.FC = () => {
         try {
           await revenueCatService.setUser(user.uid);
           plaidService.setUserId(user.uid);
-          console.log("User services configured in MainApp");
+
+          // Check for Plaid update mode status
+          setLoadingMessage("Checking bank connection status...");
+          await checkPlaidUpdateMode();
         } catch (error) {
           console.error("Failed to configure user services in MainApp:", error);
         }
@@ -162,11 +195,22 @@ export const MainApp: React.FC = () => {
     }
   }, [user, isAuthenticated]);
 
+  // Check for Plaid updates when user changes (with debouncing)
+  useEffect(() => {
+    if (user?.uid && isAuthenticated && !plaidUpdateChecked) {
+      // Add a small delay to prevent rapid calls
+      const timeoutId = setTimeout(() => {
+        checkPlaidUpdateMode();
+      }, 1000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [user, isAuthenticated, plaidUpdateChecked]);
+
   const setupBillReminders = async () => {
     if (!user) return;
 
     try {
-      console.log("Setting up bill reminders for user:", user.uid);
       await billReminderService.scheduleAllBillReminders(user.uid);
     } catch (error) {
       console.error("Error setting up bill reminders:", error);
@@ -177,7 +221,6 @@ export const MainApp: React.FC = () => {
     // Load persisted badge count first
     try {
       await notificationService.loadPersistedBadgeCount();
-      console.log("Persisted badge count loaded");
     } catch (error) {
       console.error("Error loading persisted badge count:", error);
     }
@@ -185,7 +228,6 @@ export const MainApp: React.FC = () => {
     // Clear badge when app opens
     try {
       await notificationService.clearBadge();
-      console.log("Badge cleared on app open");
     } catch (error) {
       console.error("Error clearing badge on app open:", error);
     }
@@ -193,11 +235,10 @@ export const MainApp: React.FC = () => {
     // Setup notification listeners
     const cleanup = notificationService.setupNotificationListeners(
       (notification) => {
-        console.log("Notification received:", notification);
+        // Notification received
       },
       (response) => {
-        console.log("Notification response:", response);
-        // Handle navigation based on notification type
+        // Notification response
         const data = response.notification.request.content.data;
         // You can add navigation logic here based on notification type
       }
@@ -209,24 +250,12 @@ export const MainApp: React.FC = () => {
   // Handle app state changes for biometric authentication
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      console.log("App state changed to:", nextAppState);
-      console.log("Biometric state:", {
-        isBiometricEnabled,
-        isAutoLockEnabled,
-        wasPreviouslyAuthenticated,
-        isBiometricAuthenticated,
-        justLoggedIn,
-      });
-
       if (nextAppState === "background" || nextAppState === "inactive") {
         if (
           isBiometricEnabled &&
           isAutoLockEnabled &&
           wasPreviouslyAuthenticated
         ) {
-          console.log(
-            "App going to background, resetting biometric authentication"
-          );
           setBiometricAuthenticated(false);
         }
       } else if (nextAppState === "active") {
@@ -240,7 +269,6 @@ export const MainApp: React.FC = () => {
             !isBiometricAuthenticated &&
             !justLoggedIn // Don't show biometric overlay if user just logged in
           ) {
-            console.log("App became active, showing biometric overlay");
             setShowBiometricOverlay(true);
           }
         }, 1000); // 1 second delay to prevent double verification
@@ -404,93 +432,144 @@ export const MainApp: React.FC = () => {
     return (
       <ThemeProvider>
         <UserProvider>
-          <DataProvider>
-            <SubscriptionProvider>
-              <DataPreloader>
-                <NavigationContainer>
-                  <Stack.Navigator
-                    screenOptions={{
-                      headerShown: false,
+          <SubscriptionProvider>
+            <DataProvider>
+              <ChatbotProvider>
+                <FriendlyModeProvider>
+                  <DataPreloader>
+                    <NavigationContainer>
+                      {/* Floating AI Chatbot - only show on main app screens */}
+                      {appState === "main" && (
+                        <FloatingAIChatbot hideOnAIScreen={false} />
+                      )}
+                      <Stack.Navigator
+                        screenOptions={{
+                          headerShown: false,
+                        }}
+                      >
+                        <Stack.Screen
+                          name="MainTabs"
+                          component={MainTabNavigator}
+                        />
+                        <Stack.Screen
+                          name="AddTransaction"
+                          component={AddTransactionScreen}
+                        />
+                        <Stack.Screen
+                          name="AddAssetDebt"
+                          component={AddAssetDebtScreen}
+                        />
+
+                        <Stack.Screen
+                          name="FinancialRisk"
+                          component={FinancialRiskScreen}
+                        />
+                        <Stack.Screen
+                          name="SharedFinance"
+                          component={SharedFinanceScreen}
+                        />
+                        <Stack.Screen
+                          name="EditProfile"
+                          component={EditProfileScreen}
+                        />
+                        <Stack.Screen
+                          name="NotificationSettings"
+                          component={NotificationSettingsScreen}
+                        />
+                        <Stack.Screen
+                          name="PrivacySecurity"
+                          component={PrivacySecurityScreen}
+                        />
+                        <Stack.Screen name="About" component={AboutScreen} />
+                        <Stack.Screen
+                          name="HelpSupport"
+                          component={HelpSupportScreen}
+                        />
+                        <Stack.Screen
+                          name="RecurringTransactions"
+                          component={RecurringTransactionsScreen}
+                        />
+                        <Stack.Screen
+                          name="Subscription"
+                          component={SubscriptionScreen}
+                        />
+                        <Stack.Screen
+                          name="BankTransactions"
+                          component={BankTransactionsScreen}
+                        />
+                        <Stack.Screen
+                          name="AIFinancialAdvisor"
+                          component={AIFinancialAdvisorScreen}
+                        />
+                        <Stack.Screen
+                          name="FinancialPlans"
+                          component={FinancialPlansScreen}
+                        />
+                        <Stack.Screen
+                          name="PrivacyPolicy"
+                          component={PrivacyPolicyScreen}
+                        />
+                        <Stack.Screen
+                          name="TermsOfService"
+                          component={TermsOfServiceScreen}
+                        />
+                      </Stack.Navigator>
+                    </NavigationContainer>
+                  </DataPreloader>
+
+                  {/* Biometric Authentication Overlay */}
+                  <BiometricAuthOverlay
+                    visible={showBiometricOverlay}
+                    onSuccess={() => {
+                      setShowBiometricOverlay(false);
+                      setBiometricAuthenticated(true);
+                      setAppState("main");
                     }}
-                  >
-                    <Stack.Screen
-                      name="MainTabs"
-                      component={MainTabNavigator}
-                    />
-                    <Stack.Screen
-                      name="AddTransaction"
-                      component={AddTransactionScreen}
-                    />
-                    <Stack.Screen
-                      name="AddAssetDebt"
-                      component={AddAssetDebtScreen}
-                    />
+                    onCancel={() => {
+                      setShowBiometricOverlay(false);
+                      setBiometricAuthenticated(false);
+                      setAppState("login");
+                    }}
+                    onUsePasscode={() => {
+                      // Allow access with device passcode fallback
+                      setShowBiometricOverlay(false);
+                      setBiometricAuthenticated(true);
+                      setAppState("main");
+                    }}
+                    onSignOut={async () => {
+                      try {
+                        // Handle Plaid logout cleanup
+                        await plaidService.handleLogout();
 
-                    <Stack.Screen
-                      name="BalanceSheet"
-                      component={BalanceSheetScreen}
-                    />
-                    <Stack.Screen
-                      name="SharedFinance"
-                      component={SharedFinanceScreen}
-                    />
-                    <Stack.Screen
-                      name="EditProfile"
-                      component={EditProfileScreen}
-                    />
-                    <Stack.Screen
-                      name="NotificationSettings"
-                      component={NotificationSettingsScreen}
-                    />
-                    <Stack.Screen
-                      name="PrivacySecurity"
-                      component={PrivacySecurityScreen}
-                    />
-                    <Stack.Screen name="About" component={AboutScreen} />
-                    <Stack.Screen
-                      name="HelpSupport"
-                      component={HelpSupportScreen}
-                    />
-                    <Stack.Screen
-                      name="RecurringTransactions"
-                      component={RecurringTransactionsScreen}
-                    />
-                    <Stack.Screen
-                      name="Subscription"
-                      component={SubscriptionScreen}
-                    />
-                    <Stack.Screen
-                      name="BankTransactions"
-                      component={BankTransactionsScreen}
-                    />
-                    <Stack.Screen
-                      name="AIFinancialAdvisor"
-                      component={AIFinancialAdvisorScreen}
-                    />
-                    <Stack.Screen
-                      name="FinancialPlans"
-                      component={FinancialPlansScreen}
-                    />
-                  </Stack.Navigator>
-                </NavigationContainer>
-              </DataPreloader>
+                        const { signOutUser } = await import(
+                          "../services/auth"
+                        );
+                        await signOutUser();
 
-              {/* Biometric Authentication Overlay */}
-              <BiometricAuthOverlay
-                visible={showBiometricOverlay}
-                onSuccess={() => {
-                  setShowBiometricOverlay(false);
-                  setBiometricAuthenticated(true);
-                  setAppState("main");
-                }}
-                onCancel={() => {
-                  setShowBiometricOverlay(false);
-                  setBiometricAuthenticated(false);
-                  setAppState("login");
-                }}
-              />
-            </SubscriptionProvider>
-          </DataProvider>
+                        setShowBiometricOverlay(false);
+                        setBiometricAuthenticated(false);
+                        setAppState("login");
+                      } catch (error) {
+                        console.error("Error signing out:", error);
+                        // Fallback to login screen even if signout fails
+                        setShowBiometricOverlay(false);
+                        setBiometricAuthenticated(false);
+                        setAppState("login");
+                      }
+                    }}
+                  />
+
+                  {/* Plaid Update Mode Modal */}
+                  <PlaidUpdateMode
+                    visible={showPlaidUpdateMode}
+                    onClose={() => setShowPlaidUpdateMode(false)}
+                    updateType={plaidUpdateType}
+                    newAccounts={plaidNewAccounts}
+                  />
+                </FriendlyModeProvider>
+              </ChatbotProvider>
+            </DataProvider>
+          </SubscriptionProvider>
         </UserProvider>
       </ThemeProvider>
     );
@@ -505,6 +584,9 @@ const MainTabNavigator = () => {
 
   const handleLogout = async () => {
     try {
+      // Handle Plaid logout cleanup
+      await plaidService.handleLogout();
+
       const { signOutUser } = await import("../services/auth");
       await signOutUser();
       // The auth state change will be handled by the useEffect in MainApp

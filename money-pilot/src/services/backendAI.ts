@@ -28,19 +28,22 @@ export interface AIFeedback {
 export const callBackendAI = async (
   message: string,
   financialData?: any,
-  userPreferences?: any
+  userPreferences?: any,
+  conversationHistory?: Array<{ role: string; content: string }>
 ): Promise<AIResponse> => {
   try {
     console.log("Calling backend AI with:", {
       messageLength: message.length,
       hasFinancialData: !!financialData,
       userPreferences,
+      conversationHistoryLength: conversationHistory?.length || 0,
     });
 
     const result = await backendAIChat({
       message,
       financialData,
       userPreferences,
+      conversationHistory,
     });
 
     const data = result.data as AIResponse;

@@ -9,6 +9,7 @@ import {
   TextInput,
   Modal,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -47,6 +48,7 @@ export const RecurringTransactionsScreen: React.FC<
     RecurringTransaction[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<RecurringTransaction | null>(null);
@@ -207,30 +209,39 @@ export const RecurringTransactionsScreen: React.FC<
   const handleDelete = async (transaction: RecurringTransaction) => {
     if (!transaction.id) return;
 
-    Alert.alert(
-      "Delete Recurring Transaction",
-      `Are you sure you want to delete "${transaction.name}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteRecurringTransaction(transaction.id!);
-              Alert.alert(
-                "Success",
-                "Recurring transaction deleted successfully!"
-              );
-              await loadRecurringTransactions();
-            } catch (error) {
-              console.error("Error deleting recurring transaction:", error);
-              Alert.alert("Error", "Failed to delete recurring transaction");
-            }
+    setDeleteLoading(transaction.id);
+
+    try {
+      Alert.alert(
+        "Delete Recurring Transaction",
+        `Are you sure you want to delete "${transaction.name}"?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await deleteRecurringTransaction(transaction.id!);
+                Alert.alert(
+                  "Success",
+                  "Recurring transaction deleted successfully!"
+                );
+                await loadRecurringTransactions();
+              } catch (error) {
+                console.error("Error deleting recurring transaction:", error);
+                Alert.alert("Error", "Failed to delete recurring transaction");
+              } finally {
+                setDeleteLoading(null);
+              }
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } catch (error) {
+      console.error("Error in delete confirmation:", error);
+      setDeleteLoading(null);
+    }
   };
 
   const handleEditTransaction = (transaction: RecurringTransaction) => {
@@ -604,9 +615,17 @@ export const RecurringTransactionsScreen: React.FC<
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => handleDelete(transaction)}
-                      style={styles.deleteButton}
+                      style={[
+                        styles.deleteButton,
+                        { opacity: deleteLoading === transaction.id ? 0.6 : 1 },
+                      ]}
+                      disabled={deleteLoading === transaction.id}
                     >
-                      <Ionicons name="trash" size={16} color="#dc2626" />
+                      {deleteLoading === transaction.id ? (
+                        <ActivityIndicator size="small" color="#dc2626" />
+                      ) : (
+                        <Ionicons name="trash" size={16} color="#dc2626" />
+                      )}
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -638,9 +657,21 @@ export const RecurringTransactionsScreen: React.FC<
             </Text>
             <TouchableOpacity
               onPress={handleSave}
-              style={styles.modalSaveButton}
+              style={[styles.modalSaveButton, { opacity: loading ? 0.6 : 1 }]}
+              disabled={loading}
             >
-              <Text style={styles.modalSaveText}>Save</Text>
+              {loading ? (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <ActivityIndicator
+                    size="small"
+                    color="white"
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={styles.modalSaveText}>Saving...</Text>
+                </View>
+              ) : (
+                <Text style={styles.modalSaveText}>Save</Text>
+              )}
             </TouchableOpacity>
           </View>
 

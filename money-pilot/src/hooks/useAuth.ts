@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import { User } from "firebase/auth";
-import { onAuthStateChange, getCurrentUser } from "../services/auth";
+import {
+  onAuthStateChange,
+  getCurrentUser,
+  isUserSessionValid,
+  refreshUserToken,
+} from "../services/auth";
 
 export interface AuthState {
   user: User | null;
@@ -16,7 +21,32 @@ export const useAuth = () => {
   });
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChange((user) => {
+    const unsubscribe = onAuthStateChange(async (user) => {
+      if (user) {
+        // Validate the user session
+        try {
+          const isValid = await isUserSessionValid();
+          if (!isValid) {
+            console.log(
+              "Invalid session detected, attempting to refresh token"
+            );
+            const refreshed = await refreshUserToken();
+            if (!refreshed) {
+              // Session is truly invalid, clear the user
+              setAuthState({
+                user: null,
+                loading: false,
+                error: "Session expired. Please sign in again.",
+              });
+              return;
+            }
+          }
+        } catch (error) {
+          console.error("Error validating user session:", error);
+          // Continue with the user if validation fails
+        }
+      }
+
       setAuthState({
         user,
         loading: false,

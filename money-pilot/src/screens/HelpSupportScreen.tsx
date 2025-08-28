@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -8,9 +8,15 @@ import {
   StyleSheet,
   Linking,
   Alert,
+  Switch,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
+import * as MailComposer from "expo-mail-composer";
+import { useAuth } from "../hooks/useAuth";
+
+import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 
 interface HelpSupportScreenProps {
   navigation: any;
@@ -27,7 +33,23 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
   navigation,
 }) => {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
+  const { isFriendlyMode, setIsFriendlyMode } = useFriendlyMode();
+
+  // Handle friendly mode toggle
+  const handleFriendlyModeToggle = async (value: boolean) => {
+    setIsFriendlyMode(value);
+
+    // Show confirmation message
+    Alert.alert(
+      value ? "Friendly Mode Enabled" : "Friendly Mode Disabled",
+      value
+        ? "Financial terms will now be shown in friendly, easy-to-understand language."
+        : "Financial terms will now be shown in standard language.",
+      [{ text: "OK" }]
+    );
+  };
 
   const faqs: FAQItem[] = [
     {
@@ -99,10 +121,69 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
     setExpandedFAQ(expandedFAQ === faqId ? null : faqId);
   };
 
-  const openSupportEmail = () => {
-    Linking.openURL(
-      "mailto:support@moneypilot.com?subject=Money%20Pilot%20Support"
-    );
+  const openSupportEmail = async () => {
+    try {
+      // Check if device can send emails
+      const isAvailable = await MailComposer.isAvailableAsync();
+
+      if (!isAvailable) {
+        Alert.alert(
+          "Email Not Available",
+          "No email app is configured on this device. Please set up an email account in your device settings.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      // Prepare email content with user context
+      const userInfo = user
+        ? `\n\nUser Information:\n- User ID: ${user.uid}\n- Email: ${
+            user.email || "Not provided"
+          }\n- Display Name: ${user.displayName || "Not provided"}`
+        : "";
+
+      const emailContent = {
+        recipients: ["support@vectorfi.ai"],
+        subject: "VectorFi Support Request",
+        body: `Hello VectorFi Support Team,
+
+I need help with the VectorFi app. Please provide assistance with my issue.
+
+${userInfo}
+
+Issue Description:
+[Please describe your issue here]
+
+Device Information:
+- App Version: [Auto-detected]
+- Platform: ${Platform.OS}
+- Device: ${Platform.OS === "ios" ? "iOS" : "Android"}
+
+Thank you for your help!
+
+Best regards,
+${user?.displayName || "VectorFi User"}`,
+        isHtml: false,
+      };
+
+      // Open email composer
+      const result = await MailComposer.composeAsync(emailContent);
+
+      if (result.status === MailComposer.MailComposerStatus.SENT) {
+        Alert.alert(
+          "Email Sent",
+          "Thank you for contacting us. We'll get back to you as soon as possible.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("Error opening email composer:", error);
+      Alert.alert(
+        "Error",
+        "Unable to open email composer. Please try again or contact us through other means.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   const openLiveChat = () => {
@@ -123,19 +204,151 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
   };
 
   const openUserGuide = () => {
-    Linking.openURL("https://moneypilot.com/user-guide");
+    Linking.openURL("https://vectorfi.ai/");
   };
 
   const openVideoTutorials = () => {
-    Linking.openURL("https://moneypilot.com/tutorials");
+    Linking.openURL("https://vectorfi.ai/");
   };
 
-  const reportBug = () => {
-    Linking.openURL("mailto:bugs@moneypilot.com?subject=Bug%20Report");
+  const reportBug = async () => {
+    try {
+      const isAvailable = await MailComposer.isAvailableAsync();
+
+      if (!isAvailable) {
+        Alert.alert(
+          "Email Not Available",
+          "No email app is configured on this device. Please set up an email account in your device settings.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      const userInfo = user
+        ? `\n\nUser Information:\n- User ID: ${user.uid}\n- Email: ${
+            user.email || "Not provided"
+          }\n- Display Name: ${user.displayName || "Not provided"}`
+        : "";
+
+      const emailContent = {
+        recipients: ["support@vectorfi.ai"],
+        subject: "VectorFi Bug Report",
+        body: `Hello VectorFi Team,
+
+I found a bug in the VectorFi app. Here are the details:
+
+${userInfo}
+
+Bug Description:
+[Please describe the bug you encountered]
+
+Steps to Reproduce:
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+
+Expected Behavior:
+[What should happen]
+
+Actual Behavior:
+[What actually happened]
+
+Device Information:
+- App Version: [Auto-detected]
+- Platform: ${Platform.OS}
+- Device: ${Platform.OS === "ios" ? "iOS" : "Android"}
+
+Thank you for your attention to this issue!
+
+Best regards,
+${user?.displayName || "VectorFi User"}`,
+        isHtml: false,
+      };
+
+      const result = await MailComposer.composeAsync(emailContent);
+
+      if (result.status === MailComposer.MailComposerStatus.SENT) {
+        Alert.alert(
+          "Bug Report Sent",
+          "Thank you for reporting this bug. We'll investigate and fix it as soon as possible.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("Error opening email composer:", error);
+      Alert.alert("Error", "Unable to open email composer. Please try again.", [
+        { text: "OK" },
+      ]);
+    }
   };
 
-  const requestFeature = () => {
-    Linking.openURL("mailto:features@moneypilot.com?subject=Feature%20Request");
+  const requestFeature = async () => {
+    try {
+      const isAvailable = await MailComposer.isAvailableAsync();
+
+      if (!isAvailable) {
+        Alert.alert(
+          "Email Not Available",
+          "No email app is configured on this device. Please set up an email account in your device settings.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      const userInfo = user
+        ? `\n\nUser Information:\n- User ID: ${user.uid}\n- Email: ${
+            user.email || "Not provided"
+          }\n- Display Name: ${user.displayName || "Not provided"}`
+        : "";
+
+      const emailContent = {
+        recipients: ["support@vectorfi.ai"],
+        subject: "VectorFi Feature Request",
+        body: `Hello VectorFi Team,
+
+I have a feature request for the VectorFi app. Here are the details:
+
+${userInfo}
+
+Feature Request:
+[Please describe the feature you'd like to see]
+
+Why is this feature important to you?
+[Explain how this feature would help you]
+
+Use Case:
+[Describe how you would use this feature]
+
+Additional Notes:
+[Any other relevant information]
+
+Device Information:
+- App Version: [Auto-detected]
+- Platform: ${Platform.OS}
+- Device: ${Platform.OS === "ios" ? "iOS" : "Android"}
+
+Thank you for considering this feature request!
+
+Best regards,
+${user?.displayName || "VectorFi User"}`,
+        isHtml: false,
+      };
+
+      const result = await MailComposer.composeAsync(emailContent);
+
+      if (result.status === MailComposer.MailComposerStatus.SENT) {
+        Alert.alert(
+          "Feature Request Sent",
+          "Thank you for your feature request. We'll review it and consider it for future updates.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("Error opening email composer:", error);
+      Alert.alert("Error", "Unable to open email composer. Please try again.", [
+        { text: "OK" },
+      ]);
+    }
   };
 
   const getCategoryIcon = (category: string) => {
@@ -197,10 +410,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={[
-              styles.backButton,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
+            style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -214,41 +424,101 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
           </View>
         </View>
 
+        {/* Friendly Mode Toggle */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Accessibility
+          </Text>
+
+          <View
+            style={[
+              styles.settingCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <View
+                  style={[
+                    styles.settingIcon,
+                    { backgroundColor: colors.surfaceSecondary },
+                  ]}
+                >
+                  <Ionicons name="school" size={20} color="#6366f1" />
+                </View>
+                <View style={styles.settingText}>
+                  <Text style={[styles.settingTitle, { color: colors.text }]}>
+                    Friendly Mode
+                  </Text>
+                  <Text
+                    style={[
+                      styles.settingDescription,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Translate financial terms into friendly, easy-to-understand
+                    language
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={isFriendlyMode}
+                onValueChange={handleFriendlyModeToggle}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={
+                  isFriendlyMode ? colors.buttonText : colors.surfaceSecondary
+                }
+              />
+            </View>
+          </View>
+        </View>
+
         {/* Quick Support Options */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Quick Support
           </Text>
 
-          <View style={styles.supportGrid}>
-            <TouchableOpacity
-              style={[
-                styles.supportCard,
-                { backgroundColor: colors.surface, shadowColor: colors.shadow },
-              ]}
-              onPress={openSupportEmail}
-            >
+          <TouchableOpacity
+            style={[
+              styles.emailSupportRow,
+              { backgroundColor: colors.surface, shadowColor: colors.shadow },
+            ]}
+            onPress={openSupportEmail}
+          >
+            <View style={styles.emailSupportContent}>
               <View
                 style={[
-                  styles.supportIcon,
+                  styles.emailSupportIcon,
                   { backgroundColor: colors.surfaceSecondary },
                 ]}
               >
                 <Ionicons name="mail" size={24} color="#6366f1" />
               </View>
-              <Text style={[styles.supportTitle, { color: colors.text }]}>
-                Email Support
-              </Text>
-              <Text
-                style={[
-                  styles.supportDescription,
-                  { color: colors.textSecondary },
-                ]}
-              >
-                Get help via email
-              </Text>
-            </TouchableOpacity>
+              <View style={styles.emailSupportText}>
+                <Text
+                  style={[styles.emailSupportTitle, { color: colors.text }]}
+                >
+                  Email Support
+                </Text>
+                <Text
+                  style={[
+                    styles.emailSupportDescription,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  Get help via email
+                </Text>
+              </View>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
 
+          {/* Live Chat - Commented out
             <TouchableOpacity
               style={[
                 styles.supportCard,
@@ -276,7 +546,9 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
                 Chat with support team
               </Text>
             </TouchableOpacity>
+            */}
 
+          {/* User Guide - Commented out
             <TouchableOpacity
               style={[
                 styles.supportCard,
@@ -304,7 +576,9 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
                 Detailed instructions
               </Text>
             </TouchableOpacity>
+            */}
 
+          {/* Video Tutorials - Commented out
             <TouchableOpacity
               style={[
                 styles.supportCard,
@@ -332,7 +606,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
                 Learn with videos
               </Text>
             </TouchableOpacity>
-          </View>
+            */}
         </View>
 
         {/* FAQ Section */}
@@ -458,7 +732,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               <Text
                 style={[styles.contactText, { color: colors.textSecondary }]}
               >
-                support@vectorFi.com
+                support@vectorfi.ai
               </Text>
             </View>
             <View style={styles.contactItem}>
@@ -474,7 +748,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               <Text
                 style={[styles.contactText, { color: colors.textSecondary }]}
               >
-                vectorfi.ai/support
+                www.vectorfi.ai
               </Text>
             </View>
           </View>
@@ -527,8 +801,6 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 20,
     padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
   },
   title: {
     fontSize: 26,
@@ -581,6 +853,41 @@ const styles = StyleSheet.create({
   supportDescription: {
     fontSize: 12,
     textAlign: "center",
+  },
+  emailSupportRow: {
+    borderRadius: 16,
+    padding: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  emailSupportContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  emailSupportIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  emailSupportText: {
+    flex: 1,
+  },
+  emailSupportTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  emailSupportDescription: {
+    fontSize: 14,
   },
   faqItem: {
     borderRadius: 16,
@@ -683,9 +990,46 @@ const styles = StyleSheet.create({
   },
   emergencyDescription: {
     fontSize: 15,
-    textAlign: "center",
-    marginBottom: 16,
-    lineHeight: 22,
+  },
+  settingCard: {
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    marginBottom: 12,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  settingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  settingInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  settingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  settingText: {
+    flex: 1,
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  settingDescription: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   emergencyButton: {
     paddingVertical: 12,

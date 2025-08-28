@@ -11,10 +11,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
-import { useTransactionLimits } from "../hooks/useTransactionLimits";
+
 import { useData } from "../contexts/DataContext";
+import {
+  getUserNetWorthEntries,
+  updateNetWorthFromAssetsAndDebts,
+} from "../services/userData";
 
 import { useTheme } from "../contexts/ThemeContext";
+import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { translate } from "../services/translations";
+import { StandardHeader } from "../components/StandardHeader";
+import { CustomTrendChart } from "../components/CustomTrendChart";
 
 interface DashboardScreenProps {
   navigation: any;
@@ -25,14 +33,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { transactions, assets, debts, refreshInBackground } = useZeroLoading();
-  const { goals, budgetSettings } = useData();
-  const {
-    getTransactionLimitInfo,
-    getIncomeSourceLimitInfo,
-    getGoalLimitInfo,
-  } = useTransactionLimits();
+  const { goals, budgetSettings, refreshAssetsDebts } = useData();
+
   const [loading, setLoading] = useState(false);
+  const [trendData, setTrendData] = useState<any[]>([]);
+  const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(
+    new Set()
+  );
   const { colors } = useTheme();
+  const { isFriendlyMode } = useFriendlyMode();
 
   // Function to determine if name should be on a new line
   const shouldWrapName = (name: string) => {
@@ -44,6 +53,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     React.useCallback(() => {
       if (user) {
         refreshInBackground();
+        // Also refresh trend data specifically with a small delay to ensure context is updated
+        const refreshTrendData = async () => {
+          // Small delay to ensure context has been updated
+          setTimeout(async () => {
+            const data = await getTrendData();
+            setTrendData(data);
+          }, 500); // Increased delay to ensure context is fully updated
+        };
+        refreshTrendData();
       }
     }, [user, refreshInBackground])
   );
@@ -106,38 +124,43 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     .reduce((sum: number, asset: any) => sum + asset.balance, 0);
   const emergencyFundTarget = monthlyExpenses * 6;
   const emergencyFundProgress =
-    emergencyFundTarget > 0 ? (totalSavings / emergencyFundTarget) * 100 : 0;
+    emergencyFundTarget > 0 && monthlyExpenses > 0
+      ? (totalSavings / emergencyFundTarget) * 100
+      : 0;
 
   // Premium Feature: Smart Insights
   const getInsights = () => {
     const insights = [];
 
     if (monthlyIncome > 0) {
-      const savingsRate =
-        ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100;
-      if (savingsRate >= 20) {
+      // Calculate discretionary savings rate (what's actually available after all allocations)
+      const discretionarySavingsRate = (availableAmount / monthlyIncome) * 100;
+      if (discretionarySavingsRate >= 20) {
         insights.push({
+          id: "excellent-savings-rate",
           type: "success",
           icon: "trending-up",
-          title: "Excellent Savings Rate!",
-          message: `You're saving ${savingsRate.toFixed(
+          title: "Excellent Discretionary Savings!",
+          message: `You have ${discretionarySavingsRate.toFixed(
             1
-          )}% of your income this month`,
+          )}% of your income available for additional savings`,
         });
-      } else if (savingsRate < 0) {
+      } else if (discretionarySavingsRate < 0) {
         insights.push({
+          id: "spending-more-than-income",
           type: "warning",
           icon: "alert-circle",
-          title: "Spending More Than Income",
-          message: "Consider reviewing your expenses",
+          title: "Over Budget",
+          message: "Your expenses and allocations exceed your income",
         });
       }
     }
 
-    if (totalDebts > 0 && totalAssets > 0) {
+    if (totalDebts > 0 && totalAssets > 0 && totalAssets > totalDebts) {
       const debtToAssetRatio = (totalDebts / totalAssets) * 100;
       if (debtToAssetRatio > 50) {
         insights.push({
+          id: "high-debt-ratio",
           type: "warning",
           icon: "card",
           title: "High Debt Ratio",
@@ -148,6 +171,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
     if (monthlyTransactions.length >= 10) {
       insights.push({
+        id: "active-month",
         type: "info",
         icon: "analytics",
         title: "Active Month",
@@ -158,6 +182,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     // Emergency Fund Insight
     if (emergencyFundProgress >= 100) {
       insights.push({
+        id: "emergency-fund-complete",
         type: "success",
         icon: "shield-checkmark",
         title: "Emergency Fund Complete!",
@@ -167,6 +192,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       });
     } else if (emergencyFundProgress >= 50) {
       insights.push({
+        id: "emergency-fund-progress",
         type: "info",
         icon: "shield",
         title: "Emergency Fund Progress",
@@ -176,6 +202,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       });
     } else if (emergencyFundProgress > 0) {
       insights.push({
+        id: "build-emergency-fund",
         type: "warning",
         icon: "shield-outline",
         title: "Build Emergency Fund",
@@ -188,62 +215,35 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     return insights;
   };
 
-  const insights = getInsights();
+  const allInsights = React.useMemo(
+    () => getInsights(),
+    [
+      monthlyIncome,
+      availableAmount,
+      totalDebts,
+      totalAssets,
+      monthlyTransactions.length,
+      emergencyFundProgress,
+      totalSavings,
+    ]
+  );
 
-  // Premium Feature: Quick Actions
-  const transactionLimitInfo = getTransactionLimitInfo();
-  const incomeLimitInfo = getIncomeSourceLimitInfo();
-  const goalLimitInfo = getGoalLimitInfo();
+  const insights = React.useMemo(
+    () => allInsights.filter((insight) => !dismissedInsights.has(insight.id)),
+    [allInsights, dismissedInsights]
+  );
 
-  const quickActions = [
-    {
-      title: "Transaction",
-      subtitle: transactionLimitInfo.isUnlimited
-        ? ""
-        : `${transactionLimitInfo.current}/${transactionLimitInfo.limit}`,
-      icon: "add-circle",
-      onPress: () => navigation.navigate("AddTransaction"),
-      color: "#6366f1",
-    },
-    {
-      title: "AI Advisor",
-      subtitle: "",
-      icon: "chatbubble-ellipses",
-      onPress: () => navigation.navigate("AIFinancialAdvisor"),
-      color: "#06b6d4",
-    },
-    {
-      title: "Asset",
-      icon: "trending-up",
-      onPress: () => navigation.navigate("AddAssetDebt", { type: "asset" }),
-      color: "#10b981",
-    },
-    {
-      title: "Debt",
-      icon: "card",
-      onPress: () => navigation.navigate("AddAssetDebt", { type: "debt" }),
-      color: "#ef4444",
-    },
-    {
-      title: "Goals",
-      subtitle: goalLimitInfo.isUnlimited
-        ? ""
-        : `${goalLimitInfo.current}/${goalLimitInfo.limit}`,
-      icon: "flag",
-      onPress: () => navigation.navigate("Goals", { openAddModal: true }),
-      color: "#f59e0b",
-    },
-    {
-      title: "Bank Data",
-      icon: "card-outline",
-      onPress: () => navigation.navigate("BankTransactions"),
-      color: "#8b5cf6",
-    },
-  ];
+  const handleDismissInsight = (insightId: string) => {
+    setDismissedInsights((prev) => new Set([...prev, insightId]));
+  };
 
   // Premium Feature: Trend Analysis
-  const getTrendData = () => {
+  const getTrendData = async () => {
     const last6Months = [];
+
+    // Get net worth entries
+    const netWorthEntries = await getUserNetWorthEntries(user?.uid || "");
+
     for (let i = 5; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
@@ -263,17 +263,73 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         .filter((t) => t.type === "expense")
         .reduce((sum: number, t: any) => sum + t.amount, 0);
 
+      // Find net worth for this month
+      const monthNetWorthEntry = netWorthEntries.find((entry) => {
+        const entryDate = new Date(entry.date);
+        return (
+          entryDate.getMonth() === date.getMonth() &&
+          entryDate.getFullYear() === date.getFullYear()
+        );
+      });
+
+      let netWorth = monthNetWorthEntry ? monthNetWorthEntry.netWorth : 0;
+
+      // If no net worth entry exists, calculate current net worth for current month
+      if (!monthNetWorthEntry && i === 0) {
+        // Current month
+        const totalAssets = assets.reduce(
+          (sum: number, asset: any) => sum + asset.balance,
+          0
+        );
+        const totalDebts = debts.reduce(
+          (sum: number, debt: any) => sum + debt.balance,
+          0
+        );
+        netWorth = totalAssets - totalDebts;
+      }
+
       last6Months.push({
         month: date.toLocaleDateString("en-US", { month: "short" }),
         income,
         expenses,
-        net: income - expenses,
+        netWorth,
       });
     }
     return last6Months;
   };
 
-  const trendData = getTrendData();
+  // Load trend data
+  useEffect(() => {
+    const loadTrendData = async () => {
+      if (user) {
+        // Initialize net worth if no entries exist
+        const netWorthEntries = await getUserNetWorthEntries(user.uid);
+        if (netWorthEntries.length === 0) {
+          await updateNetWorthFromAssetsAndDebts(user.uid);
+        }
+
+        const data = await getTrendData();
+        setTrendData(data);
+      }
+    };
+    loadTrendData();
+  }, [user, transactions]); // Removed assets and debts dependencies to prevent circular updates
+
+  // Prepare data for line chart
+  const chartData = trendData.map((month) => ({
+    x: month.month,
+    y: month.income,
+  }));
+
+  const expensesData = trendData.map((month) => ({
+    x: month.month,
+    y: month.expenses,
+  }));
+
+  const netWorthData = trendData.map((month) => ({
+    x: month.month,
+    y: month.netWorth,
+  }));
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString(undefined, {
@@ -289,104 +345,69 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 32,
-            paddingTop: 8,
-          }}
-        >
-          <View>
-            <Text
-              style={{
-                fontSize: 32,
-                fontWeight: "800",
-                color: colors.text,
-                letterSpacing: -0.5,
-              }}
-            >
-              Dashboard
-            </Text>
-            {shouldWrapName(user?.displayName || "User") ? (
-              <View style={{ marginTop: 6 }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: colors.textSecondary,
-                    fontWeight: "500",
-                  }}
-                >
-                  Welcome back,
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: colors.textSecondary,
-                    fontWeight: "500",
-                    marginTop: 2,
-                  }}
-                >
-                  {user?.displayName || "User"} 👋
-                </Text>
-              </View>
-            ) : (
-              <Text
+        <StandardHeader
+          title={translate("dashboard", isFriendlyMode)}
+          subtitle={`Welcome back, ${user?.displayName || "User"}`}
+          showBackButton={false}
+          rightComponent={
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("FinancialRisk")}
                 style={{
-                  fontSize: 16,
-                  color: colors.textSecondary,
-                  marginTop: 6,
-                  fontWeight: "500",
+                  backgroundColor: colors.error,
+                  padding: 14,
+                  borderRadius: 14,
+                  shadowColor: colors.error,
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 3,
                 }}
               >
-                Welcome back, {user?.displayName || "User"} 👋
-              </Text>
-            )}
-          </View>
-          <View style={{ flexDirection: "row", gap: 12 }}>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("BalanceSheet")}
-              style={{
-                backgroundColor: "#6366f1",
-                padding: 14,
-                borderRadius: 14,
-              }}
-            >
-              <Ionicons name="analytics-outline" size={22} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("SharedFinance")}
-              style={{
-                backgroundColor: "#ec4899",
-                padding: 14,
-                borderRadius: 14,
-              }}
-            >
-              <Ionicons name="people" size={22} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
+                <Ionicons
+                  name="shield-checkmark"
+                  size={22}
+                  color={colors.buttonText}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("SharedFinance")}
+                style={{
+                  backgroundColor: "#8b5cf6",
+                  padding: 14,
+                  borderRadius: 14,
+                  shadowColor: "#8b5cf6",
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 3,
+                }}
+              >
+                <Ionicons name="people" size={22} color={colors.buttonText} />
+              </TouchableOpacity>
+            </View>
+          }
+        />
 
         {/* Monthly Overview - Large Card */}
         <View
           style={{
             backgroundColor: colors.surface,
             borderRadius: 20,
-            padding: 28,
-            marginBottom: 24,
+            padding: 24,
+            marginBottom: 20,
             shadowColor: colors.shadow,
             shadowOpacity: 0.08,
-            shadowRadius: 16,
-            shadowOffset: { width: 0, height: 6 },
-            elevation: 6,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
           }}
         >
           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
-              marginBottom: 24,
+              marginBottom: 20,
             }}
           >
             <View
@@ -402,7 +423,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <View>
               <Text
                 style={{
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: "700",
                   color: colors.text,
                   letterSpacing: -0.3,
@@ -430,7 +451,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  backgroundColor: "#dcfce7",
+                  backgroundColor: colors.surfaceSecondary,
                   padding: 12,
                   borderRadius: 12,
                   marginRight: 16,
@@ -440,7 +461,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   alignItems: "center",
                 }}
               >
-                <Ionicons name="trending-up" size={20} color="#16a34a" />
+                <Ionicons name="trending-up" size={20} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text
@@ -453,7 +474,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     letterSpacing: 0.5,
                   }}
                 >
-                  Income
+                  {translate("income", isFriendlyMode)}
                 </Text>
                 <Text
                   style={{
@@ -471,7 +492,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  backgroundColor: "#fee2e2",
+                  backgroundColor: colors.surfaceSecondary,
                   padding: 12,
                   borderRadius: 12,
                   marginRight: 16,
@@ -481,20 +502,24 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   alignItems: "center",
                 }}
               >
-                <Ionicons name="trending-down" size={20} color="#dc2626" />
+                <Ionicons
+                  name="trending-down"
+                  size={20}
+                  color={colors.primary}
+                />
               </View>
               <View style={{ flex: 1 }}>
                 <Text
                   style={{
                     fontSize: 14,
-                    color: "#6b7280",
+                    color: colors.textSecondary,
                     marginBottom: 4,
                     fontWeight: "600",
                     textTransform: "uppercase",
                     letterSpacing: 0.5,
                   }}
                 >
-                  Expenses
+                  {translate("expenses", isFriendlyMode)}
                 </Text>
                 <Text
                   style={{
@@ -512,7 +537,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  backgroundColor: availableAmount >= 0 ? "#dbeafe" : "#fef3c7",
+                  backgroundColor: colors.surfaceSecondary,
                   padding: 12,
                   borderRadius: 12,
                   marginRight: 16,
@@ -525,22 +550,59 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Ionicons
                   name={availableAmount >= 0 ? "wallet" : "alert-circle"}
                   size={20}
-                  color={availableAmount >= 0 ? "#2563eb" : "#d97706"}
+                  color={colors.primary}
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text
+                <View
                   style={{
-                    fontSize: 14,
-                    color: "#6b7280",
+                    flexDirection: "row",
+                    alignItems: "center",
                     marginBottom: 4,
-                    fontWeight: "600",
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
                   }}
                 >
-                  Available
-                </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      fontWeight: "600",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {translate("availableAmount", isFriendlyMode)}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Alert.alert(
+                        "Available Amount Calculation",
+                        `Formula:\nNet Income - Savings (${savingsPercent}%) - Goal Contributions - Debt Payoff (${debtPayoffPercent}%)\n\nBreakdown:\n\nGross Income:     ${formatCurrency(
+                          monthlyIncome
+                        )}\nExpenses:         ${formatCurrency(
+                          monthlyExpenses
+                        )}\n─────────────────────────\nNet Income:       ${formatCurrency(
+                          netIncome
+                        )}\n\nSavings:          ${formatCurrency(
+                          savingsAmount
+                        )}\nGoal Contrib:     ${formatCurrency(
+                          totalGoalContributions
+                        )}\nDebt Payoff:      ${formatCurrency(
+                          debtPayoffAmount
+                        )}\n─────────────────────────\nAvailable:        ${formatCurrency(
+                          availableAmount
+                        )}`,
+                        [{ text: "Got it", style: "default" }]
+                      );
+                    }}
+                    style={{ marginLeft: 8 }}
+                  >
+                    <Ionicons
+                      name="information-circle"
+                      size={16}
+                      color={colors.textTertiary}
+                    />
+                  </TouchableOpacity>
+                </View>
                 <Text
                   style={{
                     fontSize: 20,
@@ -556,7 +618,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </View>
         </View>
 
-        {/* Net Worth Card */}
+        {/* Balance Sheet Card */}
         <View
           style={{
             backgroundColor: colors.surface,
@@ -578,10 +640,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               color: colors.text,
             }}
           >
-            Net Worth
+            Balance Sheet Snapshot
           </Text>
 
-          <View style={{ alignItems: "center" }}>
+          <View style={{ alignItems: "center", marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 36,
@@ -596,94 +658,46 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
             </Text>
           </View>
-        </View>
 
-        {/* Quick Actions */}
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 20,
-            padding: 24,
-            marginBottom: 20,
-            shadowColor: colors.shadow,
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "700",
-              marginBottom: 20,
-              color: colors.text,
-            }}
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
-            Quick Actions
-          </Text>
-
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-            {quickActions.map((action, index) => (
-              <TouchableOpacity
-                key={`action-${action.title}-${index}`}
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
                 style={{
-                  flex: 1,
-                  minWidth: "48%",
-                  backgroundColor: colors.surfaceSecondary,
-                  padding: 16,
-                  borderRadius: 16,
-                  alignItems: "center",
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  shadowColor: colors.shadow,
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 2,
-                  elevation: 1,
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 4,
                 }}
-                onPress={action.onPress}
               >
-                <View
-                  style={{
-                    backgroundColor: action.color + "15",
-                    padding: 10,
-                    borderRadius: 10,
-                    marginBottom: 8,
-                  }}
-                >
-                  <Ionicons
-                    name={action.icon as any}
-                    size={20}
-                    color={action.color}
-                  />
-                </View>
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: "600",
-                    color: colors.text,
-                    textAlign: "center",
-                    lineHeight: 16,
-                  }}
-                >
-                  {action.title}
-                </Text>
-                {action.subtitle && (
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      fontWeight: "500",
-                      color: colors.textSecondary,
-                      textAlign: "center",
-                      marginTop: 2,
-                    }}
-                  >
-                    {action.subtitle}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            ))}
+                Total {translate("assets", isFriendlyMode)}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.success,
+                }}
+              >
+                {formatCurrency(totalAssets)}
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 4,
+                }}
+              >
+                Total {translate("liabilities", isFriendlyMode)}
+              </Text>
+              <Text
+                style={{ fontSize: 18, fontWeight: "700", color: colors.error }}
+              >
+                {formatCurrency(totalDebts)}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -720,15 +734,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Ionicons name="bulb" size={20} color={colors.warning} />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: colors.text }}
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  marginBottom: 20,
+                  color: colors.text,
+                }}
               >
-                Smart Insights
+                {translate("smartInsights", isFriendlyMode)}
               </Text>
             </View>
 
             {insights.map((insight, index) => (
               <View
-                key={`insight-${insight.title}-${index}`}
+                key={`insight-${insight.id}-${index}`}
                 style={{ marginBottom: 12 }}
               >
                 <View
@@ -755,10 +774,26 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       fontSize: 14,
                       fontWeight: "600",
                       color: colors.text,
+                      flex: 1,
                     }}
                   >
                     {insight.title}
                   </Text>
+                  <TouchableOpacity
+                    onPress={() => handleDismissInsight(insight.id)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={{
+                      padding: 4,
+                      borderRadius: 12,
+                      backgroundColor: colors.surfaceSecondary,
+                    }}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={14}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
                 </View>
                 <Text
                   style={{
@@ -774,7 +809,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </View>
         )}
 
-        {/* 6-Month Trend - Simplified */}
+        {/* 6-Month Trend - Line Chart */}
         <View
           style={{
             backgroundColor: colors.surface,
@@ -799,59 +834,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             6-Month Trend
           </Text>
 
-          {trendData.map((month, index) => (
-            <View
-              key={`trend-${month.month}-${index}`}
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 12,
-                paddingVertical: 8,
-                borderBottomWidth: index < trendData.length - 1 ? 1 : 0,
-                borderBottomColor: colors.border,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: colors.textSecondary,
-                  width: 40,
-                  fontWeight: "500",
-                }}
-              >
-                {month.month}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: "#16a34a",
-                  width: 80,
-                  fontWeight: "600",
-                }}
-              >
-                {formatCurrency(month.income)}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: "#dc2626",
-                  width: 80,
-                  fontWeight: "600",
-                }}
-              >
-                {formatCurrency(month.expenses)}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "700",
-                  color: month.net >= 0 ? "#16a34a" : "#dc2626",
-                }}
-              >
-                {formatCurrency(month.net)}
-              </Text>
-            </View>
-          ))}
+          <CustomTrendChart
+            incomeData={chartData}
+            expensesData={expensesData}
+            netWorthData={netWorthData}
+            height={250}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>

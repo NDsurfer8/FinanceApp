@@ -156,6 +156,17 @@ export interface SharedInvitation {
   createdAt: number;
 }
 
+export interface NetWorthEntry {
+  id?: string;
+  userId: string;
+  netWorth: number;
+  assets: number;
+  debts: number;
+  date: number; // timestamp
+  createdAt: number;
+  updatedAt: number;
+}
+
 // Create or update user profile
 export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
   try {
@@ -192,6 +203,187 @@ export const getUserProfile = async (
     return null;
   } catch (error) {
     console.error("Error getting user profile:", error);
+    throw error;
+  }
+};
+
+// Save net worth entry
+export const saveNetWorthEntry = async (
+  entry: NetWorthEntry
+): Promise<string> => {
+  try {
+    const { encryptNetWorthEntry } = await import("./encryption");
+    const encryptedEntry = await encryptNetWorthEntry(entry);
+
+    const netWorthRef = ref(db, `users/${entry.userId}/netWorth`);
+    const newEntryRef = push(netWorthRef);
+    const entryId = newEntryRef.key;
+
+    if (!entryId) {
+      throw new Error("Failed to generate net worth entry ID");
+    }
+
+    await set(newEntryRef, {
+      ...encryptedEntry,
+      id: entryId,
+    });
+
+    console.log("Net worth entry saved successfully");
+    return entryId;
+  } catch (error) {
+    console.error("Error saving net worth entry:", error);
+    throw error;
+  }
+};
+
+// Get user net worth entries
+export const getUserNetWorthEntries = async (
+  userId: string
+): Promise<NetWorthEntry[]> => {
+  try {
+    const { decryptNetWorthEntries } = await import("./encryption");
+    const netWorthRef = ref(db, `users/${userId}/netWorth`);
+    const snapshot = await get(netWorthRef);
+
+    if (snapshot.exists()) {
+      const entries: NetWorthEntry[] = [];
+      snapshot.forEach((childSnapshot) => {
+        entries.push(childSnapshot.val());
+      });
+
+      // Decrypt all entries
+      const decryptedEntries = await decryptNetWorthEntries(entries);
+      return decryptedEntries.sort(
+        (a: NetWorthEntry, b: NetWorthEntry) => b.date - a.date
+      );
+    }
+    return [];
+  } catch (error) {
+    console.error("Error getting user net worth entries:", error);
+    throw error;
+  }
+};
+
+// Debounce mechanism to prevent multiple simultaneous calls
+const updateNetWorthCallbacks: { [userId: string]: NodeJS.Timeout } = {};
+
+// Update net worth from current assets and debts
+export const updateNetWorthFromAssetsAndDebts = async (
+  userId: string
+): Promise<void> => {
+  console.log("updateNetWorthFromAssetsAndDebts called for user:", userId);
+
+  // Clear any existing timeout for this user
+  if (updateNetWorthCallbacks[userId]) {
+    clearTimeout(updateNetWorthCallbacks[userId]);
+  }
+
+  // Set a new timeout to debounce the call
+  updateNetWorthCallbacks[userId] = setTimeout(async () => {
+    console.log("updateNetWorthFromAssetsAndDebts executing for user:", userId);
+    try {
+      // Get current assets and debts
+      const [assets, debts] = await Promise.all([
+        getUserAssets(userId),
+        getUserDebts(userId),
+      ]);
+
+      // Calculate totals
+      const totalAssets = assets.reduce(
+        (sum: number, asset: any) => sum + asset.balance,
+        0
+      );
+      const totalDebts = debts.reduce(
+        (sum: number, debt: any) => sum + debt.balance,
+        0
+      );
+      const netWorth = totalAssets - totalDebts;
+
+      // Get existing net worth entries
+      const entries = await getUserNetWorthEntries(userId);
+
+      // Check if there's already an entry for current month
+      const currentDate = new Date();
+      const currentMonthEntry = entries.find((entry) => {
+        const entryDate = new Date(entry.date);
+        return (
+          entryDate.getMonth() === currentDate.getMonth() &&
+          entryDate.getFullYear() === currentDate.getFullYear()
+        );
+      });
+
+      if (currentMonthEntry) {
+        // Update existing entry
+        const { encryptNetWorthEntry } = await import("./encryption");
+        const updatedEntry = {
+          ...currentMonthEntry,
+          netWorth,
+          assets: totalAssets,
+          debts: totalDebts,
+          updatedAt: Date.now(),
+        };
+        const encryptedEntry = await encryptNetWorthEntry(updatedEntry);
+
+        const entryRef = ref(
+          db,
+          `users/${userId}/netWorth/${currentMonthEntry.id}`
+        );
+        await set(entryRef, encryptedEntry);
+        console.log("Current month net worth updated successfully");
+      } else {
+        // Create new entry for current month
+        const currentMonth = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          1
+        );
+        console.log("Creating new net worth entry for month:", currentMonth);
+        const newEntry: NetWorthEntry = {
+          userId,
+          netWorth,
+          assets: totalAssets,
+          debts: totalDebts,
+          date: currentMonth.getTime(),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        await saveNetWorthEntry(newEntry);
+        console.log("New net worth entry created for current month");
+      }
+
+      // Maintain only last 6 entries
+      await maintainNetWorthHistory(userId);
+    } catch (error) {
+      console.error("Error updating net worth from assets and debts:", error);
+      throw error;
+    }
+  }, 100); // 100ms debounce delay
+};
+
+// Maintain only last 6 net worth entries
+export const maintainNetWorthHistory = async (
+  userId: string
+): Promise<void> => {
+  try {
+    const entries = await getUserNetWorthEntries(userId);
+
+    if (entries.length > 6) {
+      // Sort by date (newest first) and keep only the last 6
+      const sortedEntries = entries.sort((a, b) => b.date - a.date);
+      const entriesToKeep = sortedEntries.slice(0, 6);
+      const entriesToDelete = sortedEntries.slice(6);
+
+      // Delete old entries
+      for (const entry of entriesToDelete) {
+        if (entry.id) {
+          const entryRef = ref(db, `users/${userId}/netWorth/${entry.id}`);
+          await remove(entryRef);
+        }
+      }
+      console.log(`Deleted ${entriesToDelete.length} old net worth entries`);
+    }
+  } catch (error) {
+    console.error("Error maintaining net worth history:", error);
     throw error;
   }
 };
@@ -288,6 +480,9 @@ export const saveAsset = async (asset: Asset): Promise<string> => {
     // Auto-update shared groups
     await updateSharedGroupsForUser(asset.userId);
 
+    // Auto-update net worth
+    await updateNetWorthFromAssetsAndDebts(asset.userId);
+
     return assetId;
   } catch (error) {
     console.error("Error saving asset:", error);
@@ -347,6 +542,9 @@ export const saveDebt = async (debt: Debt): Promise<string> => {
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(debt.userId);
+
+    // Auto-update net worth
+    await updateNetWorthFromAssetsAndDebts(debt.userId);
 
     return debtId;
   } catch (error) {
@@ -456,6 +654,9 @@ export const removeAsset = async (
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(userId);
+
+    // Auto-update net worth
+    await updateNetWorthFromAssetsAndDebts(userId);
   } catch (error) {
     console.error("Error removing asset:", error);
     throw error;
@@ -477,6 +678,9 @@ export const updateAsset = async (asset: Asset): Promise<void> => {
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(asset.userId);
+
+    // Auto-update net worth
+    await updateNetWorthFromAssetsAndDebts(asset.userId);
   } catch (error) {
     console.error("Error updating asset:", error);
     throw error;
@@ -495,6 +699,9 @@ export const removeDebt = async (
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(userId);
+
+    // Auto-update net worth
+    await updateNetWorthFromAssetsAndDebts(userId);
   } catch (error) {
     console.error("Error removing debt:", error);
     throw error;
@@ -516,6 +723,9 @@ export const updateDebt = async (debt: Debt): Promise<void> => {
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(debt.userId);
+
+    // Auto-update net worth
+    await updateNetWorthFromAssetsAndDebts(debt.userId);
   } catch (error) {
     console.error("Error updating debt:", error);
     throw error;

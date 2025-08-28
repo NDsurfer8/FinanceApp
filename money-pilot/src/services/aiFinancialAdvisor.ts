@@ -30,7 +30,28 @@ class AIFinancialAdvisorService {
   // Check if user is requesting a financial plan
   isPlanRequest(userQuestion: string): boolean {
     const lowerQuestion = userQuestion.toLowerCase();
-    return lowerQuestion.includes("generate");
+    const planKeywords = [
+      "generate",
+      "create",
+      "make",
+      "build",
+      "develop",
+      "plan",
+      "financial plan",
+      "budget plan",
+      "savings plan",
+      "debt plan",
+      "investment plan",
+      "retirement plan",
+      "emergency fund plan",
+      "money plan",
+      "financial strategy",
+      "budget strategy",
+      "savings strategy",
+      "debt strategy",
+    ];
+
+    return planKeywords.some((keyword) => lowerQuestion.includes(keyword));
   }
 
   // Generate AI response using backend AI
@@ -38,7 +59,8 @@ class AIFinancialAdvisorService {
     userQuestion: string,
     snapshot: FinancialSnapshot,
     isPlanRequest: boolean = false,
-    userPreferences?: any
+    userPreferences?: any,
+    conversationHistory?: Array<{ role: string; content: string }>
   ): Promise<string> {
     try {
       console.log("Using backend AI... sending snapshot to backend");
@@ -75,7 +97,8 @@ class AIFinancialAdvisorService {
       const result = await callBackendAI(
         userQuestion,
         financialData,
-        userPreferences
+        userPreferences,
+        conversationHistory
       );
       return result.response;
     } catch (error) {

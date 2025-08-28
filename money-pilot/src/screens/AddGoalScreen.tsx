@@ -9,6 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
@@ -20,8 +21,10 @@ import {
   removeGoal,
   FinancialGoal,
 } from "../services/userData";
+import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
+import { StandardHeader } from "../components/StandardHeader";
 
 interface AddGoalScreenProps {
   navigation: any;
@@ -45,6 +48,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
   const { presentPaywall } = usePaywall();
   const { editMode, goal } = route.params as RouteParams;
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const goalCategories = [
     {
@@ -116,6 +120,8 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
     }
 
     // Check goal limits (only for new goals, not edits)
+    // TEMPORARILY DISABLED - Commented out subscription checks for goals
+    /*
     if (!editMode) {
       if (!canAddGoal()) {
         const limitInfo = getGoalLimitInfo();
@@ -132,6 +138,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
         return;
       }
     }
+    */
 
     try {
       setLoading(true);
@@ -141,9 +148,11 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
         const updatedGoal = {
           ...goal,
           name: formData.name,
-          targetAmount: parseFloat(formData.targetAmount),
-          currentAmount: parseFloat(formData.currentAmount),
-          monthlyContribution: parseFloat(formData.monthlyContribution),
+          targetAmount: parseFloat(removeCommas(formData.targetAmount)),
+          currentAmount: parseFloat(removeCommas(formData.currentAmount)),
+          monthlyContribution: parseFloat(
+            removeCommas(formData.monthlyContribution)
+          ),
           targetDate: formData.targetDate,
           category: formData.category,
           priority: formData.priority,
@@ -167,9 +176,11 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
         const newGoal = {
           id: `temp-${Date.now()}`,
           name: formData.name,
-          targetAmount: parseFloat(formData.targetAmount),
-          currentAmount: parseFloat(formData.currentAmount),
-          monthlyContribution: parseFloat(formData.monthlyContribution),
+          targetAmount: parseFloat(removeCommas(formData.targetAmount)),
+          currentAmount: parseFloat(removeCommas(formData.currentAmount)),
+          monthlyContribution: parseFloat(
+            removeCommas(formData.monthlyContribution)
+          ),
           targetDate: formData.targetDate,
           category: formData.category,
           priority: formData.priority,
@@ -215,34 +226,52 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
       return;
     }
 
-    Alert.alert(
-      "Delete Confirmation",
-      "Are you sure you want to delete this goal? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // Optimistic update
-              const updatedGoals = goals.filter((g) => g.id !== goal.id);
-              updateDataOptimistically({ goals: updatedGoals });
+    setDeleteLoading(true);
 
-              // Delete from database
-              await removeGoal(user.uid, goal.id!);
-
-              Alert.alert("Success", "Goal deleted successfully!", [
-                { text: "OK", onPress: () => navigation.goBack() },
-              ]);
-            } catch (error) {
-              console.error("Error deleting goal:", error);
-              Alert.alert("Error", "Failed to delete goal. Please try again.");
-            }
+    try {
+      Alert.alert(
+        "Delete Confirmation",
+        "Are you sure you want to delete this goal? This action cannot be undone.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => {
+              setDeleteLoading(false);
+            },
           },
-        },
-      ]
-    );
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Optimistic update
+                const updatedGoals = goals.filter((g) => g.id !== goal.id);
+                updateDataOptimistically({ goals: updatedGoals });
+
+                // Delete from database
+                await removeGoal(user.uid, goal.id!);
+
+                Alert.alert("Success", "Goal deleted successfully!", [
+                  { text: "OK", onPress: () => navigation.goBack() },
+                ]);
+              } catch (error) {
+                console.error("Error deleting goal:", error);
+                Alert.alert(
+                  "Error",
+                  "Failed to delete goal. Please try again."
+                );
+              } finally {
+                setDeleteLoading(false);
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("Error in delete confirmation:", error);
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -256,346 +285,353 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
           keyboardShouldPersistTaps="handled"
         >
           {/* Header */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 24,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ marginRight: 16 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text
-              style={{ fontSize: 20, fontWeight: "600", color: colors.text }}
-            >
-              {editMode ? "Edit" : "Add"} Goal
-            </Text>
-          </View>
+          <StandardHeader
+            title={`${editMode ? "Edit" : "Add"} Goal`}
+            onBack={() => navigation.goBack()}
+          />
 
-          {/* Form */}
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 16,
-              padding: 16,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.06,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 2,
-            }}
-          >
-            {/* Goal Name */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Goal Name *
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="e.g., Emergency Fund"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.name}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, name: text })
-                }
-              />
-            </View>
-
-            {/* Category */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Category *
-              </Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {goalCategories.map((category) => (
-                  <TouchableOpacity
-                    key={category.key}
-                    style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 8,
-                      borderRadius: 8,
-                      backgroundColor:
-                        formData.category === category.key
-                          ? category.color + "20"
-                          : colors.surfaceSecondary,
-                      borderWidth: 1,
-                      borderColor:
-                        formData.category === category.key
-                          ? category.color
-                          : colors.border,
-                    }}
-                    onPress={() =>
-                      setFormData({ ...formData, category: category.key })
-                    }
-                  >
-                    <Text
-                      style={{
-                        color:
-                          formData.category === category.key
-                            ? category.color
-                            : colors.text,
-                        fontSize: 14,
-                        fontWeight: "500",
-                      }}
-                    >
-                      {category.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Target Amount */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Target Amount *
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="0.00"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.targetAmount}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, targetAmount: text })
-                }
-                keyboardType="decimal-pad"
-              />
-            </View>
-
-            {/* Current Amount */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Current Amount *
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="0.00"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.currentAmount}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, currentAmount: text })
-                }
-                keyboardType="decimal-pad"
-              />
-            </View>
-
-            {/* Monthly Contribution */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Monthly Contribution *
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="0.00"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.monthlyContribution}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, monthlyContribution: text })
-                }
-                keyboardType="decimal-pad"
-              />
-            </View>
-
-            {/* Target Date */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Target Date *
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 16,
-                  backgroundColor: colors.surfaceSecondary,
-                  color: colors.text,
-                }}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.targetDate}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, targetDate: text })
-                }
-              />
-            </View>
-
-            {/* Priority */}
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  marginBottom: 8,
-                  color: colors.text,
-                }}
-              >
-                Priority *
-              </Text>
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                {(["low", "medium", "high"] as const).map((priority) => (
-                  <TouchableOpacity
-                    key={priority}
-                    style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 8,
-                      borderRadius: 8,
-                      backgroundColor:
-                        formData.priority === priority
-                          ? priorityColors[priority] + "20"
-                          : colors.surfaceSecondary,
-                      borderWidth: 1,
-                      borderColor:
-                        formData.priority === priority
-                          ? priorityColors[priority]
-                          : colors.border,
-                    }}
-                    onPress={() => setFormData({ ...formData, priority })}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          formData.priority === priority
-                            ? priorityColors[priority]
-                            : colors.text,
-                        fontSize: 14,
-                        fontWeight: "500",
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {priority}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-
-          {/* Save Button */}
-          <TouchableOpacity
-            style={{
-              backgroundColor: colors.primary,
-              borderRadius: 12,
-              padding: 16,
-              alignItems: "center",
-              marginTop: 24,
-            }}
-            onPress={handleSave}
-            disabled={loading}
-          >
+          {/* Form Fields */}
+          {/* Goal Description */}
+          <View style={{ marginBottom: 20 }}>
             <Text
               style={{
-                color: colors.buttonText,
                 fontSize: 16,
                 fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
               }}
             >
-              {editMode ? "Update" : "Save"} Goal
+              Goal Description
             </Text>
-          </TouchableOpacity>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              placeholder="e.g., Emergency Fund"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.name}
+              onChangeText={(text) => setFormData({ ...formData, name: text })}
+            />
+          </View>
 
-          {/* Delete Button (only show in edit mode) */}
-          {editMode && (
+          {/* Category */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Category
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ marginBottom: 8 }}
+            >
+              {goalCategories.map((category) => (
+                <TouchableOpacity
+                  key={category.key}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    marginRight: 8,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor:
+                      formData.category === category.key
+                        ? category.color
+                        : colors.border,
+                    backgroundColor:
+                      formData.category === category.key
+                        ? category.color
+                        : "transparent",
+                    alignItems: "center",
+                    flexDirection: "row",
+                  }}
+                  onPress={() =>
+                    setFormData({ ...formData, category: category.key })
+                  }
+                >
+                  <Ionicons
+                    name={category.icon as any}
+                    size={16}
+                    color={
+                      formData.category === category.key
+                        ? "white"
+                        : category.color
+                    }
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color:
+                        formData.category === category.key
+                          ? "white"
+                          : colors.text,
+                    }}
+                  >
+                    {category.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Target Amount */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Goal Target Amount
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              placeholder="0.00"
+              placeholderTextColor={colors.textSecondary}
+              value={formatNumberWithCommas(formData.targetAmount)}
+              onChangeText={(text) => {
+                const cleanValue = removeCommas(text);
+                setFormData({ ...formData, targetAmount: cleanValue });
+              }}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Current Amount */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Current Amount Saved for Goal
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              placeholder="0.00"
+              placeholderTextColor={colors.textSecondary}
+              value={formatNumberWithCommas(formData.currentAmount)}
+              onChangeText={(text) => {
+                const cleanValue = removeCommas(text);
+                setFormData({ ...formData, currentAmount: cleanValue });
+              }}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Monthly Contribution */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Planned Monthly Contribution
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              placeholder="0.00"
+              placeholderTextColor={colors.textSecondary}
+              value={formatNumberWithCommas(formData.monthlyContribution)}
+              onChangeText={(text) => {
+                const cleanValue = removeCommas(text);
+                setFormData({ ...formData, monthlyContribution: cleanValue });
+              }}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Target Date */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Target Achievement Date
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.card,
+              }}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.textSecondary}
+              value={formData.targetDate}
+              onChangeText={(text) =>
+                setFormData({ ...formData, targetDate: text })
+              }
+            />
+          </View>
+
+          {/* Priority */}
+          <View style={{ marginBottom: 20 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              Priority
+            </Text>
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              {(["low", "medium", "high"] as const).map((priority) => (
+                <TouchableOpacity
+                  key={priority}
+                  style={{
+                    flex: 1,
+                    padding: 12,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor:
+                      formData.priority === priority
+                        ? priorityColors[priority]
+                        : colors.border,
+                    backgroundColor:
+                      formData.priority === priority
+                        ? priorityColors[priority]
+                        : "transparent",
+                    alignItems: "center",
+                  }}
+                  onPress={() => setFormData({ ...formData, priority })}
+                >
+                  <Text
+                    style={{
+                      color:
+                        formData.priority === priority ? "white" : colors.text,
+                      fontSize: 14,
+                      fontWeight: "600",
+                      textTransform: "capitalize",
+                    }}
+                  >
+                    {priority}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={{ marginTop: 20, gap: 12 }}>
+            {/* Save Button */}
             <TouchableOpacity
               style={{
-                backgroundColor: colors.error,
-                borderRadius: 12,
+                backgroundColor: colors.primary,
                 padding: 16,
+                borderRadius: 8,
                 alignItems: "center",
-                marginTop: 12,
+                flexDirection: "row",
+                justifyContent: "center",
               }}
-              onPress={handleDelete}
+              onPress={handleSave}
               disabled={loading}
             >
+              {loading && (
+                <ActivityIndicator
+                  size="small"
+                  color="white"
+                  style={{ marginRight: 8 }}
+                />
+              )}
               <Text
                 style={{
-                  color: colors.buttonText,
+                  color: "white",
                   fontSize: 16,
                   fontWeight: "600",
                 }}
               >
-                Delete Goal
+                {editMode ? "Update" : "Save"} Goal
               </Text>
             </TouchableOpacity>
-          )}
+
+            {/* Delete Button (only in edit mode) */}
+            {editMode && (
+              <TouchableOpacity
+                style={{
+                  backgroundColor: colors.error,
+                  padding: 16,
+                  borderRadius: 8,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                }}
+                onPress={handleDelete}
+                disabled={deleteLoading}
+              >
+                {deleteLoading && (
+                  <ActivityIndicator
+                    size="small"
+                    color="white"
+                    style={{ marginRight: 8 }}
+                  />
+                )}
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Delete Goal
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

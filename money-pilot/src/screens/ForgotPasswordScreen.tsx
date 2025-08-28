@@ -74,10 +74,10 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity style={styles.backButton} onPress={onBack}>
-              <Ionicons name="arrow-back" size={24} color="#6366f1" />
+              <Ionicons name="arrow-back" size={24} color="#10b981" />
             </TouchableOpacity>
             <View style={styles.logoContainer}>
-              <Ionicons name="lock-open" size={60} color="#6366f1" />
+              <Ionicons name="lock-open" size={60} color="#10b981" />
             </View>
             <Text style={styles.title}>Reset Password</Text>
             <Text style={styles.subtitle}>
@@ -91,12 +91,13 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
               <Ionicons
                 name="mail"
                 size={20}
-                color="#6b7280"
+                color="#9ca3af"
                 style={styles.inputIcon}
               />
               <TextInput
                 style={styles.input}
                 placeholder="Enter your email"
+                placeholderTextColor="#9ca3af"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -139,7 +140,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#000000",
   },
   keyboardView: {
     flex: 1,
@@ -167,18 +168,18 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#1f2937",
+    color: "#ffffff",
     textAlign: "center",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6b7280",
+    color: "#9ca3af",
     textAlign: "center",
     lineHeight: 24,
   },
@@ -188,18 +189,18 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "white",
+    backgroundColor: "#1a1a1a",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#374151",
     paddingHorizontal: 16,
     paddingVertical: 16,
     marginBottom: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   inputIcon: {
     marginRight: 12,
@@ -207,22 +208,22 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: "#1f2937",
+    color: "#ffffff",
   },
   resetButton: {
-    backgroundColor: "#6366f1",
+    backgroundColor: "#10b981",
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: "center",
     marginBottom: 24,
-    shadowColor: "#6366f1",
+    shadowColor: "#10b981",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   resetButtonDisabled: {
-    backgroundColor: "#a5b4fc",
+    backgroundColor: "#6b7280",
   },
   resetButtonText: {
     color: "white",
@@ -234,7 +235,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   backToLoginText: {
-    color: "#6366f1",
+    color: "#10b981",
     fontSize: 16,
     fontWeight: "500",
   },

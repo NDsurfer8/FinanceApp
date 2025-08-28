@@ -9,10 +9,15 @@ import {
   Linking,
   Alert,
   Image,
+  Platform,
+  Share,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { useTheme } from "../contexts/ThemeContext";
+import * as MailComposer from "expo-mail-composer";
+import * as StoreReview from "expo-store-review";
+import { useAuth } from "../hooks/useAuth";
 
 interface AboutScreenProps {
   navigation: any;
@@ -20,66 +25,192 @@ interface AboutScreenProps {
 
 export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const appVersion = Constants.expoConfig?.version || "1.0.0";
   const buildNumber = Constants.expoConfig?.ios?.buildNumber || "1";
   const appName = Constants.expoConfig?.name || "VectorFi";
 
   const openPrivacyPolicy = () => {
-    Linking.openURL("https://your-app.com/privacy-policy");
+    navigation.navigate("PrivacyPolicy");
   };
 
   const openTermsOfService = () => {
-    Linking.openURL("https://your-app.com/terms-of-service");
+    navigation.navigate("TermsOfService");
   };
 
-  const openSupportEmail = () => {
-    Linking.openURL("mailto:support@moneypilot.com");
+  const openSupportEmail = async () => {
+    try {
+      const isAvailable = await MailComposer.isAvailableAsync();
+
+      if (!isAvailable) {
+        Alert.alert(
+          "Email Not Available",
+          "No email app is configured on this device. Please set up an email account in your device settings.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      const userInfo = user
+        ? `\n\nUser Information:\n- User ID: ${user.uid}\n- Email: ${
+            user.email || "Not provided"
+          }\n- Display Name: ${user.displayName || "Not provided"}`
+        : "";
+
+      const emailContent = {
+        recipients: ["support@vectorfi.ai"],
+        subject: "VectorFi Support Request",
+        body: `Hello VectorFi Support Team,
+
+I need help with the VectorFi app. Please provide assistance with my issue.
+
+${userInfo}
+
+Issue Description:
+[Please describe your issue here]
+
+Device Information:
+- App Version: ${appVersion}
+- Platform: ${Platform.OS}
+- Device: ${Platform.OS === "ios" ? "iOS" : "Android"}
+
+Thank you for your help!
+
+Best regards,
+${user?.displayName || "VectorFi User"}`,
+        isHtml: false,
+      };
+
+      const result = await MailComposer.composeAsync(emailContent);
+
+      if (result.status === MailComposer.MailComposerStatus.SENT) {
+        Alert.alert(
+          "Email Sent",
+          "Thank you for contacting us. We'll get back to you as soon as possible.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("Error opening email composer:", error);
+      Alert.alert(
+        "Error",
+        "Unable to open email composer. Please try again or contact us through other means.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   const openWebsite = () => {
-    Linking.openURL("https://moneypilot.com");
+    Linking.openURL("https://vectorfi.ai/");
   };
 
   const openGitHub = () => {
     Linking.openURL("https://github.com/ndsurf888/vectorfii");
   };
 
-  const shareApp = () => {
-    Alert.alert(
-      "Share VectorFi",
-      "Help others take control of their finances! Share this app with friends and family.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Share",
-          onPress: () => {
-            // You can implement actual sharing functionality here
-            Alert.alert(
-              "Share",
-              "Sharing functionality would be implemented here"
-            );
-          },
-        },
-      ]
-    );
+  const shareApp = async () => {
+    try {
+      // Start with general share as the primary option
+      // This is more reliable and doesn't require permissions
+      shareAppGeneral();
+    } catch (error) {
+      console.error("Error sharing app:", error);
+      Alert.alert("Error", "Unable to share the app. Please try again later.", [
+        { text: "OK" },
+      ]);
+    }
   };
 
-  const rateApp = () => {
-    // This would open the app store for rating
-    Alert.alert(
-      "Rate VectorFi",
-      "Enjoying the app? Please rate us on the App Store!",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Rate",
-          onPress: () => {
-            // You can implement actual app store rating here
-            Alert.alert("Rate", "App store rating would be implemented here");
-          },
-        },
-      ]
-    );
+  const shareAppGeneral = async () => {
+    try {
+      // Prepare share content
+      const shareContent = {
+        title: "VectorFi - Take Control of Your Finances",
+        message: `Check out VectorFi - the smart finance app that helps you track expenses, set goals, and build wealth! 
+
+Download now and start your financial journey:
+https://vectorfi.ai/
+
+#VectorFi #Finance #Budgeting #Investing`,
+        url: "https://vectorfi.ai/",
+      };
+
+      // Share the app using React Native's Share API
+      const result = await Share.share(shareContent);
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          console.log("Shared with activity type:", result.activityType);
+        } else {
+          console.log("Shared successfully");
+        }
+      } else if (result.action === Share.dismissedAction) {
+        console.log("Share dismissed");
+      }
+    } catch (error) {
+      console.error("Error sharing app:", error);
+
+      // Fallback to a simpler share if the main one fails
+      try {
+        const simpleShare = {
+          message:
+            "Check out VectorFi - the smart finance app! https://vectorfi.ai/",
+        };
+        await Share.share(simpleShare);
+      } catch (fallbackError) {
+        console.error("Fallback share also failed:", fallbackError);
+        Alert.alert(
+          "Sharing Unavailable",
+          "Sharing is not available on this device. You can copy the link manually: https://vectorfi.ai/",
+          [{ text: "OK" }]
+        );
+      }
+    }
+  };
+
+  const rateApp = async () => {
+    try {
+      // Check if the app is available for review
+      const isAvailable = await StoreReview.isAvailableAsync();
+
+      if (!isAvailable) {
+        Alert.alert(
+          "Rating Not Available",
+          "App rating is not available at this time. Please try again later.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      // Check if the user has already rated the app
+      const hasAction = await StoreReview.hasAction();
+
+      if (!hasAction) {
+        Alert.alert(
+          "Rating Not Available",
+          "App rating is not available at this time. Please try again later.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      // Request a review
+      await StoreReview.requestReview();
+
+      // Show thank you message after requesting review
+      Alert.alert(
+        "Thank You!",
+        "Thank you for taking the time to rate VectorFi! Your feedback helps us improve the app.",
+        [{ text: "OK" }]
+      );
+    } catch (error) {
+      console.error("Error requesting app review:", error);
+      Alert.alert(
+        "Error",
+        "Unable to open app rating. Please try again later.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   return (
@@ -91,10 +222,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={[
-              styles.backButton,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
+            style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -122,7 +250,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
             >
               <Image
                 source={require("../../assets/appstore.png")}
-                style={{ width: 48, height: 48, borderRadius: 8 }}
+                style={styles.appStoreIcon}
                 resizeMode="contain"
               />
             </View>
@@ -231,6 +359,14 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
                 style={[styles.featureText, { color: colors.textSecondary }]}
               >
                 Secure Data Encryption
+              </Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
+              <Text
+                style={[styles.featureText, { color: colors.textSecondary }]}
+              >
+                Vectra AI Financial Assistant
               </Text>
             </View>
           </View>
@@ -453,8 +589,9 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 20,
     padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0,
+    borderColor: "transparent",
+    backgroundColor: "transparent",
   },
   title: {
     fontSize: 26,
@@ -485,6 +622,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+  },
+  appStoreIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
   },
   appName: {
     fontSize: 24,

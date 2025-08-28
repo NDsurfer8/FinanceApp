@@ -93,7 +93,8 @@ export const deleteTransaction = async (
 // ===== RECURRING TRANSACTIONS CRUD =====
 
 export const createRecurringTransaction = async (
-  recurringTransaction: Omit<RecurringTransaction, "id">
+  recurringTransaction: Omit<RecurringTransaction, "id">,
+  targetMonth?: Date
 ): Promise<string> => {
   try {
     // Use the encrypted saveRecurringTransaction function from userData.ts
@@ -125,16 +126,16 @@ export const createRecurringTransaction = async (
 
     console.log("Recurring transaction created successfully");
 
-    // Create the first transaction for the current month if it should occur
-    const currentMonth = new Date();
+    // Create the first transaction for the target month (or current month if not specified) if it should occur
+    const targetMonthDate = targetMonth || new Date();
     const monthStart = new Date(
-      currentMonth.getFullYear(),
-      currentMonth.getMonth(),
+      targetMonthDate.getFullYear(),
+      targetMonthDate.getMonth(),
       1
     );
     const monthEnd = new Date(
-      currentMonth.getFullYear(),
-      currentMonth.getMonth() + 1,
+      targetMonthDate.getFullYear(),
+      targetMonthDate.getMonth() + 1,
       0,
       23,
       59,
@@ -143,20 +144,11 @@ export const createRecurringTransaction = async (
     );
     const startDate = new Date(recurringTransaction.startDate);
 
-    // Always create a transaction for the current month if the recurring transaction is active
-    // and the start date is not in the future
+    // Create a transaction for the target month if the recurring transaction is active
+    // and the start date is before or during the target month
     const shouldCreateFirstTransaction =
       recurringTransaction.isActive &&
       startDate.getTime() <= monthEnd.getTime();
-
-    console.log("Debug recurring transaction creation:", {
-      startDate: startDate.toISOString(),
-      monthStart: monthStart.toISOString(),
-      monthEnd: monthEnd.toISOString(),
-      shouldCreate: shouldCreateFirstTransaction,
-      startDateTimestamp: recurringTransaction.startDate,
-      isActive: recurringTransaction.isActive,
-    });
 
     if (shouldCreateFirstTransaction) {
       // Use the start date as the transaction date for the first occurrence
@@ -207,50 +199,33 @@ export const updateRecurringTransaction = async (
     await updateRecurringTransactionEncrypted(recurringTransaction);
     console.log("Recurring transaction updated successfully");
 
-    // Check if we need to create a transaction for the current month
-    // This handles cases where a recurring transaction is activated or modified
-    if (recurringTransaction.isActive) {
-      const currentMonth = new Date();
-      const shouldCreateTransaction = checkIfTransactionShouldOccur(
-        recurringTransaction,
-        new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1),
-        new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
-      );
+    // Update the linked transaction to reflect the recurring transaction changes
+    const { getUserTransactions } = await import("./userData");
+    const allTransactions = await getUserTransactions(
+      recurringTransaction.userId
+    );
 
-      if (shouldCreateTransaction) {
-        // Check if transaction already exists for this month
-        const existingTransactions = await getTransactionsForMonth(
-          recurringTransaction.userId,
-          currentMonth
-        );
+    // Find the transaction linked to this recurring transaction
+    const linkedTransaction = allTransactions.find(
+      (transaction) =>
+        transaction.recurringTransactionId === recurringTransaction.id
+    );
 
-        const transactionExists = existingTransactions.some(
-          (transaction) =>
-            transaction.description === recurringTransaction.name &&
-            transaction.amount === recurringTransaction.amount &&
-            transaction.type === recurringTransaction.type
-        );
+    if (linkedTransaction) {
+      // Update the linked transaction with the new recurring transaction data
+      const updatedTransaction: Transaction = {
+        ...linkedTransaction,
+        description: recurringTransaction.name,
+        amount: recurringTransaction.amount,
+        type: recurringTransaction.type,
+        category: recurringTransaction.category,
+        date: recurringTransaction.startDate, // Use the start date as the transaction date
+        updatedAt: Date.now(),
+      };
 
-        if (!transactionExists) {
-          const transactionDate = getNextOccurrenceDate(
-            recurringTransaction,
-            new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
-          );
-
-          const newTransaction: Transaction = {
-            description: recurringTransaction.name,
-            amount: recurringTransaction.amount,
-            type: recurringTransaction.type,
-            category: recurringTransaction.category,
-            date: transactionDate.getTime(),
-            userId: recurringTransaction.userId,
-            recurringTransactionId: recurringTransaction.id, // Reference to the recurring transaction
-          };
-
-          await createTransaction(newTransaction);
-          console.log("Transaction created for current month after update");
-        }
-      }
+      // Update the transaction in the database
+      await updateTransaction(updatedTransaction);
+      console.log("Linked transaction updated to match recurring transaction");
     }
   } catch (error) {
     console.error("Error updating recurring transaction:", error);

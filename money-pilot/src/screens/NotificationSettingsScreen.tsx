@@ -17,6 +17,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../contexts/ThemeContext";
+import { StandardHeader } from "../components/StandardHeader";
 
 interface NotificationSettingsScreenProps {
   navigation: any;
@@ -40,7 +41,6 @@ export const NotificationSettingsScreen: React.FC<
   const [isLoading, setIsLoading] = useState(true);
 
   const [permissionGranted, setPermissionGranted] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     checkPermissions();
@@ -102,22 +102,22 @@ export const NotificationSettingsScreen: React.FC<
           enabled: false,
           type: "goals",
         },
-        {
-          id: "weekly-reports",
-          title: "Weekly Reports",
-          description: "Receive weekly financial summaries",
-          icon: "bar-chart",
-          enabled: false,
-          type: "weekly",
-        },
-        {
-          id: "monthly-reports",
-          title: "Monthly Reports",
-          description: "Get monthly financial reviews",
-          icon: "trending-up",
-          enabled: false,
-          type: "monthly",
-        },
+        // {
+        //   id: "weekly-reports",
+        //   title: "Weekly Reports",
+        //   description: "Receive weekly financial summaries",
+        //   icon: "bar-chart",
+        //   enabled: false,
+        //   type: "weekly",
+        // },
+        // {
+        //   id: "monthly-reports",
+        //   title: "Monthly Reports",
+        //   description: "Get monthly financial reviews",
+        //   icon: "trending-up",
+        //   enabled: false,
+        //   type: "monthly",
+        // },
         {
           id: "low-balance-alerts",
           title: "Low Balance Alerts",
@@ -381,80 +381,6 @@ export const NotificationSettingsScreen: React.FC<
     }
   };
 
-  const testNotification = async (setting: NotificationSetting) => {
-    setLoading(true);
-    try {
-      switch (setting.type) {
-        case "budget":
-          if (user) {
-            // Get current budget status and schedule a test reminder
-            const budgetStatus =
-              await budgetReminderService.getCurrentBudgetStatus(user.uid);
-            console.log("Budget test notification data:", budgetStatus);
-            await notificationService.scheduleNotification({
-              id: `test-budget-${Date.now()}`,
-              title: "💰 Budget Test",
-              body: `Income: $${budgetStatus.totalIncome.toFixed(
-                2
-              )}, Expenses: $${budgetStatus.totalExpenses.toFixed(
-                2
-              )}, Remaining: $${budgetStatus.remainingBudget.toFixed(2)}`,
-              data: { type: "test-budget" },
-              trigger: { seconds: 5 } as any,
-            });
-          }
-          break;
-        case "bills":
-          if (user) {
-            // Schedule a test bill reminder for 10 seconds from now
-            const testDate = new Date();
-            testDate.setSeconds(testDate.getSeconds() + 10);
-            await billReminderService.scheduleBillReminder(
-              "Test Bill",
-              testDate,
-              150.0,
-              false,
-              0 // Due today
-            );
-          }
-          break;
-        case "goals":
-          await notificationService.scheduleGoalReminder(
-            "Test Goal",
-            10000,
-            7500
-          );
-          break;
-        case "balance":
-          await notificationService.scheduleLowBalanceAlert(
-            "Test Account",
-            500
-          );
-          break;
-        case "savings":
-          await notificationService.scheduleSavingsReminder(5000, 3000);
-          break;
-        default:
-          await notificationService.scheduleNotification({
-            id: `test-${Date.now()}`,
-            title: "🧪 Test Notification",
-            body: "This is a test notification from VectorFi!",
-            data: { type: "test" },
-            trigger: { seconds: 5 } as any,
-          });
-      }
-      Alert.alert(
-        "Success",
-        "Test notification scheduled! Check your device in 5 seconds."
-      );
-    } catch (error) {
-      console.error("Error testing notification:", error);
-      Alert.alert("Error", "Failed to send test notification");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const requestPermissions = async () => {
     const granted = await notificationService.requestPermissions();
     setPermissionGranted(granted);
@@ -472,25 +398,13 @@ export const NotificationSettingsScreen: React.FC<
       <SafeAreaView
         style={[styles.container, { backgroundColor: colors.background }]}
       >
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={[
-              styles.backButton,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <View>
-            <Text style={[styles.title, { color: colors.text }]}>
-              Notification Settings
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Loading...
-            </Text>
-          </View>
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <StandardHeader
+            title="Notification Settings"
+            subtitle="Loading..."
+            onBack={() => navigation.goBack()}
+          />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -501,25 +415,11 @@ export const NotificationSettingsScreen: React.FC<
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={[
-              styles.backButton,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <View>
-            <Text style={[styles.title, { color: colors.text }]}>
-              Notification Settings
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Manage your financial reminders
-            </Text>
-          </View>
-        </View>
+        <StandardHeader
+          title="Notification Settings"
+          subtitle="Manage your financial reminders"
+          onBack={() => navigation.goBack()}
+        />
 
         {/* Permission Status */}
         <View
@@ -606,31 +506,11 @@ export const NotificationSettingsScreen: React.FC<
                       styles.settingDescription,
                       { color: colors.textSecondary },
                     ]}
+                    numberOfLines={0}
                   >
                     {setting.description}
                   </Text>
                 </View>
-              </View>
-
-              <View style={styles.settingActions}>
-                <TouchableOpacity
-                  style={[
-                    styles.testButton,
-                    {
-                      backgroundColor: colors.surfaceSecondary,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                  onPress={() => testNotification(setting)}
-                  disabled={loading || !permissionGranted}
-                >
-                  <Text
-                    style={[styles.testButtonText, { color: colors.primary }]}
-                  >
-                    Test
-                  </Text>
-                </TouchableOpacity>
-
                 <Switch
                   value={setting.enabled}
                   onValueChange={() => toggleSetting(setting.id)}
@@ -699,28 +579,6 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 32,
-    paddingTop: 8,
-  },
-  backButton: {
-    marginRight: 20,
-    padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "700",
-    letterSpacing: -0.3,
-  },
-  subtitle: {
-    fontSize: 16,
-    marginTop: 4,
-    fontWeight: "400",
-  },
   permissionCard: {
     borderRadius: 16,
     padding: 20,
@@ -775,6 +633,7 @@ const styles = StyleSheet.create({
   settingInfo: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 16,
   },
   settingIcon: {
@@ -784,6 +643,7 @@ const styles = StyleSheet.create({
   },
   settingText: {
     flex: 1,
+    marginRight: 16,
   },
   settingTitle: {
     fontSize: 16,
@@ -792,21 +652,6 @@ const styles = StyleSheet.create({
   },
   settingDescription: {
     fontSize: 14,
-  },
-  settingActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  testButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  testButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
   },
   quickActions: {
     marginBottom: 24,

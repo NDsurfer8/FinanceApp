@@ -6,27 +6,31 @@ import {
   Text,
   TouchableOpacity,
   Alert,
-  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
+import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { translate } from "../services/translations";
+import { StandardHeader } from "../components/StandardHeader";
+import { gradeRatio, fmt } from "../utils/ratioGrading";
 import {
   getUserAssets,
   getUserDebts,
   getUserTransactions,
 } from "../services/userData";
 
-interface BalanceSheetScreenProps {
+interface FinancialRiskScreenProps {
   navigation: any;
 }
 
-export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
+export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { isFriendlyMode } = useFriendlyMode();
   const [assets, setAssets] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -126,32 +130,51 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
   };
 
   const getRatioStatus = (ratio: number, type: string) => {
+    const mode = isFriendlyMode ? "friendly" : "pro";
+    let ratioKey: any;
+
     switch (type) {
       case "liquidity":
-        return ratio >= 1 ? "Good" : "Poor";
+        ratioKey = "liquidity";
+        break;
       case "coverage":
-        return ratio >= 6 ? "Excellent" : ratio >= 3 ? "Good" : "Poor";
+        ratioKey = "monthsCovered";
+        break;
       case "debtAsset":
-        return ratio <= 30 ? "Excellent" : ratio <= 50 ? "Good" : "Poor";
+        ratioKey = "debtToAsset";
+        break;
       case "debtSafety":
-        return ratio <= 28 ? "Excellent" : ratio <= 36 ? "Good" : "Poor";
+        ratioKey = "debtToIncome";
+        break;
       default:
         return "Unknown";
     }
+
+    return gradeRatio(ratioKey, ratio, mode).status;
   };
 
   const getRatioColor = (ratio: number, type: string) => {
-    const status = getRatioStatus(ratio, type);
-    switch (status) {
-      case "Excellent":
-        return "#16a34a";
-      case "Good":
-        return "#d97706";
-      case "Poor":
-        return "#dc2626";
+    const mode = isFriendlyMode ? "friendly" : "pro";
+    let ratioKey: any;
+
+    switch (type) {
+      case "liquidity":
+        ratioKey = "liquidity";
+        break;
+      case "coverage":
+        ratioKey = "monthsCovered";
+        break;
+      case "debtAsset":
+        ratioKey = "debtToAsset";
+        break;
+      case "debtSafety":
+        ratioKey = "debtToIncome";
+        break;
       default:
         return "#6b7280";
     }
+
+    return gradeRatio(ratioKey, ratio, mode).color;
   };
 
   if (loading) {
@@ -175,380 +198,11 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 24,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ marginRight: 16 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <View>
-              <Text
-                style={{ fontSize: 28, fontWeight: "800", color: colors.text }}
-              >
-                Balance Sheet
-              </Text>
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: colors.textSecondary,
-                  marginTop: 4,
-                }}
-              >
-                Your financial position
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("AddAssetDebt", { type: "asset" })
-            }
-            style={{
-              backgroundColor: colors.primary,
-              padding: 12,
-              borderRadius: 12,
-            }}
-          >
-            <Ionicons name="add" size={20} color={colors.buttonText} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Net Worth Summary */}
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 20,
-            padding: 24,
-            marginBottom: 20,
-            shadowColor: colors.shadow,
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "700",
-              marginBottom: 20,
-              color: colors.text,
-            }}
-          >
-            Net Worth Summary
-          </Text>
-
-          <View style={{ alignItems: "center", marginBottom: 24 }}>
-            <Text
-              style={{
-                fontSize: 36,
-                fontWeight: "800",
-                color: netWorth >= 0 ? "#16a34a" : "#dc2626",
-                marginBottom: 8,
-              }}
-            >
-              {formatCurrency(netWorth)}
-            </Text>
-            <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-              {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
-            </Text>
-          </View>
-
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: colors.textSecondary,
-                  marginBottom: 4,
-                }}
-              >
-                Total Assets
-              </Text>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: colors.success,
-                }}
-              >
-                {formatCurrency(totalAssets)}
-              </Text>
-            </View>
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: colors.textSecondary,
-                  marginBottom: 4,
-                }}
-              >
-                Total Liabilities
-              </Text>
-              <Text
-                style={{ fontSize: 18, fontWeight: "700", color: colors.error }}
-              >
-                {formatCurrency(totalLiabilities)}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Assets Section */}
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 20,
-            padding: 24,
-            marginBottom: 20,
-            shadowColor: colors.shadow,
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 20,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
-                style={{
-                  backgroundColor: colors.successLight,
-                  padding: 8,
-                  borderRadius: 10,
-                  marginRight: 12,
-                }}
-              >
-                <Ionicons name="trending-up" size={20} color={colors.success} />
-              </View>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: colors.success,
-                }}
-              >
-                Assets
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("AddAssetDebt", { type: "asset" })
-              }
-            >
-              <Ionicons name="add-circle" size={24} color={colors.success} />
-            </TouchableOpacity>
-          </View>
-
-          {assets.length === 0 ? (
-            <Text
-              style={{
-                color: colors.textSecondary,
-                textAlign: "center",
-                padding: 20,
-              }}
-            >
-              No assets added yet
-            </Text>
-          ) : (
-            assets.map((asset) => (
-              <TouchableOpacity
-                key={asset.id}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 12,
-                  paddingVertical: 8,
-                  borderBottomWidth: 1,
-                  borderBottomColor: colors.border,
-                }}
-                onPress={() =>
-                  navigation.navigate("AddAssetDebt", {
-                    type: "asset",
-                    editMode: true,
-                    asset: asset,
-                  })
-                }
-              >
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: colors.text,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {asset.name}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: colors.textSecondary,
-                      marginTop: 2,
-                    }}
-                  >
-                    {asset.type}
-                  </Text>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "700",
-                      color: colors.success,
-                      marginRight: 8,
-                    }}
-                  >
-                    {formatCurrency(asset.balance)}
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.textSecondary}
-                  />
-                </View>
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
-
-        {/* Liabilities Section */}
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 20,
-            padding: 24,
-            marginBottom: 20,
-            shadowColor: colors.shadow,
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 20,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
-                style={{
-                  backgroundColor: colors.errorLight,
-                  padding: 8,
-                  borderRadius: 10,
-                  marginRight: 12,
-                }}
-              >
-                <Ionicons name="trending-down" size={20} color={colors.error} />
-              </View>
-              <Text
-                style={{ fontSize: 18, fontWeight: "700", color: colors.error }}
-              >
-                Liabilities
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("AddAssetDebt", { type: "debt" })
-              }
-            >
-              <Ionicons name="add-circle" size={24} color={colors.error} />
-            </TouchableOpacity>
-          </View>
-
-          {debts.length === 0 ? (
-            <Text
-              style={{
-                color: colors.textSecondary,
-                textAlign: "center",
-                padding: 20,
-              }}
-            >
-              No debts added yet
-            </Text>
-          ) : (
-            debts.map((debt) => (
-              <TouchableOpacity
-                key={debt.id}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 12,
-                  paddingVertical: 8,
-                  borderBottomWidth: 1,
-                  borderBottomColor: colors.border,
-                }}
-                onPress={() =>
-                  navigation.navigate("AddAssetDebt", {
-                    type: "debt",
-                    editMode: true,
-                    debt: debt,
-                  })
-                }
-              >
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: colors.text,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {debt.name}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: colors.textSecondary,
-                      marginTop: 2,
-                    }}
-                  >
-                    {formatPercentage(debt.rate)} APR • ${debt.payment}/month
-                  </Text>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "700",
-                      color: colors.error,
-                      marginRight: 8,
-                    }}
-                  >
-                    {formatCurrency(debt.balance)}
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.textSecondary}
-                  />
-                </View>
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
+        <StandardHeader
+          title="Financial Risk Profile"
+          subtitle="Your financial risk overview"
+          onBack={() => navigation.goBack()}
+        />
 
         {/* Emergency Fund Section */}
         <View
@@ -584,7 +238,12 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                 <Ionicons name="shield-checkmark" size={20} color="#d97706" />
               </View>
               <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#d97706" }}
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  marginBottom: 20,
+                  color: "#d97706",
+                }}
               >
                 Emergency Fund
               </Text>
@@ -758,9 +417,17 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
               <Ionicons name="analytics" size={20} color={colors.info} />
             </View>
             <Text
-              style={{ fontSize: 18, fontWeight: "700", color: colors.info }}
+              style={{
+                fontSize: 20,
+                fontWeight: "700",
+                marginBottom: 20,
+                color: colors.info,
+              }}
             >
-              Financial Ratios
+              {translate(
+                isFriendlyMode ? "keyNumbers" : "financialRatios",
+                isFriendlyMode
+              )}
             </Text>
           </View>
 
@@ -780,7 +447,10 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                   fontWeight: "500",
                 }}
               >
-                Liquidity Ratio
+                {translate(
+                  isFriendlyMode ? "billsCushion" : "liquidityRatio",
+                  isFriendlyMode
+                )}
               </Text>
               <Text
                 style={{
@@ -795,10 +465,10 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
             <Text
               style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
             >
-              {formatRatio(liquidityRatio)}x
+              {fmt.ratio(liquidityRatio)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-              Current assets ÷ Current liabilities
+              {translate("currentAssetsCurrentLiabilities", isFriendlyMode)}
             </Text>
           </View>
 
@@ -818,7 +488,12 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                   fontWeight: "500",
                 }}
               >
-                Monthly Living Expenses Coverage
+                {translate(
+                  isFriendlyMode
+                    ? "monthsCovered"
+                    : "monthlyLivingExpensesCoverage",
+                  isFriendlyMode
+                )}
               </Text>
               <Text
                 style={{
@@ -836,10 +511,10 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
             <Text
               style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
             >
-              {formatRatio(monthlyLivingExpensesCoverage)}x
+              {fmt.months(monthlyLivingExpensesCoverage)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-              Current assets ÷ Total monthly expenses
+              {translate("currentAssetsTotalMonthlyExpenses", isFriendlyMode)}
             </Text>
           </View>
 
@@ -859,7 +534,10 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                   fontWeight: "500",
                 }}
               >
-                Debt-Asset Ratio
+                {translate(
+                  isFriendlyMode ? "debtVsWhatYouOwn" : "debtAssetRatio",
+                  isFriendlyMode
+                )}
               </Text>
               <Text
                 style={{
@@ -874,10 +552,10 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
             <Text
               style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
             >
-              {formatPercentage(debtAssetRatio)}
+              {fmt.pct(debtAssetRatio)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-              Total liabilities ÷ Total assets
+              {translate("totalLiabilitiesTotalAssets", isFriendlyMode)}
             </Text>
           </View>
 
@@ -897,7 +575,10 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
                   fontWeight: "500",
                 }}
               >
-                Debt Safety Ratio
+                {translate(
+                  isFriendlyMode ? "debtVsIncome" : "debtSafetyRatio",
+                  isFriendlyMode
+                )}
               </Text>
               <Text
                 style={{
@@ -912,10 +593,10 @@ export const BalanceSheetScreen: React.FC<BalanceSheetScreenProps> = ({
             <Text
               style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
             >
-              {formatPercentage(debtSafetyRatio)}
+              {fmt.pct(debtSafetyRatio)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-              Total monthly debt payments ÷ Total income
+              {translate("totalMonthlyDebtPaymentsTotalIncome", isFriendlyMode)}
             </Text>
           </View>
         </View>
