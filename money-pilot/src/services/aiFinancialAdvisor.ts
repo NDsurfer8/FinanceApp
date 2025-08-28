@@ -30,7 +30,28 @@ class AIFinancialAdvisorService {
   // Check if user is requesting a financial plan
   isPlanRequest(userQuestion: string): boolean {
     const lowerQuestion = userQuestion.toLowerCase();
-    return lowerQuestion.includes("generate");
+    const planKeywords = [
+      "generate",
+      "create",
+      "make",
+      "build",
+      "develop",
+      "plan",
+      "financial plan",
+      "budget plan",
+      "savings plan",
+      "debt plan",
+      "investment plan",
+      "retirement plan",
+      "emergency fund plan",
+      "money plan",
+      "financial strategy",
+      "budget strategy",
+      "savings strategy",
+      "debt strategy",
+    ];
+
+    return planKeywords.some((keyword) => lowerQuestion.includes(keyword));
   }
 
   // Generate AI response using backend AI

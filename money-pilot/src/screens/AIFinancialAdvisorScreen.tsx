@@ -1106,84 +1106,6 @@ Requirements:
     return suggestions;
   };
 
-  // Update budget settings with confirmation
-  const updateBudgetSettingsWithConfirmation = async (
-    savingsPercentage?: number,
-    debtPayoffPercentage?: number
-  ) => {
-    if (!user?.uid || !budgetSettings) return;
-
-    const currentSavings = budgetSettings.savingsPercentage;
-    const currentDebt = budgetSettings.debtPayoffPercentage;
-    const snapshot = generateFinancialSnapshot();
-    const netIncome = snapshot.netIncome;
-
-    const hasChanges =
-      (savingsPercentage && savingsPercentage !== currentSavings) ||
-      (debtPayoffPercentage && debtPayoffPercentage !== currentDebt);
-
-    if (!hasChanges) return;
-
-    let message = `Would you like me to update your budget settings?\n\n`;
-
-    if (savingsPercentage && savingsPercentage !== currentSavings) {
-      const savingsAmount = Math.round((savingsPercentage / 100) * netIncome);
-      message += `• Savings: ${currentSavings}% → ${savingsPercentage}% ($${savingsAmount}/month)\n`;
-    }
-
-    if (debtPayoffPercentage && debtPayoffPercentage !== currentDebt) {
-      const debtAmount = Math.round((debtPayoffPercentage / 100) * netIncome);
-      message += `• Debt Payoff: ${currentDebt}% → ${debtPayoffPercentage}% ($${debtAmount}/month)\n`;
-    }
-
-    Alert.alert("Update Budget Settings?", message, [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Update",
-        onPress: async () => {
-          try {
-            const updatedSettings = {
-              ...budgetSettings,
-              savingsPercentage: savingsPercentage || currentSavings,
-              debtPayoffPercentage: debtPayoffPercentage || currentDebt,
-              updatedAt: Date.now(),
-            };
-
-            if (budgetSettings?.id) {
-              // Update existing settings
-              await updateBudgetSettings({
-                ...updatedSettings,
-                id: budgetSettings.id,
-              });
-            } else {
-              // Create new settings
-              await saveBudgetSettings(updatedSettings);
-            }
-
-            // Refresh budget settings to ensure consistency
-            await refreshBudgetSettings();
-
-            Alert.alert(
-              "Success!",
-              "Your budget settings have been updated. You can see the changes in the Budget screen.",
-              [{ text: "OK" }]
-            );
-          } catch (error) {
-            console.error("Failed to update budget settings:", error);
-            Alert.alert(
-              "Error",
-              "Failed to update budget settings. Please try again.",
-              [{ text: "OK" }]
-            );
-          }
-        },
-      },
-    ]);
-  };
-
   // Generate optimized prompt based on user preferences
   const generateOptimizedPrompt = (basePrompt: string) => {
     const styleInstructions = {
@@ -1370,7 +1292,7 @@ Original Request: ${basePrompt}
     }
   };
 
-  // Generate CSV from AI message
+  // Generate CSV from AI message with improved parsing
   const generateCSVFromAIMessage = (
     messageText: string,
     planName: string
@@ -1399,10 +1321,15 @@ Original Request: ${basePrompt}
         continue;
       }
 
-      // Detect subsection headers (with emojis)
+      // Detect subsection headers (with emojis or bold text)
       if (
-        trimmedLine.match(/^[🎯📊📅💰🛡️🚗🚀💳]/) &&
-        trimmedLine.includes(":")
+        (trimmedLine.match(/^[🎯📊📅💰🛡️🚗🚀💳]/) &&
+          trimmedLine.includes(":")) ||
+        (trimmedLine.includes(":") &&
+          (trimmedLine.includes("Plan") ||
+            trimmedLine.includes("Steps") ||
+            trimmedLine.includes("Options") ||
+            trimmedLine.includes("Recommendations")))
       ) {
         const subsection = trimmedLine
           .replace(/^[🎯📊📅💰🛡️🚗🚀💳]\s*/, "")
@@ -1414,8 +1341,9 @@ Original Request: ${basePrompt}
 
       // Extract financial data (lines with dollar amounts or percentages)
       if (trimmedLine.includes("$") || trimmedLine.includes("%")) {
+        // Improved regex to handle various formats
         const match = trimmedLine.match(
-          /^[•\-\s]*([^:]+):\s*([^$%]+[$%][^$%]*)/
+          /^[•\-\s]*([^:]+):\s*([^$%]+[$%][^$%]*)/i
         );
         if (match) {
           const item = match[1].trim();
@@ -1427,7 +1355,7 @@ Original Request: ${basePrompt}
       // Extract action steps (bullet points in Step-by-Step Action Plan)
       if (
         trimmedLine.startsWith("•") &&
-        currentSection.includes("Action Plan")
+        (currentSection.includes("Action") || currentSection.includes("Steps"))
       ) {
         const stepText = trimmedLine.replace(/^•\s*/, "").trim();
 
@@ -1459,6 +1387,13 @@ Original Request: ${basePrompt}
       ) {
         const recText = trimmedLine.replace(/^•\s*/, "").trim();
         csvRows.push(`"${currentSection}","Recommendation","${recText}",""`);
+      }
+
+      // Extract pros/cons from options
+      if (trimmedLine.includes("Pros:") || trimmedLine.includes("Cons:")) {
+        const type = trimmedLine.includes("Pros:") ? "Pros" : "Cons";
+        const content = trimmedLine.replace(/^(Pros|Cons):\s*/, "").trim();
+        csvRows.push(`"${currentSection}","${type}","${content}",""`);
       }
     }
 
@@ -1783,46 +1718,6 @@ Original Request: ${basePrompt}
                                   </Text>
                                 </TouchableOpacity>
                               )}
-                              {/* Budget Update Button - only show if budget suggestions are detected */}
-                              {message.budgetSuggestions &&
-                                (message.budgetSuggestions.savingsPercentage ||
-                                  message.budgetSuggestions
-                                    .debtPayoffPercentage) && (
-                                  <TouchableOpacity
-                                    onPress={() =>
-                                      updateBudgetSettingsWithConfirmation(
-                                        message.budgetSuggestions
-                                          ?.savingsPercentage,
-                                        message.budgetSuggestions
-                                          ?.debtPayoffPercentage
-                                      )
-                                    }
-                                    style={{
-                                      paddingHorizontal: 12,
-                                      paddingVertical: 6,
-                                      borderRadius: 8,
-                                      backgroundColor: colors.primary,
-                                      borderWidth: 1,
-                                      borderColor: colors.primary,
-                                      marginLeft: "auto",
-                                      shadowColor: colors.text,
-                                      shadowOffset: { width: 0, height: 1 },
-                                      shadowOpacity: 0.1,
-                                      shadowRadius: 2,
-                                      elevation: 2,
-                                    }}
-                                  >
-                                    <Text
-                                      style={{
-                                        fontSize: 12,
-                                        color: "#fff",
-                                        fontWeight: "600",
-                                      }}
-                                    >
-                                      📊 Update Budget
-                                    </Text>
-                                  </TouchableOpacity>
-                                )}
                             </View>
                           )}
                         </View>
