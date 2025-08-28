@@ -625,7 +625,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           setIsBankConnected(connected);
 
           // If user is not premium, don't load bank data and disconnect if connected
-          if (!subscriptionStatus?.isPremium) {
+          // Only disconnect if we have a definitive subscription status (not null/undefined)
+          if (
+            subscriptionStatus !== null &&
+            subscriptionStatus !== undefined &&
+            !subscriptionStatus.isPremium
+          ) {
             console.log(
               "DataContext: User not premium, clearing bank connection"
             );
@@ -702,7 +707,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Clear bank data when subscription expires
   useEffect(() => {
-    if (subscriptionStatus && !subscriptionStatus.isPremium) {
+    // Only clear data if we have a definitive subscription status and user is not premium
+    if (
+      subscriptionStatus !== null &&
+      subscriptionStatus !== undefined &&
+      !subscriptionStatus.isPremium
+    ) {
       console.log("DataContext: Subscription expired, clearing bank data");
 
       // Clear bank data from state

@@ -12,6 +12,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useData } from "../contexts/DataContext";
+import { useSubscription } from "../contexts/SubscriptionContext";
+import { usePaywall } from "../hooks/usePaywall";
 import { plaidService } from "../services/plaid";
 import { AccountSelector } from "../components/AccountSelector";
 import { PlaidAccount, PlaidTransaction } from "../services/plaid";
@@ -30,7 +32,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     setSelectedBankAccount,
     selectedBankAccount,
     refreshBankData,
+    isBankConnected,
   } = useData();
+  const { isFeatureAvailable, PREMIUM_FEATURES } = useSubscription();
+  const { presentPaywall } = usePaywall();
 
   // Filter accounts to only show checking/savings accounts (not loans)
   const checkingAccounts = bankAccounts.filter(
@@ -167,54 +172,134 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
           </View>
         </View>
 
-        {/* Total Balance Card */}
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 16,
-            padding: 20,
-            marginBottom: 16,
-            shadowColor: colors.shadow,
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-        >
-          <Text
+        {/* Premium Upgrade Card - Show when no bank connected */}
+        {!isBankConnected && (
+          <View
             style={{
-              fontSize: 14,
-              fontWeight: "600",
-              color: colors.textSecondary,
-              marginBottom: 6,
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 24,
+              marginBottom: 16,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+              alignItems: "center",
             }}
           >
-            Total Balance
-          </Text>
-          <Text
-            style={{
-              fontSize: 28,
-              fontWeight: "800",
-              color: totalBalance >= 0 ? colors.success : colors.error,
-              letterSpacing: -0.5,
-            }}
-          >
-            {formatCurrency(totalBalance)}
-          </Text>
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.textSecondary,
-              marginTop: 2,
-            }}
-          >
-            Across {checkingAccounts.length} account
-            {checkingAccounts.length !== 1 ? "s" : ""}
-          </Text>
-        </View>
+            <View
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: 30,
+                backgroundColor: colors.primary + "20",
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <Ionicons name="card" size={28} color={colors.primary} />
+            </View>
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: "700",
+                color: colors.text,
+                marginBottom: 8,
+                textAlign: "center",
+              }}
+            >
+              Connect Your Bank
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                textAlign: "center",
+                marginBottom: 20,
+                lineHeight: 20,
+              }}
+            >
+              Upgrade to Premium to connect your bank account and automatically
+              sync transactions, balances, and account information.
+            </Text>
+            <TouchableOpacity
+              onPress={presentPaywall}
+              style={{
+                backgroundColor: colors.primary,
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                borderRadius: 12,
+                minWidth: 44,
+                minHeight: 44,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: colors.buttonText,
+                }}
+              >
+                Get Premium
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
-        {/* Account Selector */}
-        {checkingAccounts.length > 1 && (
+        {/* Total Balance Card - Only show when bank is connected */}
+        {isBankConnected && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 20,
+              marginBottom: 16,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "600",
+                color: colors.textSecondary,
+                marginBottom: 6,
+              }}
+            >
+              Total Balance
+            </Text>
+            <Text
+              style={{
+                fontSize: 28,
+                fontWeight: "800",
+                color: totalBalance >= 0 ? colors.success : colors.error,
+                letterSpacing: -0.5,
+              }}
+            >
+              {formatCurrency(totalBalance)}
+            </Text>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+                marginTop: 2,
+              }}
+            >
+              Across {checkingAccounts.length} account
+              {checkingAccounts.length !== 1 ? "s" : ""}
+            </Text>
+          </View>
+        )}
+
+        {/* Account Selector - Only show when bank is connected */}
+        {isBankConnected && checkingAccounts.length > 1 && (
           <View
             style={{
               backgroundColor: colors.surface,
@@ -301,97 +386,99 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
           </View>
         )}
 
-        {/* Account Balances */}
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 16,
-            padding: 20,
-            marginBottom: 16,
-            shadowColor: colors.shadow,
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-        >
-          <Text
+        {/* Account Balances - Only show when bank is connected */}
+        {isBankConnected && (
+          <View
             style={{
-              fontSize: 18,
-              fontWeight: "700",
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 20,
               marginBottom: 16,
-              color: colors.text,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
             }}
           >
-            Account Balances
-          </Text>
-          {checkingAccounts.map((account: any) => (
-            <View
-              key={account.id}
+            <Text
               style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingVertical: 12,
-                borderBottomWidth:
-                  account.id ===
-                  checkingAccounts[checkingAccounts.length - 1].id
-                    ? 0
-                    : 1,
-                borderBottomColor: colors.border,
+                fontSize: 18,
+                fontWeight: "700",
+                marginBottom: 16,
+                color: colors.text,
               }}
             >
-              <View style={{ flex: 1, marginRight: 12 }}>
-                <Text
-                  style={{
-                    fontSize: 15,
-                    fontWeight: "600",
-                    color: colors.text,
-                  }}
-                  numberOfLines={1}
-                >
-                  {account.name}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: colors.textSecondary,
-                    marginTop: 2,
-                  }}
-                  numberOfLines={1}
-                >
-                  ****{account.mask} • {account.subtype}
-                </Text>
+              Account Balances
+            </Text>
+            {checkingAccounts.map((account: any) => (
+              <View
+                key={account.id}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  borderBottomWidth:
+                    account.id ===
+                    checkingAccounts[checkingAccounts.length - 1].id
+                      ? 0
+                      : 1,
+                  borderBottomColor: colors.border,
+                }}
+              >
+                <View style={{ flex: 1, marginRight: 12 }}>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "600",
+                      color: colors.text,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {account.name}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                    numberOfLines={1}
+                  >
+                    ****{account.mask} • {account.subtype}
+                  </Text>
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color:
+                        account.balances.current >= 0
+                          ? colors.success
+                          : colors.error,
+                    }}
+                  >
+                    {formatCurrency(account.balances.current)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    Available: {formatCurrency(account.balances.available)}
+                  </Text>
+                </View>
               </View>
-              <View style={{ alignItems: "flex-end" }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "700",
-                    color:
-                      account.balances.current >= 0
-                        ? colors.success
-                        : colors.error,
-                  }}
-                >
-                  {formatCurrency(account.balances.current)}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 11,
-                    color: colors.textSecondary,
-                    marginTop: 2,
-                  }}
-                >
-                  Available: {formatCurrency(account.balances.available)}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
 
-        {/* Connected Loan Accounts Section */}
-        {loanAccounts.length > 0 && (
+        {/* Connected Loan Accounts Section - Only show when bank is connected */}
+        {isBankConnected && loanAccounts.length > 0 && (
           <View
             style={{
               backgroundColor: colors.surface,
