@@ -1247,9 +1247,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                             fontStyle: "italic",
                           }}
                         >
-                          {getCacheStatus()} •{" "}
-                          {filteredNonRecurringTransactions.length}{" "}
-                          non-recurring transactions
+                          {getCacheStatus()}
                         </Text>
                       )}
                     </View>

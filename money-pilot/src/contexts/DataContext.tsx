@@ -121,7 +121,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     user?.uid || "anonymous"
   }`;
   const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours for recurring analysis
-  const TRANSACTION_UPDATE_INTERVAL = 4 * 60 * 60 * 1000; // 4 hours for new transactions
+  const TRANSACTION_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours for new transactions (increased from 4 hours)
 
   // Check if data is stale (older than 30 minutes instead of 5)
   const isDataStale = useCallback(() => {

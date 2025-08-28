@@ -25,8 +25,12 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
-  const { bankAccounts, setSelectedBankAccount, selectedBankAccount } =
-    useData();
+  const {
+    bankAccounts,
+    setSelectedBankAccount,
+    selectedBankAccount,
+    refreshBankData,
+  } = useData();
 
   // Filter accounts to only show checking/savings accounts (not loans)
   const checkingAccounts = bankAccounts.filter(
@@ -55,40 +59,19 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     try {
       const isConnected = await plaidService.isBankConnected();
       if (!isConnected) {
-        console.log("No bank connected, attempting to load data");
+        console.log("No bank connected, using cached data");
         setIsUsingRealData(false);
-        // Try to load real data even without connection
-        const [accountsData, transactionsData] = await Promise.all([
-          plaidService.getAccounts(),
-          plaidService.getTransactions(
-            new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-              .toISOString()
-              .split("T")[0], // 30 days ago
-            new Date().toISOString().split("T")[0] // today
-          ),
-        ]);
-
-        // Accounts and transactions are now managed globally in DataContext
+        // Use DataContext data instead of making duplicate API calls
         return;
       }
 
-      console.log("Bank connected, attempting to load real data");
+      console.log("Bank connected, using DataContext data");
       setIsUsingRealData(true);
 
-      const [accountsData, transactionsData] = await Promise.all([
-        plaidService.getAccounts(),
-        plaidService.getTransactions(
-          new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0], // 30 days ago
-          new Date().toISOString().split("T")[0] // today
-        ),
-      ]);
-
-      // Accounts and transactions are now managed globally in DataContext
+      // DataContext already manages bank data, no need for duplicate calls
+      // The data is automatically loaded and cached by DataContext
     } catch (error) {
-      console.error("Error loading bank data:", error);
-      // Don't show error alert, just log it
+      console.error("Error checking bank connection:", error);
       console.log("Using fallback data due to error");
     } finally {
       setIsLoading(false);
@@ -97,8 +80,14 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadBankData();
-    setRefreshing(false);
+    try {
+      // Use DataContext refresh instead of making direct API calls
+      await refreshBankData(true); // Force refresh
+    } catch (error) {
+      console.error("Error refreshing bank data:", error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const formatCurrency = (amount: number) => {

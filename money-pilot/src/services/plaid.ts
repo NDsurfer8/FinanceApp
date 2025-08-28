@@ -69,9 +69,9 @@ class PlaidService {
   private pendingAccountsRequest: Promise<PlaidAccount[]> | null = null;
   private requestCache: Map<string, { data: any; timestamp: number }> =
     new Map();
-  private readonly CACHE_DURATION = 30000; // 30 seconds
-  private readonly ACCOUNTS_CACHE_DURATION = 300000; // 5 minutes for accounts (more stable)
-  private readonly TRANSACTIONS_CACHE_DURATION = 60000; // 1 minute for transactions
+  private readonly CACHE_DURATION = 60000; // 1 minute (increased from 30 seconds)
+  private readonly ACCOUNTS_CACHE_DURATION = 600000; // 10 minutes for accounts (increased from 5 minutes)
+  private readonly TRANSACTIONS_CACHE_DURATION = 300000; // 5 minutes for transactions (increased from 1 minute)
 
   // Request queue to prevent concurrent API calls
   private requestQueue: Array<() => Promise<any>> = [];
@@ -128,7 +128,7 @@ class PlaidService {
           console.error("Error processing queued request:", error);
         }
         // Add delay between requests to prevent rate limiting
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Reduced from 1000ms to 500ms
       }
     }
 
