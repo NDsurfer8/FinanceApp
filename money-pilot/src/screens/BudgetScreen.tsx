@@ -8,6 +8,7 @@ import {
   Alert,
   TextInput,
   Modal,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -24,6 +25,7 @@ import { AccountSelector } from "../components/AccountSelector";
 import { saveBudgetSettings, updateBudgetSettings } from "../services/userData";
 import { getProjectedTransactionsForMonth } from "../services/transactionService";
 import { billReminderService } from "../services/billReminders";
+import { plaidService } from "../services/plaid";
 
 interface BudgetScreenProps {
   navigation: any;
@@ -83,9 +85,54 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   } | null>(null);
   const [isIncomeCollapsed, setIsIncomeCollapsed] = useState(false);
   const [isExpensesCollapsed, setIsExpensesCollapsed] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const monthPickerScrollRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
+
+  // Pull-to-refresh function
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Force refresh bank data to get latest transactions from Plaid
+      if (isBankConnected) {
+        console.log(
+          "🔄 BudgetScreen: Manual refresh triggered - fetching fresh transactions from Plaid"
+        );
+
+        // Direct call to Plaid service to get fresh transactions
+        const endDate = new Date().toISOString().split("T")[0];
+        const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0];
+
+        // Clear the Plaid service cache to ensure fresh data
+        (plaidService as any).requestCache.clear();
+
+        const freshTransactions = await plaidService.getTransactions(
+          startDate,
+          endDate
+        );
+        console.log(
+          `📊 BudgetScreen: Received ${freshTransactions.length} fresh transactions from Plaid`
+        );
+
+        // Update the DataContext with fresh transactions
+        // This ensures the UI reflects the latest data without overriding
+        if (freshTransactions.length > 0) {
+          // Force refresh the DataContext to update with new data
+          await refreshBankData(true);
+        }
+      }
+
+      // Also refresh user data
+      await refreshData();
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Custom Slider Component
   const CustomSlider = ({
@@ -713,6 +760,14 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
       >
         {/* Header */}
         <StandardHeader

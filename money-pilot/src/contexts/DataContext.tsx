@@ -481,12 +481,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         let fetchStrategy: "full" | "incremental" | "recurring-only";
 
         if (forceRefresh || lastFetch === 0) {
-          // First time or force refresh: get 3 months of data for recurring analysis
-          startDate = new Date(Date.now() - 3 * 30 * 24 * 60 * 60 * 1000)
+          // First time or force refresh: get 1 year of data for comprehensive recurring analysis
+          startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
             .toISOString()
             .split("T")[0];
           fetchStrategy = "full";
-          console.log("DataContext: Full refresh - fetching 3 months of data");
+          console.log("DataContext: Full refresh - fetching 1 year of data");
         } else if (timeSinceLastFetch > TRANSACTION_UPDATE_INTERVAL) {
           // Check for new transactions (incremental update)
           const lastTransactionDate = await AsyncStorage.getItem(
