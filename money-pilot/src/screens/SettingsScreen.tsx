@@ -48,11 +48,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   };
   const { subscriptionStatus, isEligibleForIntroOffer } = useSubscription();
-  const [isBankConnected, setIsBankConnected] = useState(false);
   const { isDark, toggleTheme, colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const { isVisible: isChatbotVisible, toggleChatbot } = useChatbot();
-  const { refreshBankData, isBankDataLoading, bankTransactions } = useData();
+  const {
+    refreshBankData,
+    isBankDataLoading,
+    bankTransactions,
+    isBankConnected,
+  } = useData();
   const [connectedBankInfo, setConnectedBankInfo] = useState<{
     name: string;
     accounts: any[];
@@ -175,7 +179,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     const checkBankConnection = async () => {
       try {
         const connected = await plaidService.isBankConnected();
-        setIsBankConnected(connected);
         console.log("SettingsScreen: Bank connection status:", connected);
 
         // If bank is connected, stop any loading state
@@ -194,7 +197,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         }
       } catch (error) {
         console.error("Failed to check bank connection:", error);
-        setIsBankConnected(false);
         setConnectedBankInfo(null);
       }
     };
@@ -237,7 +239,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         const checkBankConnection = async () => {
           try {
             const connected = await plaidService.isBankConnected();
-            setIsBankConnected(connected);
 
             if (connected) {
               const bankInfo = await plaidService.getConnectedBankInfo();
@@ -248,7 +249,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             (global as any).lastBankCheckTime = Date.now();
           } catch (error) {
             console.error("Failed to check bank connection on focus:", error);
-            setIsBankConnected(false);
             setConnectedBankInfo(null);
           }
         };
@@ -588,7 +588,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <PlaidLinkComponent
             onSuccess={async () => {
               console.log("Bank connected successfully");
-              setIsBankConnected(true);
 
               // Get the bank information after successful connection
               try {

@@ -100,6 +100,13 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   const checkConnectionStatus = async () => {
     try {
       const connected = await plaidService.isBankConnected();
+
+      // If user is not premium, don't show as connected even if bank is connected
+      if (!isFeatureAvailable(PREMIUM_FEATURES.PLAID_BANK_CONNECTION)) {
+        setIsConnected(false);
+        return;
+      }
+
       setIsConnected(connected);
 
       // If we were loading and now we're connected, stop the loading
@@ -131,6 +138,13 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     while (attempts < maxAttempts && isLoading) {
       try {
         const connected = await plaidService.isBankConnected();
+
+        // If user is not premium, don't show as connected even if bank is connected
+        if (!isFeatureAvailable(PREMIUM_FEATURES.PLAID_BANK_CONNECTION)) {
+          setIsConnected(false);
+          return;
+        }
+
         setIsConnected(connected);
 
         // Stop polling if we're no longer loading (user might have disconnected)

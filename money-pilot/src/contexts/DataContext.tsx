@@ -624,6 +624,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           const connected = await plaidService.isBankConnected();
           setIsBankConnected(connected);
 
+          // If user is not premium, don't load bank data and disconnect if connected
+          if (!subscriptionStatus?.isPremium) {
+            console.log(
+              "DataContext: User not premium, clearing bank connection"
+            );
+            if (connected) {
+              await plaidService.disconnectBank();
+            }
+            setIsBankConnected(false);
+            return;
+          }
+
           if (!connected) {
             setIsBankConnected(false);
             return;
@@ -686,7 +698,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setIsBankConnected(false);
       setBankDataLastUpdated(null);
     }
-  }, [user, loadAllData, loadCachedBankData]);
+  }, [user, loadAllData, loadCachedBankData, subscriptionStatus?.isPremium]);
 
   // Clear bank data when subscription expires
   useEffect(() => {
@@ -700,6 +712,50 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setBankDataLastUpdated(null);
       setBankAccounts([]);
       setSelectedBankAccount(null);
+
+      // Also disconnect the bank from Firebase and clear cache
+      const handleExpiration = async () => {
+        try {
+          console.log(
+            "DataContext: Disconnecting bank due to subscription expiration"
+          );
+
+          // Disconnect bank from Firebase
+          const isConnected = await plaidService.isBankConnected();
+          if (isConnected) {
+            await plaidService.disconnectBank();
+          }
+
+          // Clear Plaid service cache
+          (plaidService as any).requestCache?.clear();
+
+          // Clear AsyncStorage cache
+          const keysToClear = [
+            "bankTransactions",
+            "bankRecurringSuggestions",
+            "bankAccounts",
+            "bankDataLastUpdated",
+            "isBankConnected",
+            "plaid_access_token",
+            "plaid_item_id",
+          ];
+
+          for (const key of keysToClear) {
+            await AsyncStorage.removeItem(key);
+          }
+
+          console.log(
+            "DataContext: Successfully disconnected bank and cleared cache"
+          );
+        } catch (error) {
+          console.error(
+            "DataContext: Error handling subscription expiration:",
+            error
+          );
+        }
+      };
+
+      handleExpiration();
     }
   }, [subscriptionStatus?.isPremium]);
 
