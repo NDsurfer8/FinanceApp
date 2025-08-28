@@ -87,16 +87,7 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
     };
 
     preloadData();
-  }, [
-    user,
-    hasData,
-    hasBankData,
-    isLoading,
-    isBankDataLoading,
-    refreshData,
-    refreshBankData,
-    isBankConnected,
-  ]);
+  }, [user]); // Only depend on user changes to prevent infinite loops
 
   // Show children immediately if no user or if preloading is complete
   if (!user || !isPreloading) {

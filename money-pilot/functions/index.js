@@ -49,17 +49,38 @@ function getPlaidClient(clientId, secret) {
   }
 
   if (!globalPlaidClient) {
+    // Ensure clientId and secret are properly trimmed and valid
+    const cleanClientId = clientId ? clientId.toString().trim() : "";
+    const cleanSecret = secret ? secret.toString().trim() : "";
+
+    if (!cleanClientId || !cleanSecret) {
+      console.error("Invalid Plaid credentials:", {
+        clientId: cleanClientId ? "present" : "missing",
+        secret: cleanSecret ? "present" : "missing",
+      });
+      return null;
+    }
+
+    console.log("Creating new Plaid client with cleaned credentials:", {
+      clientId: cleanClientId.substring(0, 8) + "...",
+      secret: cleanSecret.substring(0, 8) + "...",
+      environment,
+    });
+
     const configuration = new Configuration({
       basePath: PlaidEnvironments[environment],
       baseOptions: {
         headers: {
-          "PLAID-CLIENT-ID": clientId,
-          "PLAID-SECRET": secret,
+          "PLAID-CLIENT-ID": cleanClientId,
+          "PLAID-SECRET": cleanSecret,
           "Plaid-Version": "2020-09-14", // Using stable API version - supports pagination
         },
       },
     });
     globalPlaidClient = new PlaidApi(configuration);
+    console.log("Plaid client created successfully");
+  } else {
+    console.log("Using existing Plaid client");
   }
   return globalPlaidClient;
 }

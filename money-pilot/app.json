@@ -57,13 +57,13 @@
     ],
     "extra": {
       "firebase": {
-        "apiKey": "AIzaSyAgz2sbb7EU6Gcd0OLgpLy8haipBmtUAVA",
-        "authDomain": "money-pilot-ee3e3.firebaseapp.com",
-        "projectId": "money-pilot-ee3e3",
-        "storageBucket": "money-pilot-ee3e3.firebasestorage.app",
-        "messagingSenderId": "957142982959",
-        "appId": "1:957142982959:web:1580b8f5ad295255f2c1da",
-        "databaseURL": "https://money-pilot-ee3e3-default-rtdb.firebaseio.com"
+        "apiKey": "AIzaSyACtNd4rcPXsMal0oMDMR89Ew5yW3hJ5Ds",
+        "authDomain": "vectorfi-888.firebaseapp.com",
+        "projectId": "vectorfi-888",
+        "storageBucket": "vectorfi-888.firebasestorage.app",
+        "messagingSenderId": "957229887847",
+        "appId": "1:957229887847:web:b66d83149e457b6782ffc2",
+        "databaseURL": "https://vectorfi-888-default-rtdb.firebaseio.com"
       },
       "eas": {
         "projectId": "ad418174-c1b3-4cd0-a54e-d1198eecb1f7"
