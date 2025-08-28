@@ -2,31 +2,41 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
-  Alert,
   Modal,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { biometricAuthService } from "../services/biometricAuth";
 import { useTheme } from "../contexts/ThemeContext";
+import { biometricAuthService } from "../services/biometricAuth";
 
 interface BiometricAuthOverlayProps {
   visible: boolean;
   onSuccess: () => void;
   onCancel: () => void;
+  onUsePasscode?: () => void;
+  onSignOut?: () => void;
 }
 
 export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
   visible,
   onSuccess,
   onCancel,
+  onUsePasscode,
+  onSignOut,
 }) => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [failureCount, setFailureCount] = useState(0);
+  const [showAlternativeOptions, setShowAlternativeOptions] = useState(false);
   const { colors } = useTheme();
 
   useEffect(() => {
     if (visible) {
+      // Reset failure count when overlay becomes visible
+      setFailureCount(0);
+      setShowAlternativeOptions(false);
       // Automatically trigger authentication when overlay becomes visible
       handleBiometricAuth();
     }
@@ -34,6 +44,7 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
 
   const handleBiometricAuth = async () => {
     setIsAuthenticating(true);
+    setShowAlternativeOptions(false);
 
     try {
       // Add a delay to ensure the overlay is fully visible
@@ -48,7 +59,10 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
         Alert.alert(
           "Biometric Not Available",
           "Biometric authentication is not available on this device.",
-          [{ text: "OK", onPress: onCancel }]
+          [
+            { text: "OK", onPress: onCancel },
+            { text: "Use Passcode", onPress: onUsePasscode },
+          ]
         );
         return;
       }
@@ -63,31 +77,102 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
 
       if (result.success) {
         console.log("Biometric authentication successful");
+        setFailureCount(0);
         onSuccess();
       } else {
         console.log("Biometric authentication failed:", result.error);
+        const newFailureCount = failureCount + 1;
+        setFailureCount(newFailureCount);
+
+        // Progressive failure handling
+        if (newFailureCount >= 3) {
+          // After 3 failures, show alternative options
+          setShowAlternativeOptions(true);
+          Alert.alert(
+            "Authentication Failed",
+            "Multiple authentication attempts failed. Please choose an alternative method.",
+            [
+              { text: "Use Passcode", onPress: onUsePasscode },
+              { text: "Sign Out", onPress: onSignOut, style: "destructive" },
+              { text: "Cancel", onPress: onCancel },
+            ]
+          );
+        } else if (newFailureCount >= 2) {
+          // After 2 failures, suggest passcode
+          Alert.alert(
+            "Authentication Failed",
+            result.error || "Please try again or use your device passcode.",
+            [
+              { text: "Try Again", onPress: handleBiometricAuth },
+              { text: "Use Passcode", onPress: onUsePasscode },
+              { text: "Cancel", onPress: onCancel },
+            ]
+          );
+        } else {
+          // First failure, just retry
+          Alert.alert(
+            "Authentication Failed",
+            result.error || "Please try again",
+            [
+              { text: "Cancel", onPress: onCancel },
+              { text: "Try Again", onPress: handleBiometricAuth },
+            ]
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Biometric authentication error:", error);
+      const newFailureCount = failureCount + 1;
+      setFailureCount(newFailureCount);
+
+      if (newFailureCount >= 3) {
+        setShowAlternativeOptions(true);
         Alert.alert(
-          "Authentication Failed",
-          result.error || "Please try again",
+          "Authentication Error",
+          "An error occurred during authentication. Please choose an alternative method.",
+          [
+            { text: "Use Passcode", onPress: onUsePasscode },
+            { text: "Sign Out", onPress: onSignOut, style: "destructive" },
+            { text: "Cancel", onPress: onCancel },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Authentication Error",
+          "An error occurred during authentication. Please try again.",
           [
             { text: "Cancel", onPress: onCancel },
             { text: "Try Again", onPress: handleBiometricAuth },
           ]
         );
       }
-    } catch (error) {
-      console.error("Biometric authentication error:", error);
-      Alert.alert(
-        "Authentication Error",
-        "An error occurred during authentication. Please try again.",
-        [
-          { text: "Cancel", onPress: onCancel },
-          { text: "Try Again", onPress: handleBiometricAuth },
-        ]
-      );
     } finally {
       setIsAuthenticating(false);
     }
+  };
+
+  const handleUsePasscode = () => {
+    if (onUsePasscode) {
+      onUsePasscode();
+    } else {
+      // Fallback: try biometric again with passcode fallback enabled
+      handleBiometricAuth();
+    }
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      "Sign Out",
+      "Are you sure you want to sign out? You'll need to sign in again.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign Out",
+          style: "destructive",
+          onPress: onSignOut,
+        },
+      ]
+    );
   };
 
   if (!visible) return null;
@@ -114,8 +199,55 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             {isAuthenticating
               ? "Authenticating with Face ID..."
+              : failureCount > 0
+              ? `Authentication failed (${failureCount} attempt${
+                  failureCount > 1 ? "s" : ""
+                })`
               : "Please authenticate with Face ID to access your financial data"}
           </Text>
+
+          {showAlternativeOptions && (
+            <View style={styles.alternativeOptions}>
+              <Text style={[styles.alternativeTitle, { color: colors.text }]}>
+                Alternative Options
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.alternativeButton,
+                  { backgroundColor: colors.info },
+                ]}
+                onPress={handleUsePasscode}
+              >
+                <Ionicons name="key" size={20} color={colors.buttonText} />
+                <Text
+                  style={[
+                    styles.alternativeButtonText,
+                    { color: colors.buttonText },
+                  ]}
+                >
+                  Use Device Passcode
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.alternativeButton,
+                  { backgroundColor: colors.error },
+                ]}
+                onPress={handleSignOut}
+              >
+                <Ionicons name="log-out" size={20} color={colors.buttonText} />
+                <Text
+                  style={[
+                    styles.alternativeButtonText,
+                    { color: colors.buttonText },
+                  ]}
+                >
+                  Sign Out
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity
@@ -133,9 +265,13 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
               onPress={handleBiometricAuth}
               disabled={isAuthenticating}
             >
-              <Text style={[styles.buttonText, { color: colors.card }]}>
-                {isAuthenticating ? "Authenticating..." : "Use Face ID"}
-              </Text>
+              {isAuthenticating ? (
+                <ActivityIndicator size="small" color={colors.card} />
+              ) : (
+                <Text style={[styles.buttonText, { color: colors.card }]}>
+                  {failureCount > 0 ? "Try Again" : "Use Face ID"}
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -157,6 +293,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     maxWidth: 300,
     width: "80%",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   iconContainer: {
     width: 80,
@@ -167,30 +311,55 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  alternativeOptions: {
+    width: "100%",
+    marginBottom: 24,
+  },
+  alternativeTitle: {
+    fontSize: 16,
     fontWeight: "600",
     marginBottom: 12,
     textAlign: "center",
   },
-  subtitle: {
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 32,
-    lineHeight: 22,
+  alternativeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  alternativeButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 8,
   },
   buttonContainer: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
     gap: 12,
   },
   button: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    minWidth: 100,
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonText: {
     fontSize: 16,
     fontWeight: "600",
-    textAlign: "center",
   },
 });

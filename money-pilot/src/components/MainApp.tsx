@@ -530,6 +530,33 @@ export const MainApp: React.FC = () => {
                       setBiometricAuthenticated(false);
                       setAppState("login");
                     }}
+                    onUsePasscode={() => {
+                      // Allow access with device passcode fallback
+                      setShowBiometricOverlay(false);
+                      setBiometricAuthenticated(true);
+                      setAppState("main");
+                    }}
+                    onSignOut={async () => {
+                      try {
+                        // Handle Plaid logout cleanup
+                        await plaidService.handleLogout();
+
+                        const { signOutUser } = await import(
+                          "../services/auth"
+                        );
+                        await signOutUser();
+
+                        setShowBiometricOverlay(false);
+                        setBiometricAuthenticated(false);
+                        setAppState("login");
+                      } catch (error) {
+                        console.error("Error signing out:", error);
+                        // Fallback to login screen even if signout fails
+                        setShowBiometricOverlay(false);
+                        setBiometricAuthenticated(false);
+                        setAppState("login");
+                      }
+                    }}
                   />
 
                   {/* Plaid Update Mode Modal */}
