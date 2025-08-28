@@ -54,18 +54,8 @@ function getPlaidClient(clientId, secret) {
     const cleanSecret = secret ? secret.toString().trim() : "";
 
     if (!cleanClientId || !cleanSecret) {
-      console.error("Invalid Plaid credentials:", {
-        clientId: cleanClientId ? "present" : "missing",
-        secret: cleanSecret ? "present" : "missing",
-      });
       return null;
     }
-
-    console.log("Creating new Plaid client with cleaned credentials:", {
-      clientId: cleanClientId.substring(0, 8) + "...",
-      secret: cleanSecret.substring(0, 8) + "...",
-      environment,
-    });
 
     const configuration = new Configuration({
       basePath: PlaidEnvironments[environment],
