@@ -21,6 +21,8 @@ import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useChatbot } from "../contexts/ChatbotContext";
+import { useSubscription } from "../contexts/SubscriptionContext";
+import { aiUsageTracker } from "../services/aiUsageTracker";
 import {
   aiFinancialAdvisorService,
   FinancialSnapshot,
@@ -270,6 +272,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
   const { hideChatbot, showChatbot } = useChatbot();
+  const { hasPremiumAccess } = useSubscription();
   const {
     transactions,
     assets,
@@ -482,6 +485,20 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     }
     setLastRequestTime(now);
 
+    // Check AI usage limits
+    if (user?.uid) {
+      const isPremium = hasPremiumAccess();
+      const usageCheck = await aiUsageTracker.checkAIUsage(user.uid, isPremium);
+
+      if (!usageCheck.canUse) {
+        Alert.alert(
+          "AI Usage Limit Reached",
+          `You've used all ${usageCheck.limit} AI questions for this period. Go to Settings to upgrade to premium for unlimited AI access!`
+        );
+        return;
+      }
+    }
+
     // Clear input immediately
     const currentInputText = inputText.trim();
     setInputText("");
@@ -650,6 +667,11 @@ Requirements:
       );
       setMessages(updatedMessages);
       saveChatHistory(updatedMessages);
+
+      // Record AI usage if not a local response
+      if (user?.uid && !localResponse) {
+        await aiUsageTracker.recordAIUsage(user.uid);
+      }
     } catch (error) {
       console.error("Error generating AI response:", error);
       const errorMessages = newMessages.map((msg) =>

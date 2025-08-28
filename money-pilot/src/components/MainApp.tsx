@@ -50,6 +50,7 @@ import {
   AIFinancialAdvisorScreen,
   FinancialPlansScreen,
 } from "../screens";
+import { AIUsageAdminScreen } from "../screens/AIUsageAdminScreen";
 import { PrivacyPolicyScreen } from "../screens/PrivacyPolicyScreen";
 import { TermsOfServiceScreen } from "../screens/TermsOfServiceScreen";
 
@@ -481,6 +482,10 @@ export const MainApp: React.FC = () => {
                           component={PrivacySecurityScreen}
                         />
                         <Stack.Screen name="About" component={AboutScreen} />
+                        <Stack.Screen
+                          name="AIUsageAdmin"
+                          component={AIUsageAdminScreen}
+                        />
                         <Stack.Screen
                           name="HelpSupport"
                           component={HelpSupportScreen}

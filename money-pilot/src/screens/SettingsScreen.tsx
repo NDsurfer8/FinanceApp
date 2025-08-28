@@ -24,6 +24,7 @@ import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { useChatbot } from "../contexts/ChatbotContext";
 import { useData } from "../contexts/DataContext";
+import { AIUsageAdminScreen } from "./AIUsageAdminScreen";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -65,6 +66,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [emailVerificationLoading, setEmailVerificationLoading] =
     useState(false);
   const [bankConnectionLoading, setBankConnectionLoading] = useState(false);
+
+  // Check if user is admin (you can modify this logic as needed)
+  const isAdmin =
+    user?.email === "noahduran911@gmail.com" ||
+    user?.email === "admin@vectorfi.ai";
 
   // Monitor bank connection status and stop loading when connected or disconnected
   useEffect(() => {
@@ -988,6 +994,34 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               color={colors.textSecondary}
             />
           </TouchableOpacity>
+
+          {/* AI Usage Admin - Only visible to admin users */}
+          {isAdmin && (
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                { borderBottomColor: colors.borderLight },
+              ]}
+              onPress={() => navigation?.navigate("AIUsageAdmin")}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons
+                  name="settings"
+                  size={20}
+                  color={colors.textSecondary}
+                  style={{ marginRight: 12 }}
+                />
+                <Text style={[styles.settingText, { color: colors.text }]}>
+                  AI Usage Admin
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             style={[
