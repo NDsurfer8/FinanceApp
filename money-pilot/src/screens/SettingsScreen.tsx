@@ -594,11 +594,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               try {
                 const bankInfo = await plaidService.getConnectedBankInfo();
                 setConnectedBankInfo(bankInfo);
-
-                // Refresh bank data to load transactions
-                console.log("Refreshing bank data after connection...");
-                await refreshBankData(true);
-                console.log("Bank data refreshed successfully");
+                console.log("Bank info retrieved successfully");
               } catch (error) {
                 console.error(
                   "Failed to get bank info after connection:",

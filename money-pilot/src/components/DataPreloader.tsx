@@ -65,18 +65,8 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
             await refreshData();
           }
 
-          // Bank data is also handled by DataContext
-          // Only preload if DataContext hasn't loaded bank data yet
-          if (isBankConnected && !hasBankData && !isBankDataLoading) {
-            console.log(
-              "DataPreloader: DataContext hasn't loaded bank data, triggering refresh"
-            );
-            try {
-              await refreshBankData();
-            } catch (error) {
-              console.error("Failed to load bank data:", error);
-            }
-          }
+          // Bank data is handled by DataContext - no need to preload here
+          // This prevents race conditions with the main DataContext logic
         } catch (error) {
           console.error("DataPreloader: Error during preload:", error);
         }

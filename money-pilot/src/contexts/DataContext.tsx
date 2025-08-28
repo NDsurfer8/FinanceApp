@@ -614,8 +614,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
           // Register callback for when bank is connected
           plaidService.onBankConnected(async () => {
+            console.log("🔄 DataContext: Bank connected callback triggered");
             setIsBankConnected(true);
-            await refreshBankData(true); // Force refresh when new bank connects
+            // Don't call refreshBankData here - let the main logic handle it
+            // This prevents duplicate calls and ensures consistent data loading
           });
 
           // Check if bank is connected
@@ -628,27 +630,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           }
 
           // Smart refresh strategy for app refresh:
-          // 1. Try to load from cache first
+          // 1. Try to load from cache first for immediate UI response
           const cacheLoaded = await loadCachedBankData();
 
           if (cacheLoaded) {
-            console.log("DataContext: Loaded bank data from cache");
-            return;
+            console.log(
+              "DataContext: Loaded bank data from cache for immediate display"
+            );
           }
 
-          // 2. Check if we need to fetch fresh data
-          const lastFetch = bankDataLastUpdated?.getTime() || 0;
-          const timeSinceLastFetch = Date.now() - lastFetch;
-          const SIX_HOURS = 6 * 60 * 60 * 1000;
-
-          if (timeSinceLastFetch < SIX_HOURS) {
-            console.log("DataContext: Bank data is fresh, skipping API call");
-            return;
-          }
-
-          // 3. Only fetch if data is stale or no cache exists
-          console.log("DataContext: Bank data is stale, fetching fresh data");
-          await refreshBankData(false); // Don't force refresh, use smart strategy
+          // 2. Always fetch fresh data when bank is connected (regardless of cache)
+          console.log("DataContext: Bank is connected, fetching fresh data");
+          await refreshBankData(true); // Force refresh to ensure we get the latest data
         } catch (error) {
           console.error("DataContext: Failed to load bank data:", error);
         }
