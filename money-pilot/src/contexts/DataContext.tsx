@@ -7,6 +7,7 @@ import React, {
   useRef,
 } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { useSubscription } from "./SubscriptionContext";
 import {
   getUserTransactions,
   getUserAssets,
@@ -87,6 +88,7 @@ interface DataProviderProps {
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const { user } = useAuth();
+  const { subscriptionStatus } = useSubscription();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [assets, setAssets] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
@@ -685,6 +687,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setBankDataLastUpdated(null);
     }
   }, [user, loadAllData, loadCachedBankData]);
+
+  // Clear bank data when subscription expires
+  useEffect(() => {
+    if (subscriptionStatus && !subscriptionStatus.isPremium) {
+      console.log("DataContext: Subscription expired, clearing bank data");
+
+      // Clear bank data from state
+      setBankTransactions([]);
+      setBankRecurringSuggestions([]);
+      setIsBankConnected(false);
+      setBankDataLastUpdated(null);
+      setBankAccounts([]);
+      setSelectedBankAccount(null);
+    }
+  }, [subscriptionStatus?.isPremium]);
 
   const value: DataContextType = {
     transactions,

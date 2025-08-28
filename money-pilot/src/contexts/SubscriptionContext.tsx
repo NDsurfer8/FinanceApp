@@ -10,6 +10,8 @@ import revenueCatService, {
   SubscriptionStatus,
   PREMIUM_FEATURES,
 } from "../services/revenueCat";
+import { plaidService } from "../services/plaid";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface SubscriptionContextType {
   subscriptionStatus: SubscriptionStatus | null;
@@ -23,6 +25,7 @@ interface SubscriptionContextType {
   refreshSubscriptionStatus: (
     forceRefresh?: boolean
   ) => Promise<SubscriptionStatus | null>;
+  handleSubscriptionExpiration: () => Promise<void>;
   PREMIUM_FEATURES: typeof PREMIUM_FEATURES;
 }
 
@@ -142,10 +145,88 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
     return subscriptionStatus?.isEligibleForIntroOffer ?? false;
   }, [subscriptionStatus]);
 
+  // Handle subscription expiration - disconnect bank and clear data
+  const handleSubscriptionExpiration = useCallback(async () => {
+    try {
+      console.log("SubscriptionContext: Handling subscription expiration...");
+
+      // 1. Disconnect bank connection
+      const isConnected = await plaidService.isBankConnected();
+      if (isConnected) {
+        console.log(
+          "SubscriptionContext: Disconnecting bank due to subscription expiration"
+        );
+        await plaidService.disconnectBank();
+      }
+
+      // 2. Clear all cached data
+      console.log(
+        "SubscriptionContext: Clearing cached data due to subscription expiration"
+      );
+
+      // Clear Plaid service cache
+      (plaidService as any).requestCache?.clear();
+
+      // Clear AsyncStorage cache
+      const keysToClear = [
+        "bankTransactions",
+        "bankRecurringSuggestions",
+        "bankAccounts",
+        "bankDataLastUpdated",
+        "isBankConnected",
+        "plaid_access_token",
+        "plaid_item_id",
+      ];
+
+      for (const key of keysToClear) {
+        await AsyncStorage.removeItem(key);
+      }
+
+      console.log("SubscriptionContext: Successfully cleared all cached data");
+    } catch (error) {
+      console.error(
+        "SubscriptionContext: Error handling subscription expiration:",
+        error
+      );
+    }
+  }, []);
+
   // Initialize subscription when user changes
   useEffect(() => {
     initializeSubscription();
   }, [initializeSubscription]);
+
+  // Check for subscription expiration on app start
+  useEffect(() => {
+    if (!user?.uid || !subscriptionStatus) return;
+
+    const checkExpirationOnStart = async () => {
+      try {
+        const currentStatus = await revenueCatService.checkSubscriptionStatus(
+          true
+        );
+
+        // If subscription expired while app was closed, handle cleanup
+        if (!currentStatus.isPremium && subscriptionStatus.isPremium) {
+          console.log(
+            "SubscriptionContext: App start detected subscription expiration"
+          );
+          await handleSubscriptionExpiration();
+          setSubscriptionStatus(currentStatus);
+        }
+      } catch (error) {
+        console.error(
+          "SubscriptionContext: Error checking expiration on app start:",
+          error
+        );
+      }
+    };
+
+    // Check after a short delay to ensure everything is initialized
+    const timeout = setTimeout(checkExpirationOnStart, 2000);
+
+    return () => clearTimeout(timeout);
+  }, [user?.uid, subscriptionStatus, handleSubscriptionExpiration]);
 
   // Set up customer info update listener for real-time subscription changes
   useEffect(() => {
@@ -167,6 +248,20 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
           const newStatus = await revenueCatService.checkSubscriptionStatus(
             true
           );
+
+          // Check if subscription just expired
+          const previousStatus = subscriptionStatus;
+          const wasPremium = previousStatus?.isPremium;
+          const isNowPremium = newStatus?.isPremium;
+
+          // If user was premium but is no longer premium, handle expiration
+          if (wasPremium && !isNowPremium) {
+            console.log(
+              "SubscriptionContext: Subscription expired, handling cleanup..."
+            );
+            await handleSubscriptionExpiration();
+          }
+
           setSubscriptionStatus(newStatus);
           console.log(
             "SubscriptionContext: Subscription status updated from listener:",
@@ -190,6 +285,37 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
     };
   }, [user?.uid]);
 
+  // Periodic check for subscription expiration (every 5 minutes)
+  useEffect(() => {
+    if (!user?.uid || !subscriptionStatus?.isPremium) return;
+
+    const checkExpiration = async () => {
+      try {
+        const currentStatus = await revenueCatService.checkSubscriptionStatus(
+          true
+        );
+
+        // If subscription expired, handle cleanup
+        if (!currentStatus.isPremium && subscriptionStatus.isPremium) {
+          console.log(
+            "SubscriptionContext: Periodic check detected subscription expiration"
+          );
+          await handleSubscriptionExpiration();
+          setSubscriptionStatus(currentStatus);
+        }
+      } catch (error) {
+        console.error(
+          "SubscriptionContext: Error in periodic expiration check:",
+          error
+        );
+      }
+    };
+
+    const interval = setInterval(checkExpiration, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [user?.uid, subscriptionStatus?.isPremium, handleSubscriptionExpiration]);
+
   // Debug: Log subscription status changes
   useEffect(() => {
     console.log("SubscriptionContext: Subscription status changed:", {
@@ -211,6 +337,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
     getProductId,
     isEligibleForIntroOffer,
     refreshSubscriptionStatus,
+    handleSubscriptionExpiration,
     PREMIUM_FEATURES,
   };
 
