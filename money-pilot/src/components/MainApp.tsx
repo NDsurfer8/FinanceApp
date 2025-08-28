@@ -90,6 +90,8 @@ export const MainApp: React.FC = () => {
   const [plaidUpdateChecked, setPlaidUpdateChecked] = useState(false);
 
   useEffect(() => {
+    // Set app start time for smart refresh detection
+    (global as any).appStartTime = Date.now();
     initializeApp();
   }, []);
 

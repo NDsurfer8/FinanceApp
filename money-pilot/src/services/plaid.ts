@@ -908,12 +908,17 @@ class PlaidService {
       const startTime = Date.now();
       const result = await getTransactions({
         accessToken: this.accessToken,
+        cursor: null, // Start with null cursor for initial fetch
         // Note: /transactions/sync doesn't use date parameters
         // It fetches all available transactions and uses cursor-based pagination
       });
       const duration = Date.now() - startTime;
 
       const { transactions } = result.data as { transactions: any[] };
+
+      console.log(
+        `📊 Plaid API: Received ${transactions.length} transactions from Firebase function`
+      );
 
       return transactions.map((transaction) => ({
         id: transaction.transaction_id,

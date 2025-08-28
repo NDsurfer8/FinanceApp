@@ -270,7 +270,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const calculateFrequency = useCallback((transactions: any[]) => {
     if (transactions.length < 2) return null;
 
-    const dates = transactions.map((t) => new Date(t.date).getTime());
+    const dates = transactions?.map((t) => new Date(t.date).getTime());
     const intervals = [];
 
     for (let i = 1; i < dates.length; i++) {
@@ -292,6 +292,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const analyzeRecurringPatterns = useCallback(
     (transactions: any[]) => {
+      console.log(
+        "Analyzing recurring patterns for transactions:",
+        transactions.length
+      );
       const patterns: { [key: string]: any[] } = {};
       const suggestions: any[] = [];
 
@@ -412,12 +416,30 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         // Don't allow calls more frequent than 5 seconds apart (unless force refresh)
         if (timeSinceLastCall < 5000 && !forceRefresh) {
+          console.log("DataContext: Debouncing API call (too frequent)");
           return;
         }
 
         // Don't load if already loading
         if (isBankDataLoadingRef.current && !forceRefresh) {
+          console.log("DataContext: Already loading, skipping duplicate call");
           return;
+        }
+
+        // Smart app refresh detection
+        const appStartTime = (global as any).appStartTime || now;
+        const isAppJustStarted = now - appStartTime < 30000; // 30 seconds after app start
+
+        if (isAppJustStarted && !forceRefresh) {
+          console.log("DataContext: App just started, using cache first");
+          // For app refresh, try cache first before making API calls
+          const cacheLoaded = await loadCachedBankData();
+          if (cacheLoaded) {
+            console.log(
+              "DataContext: App refresh - loaded from cache, skipping API call"
+            );
+            return;
+          }
         }
 
         // Update last call time
@@ -450,7 +472,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           }
         }
 
-        // Determine what data to fetch based on cache status
+        // Smart fetch strategy based on cache status and app refresh context
         const lastFetch = bankDataLastUpdated?.getTime() || 0;
         const timeSinceLastFetch = now - lastFetch;
 
@@ -464,8 +486,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             .toISOString()
             .split("T")[0];
           fetchStrategy = "full";
+          console.log("DataContext: Full refresh - fetching 3 months of data");
         } else if (timeSinceLastFetch > TRANSACTION_UPDATE_INTERVAL) {
-          // Check for new transactions (last 4 hours)
+          // Check for new transactions (incremental update)
           const lastTransactionDate = await AsyncStorage.getItem(
             LAST_TRANSACTION_DATE_KEY
           );
@@ -475,8 +498,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               .toISOString()
               .split("T")[0]; // Fallback to 7 days
           fetchStrategy = "incremental";
+          console.log(
+            "DataContext: Incremental update - fetching recent transactions"
+          );
         } else {
           // Cache is fresh, no need to fetch
+          console.log("DataContext: Cache is fresh, skipping API call");
           setIsBankDataLoading(false);
           return;
         }
@@ -573,12 +600,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     await loadAllData();
   }, [loadAllData]);
 
-  // Load data when user changes
+  // Load data when user changes (optimized for app refresh)
   useEffect(() => {
     if (user) {
+      // Load user data (transactions, assets, debts, etc.) - this is fast from Firebase
       loadAllData();
 
-      // Load bank data
+      // Load bank data with smart caching
       const loadBankData = async () => {
         try {
           // Set user ID for PlaidService first
@@ -587,10 +615,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           // Register callback for when bank is connected
           plaidService.onBankConnected(async () => {
             setIsBankConnected(true);
-            await refreshBankData(true);
+            await refreshBankData(true); // Force refresh when new bank connects
           });
 
-          // Call refreshBankData directly without including it in dependencies
+          // Check if bank is connected
           const connected = await plaidService.isBankConnected();
           setIsBankConnected(connected);
 
@@ -599,14 +627,28 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             return;
           }
 
-          // Try to load from cache first
+          // Smart refresh strategy for app refresh:
+          // 1. Try to load from cache first
           const cacheLoaded = await loadCachedBankData();
+
           if (cacheLoaded) {
+            console.log("DataContext: Loaded bank data from cache");
             return;
           }
 
-          // Force refresh if no cache
-          await refreshBankData(true);
+          // 2. Check if we need to fetch fresh data
+          const lastFetch = bankDataLastUpdated?.getTime() || 0;
+          const timeSinceLastFetch = Date.now() - lastFetch;
+          const SIX_HOURS = 6 * 60 * 60 * 1000;
+
+          if (timeSinceLastFetch < SIX_HOURS) {
+            console.log("DataContext: Bank data is fresh, skipping API call");
+            return;
+          }
+
+          // 3. Only fetch if data is stale or no cache exists
+          console.log("DataContext: Bank data is stale, fetching fresh data");
+          await refreshBankData(false); // Don't force refresh, use smart strategy
         } catch (error) {
           console.error("DataContext: Failed to load bank data:", error);
         }

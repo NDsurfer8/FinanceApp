@@ -356,7 +356,7 @@ exports.getTransactions = onCall(
       // Fetch transactions using modern /transactions/sync endpoint
       let allTransactions = [];
       let hasMore = true;
-      let cursor = null;
+      let currentCursor = cursor; // Use the cursor passed from client
 
       while (hasMore) {
         const syncRequest = {
@@ -367,8 +367,8 @@ exports.getTransactions = onCall(
         };
 
         // Add cursor for pagination (except first request)
-        if (cursor) {
-          syncRequest.cursor = cursor;
+        if (currentCursor) {
+          syncRequest.cursor = currentCursor;
         }
 
         const transactionsResponse = await client.transactionsSync(syncRequest);
@@ -377,7 +377,7 @@ exports.getTransactions = onCall(
         allTransactions = allTransactions.concat(transactions);
 
         // Update cursor and check if more data is available
-        cursor = transactionsResponse.data.next_cursor;
+        currentCursor = transactionsResponse.data.next_cursor;
         hasMore = transactionsResponse.data.has_more;
 
         // Safety check to prevent infinite loops
@@ -390,7 +390,7 @@ exports.getTransactions = onCall(
       return {
         transactions: allTransactions,
         total_transactions: allTransactions.length,
-        cursor: cursor, // Return cursor for future incremental updates
+        cursor: currentCursor, // Return cursor for future incremental updates
       };
     } catch (error) {
       console.error("Error getting transactions:", error);
