@@ -189,7 +189,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         if (connected) {
           const bankInfo = await plaidService.getConnectedBankInfo();
           setConnectedBankInfo(bankInfo);
-          console.log("SettingsScreen: Connected bank info:", bankInfo);
         } else {
           setConnectedBankInfo(null);
         }
@@ -224,18 +223,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         try {
           const connected = await plaidService.isBankConnected();
           setIsBankConnected(connected);
-          console.log(
-            "SettingsScreen: Bank connection status on focus:",
-            connected
-          );
 
           if (connected) {
             const bankInfo = await plaidService.getConnectedBankInfo();
             setConnectedBankInfo(bankInfo);
-            console.log(
-              "SettingsScreen: Connected bank info on focus:",
-              bankInfo
-            );
           } else {
             setConnectedBankInfo(null);
           }
@@ -586,10 +577,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               try {
                 const bankInfo = await plaidService.getConnectedBankInfo();
                 setConnectedBankInfo(bankInfo);
-                console.log(
-                  "SettingsScreen: Bank info after connection:",
-                  bankInfo
-                );
 
                 // Refresh bank data to load transactions
                 console.log("Refreshing bank data after connection...");

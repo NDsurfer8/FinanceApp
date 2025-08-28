@@ -150,16 +150,6 @@ export const createRecurringTransaction = async (
       recurringTransaction.isActive &&
       startDate.getTime() <= monthEnd.getTime();
 
-    console.log("Debug recurring transaction creation:", {
-      startDate: startDate.toISOString(),
-      monthStart: monthStart.toISOString(),
-      monthEnd: monthEnd.toISOString(),
-      shouldCreate: shouldCreateFirstTransaction,
-      startDateTimestamp: recurringTransaction.startDate,
-      isActive: recurringTransaction.isActive,
-      targetMonth: targetMonth?.toISOString(),
-    });
-
     if (shouldCreateFirstTransaction) {
       // Use the start date as the transaction date for the first occurrence
       const firstTransaction: Transaction = {

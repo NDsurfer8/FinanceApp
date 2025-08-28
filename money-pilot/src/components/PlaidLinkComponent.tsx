@@ -217,8 +217,6 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
   const handlePlaidSuccess = async (linkSuccess: LinkSuccess) => {
     try {
-      console.log("Plaid Link success received:", linkSuccess);
-
       // Process the success first
       await plaidService.handlePlaidSuccess(
         linkSuccess.publicToken,

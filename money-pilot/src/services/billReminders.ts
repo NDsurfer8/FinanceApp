@@ -112,14 +112,8 @@ export class BillReminderService {
     reminderDays: number = 3
   ): Promise<void> {
     try {
-      console.log(`\n=== Scheduling Bill Reminder for ${billName} ===`);
-      console.log(`Due Date: ${dueDate.toLocaleDateString()}`);
-      console.log(`Amount: $${amount}`);
-      console.log(`Reminder Days: ${reminderDays}`);
-
       const reminderDate = new Date(dueDate);
       reminderDate.setDate(reminderDate.getDate() - reminderDays);
-      console.log(`Reminder Date: ${reminderDate.toLocaleDateString()}`);
 
       // Check if bill is due today or overdue
       const isDueToday = dueDate.toDateString() === new Date().toDateString();
@@ -127,20 +121,12 @@ export class BillReminderService {
       const isDueSoon =
         dueDate.getTime() - new Date().getTime() <= 7 * 24 * 60 * 60 * 1000; // Within 7 days
 
-      console.log(`isDueToday: ${isDueToday}`);
-      console.log(`isOverdue: ${isOverdue}`);
-      console.log(`isDueSoon: ${isDueSoon}`);
-      console.log(`reminderDate <= new Date(): ${reminderDate <= new Date()}`);
-
       if (
         reminderDate <= new Date() &&
         !isDueToday &&
         !isOverdue &&
         !isDueSoon
       ) {
-        console.log(
-          `Bill reminder for ${billName} would be in the past, skipping`
-        );
         return;
       }
 
@@ -150,18 +136,7 @@ export class BillReminderService {
         Math.floor((reminderDate.getTime() - Date.now()) / 1000)
       );
 
-      console.log(`Scheduling reminder for ${billName}:`, {
-        dueDate: dueDate.toLocaleDateString(),
-        isDueToday,
-        isOverdue,
-        secondsUntilReminder,
-        reminderDate: reminderDate.toLocaleDateString(),
-      });
-
       if (isDueToday || isOverdue) {
-        console.log(
-          `Scheduling notification for ${billName} - Due today: ${isDueToday}, Overdue: ${isOverdue}`
-        );
         // Send notification for bills due today or overdue with minimum delay
         await notificationService.scheduleNotification({
           id: `bill-reminder-${billName}-${dueDate.getTime()}`,

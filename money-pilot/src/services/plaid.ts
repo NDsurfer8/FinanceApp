@@ -150,7 +150,6 @@ class PlaidService {
 
   // Trigger bank connected callbacks
   private triggerBankConnectedCallbacks() {
-    console.log("PlaidService: Triggering bank connected callbacks");
     this.onBankConnectedCallbacks.forEach((callback) => callback());
   }
 
@@ -352,7 +351,6 @@ class PlaidService {
 
       await open({
         onSuccess: (success: LinkSuccess) => {
-          console.log("Plaid Link success:", success);
           onSuccess(success);
         },
         onExit: (exit: LinkExit) => {
@@ -442,8 +440,6 @@ class PlaidService {
   // Handle successful link with enhanced error handling
   async handlePlaidSuccess(publicToken: string, metadata: any): Promise<void> {
     try {
-      console.log("Plaid link successful:", { publicToken, metadata });
-
       // Rate limiting for Plaid Link success flow
       const now = Date.now();
       const timeSinceLastSuccessFlow = now - this.lastSuccessFlowCall;
@@ -495,7 +491,6 @@ class PlaidService {
       let itemId: string;
 
       try {
-        console.log("🔄 Exchanging public token for access token...");
         const exchangeResult = await exchangePublicToken({ publicToken });
 
         const result = exchangeResult.data as {
@@ -504,7 +499,6 @@ class PlaidService {
         };
         accessToken = result.accessToken;
         itemId = result.itemId;
-        console.log("✅ Public token exchanged successfully");
       } catch (exchangeError: any) {
         console.error("❌ Error exchanging public token:", exchangeError);
 
@@ -532,7 +526,7 @@ class PlaidService {
       }
 
       // Add delay between sequential API calls to prevent rate limiting
-      console.log("🔄 Adding delay between sequential API calls...");
+
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Get accounts using the access token
@@ -540,10 +534,8 @@ class PlaidService {
 
       let accounts: any[];
       try {
-        console.log("🔄 Retrieving bank accounts...");
         const accountsResult = await getAccounts({ accessToken });
         accounts = (accountsResult.data as { accounts: any[] }).accounts;
-        console.log("✅ Bank accounts retrieved successfully");
       } catch (accountsError: any) {
         console.error("❌ Error retrieving accounts:", accountsError);
 
@@ -620,7 +612,6 @@ class PlaidService {
 
       // Note: Removed success alert to prevent blocking UI flow
       // The green "Bank Connected" button provides sufficient feedback
-      console.log(`✅ Successfully connected to ${metadata.institution.name}`);
     } catch (error) {
       console.error("Error handling Plaid success:", error);
 
@@ -640,8 +631,6 @@ class PlaidService {
     if (error) {
       console.error("Plaid exit with error:", error);
       Alert.alert("Error", "Failed to connect bank account");
-    } else {
-      console.log("Plaid exit without error:", metadata);
     }
   }
 
@@ -681,18 +670,13 @@ class PlaidService {
 
     // Check cache first with extended duration for accounts
     if (this.isCacheValid(cacheKey, this.ACCOUNTS_CACHE_DURATION)) {
-      console.log("📦 Returning cached accounts data");
       return this.requestCache.get(cacheKey)!.data;
     }
 
     // Check if there's already a pending request
     if (this.pendingAccountsRequest) {
-      console.log("🔄 Reusing existing accounts request");
       return this.pendingAccountsRequest;
     }
-
-    console.log("🔍 Attempting to fetch accounts with:");
-    console.log("  - Access Token:", this.accessToken.substring(0, 20) + "...");
 
     // Create the request promise with queuing
     this.pendingAccountsRequest = this.queueRequest(() =>
@@ -719,23 +703,10 @@ class PlaidService {
   private async _fetchAccounts(): Promise<PlaidAccount[]> {
     try {
       const getAccounts = httpsCallable(this.functions, "getAccounts");
-      console.log(
-        `[${new Date().toISOString()}] Plaid API: getAccounts for user: ${
-          this.userId
-        }`
-      );
-      console.log("📞 Calling Firebase Function: getAccounts");
-
       const startTime = Date.now();
       const result = await getAccounts({ accessToken: this.accessToken });
       const duration = Date.now() - startTime;
-      console.log(
-        `✅ Firebase Function returned in ${duration}ms:`,
-        result.data
-      );
       const { accounts } = result.data as { accounts: any[] };
-
-      console.log("📊 Found", accounts?.length || 0, "accounts");
 
       return accounts.map((account) => ({
         id: account.account_id,
@@ -751,7 +722,7 @@ class PlaidService {
       }));
     } catch (error) {
       console.error("❌ Error getting accounts:", error);
-      console.log("Access token being used:", this.accessToken);
+
       throw error; // Re-throw the error instead of returning mock data
     }
   }
@@ -773,20 +744,13 @@ class PlaidService {
 
     // Check cache first with extended duration for transactions
     if (this.isCacheValid(cacheKey, this.TRANSACTIONS_CACHE_DURATION)) {
-      console.log("📦 Returning cached transactions data");
       return this.requestCache.get(cacheKey)!.data;
     }
 
     // Check if there's already a pending request
     if (this.pendingTransactionsRequest) {
-      console.log("🔄 Reusing existing transactions request");
       return this.pendingTransactionsRequest;
     }
-
-    console.log("🔍 Attempting to fetch transactions with:");
-    console.log("  - Access Token:", this.accessToken.substring(0, 20) + "...");
-    console.log("  - Start Date:", startDate);
-    console.log("  - End Date:", endDate);
 
     // Create the request promise with retry logic and queuing
     this.pendingTransactionsRequest = this.queueRequest(() =>
@@ -831,30 +795,12 @@ class PlaidService {
             (latestDate.getTime() - earliestDate.getTime()) /
             (1000 * 60 * 60 * 24);
 
-          console.log(
-            `📊 Transaction date range: ${dateRangeInDays.toFixed(1)} days (${
-              transactions.length
-            } transactions)`
-          );
-
           // If we have at least 60 days of data or we're not requesting a full 3-month range, return the data
           if (
             dateRangeInDays >= 60 ||
             !this._isRequestingFullRange(startDate, endDate)
           ) {
-            console.log(
-              `✅ Sufficient transaction data found (${dateRangeInDays.toFixed(
-                1
-              )} days)`
-            );
             return transactions;
-          } else {
-            console.log(
-              `⚠️ Insufficient transaction data (${dateRangeInDays.toFixed(
-                1
-              )} days), continuing to retry...`
-            );
-            // Continue retrying to get more data
           }
         }
 
@@ -960,13 +906,8 @@ class PlaidService {
         endDate,
       });
       const duration = Date.now() - startTime;
-      console.log(
-        `✅ Firebase Function returned in ${duration}ms:`,
-        result.data
-      );
-      const { transactions } = result.data as { transactions: any[] };
 
-      console.log("📊 Found", transactions?.length || 0, "transactions");
+      const { transactions } = result.data as { transactions: any[] };
 
       return transactions.map((transaction) => ({
         id: transaction.transaction_id,
@@ -1018,22 +959,16 @@ class PlaidService {
   // Check if bank is connected
   async isBankConnected(): Promise<boolean> {
     if (!this.userId) {
-      console.log("PlaidService: No user ID set");
       return false;
     }
 
     try {
-      console.log(
-        "PlaidService: Checking bank connection for user:",
-        this.userId
-      );
       // Check Firebase for existing connection
       const plaidRef = ref(db, `users/${this.userId}/plaid`);
       const snapshot = await get(plaidRef);
 
       if (snapshot.exists()) {
         const encryptedPlaidData = snapshot.val();
-        console.log("PlaidService: Found Plaid data in Firebase");
 
         // Decrypt the Plaid data
         const fieldsToDecrypt = [
@@ -1052,37 +987,16 @@ class PlaidService {
         this.accessToken = plaidData.accessToken || null;
         this.itemId = plaidData.itemId || null;
 
-        console.log(
-          "PlaidService: Loaded access token:",
-          this.accessToken ? "Present" : "Missing"
-        );
-        console.log("PlaidService: Plaid status:", plaidData.status);
-        console.log(
-          "PlaidService: Full plaid data:",
-          JSON.stringify(plaidData, null, 2)
-        );
-
         // More flexible connection check - if we have access token and item ID, consider it connected
         const hasAccessToken = !!plaidData.accessToken;
         const hasItemId = !!plaidData.itemId;
         const statusConnected = plaidData.status === "connected";
 
         const isConnected = statusConnected || (hasAccessToken && hasItemId);
-        console.log(
-          "PlaidService: Connection check - status:",
-          statusConnected,
-          "hasAccessToken:",
-          hasAccessToken,
-          "hasItemId:",
-          hasItemId,
-          "final result:",
-          isConnected
-        );
 
         return isConnected;
       }
 
-      console.log("PlaidService: No Plaid data found in Firebase");
       return false;
     } catch (error) {
       console.error("PlaidService: Error checking bank connection:", error);
@@ -1150,7 +1064,6 @@ class PlaidService {
   }> {
     try {
       if (!this.userId) {
-        console.log("PlaidService: No user ID set");
         return {
           needsReauth: false,
           hasNewAccounts: false,
@@ -1162,7 +1075,6 @@ class PlaidService {
       // Rate limiting: prevent excessive calls
       const now = Date.now();
       if (now - this.lastUpdateCheck < this.UPDATE_CHECK_COOLDOWN) {
-        console.log("PlaidService: Rate limited, skipping update check");
         return {
           needsReauth: false,
           hasNewAccounts: false,
@@ -1206,8 +1118,6 @@ class PlaidService {
   // Handle reconnection for update mode
   async reconnectBank(): Promise<void> {
     try {
-      console.log("PlaidService: Starting bank reconnection...");
-
       // Create a new link token for reconnection
       const linkToken = await this.initializePlaidLink();
 
@@ -1216,11 +1126,9 @@ class PlaidService {
 
       // Open Plaid Link for reconnection
       await this.openPlaidLink(
-        () => console.log("PlaidService: Reconnection successful"),
-        () => console.log("PlaidService: Reconnection cancelled")
+        () => {},
+        () => {}
       );
-
-      console.log("PlaidService: Bank reconnection initiated");
     } catch (error) {
       console.error("PlaidService: Error reconnecting bank:", error);
       throw error;
@@ -1230,8 +1138,6 @@ class PlaidService {
   // Handle new accounts for update mode
   async addNewAccounts(newAccounts: any[]): Promise<void> {
     try {
-      console.log("PlaidService: Adding new accounts:", newAccounts);
-
       // Create a new link token with account selection enabled
       const linkToken = await this.initializePlaidLink();
 
@@ -1240,11 +1146,9 @@ class PlaidService {
 
       // Open Plaid Link for account selection
       await this.openPlaidLink(
-        () => console.log("PlaidService: New accounts added successfully"),
-        () => console.log("PlaidService: New accounts selection cancelled")
+        () => {},
+        () => {}
       );
-
-      console.log("PlaidService: New account selection initiated");
     } catch (error) {
       console.error("PlaidService: Error adding new accounts:", error);
       throw error;
@@ -1255,11 +1159,8 @@ class PlaidService {
   async clearUpdateModeFlags(): Promise<void> {
     try {
       if (!this.userId) {
-        console.log("PlaidService: No user ID set for clearing flags");
         return;
       }
-
-      console.log("PlaidService: Clearing update mode flags...");
 
       const plaidDataRef = ref(db, `users/${this.userId}/plaid`);
       await update(plaidDataRef, {
@@ -1270,8 +1171,6 @@ class PlaidService {
         disconnectWarning: false,
         lastUpdated: Date.now(),
       });
-
-      console.log("PlaidService: Update mode flags cleared");
     } catch (error) {
       console.error("PlaidService: Error clearing update mode flags:", error);
     }
@@ -1280,8 +1179,6 @@ class PlaidService {
   // Enhanced logout handling
   async handleLogout(): Promise<void> {
     try {
-      console.log("PlaidService: Handling logout...");
-
       // Clear local state
       this.accessToken = null;
       this.itemId = null;
@@ -1297,8 +1194,6 @@ class PlaidService {
       this.requestCache.clear();
       this.pendingTransactionsRequest = null;
       this.pendingAccountsRequest = null;
-
-      console.log("PlaidService: Logout handled successfully");
     } catch (error) {
       console.error("PlaidService: Error handling logout:", error);
     }
@@ -1306,7 +1201,6 @@ class PlaidService {
 
   // Method to reset rate limiting counters (for debugging or manual reset)
   resetRateLimiting(): void {
-    console.log("PlaidService: Resetting rate limiting counters");
     this.lastLinkTokenCall = 0;
     this.linkAttemptCount = 0;
     this.lastSuccessFlowCall = 0;
@@ -1349,8 +1243,6 @@ class PlaidService {
         throw new Error("User ID not set");
       }
 
-      console.log("PlaidService: Disconnecting bank for user:", this.userId);
-
       // Remove from Firebase
       const plaidRef = ref(db, `users/${this.userId}/plaid`);
       await remove(plaidRef);
@@ -1363,8 +1255,6 @@ class PlaidService {
       this.requestCache.clear();
       this.pendingTransactionsRequest = null;
       this.pendingAccountsRequest = null;
-
-      console.log("PlaidService: Bank disconnected successfully");
     } catch (error) {
       console.error("PlaidService: Error disconnecting bank:", error);
       throw error; // Re-throw to allow caller to handle
@@ -1378,11 +1268,6 @@ class PlaidService {
         return; // No user ID, nothing to disconnect
       }
 
-      console.log(
-        "PlaidService: Silently disconnecting bank for user:",
-        this.userId
-      );
-
       // Remove from Firebase
       const plaidRef = ref(db, `users/${this.userId}/plaid`);
       await remove(plaidRef);
@@ -1390,8 +1275,6 @@ class PlaidService {
       // Clear local state
       this.accessToken = null;
       this.itemId = null;
-
-      console.log("PlaidService: Bank disconnected silently");
     } catch (error) {
       console.error("PlaidService: Error silently disconnecting bank:", error);
       // Don't throw for silent disconnection

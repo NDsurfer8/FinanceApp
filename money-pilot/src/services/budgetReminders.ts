@@ -339,19 +339,6 @@ export class BudgetReminderService {
         .filter((t: any) => t.type === "expense")
         .reduce((sum: number, t: any) => sum + t.amount, 0);
 
-      console.log("Transaction data:", {
-        allTransactions: transactions.length,
-        monthlyTransactions: monthlyTransactions.length,
-        incomeTransactions: monthlyTransactions.filter(
-          (t: any) => t.type === "income"
-        ).length,
-        expenseTransactions: monthlyTransactions.filter(
-          (t: any) => t.type === "expense"
-        ).length,
-        totalIncome,
-        totalExpenses,
-      });
-
       // Calculate remaining balance like in budget summary
       const netIncome = totalIncome - totalExpenses;
       const savingsPercent = budgetSettings?.savingsPercentage || 20;
@@ -370,19 +357,6 @@ export class BudgetReminderService {
         netIncome - savingsAmount - totalGoalContributions;
       const debtPayoffAmount = discretionaryIncome * (debtPayoffPercent / 100);
       const remainingBalance = discretionaryIncome - debtPayoffAmount;
-
-      console.log("Budget calculation details:", {
-        totalIncome,
-        totalExpenses,
-        netIncome,
-        savingsPercent,
-        savingsAmount,
-        totalGoalContributions,
-        discretionaryIncome,
-        debtPayoffPercent,
-        debtPayoffAmount,
-        remainingBalance,
-      });
 
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
       const daysLeft = daysInMonth - new Date().getDate();
