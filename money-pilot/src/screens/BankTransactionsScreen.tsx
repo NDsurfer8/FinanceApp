@@ -34,7 +34,8 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     refreshBankData,
     isBankConnected,
   } = useData();
-  const { isFeatureAvailable, PREMIUM_FEATURES } = useSubscription();
+  const { isFeatureAvailable, PREMIUM_FEATURES, hasPremiumAccess } =
+    useSubscription();
   const { presentPaywall } = usePaywall();
 
   // Filter accounts to only show checking/savings accounts (not loans)
@@ -172,8 +173,8 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
           </View>
         </View>
 
-        {/* Premium Upgrade Card - Show when no bank connected */}
-        {!isBankConnected && (
+        {/* Premium Upgrade Card - Show when no bank connected and not premium */}
+        {!isBankConnected && !hasPremiumAccess() && (
           <View
             style={{
               backgroundColor: colors.surface,
@@ -247,6 +248,53 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                 Get Premium
               </Text>
             </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Premium User Message - Show when premium but not connected */}
+        {!isBankConnected && hasPremiumAccess() && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 20,
+              marginBottom: 16,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+              alignItems: "center",
+            }}
+          >
+            <Ionicons
+              name="information-circle"
+              size={24}
+              color={colors.primary}
+              style={{ marginBottom: 12 }}
+            />
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                textAlign: "center",
+                marginBottom: 8,
+              }}
+            >
+              Connect Your Bank Account
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                textAlign: "center",
+                lineHeight: 20,
+              }}
+            >
+              Go to Settings to connect your bank account and view your
+              transactions here.
+            </Text>
           </View>
         )}
 
