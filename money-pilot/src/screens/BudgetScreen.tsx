@@ -52,6 +52,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     isBankConnected,
     bankDataLastUpdated,
     isBankDataLoading,
+    bankConnectionError,
+    setBankConnectionError,
     refreshBankData,
     isBankDataStale,
     refreshBudgetSettings,
@@ -738,6 +740,67 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             </PanGestureHandler>
           }
         />
+
+        {/* Bank Connection Error Banner */}
+        {bankConnectionError && (
+          <View
+            style={{
+              backgroundColor: colors.errorLight,
+              borderColor: colors.error,
+              borderWidth: 1,
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+            >
+              <Ionicons
+                name="warning"
+                size={20}
+                color={colors.error}
+                style={{ marginRight: 12 }}
+              />
+              <Text
+                style={{
+                  color: colors.error,
+                  fontSize: 14,
+                  fontWeight: "500",
+                  flex: 1,
+                }}
+              >
+                {bankConnectionError}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                // Clear the error and attempt to refresh
+                setBankConnectionError(null);
+                refreshBankData(true);
+              }}
+              style={{
+                backgroundColor: colors.error,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 6,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.buttonText,
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
+                Reconnect
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Micro Feedback */}
         {microFeedback && (

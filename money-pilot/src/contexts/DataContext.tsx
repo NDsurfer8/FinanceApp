@@ -37,6 +37,7 @@ interface DataContextType {
   isBankConnected: boolean;
   bankDataLastUpdated: Date | null;
   isBankDataLoading: boolean;
+  bankConnectionError: string | null;
 
   // Loading states
   isLoading: boolean;
@@ -62,6 +63,7 @@ interface DataContextType {
   setRecurringTransactions: (transactions: any[]) => void;
   setBankAccounts: (accounts: any[]) => void;
   setSelectedBankAccount: (accountId: string | null) => void;
+  setBankConnectionError: (error: string | null) => void;
 
   // Optimistic update methods
   updateTransactionsOptimistically: (transactions: any[]) => void;
@@ -112,6 +114,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     null
   );
   const [isBankDataLoading, setIsBankDataLoading] = useState(false);
+  const [bankConnectionError, setBankConnectionError] = useState<string | null>(
+    null
+  );
   const isBankDataLoadingRef = useRef(false);
 
   // Bank Data Cache Keys
@@ -553,7 +558,29 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         await saveBankDataToCache(allTransactions, suggestions, accounts);
       } catch (error) {
         console.error("Failed to load bank data:", error);
-        setIsBankConnected(false);
+
+        // Check if it's a token error that requires reconnection
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        const isTokenError =
+          errorMessage.includes("INVALID_ACCESS_TOKEN") ||
+          errorMessage.includes("ITEM_LOGIN_REQUIRED") ||
+          errorMessage.includes("ITEM_ERROR") ||
+          errorMessage.includes("access token") ||
+          errorMessage.includes("401") ||
+          errorMessage.includes("403");
+
+        if (isTokenError) {
+          console.warn("🔑 Token error detected, user needs to reconnect bank");
+          setBankConnectionError(
+            "Your bank connection has expired. Please reconnect your bank account to continue."
+          );
+          // Don't set isBankConnected to false immediately, let the user see the error
+          // and decide whether to reconnect
+        } else {
+          setIsBankConnected(false);
+          setBankConnectionError(null);
+        }
       } finally {
         setIsBankDataLoading(false);
         isBankDataLoadingRef.current = false;
@@ -783,6 +810,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     isBankConnected,
     bankDataLastUpdated,
     isBankDataLoading,
+    bankConnectionError,
     isLoading,
     lastUpdated,
     refreshData,
@@ -800,6 +828,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setRecurringTransactions,
     setBankAccounts,
     setSelectedBankAccount,
+    setBankConnectionError,
     updateTransactionsOptimistically,
     updateBudgetSettingsOptimistically,
     updateGoalsOptimistically,

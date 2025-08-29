@@ -723,7 +723,14 @@ class PlaidService {
     } catch (error) {
       console.error("❌ Error getting accounts:", error);
 
-      throw error; // Re-throw the error instead of returning mock data
+      // Check for token errors and attempt to refresh
+      const tokenRefreshed = await this.handleTokenError(error);
+      if (tokenRefreshed) {
+        console.log("🔄 Token refreshed, retrying accounts request");
+        return this._fetchAccounts(); // Retry the request
+      }
+
+      throw error; // Re-throw the error if token refresh failed
     }
   }
 
@@ -814,7 +821,14 @@ class PlaidService {
         );
         console.log(`🔍 Full error object:`, error);
 
-        // Check for rate limit errors first
+        // Check for token errors first and attempt to refresh
+        const tokenRefreshed = await this.handleTokenError(error);
+        if (tokenRefreshed) {
+          console.log("🔄 Token refreshed, retrying request");
+          continue;
+        }
+
+        // Check for rate limit errors
         if (
           errorMessage.includes("RATE_LIMIT") ||
           errorMessage.includes("rate limit")
@@ -1270,6 +1284,49 @@ class PlaidService {
       console.error("PlaidService: Error disconnecting bank:", error);
       throw error; // Re-throw to allow caller to handle
     }
+  }
+
+  // Handle token errors and attempt to refresh connection
+  private async handleTokenError(error: any): Promise<boolean> {
+    const errorMessage = error?.message || String(error);
+
+    // Check for common Plaid token errors
+    const isTokenError =
+      errorMessage.includes("INVALID_ACCESS_TOKEN") ||
+      errorMessage.includes("ITEM_LOGIN_REQUIRED") ||
+      errorMessage.includes("ITEM_ERROR") ||
+      errorMessage.includes("access token") ||
+      errorMessage.includes("401") ||
+      errorMessage.includes("403");
+
+    if (isTokenError) {
+      console.warn(
+        "🔑 Plaid token error detected, attempting to refresh connection"
+      );
+
+      try {
+        // Clear invalid token
+        this.accessToken = null;
+        this.itemId = null;
+
+        // Try to reload connection data from Firebase
+        await this.isBankConnected();
+
+        // If we successfully loaded a new token, return true to retry the operation
+        if (this.accessToken) {
+          console.log("✅ Successfully refreshed Plaid connection");
+          return true;
+        } else {
+          console.log("❌ No valid connection found, user needs to reconnect");
+          return false;
+        }
+      } catch (refreshError) {
+        console.error("❌ Failed to refresh Plaid connection:", refreshError);
+        return false;
+      }
+    }
+
+    return false; // Not a token error, don't retry
   }
 
   // Disconnect bank silently (for logout scenarios)
