@@ -20,7 +20,8 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
-import { AccountSelector } from "../components/AccountSelector";
+
+import { AutoBudgetImporter } from "../components/AutoBudgetImporter";
 import { saveBudgetSettings, updateBudgetSettings } from "../services/userData";
 import { getProjectedTransactionsForMonth } from "../services/transactionService";
 import { billReminderService } from "../services/billReminders";
@@ -46,7 +47,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   // Bank data from global context
   const {
     bankTransactions,
-    bankRecurringSuggestions: recurringSuggestions,
+
     bankAccounts,
     isBankConnected,
     bankDataLastUpdated,
@@ -66,16 +67,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const [editingAmount, setEditingAmount] = useState("");
   const [projectedTransactions, setProjectedTransactions] = useState<any[]>([]);
   const [isFutureMonth, setIsFutureMonth] = useState(false);
-  const [showBankSuggestions, setShowBankSuggestions] = useState(false);
-  const [showNonRecurringTransactions, setShowNonRecurringTransactions] =
-    useState(false);
+
   const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(
     new Set()
   );
   const [showMonthPicker, setShowMonthPicker] = useState(false);
-  const [selectedBankAccount, setSelectedBankAccount] = useState<string | null>(
-    null
-  );
+
   const [microFeedback, setMicroFeedback] = useState<{
     message: string;
     type: "income" | "expense";
@@ -83,6 +80,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   } | null>(null);
   const [isIncomeCollapsed, setIsIncomeCollapsed] = useState(false);
   const [isExpensesCollapsed, setIsExpensesCollapsed] = useState(false);
+  const [showAutoImporter, setShowAutoImporter] = useState(false);
+  const [importSuccess, setImportSuccess] = useState<{
+    count: number;
+    message: string;
+  } | null>(null);
   const monthPickerScrollRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
@@ -201,53 +203,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   };
 
   // Filter accounts to only show checking/savings accounts (not loans)
-  const checkingAccounts = bankAccounts.filter(
-    (account) =>
-      account.type === "depository" &&
-      ["checking", "savings"].includes(account.subtype)
-  );
-
-  // Filter bank suggestions by selected account
-  const filteredBankSuggestions = selectedBankAccount
-    ? recurringSuggestions.filter((suggestion) =>
-        bankTransactions.some(
-          (transaction) =>
-            transaction.account_id === selectedBankAccount &&
-            transaction.name === suggestion.name
-        )
-      )
-    : recurringSuggestions;
-
-  // Filter non-recurring transactions for the current month
-  const getNonRecurringTransactions = () => {
-    const currentMonth = selectedMonth.getMonth();
-    const currentYear = selectedMonth.getFullYear();
-
-    return bankTransactions.filter((transaction) => {
-      const transactionDate = new Date(transaction.date);
-      const isCurrentMonth =
-        transactionDate.getMonth() === currentMonth &&
-        transactionDate.getFullYear() === currentYear;
-
-      // Check if this transaction is NOT in recurring suggestions
-      const isRecurring = recurringSuggestions.some(
-        (suggestion) =>
-          suggestion.name === transaction.name &&
-          Math.abs(suggestion.amount - Math.abs(transaction.amount)) < 0.01
-      );
-
-      return isCurrentMonth && !isRecurring;
-    });
-  };
-
-  const nonRecurringTransactions = getNonRecurringTransactions();
-
-  // Filter non-recurring transactions by selected account
-  const filteredNonRecurringTransactions = selectedBankAccount
-    ? nonRecurringTransactions.filter(
-        (transaction) => transaction.account_id === selectedBankAccount
-      )
-    : nonRecurringTransactions;
 
   useEffect(() => {
     if (user) {
@@ -292,44 +247,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     if (ageMinutes < 240) return `Recent (${Math.round(ageMinutes / 60)}h ago)`; // 4 hours
     if (ageMinutes < 1440) return `Stale (${Math.round(ageMinutes / 60)}h ago)`; // 24 hours
     return `Very stale (${Math.round(ageMinutes / 60 / 24)}d ago)`;
-  };
-
-  // Handle adding a recurring suggestion from bank data
-  const handleAddRecurringSuggestion = (suggestion: any) => {
-    navigation.navigate("AddTransaction", {
-      type: suggestion.type,
-      description: suggestion.name,
-      amount: suggestion.amount.toString(),
-      category: suggestion.category,
-      isRecurring: true,
-      frequency: suggestion.frequency,
-      fromBankSuggestion: true,
-    });
-  };
-
-  // Handle adding a non-recurring transaction from bank data
-  const handleAddNonRecurringTransaction = (transaction: any) => {
-    // Fix timezone issue by parsing the date in local timezone
-    const fixDateTimezone = (dateString: string) => {
-      try {
-        // Parse the date and create it in local timezone to avoid UTC conversion
-        const [year, month, day] = dateString.split("-").map(Number);
-        const localDate = new Date(year, month - 1, day); // month is 0-indexed
-        return localDate.toISOString().split("T")[0];
-      } catch (error) {
-        console.error("Error fixing date timezone:", error);
-        return dateString; // Return original if parsing fails
-      }
-    };
-
-    navigation.navigate("AddTransaction", {
-      type: transaction.amount < 0 ? "income" : "expense", // Plaid: negative = income, positive = expense
-      description: transaction.name,
-      amount: Math.abs(transaction.amount).toString(),
-      category: transaction.category?.[0] || "Uncategorized",
-      date: fixDateTimezone(transaction.date),
-      fromBankSuggestion: true, // Use the same flag as recurring suggestions
-    });
   };
 
   // Note: DataContext handles initial data loading
@@ -833,6 +750,49 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           </View>
         )}
 
+        {/* Import Success Message */}
+        {importSuccess && (
+          <View
+            style={{
+              backgroundColor: colors.successLight,
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 20,
+              borderWidth: 1,
+              borderColor: colors.success,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+            >
+              <Ionicons
+                name="checkmark-circle"
+                size={20}
+                color={colors.success}
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                style={{
+                  color: colors.success,
+                  fontSize: 14,
+                  fontWeight: "600",
+                }}
+              >
+                {importSuccess.message}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setImportSuccess(null)}
+              style={{ padding: 4 }}
+            >
+              <Ionicons name="close" size={16} color={colors.success} />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Premium Feature: Quick Setup */}
 
         {/* Premium Feature: Smart Insights */}
@@ -934,458 +894,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 </Text>
               </View>
             ))}
-          </View>
-        )}
-
-        {/* Bank Recurring Suggestions Button */}
-        {isBankConnected && (
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              marginBottom: 20,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
-              overflow: "hidden",
-            }}
-          >
-            {/* Collapsible Button */}
-            <TouchableOpacity
-              onPress={() => setShowBankSuggestions(!showBankSuggestions)}
-              style={{
-                padding: 20,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <View
-                style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
-              >
-                <View
-                  style={{
-                    backgroundColor: colors.infoLight,
-                    padding: 8,
-                    borderRadius: 10,
-                    marginRight: 12,
-                  }}
-                >
-                  <Ionicons name="repeat" size={20} color={colors.info} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 18,
-                      fontWeight: "700",
-                      color: colors.primary,
-                      marginBottom: 4,
-                    }}
-                    numberOfLines={1}
-                  >
-                    Bank Suggestions
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: colors.textSecondary,
-                    }}
-                  >
-                    {!showNonRecurringTransactions
-                      ? filteredBankSuggestions.length > 0
-                        ? `${filteredBankSuggestions.length} suggestions`
-                        : "No patterns found"
-                      : filteredNonRecurringTransactions.length > 0
-                      ? `${filteredNonRecurringTransactions.length} transactions`
-                      : "No transactions"}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Ionicons
-                  name={showBankSuggestions ? "chevron-up" : "chevron-down"}
-                  size={20}
-                  color={colors.info}
-                />
-              </View>
-            </TouchableOpacity>
-
-            {/* Expandable Content */}
-            {showBankSuggestions && (
-              <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
-                <AccountSelector
-                  selectedAccountId={selectedBankAccount}
-                  onAccountSelect={setSelectedBankAccount}
-                  accounts={checkingAccounts}
-                  style={{ marginBottom: 16 }}
-                />
-
-                {/* Toggle Switch */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 16,
-                    paddingHorizontal: 4,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: colors.textSecondary,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {!showNonRecurringTransactions
-                      ? "Recurring"
-                      : "Non-Recurring"}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() =>
-                      setShowNonRecurringTransactions(
-                        !showNonRecurringTransactions
-                      )
-                    }
-                    style={{
-                      width: 48,
-                      height: 24,
-                      backgroundColor: showNonRecurringTransactions
-                        ? colors.primary
-                        : colors.border,
-                      borderRadius: 12,
-                      padding: 2,
-                      flexDirection: "row",
-                      alignItems: "center",
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 20,
-                        height: 20,
-                        backgroundColor: "white",
-                        borderRadius: 10,
-                        shadowColor: colors.shadow,
-                        shadowOpacity: 0.2,
-                        shadowRadius: 2,
-                        shadowOffset: { width: 0, height: 1 },
-                        elevation: 2,
-                        transform: [
-                          { translateX: showNonRecurringTransactions ? 24 : 0 },
-                        ],
-                      }}
-                    />
-                  </TouchableOpacity>
-                </View>
-                {!showNonRecurringTransactions ? (
-                  <>
-                    <View
-                      style={{
-                        borderTopWidth: 1,
-                        borderTopColor: colors.border,
-                        paddingTop: 16,
-                        marginBottom: 16,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          color: colors.textSecondary,
-                          lineHeight: 20,
-                          marginBottom: 8,
-                        }}
-                      >
-                        Based on your bank transactions, we found these
-                        recurring payments. Tap to add them to your budget.
-                      </Text>
-                      {bankDataLastUpdated && (
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: colors.textSecondary,
-                            fontStyle: "italic",
-                          }}
-                        >
-                          {getCacheStatus()}
-                        </Text>
-                      )}
-                    </View>
-
-                    <ScrollView
-                      style={{
-                        maxHeight: 320,
-                      }}
-                      showsVerticalScrollIndicator={false}
-                      nestedScrollEnabled={true}
-                    >
-                      {filteredBankSuggestions.map((suggestion, index) => (
-                        <TouchableOpacity
-                          key={`${suggestion.name}_${suggestion.amount}_${index}`}
-                          style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            paddingVertical: 12,
-                            paddingHorizontal: 16,
-                            backgroundColor: colors.surfaceSecondary,
-                            borderRadius: 12,
-                            marginBottom: 8,
-                            borderWidth: 1,
-                            borderColor: colors.border,
-                          }}
-                          onPress={() =>
-                            handleAddRecurringSuggestion(suggestion)
-                          }
-                        >
-                          <View style={{ flex: 1 }}>
-                            <Text
-                              style={{
-                                fontSize: 14,
-                                fontWeight: "600",
-                                color: colors.text,
-                                marginBottom: 2,
-                              }}
-                            >
-                              {suggestion.name}
-                            </Text>
-                            <View
-                              style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                              }}
-                            >
-                              <Text
-                                style={{
-                                  fontSize: 12,
-                                  color: colors.textSecondary,
-                                  marginRight: 8,
-                                }}
-                              >
-                                {suggestion.frequency} •{" "}
-                                {suggestion.occurrences} times
-                              </Text>
-                              <View
-                                style={{
-                                  backgroundColor:
-                                    suggestion.type === "income"
-                                      ? "#dcfce7"
-                                      : "#fee2e2",
-                                  paddingHorizontal: 6,
-                                  paddingVertical: 2,
-                                  borderRadius: 4,
-                                }}
-                              >
-                                <Text
-                                  style={{
-                                    fontSize: 10,
-                                    fontWeight: "600",
-                                    color:
-                                      suggestion.type === "income"
-                                        ? "#16a34a"
-                                        : "#dc2626",
-                                  }}
-                                >
-                                  {suggestion.type}
-                                </Text>
-                              </View>
-                            </View>
-                          </View>
-                          <View style={{ alignItems: "flex-end" }}>
-                            <Text
-                              style={{
-                                fontSize: 16,
-                                fontWeight: "700",
-                                color: colors.text,
-                              }}
-                            >
-                              {formatCurrency(suggestion.amount)}
-                            </Text>
-                            <Text
-                              style={{
-                                fontSize: 12,
-                                color: colors.textSecondary,
-                                marginTop: 2,
-                              }}
-                            >
-                              {suggestion.category}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </>
-                ) : (
-                  <>
-                    <View
-                      style={{
-                        borderTopWidth: 1,
-                        borderTopColor: colors.border,
-                        paddingTop: 16,
-                        marginBottom: 16,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          color: colors.textSecondary,
-                          lineHeight: 20,
-                          marginBottom: 8,
-                        }}
-                      >
-                        Non-recurring transactions for{" "}
-                        {formatMonth(selectedMonth)}. These are one-time
-                        transactions that don't follow a pattern.
-                      </Text>
-                      {bankDataLastUpdated && (
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: colors.textSecondary,
-                            fontStyle: "italic",
-                          }}
-                        >
-                          {getCacheStatus()}
-                        </Text>
-                      )}
-                    </View>
-
-                    {filteredNonRecurringTransactions.length === 0 ? (
-                      <View style={{ alignItems: "center", padding: 20 }}>
-                        <Ionicons
-                          name="receipt-outline"
-                          size={32}
-                          color={colors.textTertiary}
-                        />
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            color: colors.textSecondary,
-                            marginTop: 8,
-                            textAlign: "center",
-                          }}
-                        >
-                          No non-recurring transactions found
-                        </Text>
-                      </View>
-                    ) : (
-                      <ScrollView
-                        style={{
-                          maxHeight: 320,
-                        }}
-                        showsVerticalScrollIndicator={false}
-                        nestedScrollEnabled={true}
-                      >
-                        {filteredNonRecurringTransactions.map(
-                          (transaction, index) => (
-                            <TouchableOpacity
-                              key={`${transaction.id}_${index}`}
-                              style={{
-                                flexDirection: "row",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                paddingVertical: 12,
-                                paddingHorizontal: 16,
-                                backgroundColor: colors.surfaceSecondary,
-                                borderRadius: 12,
-                                marginBottom: 8,
-                                borderWidth: 1,
-                                borderColor: colors.border,
-                              }}
-                              onPress={() =>
-                                handleAddNonRecurringTransaction(transaction)
-                              }
-                            >
-                              <View style={{ flex: 1 }}>
-                                <Text
-                                  style={{
-                                    fontSize: 14,
-                                    fontWeight: "600",
-                                    color: colors.text,
-                                    marginBottom: 2,
-                                  }}
-                                >
-                                  {transaction.name}
-                                </Text>
-                                <View
-                                  style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                  }}
-                                >
-                                  <Text
-                                    style={{
-                                      fontSize: 12,
-                                      color: colors.textSecondary,
-                                      marginRight: 8,
-                                    }}
-                                  >
-                                    {new Date(
-                                      transaction.date
-                                    ).toLocaleDateString()}{" "}
-                                    •{" "}
-                                    {transaction.category?.[0] ||
-                                      "Uncategorized"}
-                                  </Text>
-                                  <View
-                                    style={{
-                                      backgroundColor:
-                                        transaction.amount < 0
-                                          ? "#dcfce7"
-                                          : "#fee2e2",
-                                      paddingHorizontal: 6,
-                                      paddingVertical: 2,
-                                      borderRadius: 4,
-                                    }}
-                                  >
-                                    <Text
-                                      style={{
-                                        fontSize: 10,
-                                        fontWeight: "600",
-                                        color:
-                                          transaction.amount < 0
-                                            ? "#16a34a"
-                                            : "#dc2626",
-                                      }}
-                                    >
-                                      {transaction.amount < 0
-                                        ? "income"
-                                        : "expense"}
-                                    </Text>
-                                  </View>
-                                </View>
-                              </View>
-                              <View style={{ alignItems: "flex-end" }}>
-                                <Text
-                                  style={{
-                                    fontSize: 16,
-                                    fontWeight: "700",
-                                    color: colors.text,
-                                  }}
-                                >
-                                  {formatCurrency(Math.abs(transaction.amount))}
-                                </Text>
-                                <Text
-                                  style={{
-                                    fontSize: 12,
-                                    color: colors.textSecondary,
-                                    marginTop: 2,
-                                  }}
-                                >
-                                  {transaction.account_id ? "Bank" : "Manual"}
-                                </Text>
-                              </View>
-                            </TouchableOpacity>
-                          )
-                        )}
-                      </ScrollView>
-                    )}
-                  </>
-                )}
-              </View>
-            )}
           </View>
         )}
 
@@ -2132,6 +1640,60 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 : `${translate("budget", isFriendlyMode)} Settings Saved`}
             </Text>
           </TouchableOpacity>
+
+          {/* Auto Budget Importer Button */}
+          {isBankConnected && (
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.info,
+                borderRadius: 8,
+                padding: 12,
+                alignItems: "center",
+                marginBottom: 20,
+                borderWidth: 1,
+                borderColor: colors.info,
+                flexDirection: "row",
+                justifyContent: "center",
+              }}
+              onPress={() => setShowAutoImporter(true)}
+            >
+              <Ionicons
+                name="download"
+                size={16}
+                color={colors.buttonText}
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                style={{
+                  color: colors.buttonText,
+                  fontSize: 14,
+                  fontWeight: "500",
+                }}
+                allowFontScaling={true}
+              >
+                Import{" "}
+                {selectedMonth ? formatMonth(selectedMonth) : "Current Month"}
+                {bankTransactions.length > 0 && (
+                  <Text style={{ color: colors.buttonText }}>
+                    {" "}
+                    (
+                    {
+                      bankTransactions.filter((transaction: any) => {
+                        const transactionDate = new Date(transaction.date);
+                        const currentMonth = selectedMonth.getMonth();
+                        const currentYear = selectedMonth.getFullYear();
+                        return (
+                          transactionDate.getMonth() === currentMonth &&
+                          transactionDate.getFullYear() === currentYear
+                        );
+                      }).length
+                    }
+                    )
+                  </Text>
+                )}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
 
@@ -2306,6 +1868,24 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Auto Budget Importer Modal */}
+      <AutoBudgetImporter
+        isVisible={showAutoImporter}
+        onClose={() => setShowAutoImporter(false)}
+        selectedMonth={selectedMonth}
+        onSuccess={(count) => {
+          // Refresh data after successful import
+          refreshData();
+          setShowAutoImporter(false);
+          setImportSuccess({
+            count,
+            message: `Successfully imported ${count} transactions to your budget!`,
+          });
+          // Auto-hide success message after 5 seconds
+          setTimeout(() => setImportSuccess(null), 5000);
+        }}
+      />
     </SafeAreaView>
   );
 };
