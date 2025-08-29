@@ -65,6 +65,9 @@ interface DataContextType {
   setSelectedBankAccount: (accountId: string | null) => void;
   setBankConnectionError: (error: string | null) => void;
 
+  // Bank disconnection
+  disconnectBankAndClearData: () => Promise<void>;
+
   // Optimistic update methods
   updateTransactionsOptimistically: (transactions: any[]) => void;
   updateBudgetSettingsOptimistically: (settings: any) => void;
@@ -91,16 +94,16 @@ interface DataProviderProps {
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const { subscriptionStatus } = useSubscription();
+
+  // State for user data
   const [transactions, setTransactions] = useState<any[]>([]);
   const [assets, setAssets] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
   const [goals, setGoals] = useState<any[]>([]);
   const [budgetSettings, setBudgetSettings] = useState<any>(null);
   const [recurringTransactions, setRecurringTransactions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Bank Data State
+  // State for bank data
   const [bankTransactions, setBankTransactions] = useState<any[]>([]);
   const [bankRecurringSuggestions, setBankRecurringSuggestions] = useState<
     any[]
@@ -109,14 +112,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [selectedBankAccount, setSelectedBankAccount] = useState<string | null>(
     null
   );
-  const [isBankConnected, setIsBankConnected] = useState(false);
+  const [isBankConnected, setIsBankConnected] = useState<boolean>(false);
   const [bankDataLastUpdated, setBankDataLastUpdated] = useState<Date | null>(
     null
   );
-  const [isBankDataLoading, setIsBankDataLoading] = useState(false);
+  const [isBankDataLoading, setIsBankDataLoading] = useState<boolean>(false);
   const [bankConnectionError, setBankConnectionError] = useState<string | null>(
     null
   );
+
+  // Loading states
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // Refs for tracking staleness
+  const lastDataRefresh = useRef<Date | null>(null);
+  const lastBankDataRefresh = useRef<Date | null>(null);
   const isBankDataLoadingRef = useRef(false);
 
   // Bank Data Cache Keys
@@ -128,152 +139,57 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     user?.uid || "anonymous"
   }`;
   const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours for recurring analysis
-  const TRANSACTION_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours for new transactions (increased from 4 hours)
+  const TRANSACTION_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours for new transactions
 
-  // Check if data is stale (older than 30 minutes instead of 5)
-  const isDataStale = useCallback(() => {
-    if (!lastUpdated) return true;
-    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-    return lastUpdated < thirtyMinutesAgo;
-  }, [lastUpdated]);
-
-  // Load all data with aggressive caching
-  const loadAllData = useCallback(async () => {
-    if (!user) return;
-
+  // Comprehensive bank disconnection and data clearing
+  const disconnectBankAndClearData = useCallback(async () => {
     try {
-      setIsLoading(true);
+      console.log("DataContext: Disconnecting bank and clearing all data...");
 
-      const [
-        userTransactions,
-        userAssets,
-        userDebts,
-        userGoals,
-        userBudgetSettings,
-        userRecurringTransactions,
-      ] = await Promise.all([
-        getUserTransactions(user.uid),
-        getUserAssets(user.uid),
-        getUserDebts(user.uid),
-        getUserGoals(user.uid),
-        getUserBudgetSettings(user.uid),
-        getUserRecurringTransactions(user.uid),
-      ]);
+      // 1. Disconnect from Plaid service
+      await plaidService.disconnectBank();
 
-      setTransactions(userTransactions);
-      setAssets(userAssets);
-      setDebts(userDebts);
-      setGoals(userGoals);
-      setBudgetSettings(userBudgetSettings);
-      setRecurringTransactions(userRecurringTransactions);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error("Error loading data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user]);
+      // 2. Clear all bank data from state immediately
+      setBankTransactions([]);
+      setBankRecurringSuggestions([]);
+      setBankAccounts([]);
+      setSelectedBankAccount(null);
+      setIsBankConnected(false);
+      setBankDataLastUpdated(null);
+      setBankConnectionError(null);
 
-  // Optimistic data updates - update immediately without waiting for server
-  const updateTransactionsOptimistically = useCallback(
-    (newTransactions: any[]) => {
-      setTransactions(newTransactions);
-      setLastUpdated(new Date());
-    },
-    []
-  );
+      // 3. Clear AsyncStorage cache
+      const keysToClear = [
+        "bankTransactions",
+        "bankRecurringSuggestions",
+        "bankAccounts",
+        "bankDataLastUpdated",
+        "isBankConnected",
+        "plaid_access_token",
+        "plaid_item_id",
+        "selectedBankAccount",
+      ];
 
-  const updateBudgetSettingsOptimistically = useCallback((newSettings: any) => {
-    setBudgetSettings(newSettings);
-    setLastUpdated(new Date());
-  }, []);
+      for (const key of keysToClear) {
+        await AsyncStorage.removeItem(key);
+      }
 
-  const updateGoalsOptimistically = useCallback((newGoals: any[]) => {
-    setGoals(newGoals);
-    setLastUpdated(new Date());
-  }, []);
+      // 4. Clear Plaid service cache
+      (plaidService as any).requestCache?.clear();
 
-  const updateAssetsOptimistically = useCallback((newAssets: any[]) => {
-    setAssets(newAssets);
-    setLastUpdated(new Date());
-  }, []);
-
-  const updateDebtsOptimistically = useCallback((newDebts: any[]) => {
-    setDebts(newDebts);
-    setLastUpdated(new Date());
-  }, []);
-
-  const updateRecurringTransactionsOptimistically = useCallback(
-    (newRecurring: any[]) => {
-      setRecurringTransactions(newRecurring);
-      setLastUpdated(new Date());
-    },
-    []
-  );
-
-  // Refresh specific data types
-  const refreshTransactions = useCallback(async () => {
-    if (!user) return;
-    try {
-      const userTransactions = await getUserTransactions(user.uid);
-      setTransactions(userTransactions);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error("Error refreshing transactions:", error);
-    }
-  }, [user]);
-
-  const refreshAssetsDebts = useCallback(async () => {
-    if (!user) return;
-    try {
-      const [userAssets, userDebts] = await Promise.all([
-        getUserAssets(user.uid),
-        getUserDebts(user.uid),
-      ]);
-      setAssets(userAssets);
-      setDebts(userDebts);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error("Error refreshing assets/debts:", error);
-    }
-  }, [user]);
-
-  const refreshGoals = useCallback(async () => {
-    if (!user) return;
-    try {
-      const userGoals = await getUserGoals(user.uid);
-      setGoals(userGoals);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error("Error refreshing goals:", error);
-    }
-  }, [user]);
-
-  const refreshBudgetSettings = useCallback(async () => {
-    if (!user) return;
-    try {
-      const userBudgetSettings = await getUserBudgetSettings(user.uid);
-      setBudgetSettings(userBudgetSettings);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error("Error refreshing budget settings:", error);
-    }
-  }, [user]);
-
-  const refreshRecurringTransactions = useCallback(async () => {
-    if (!user) return;
-    try {
-      const userRecurringTransactions = await getUserRecurringTransactions(
-        user.uid
+      console.log(
+        "DataContext: Successfully disconnected bank and cleared all data"
       );
-      setRecurringTransactions(userRecurringTransactions);
-      setLastUpdated(new Date());
     } catch (error) {
-      console.error("Error refreshing recurring transactions:", error);
+      console.error(
+        "DataContext: Error disconnecting bank and clearing data:",
+        error
+      );
+      throw error;
     }
-  }, [user]);
+  }, []);
 
-  // Bank Data Methods
+  // Calculate frequency for recurring transactions
   const calculateFrequency = useCallback((transactions: any[]) => {
     if (transactions.length < 2) return null;
 
@@ -297,6 +213,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return null;
   }, []);
 
+  // Analyze recurring patterns
   const analyzeRecurringPatterns = useCallback(
     (transactions: any[]) => {
       console.log(
@@ -346,6 +263,44 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     [calculateFrequency]
   );
 
+  // Load all user data
+  const loadAllData = useCallback(async () => {
+    if (!user?.uid) return;
+
+    setIsLoading(true);
+    try {
+      const [
+        userTransactions,
+        userAssets,
+        userDebts,
+        userGoals,
+        userBudgetSettings,
+        userRecurringTransactions,
+      ] = await Promise.all([
+        getUserTransactions(user.uid),
+        getUserAssets(user.uid),
+        getUserDebts(user.uid),
+        getUserGoals(user.uid),
+        getUserBudgetSettings(user.uid),
+        getUserRecurringTransactions(user.uid),
+      ]);
+
+      setTransactions(userTransactions);
+      setAssets(userAssets);
+      setDebts(userDebts);
+      setGoals(userGoals);
+      setBudgetSettings(userBudgetSettings);
+      setRecurringTransactions(userRecurringTransactions);
+      setLastUpdated(new Date());
+      lastDataRefresh.current = new Date();
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.uid]);
+
+  // Load cached bank data with sophisticated caching
   const loadCachedBankData = useCallback(async () => {
     try {
       const cachedData = await AsyncStorage.getItem(BANK_DATA_CACHE_KEY);
@@ -375,6 +330,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   }, []);
 
+  // Save bank data to cache with sophisticated caching
   const saveBankDataToCache = useCallback(
     async (transactions: any[], suggestions: any[], accounts: any[]) => {
       try {
@@ -410,6 +366,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     []
   );
 
+  // Refresh bank data with sophisticated logic
   const refreshBankData = useCallback(
     async (forceRefresh = false) => {
       // Add debouncing property to the function
@@ -589,11 +546,91 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     [loadCachedBankData, saveBankDataToCache, analyzeRecurringPatterns]
   );
 
+  // Refresh functions
+  const refreshData = useCallback(async () => {
+    await loadAllData();
+  }, [loadAllData]);
+
+  const refreshTransactions = useCallback(async () => {
+    if (!user?.uid) return;
+    const userTransactions = await getUserTransactions(user.uid);
+    setTransactions(userTransactions);
+  }, [user?.uid]);
+
+  const refreshAssetsDebts = useCallback(async () => {
+    if (!user?.uid) return;
+    const [userAssets, userDebts] = await Promise.all([
+      getUserAssets(user.uid),
+      getUserDebts(user.uid),
+    ]);
+    setAssets(userAssets);
+    setDebts(userDebts);
+  }, [user?.uid]);
+
+  const refreshGoals = useCallback(async () => {
+    if (!user?.uid) return;
+    const userGoals = await getUserGoals(user.uid);
+    setGoals(userGoals);
+  }, [user?.uid]);
+
+  const refreshBudgetSettings = useCallback(async () => {
+    if (!user?.uid) return;
+    const userBudgetSettings = await getUserBudgetSettings(user.uid);
+    setBudgetSettings(userBudgetSettings);
+  }, [user?.uid]);
+
+  const refreshRecurringTransactions = useCallback(async () => {
+    if (!user?.uid) return;
+    const userRecurringTransactions = await getUserRecurringTransactions(
+      user.uid
+    );
+    setRecurringTransactions(userRecurringTransactions);
+  }, [user?.uid]);
+
+  // Staleness checks
+  const isDataStale = useCallback(() => {
+    if (!lastDataRefresh.current) return true;
+    const now = new Date();
+    const timeDiff = now.getTime() - lastDataRefresh.current.getTime();
+    return timeDiff > 5 * 60 * 1000; // 5 minutes
+  }, []);
+
   const isBankDataStale = useCallback(() => {
     if (!bankDataLastUpdated) return true;
     const now = Date.now();
     return now - bankDataLastUpdated.getTime() > TRANSACTION_UPDATE_INTERVAL;
   }, [bankDataLastUpdated]);
+
+  // Optimistic update methods
+  const updateTransactionsOptimistically = useCallback(
+    (newTransactions: any[]) => {
+      setTransactions(newTransactions);
+    },
+    []
+  );
+
+  const updateBudgetSettingsOptimistically = useCallback((newSettings: any) => {
+    setBudgetSettings(newSettings);
+  }, []);
+
+  const updateGoalsOptimistically = useCallback((newGoals: any[]) => {
+    setGoals(newGoals);
+  }, []);
+
+  const updateAssetsOptimistically = useCallback((newAssets: any[]) => {
+    setAssets(newAssets);
+  }, []);
+
+  const updateDebtsOptimistically = useCallback((newDebts: any[]) => {
+    setDebts(newDebts);
+  }, []);
+
+  const updateRecurringTransactionsOptimistically = useCallback(
+    (newTransactions: any[]) => {
+      setRecurringTransactions(newTransactions);
+    },
+    []
+  );
 
   // Auto-load bank data when connection status changes (optimized)
   useEffect(() => {
@@ -621,13 +658,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     bankTransactions.length,
     isBankDataLoading,
   ]);
-
-  // Remove the additional effect that was causing duplicate calls
-  // Bank connection changes are now handled in the main user effect
-
-  const refreshData = useCallback(async () => {
-    await loadAllData();
-  }, [loadAllData]);
 
   // Load data when user changes (optimized for app refresh)
   useEffect(() => {
@@ -734,67 +764,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Clear bank data when subscription expires
   useEffect(() => {
-    // Only clear data if we have a definitive subscription status and user is not premium
-    if (
-      subscriptionStatus !== null &&
-      subscriptionStatus !== undefined &&
-      !subscriptionStatus.isPremium
-    ) {
-      console.log("DataContext: Subscription expired, clearing bank data");
+    const handleSubscriptionExpiration = async () => {
+      if (
+        subscriptionStatus !== null &&
+        subscriptionStatus !== undefined &&
+        !subscriptionStatus.isPremium
+      ) {
+        console.log("DataContext: Subscription expired, clearing bank data");
+        await disconnectBankAndClearData();
+      }
+    };
 
-      // Clear bank data from state
-      setBankTransactions([]);
-      setBankRecurringSuggestions([]);
-      setIsBankConnected(false);
-      setBankDataLastUpdated(null);
-      setBankAccounts([]);
-      setSelectedBankAccount(null);
-
-      // Also disconnect the bank from Firebase and clear cache
-      const handleExpiration = async () => {
-        try {
-          console.log(
-            "DataContext: Disconnecting bank due to subscription expiration"
-          );
-
-          // Disconnect bank from Firebase
-          const isConnected = await plaidService.isBankConnected();
-          if (isConnected) {
-            await plaidService.disconnectBank();
-          }
-
-          // Clear Plaid service cache
-          (plaidService as any).requestCache?.clear();
-
-          // Clear AsyncStorage cache
-          const keysToClear = [
-            "bankTransactions",
-            "bankRecurringSuggestions",
-            "bankAccounts",
-            "bankDataLastUpdated",
-            "isBankConnected",
-            "plaid_access_token",
-            "plaid_item_id",
-          ];
-
-          for (const key of keysToClear) {
-            await AsyncStorage.removeItem(key);
-          }
-
-          console.log(
-            "DataContext: Successfully disconnected bank and cleared cache"
-          );
-        } catch (error) {
-          console.error(
-            "DataContext: Error handling subscription expiration:",
-            error
-          );
-        }
-      };
-
-      handleExpiration();
-    }
-  }, [subscriptionStatus?.isPremium]);
+    handleSubscriptionExpiration();
+  }, [subscriptionStatus?.isPremium, disconnectBankAndClearData]);
 
   const value: DataContextType = {
     transactions,
@@ -829,6 +811,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setBankAccounts,
     setSelectedBankAccount,
     setBankConnectionError,
+    disconnectBankAndClearData,
     updateTransactionsOptimistically,
     updateBudgetSettingsOptimistically,
     updateGoalsOptimistically,

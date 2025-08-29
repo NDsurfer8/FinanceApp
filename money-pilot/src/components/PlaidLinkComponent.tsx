@@ -12,6 +12,7 @@ import { plaidService } from "../services/plaid";
 import { fontFamily } from "../config/fonts";
 import { useAuth } from "../hooks/useAuth";
 import { useSubscription } from "../contexts/SubscriptionContext";
+import { useData } from "../contexts/DataContext";
 import { usePaywall } from "../hooks/usePaywall";
 import { LinkSuccess, LinkExit } from "react-native-plaid-link-sdk";
 
@@ -34,6 +35,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   const { user } = useAuth();
   const { isFeatureAvailable, PREMIUM_FEATURES, hasPremiumAccess } =
     useSubscription();
+  const { disconnectBankAndClearData } = useData();
   const { presentPaywall } = usePaywall();
 
   useEffect(() => {
@@ -458,8 +460,11 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
               setIsLoading(false);
               onLoadingChange?.(false);
 
-              await plaidService.disconnectBank();
-              await checkConnectionStatus(); // Refresh connection status
+              // Use the comprehensive disconnect function from DataContext
+              await disconnectBankAndClearData();
+
+              // Update connection status
+              await checkConnectionStatus();
             } catch (error) {
               console.error("Error disconnecting bank:", error);
               Alert.alert("Error", "Failed to disconnect bank account");

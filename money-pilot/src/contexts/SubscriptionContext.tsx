@@ -150,39 +150,11 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
     try {
       console.log("SubscriptionContext: Handling subscription expiration...");
 
-      // 1. Disconnect bank connection
-      const isConnected = await plaidService.isBankConnected();
-      if (isConnected) {
-        console.log(
-          "SubscriptionContext: Disconnecting bank due to subscription expiration"
-        );
-        await plaidService.disconnectBank();
-      }
-
-      // 2. Clear all cached data
+      // Use DataContext's comprehensive disconnect function if available
+      // This will be handled by DataContext's useEffect that monitors subscription status
       console.log(
-        "SubscriptionContext: Clearing cached data due to subscription expiration"
+        "SubscriptionContext: Subscription expiration detected - DataContext will handle bank disconnection"
       );
-
-      // Clear Plaid service cache
-      (plaidService as any).requestCache?.clear();
-
-      // Clear AsyncStorage cache
-      const keysToClear = [
-        "bankTransactions",
-        "bankRecurringSuggestions",
-        "bankAccounts",
-        "bankDataLastUpdated",
-        "isBankConnected",
-        "plaid_access_token",
-        "plaid_item_id",
-      ];
-
-      for (const key of keysToClear) {
-        await AsyncStorage.removeItem(key);
-      }
-
-      console.log("SubscriptionContext: Successfully cleared all cached data");
     } catch (error) {
       console.error(
         "SubscriptionContext: Error handling subscription expiration:",
