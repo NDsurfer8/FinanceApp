@@ -15,5 +15,15 @@
   ],
   "storage": {
     "rules": "firebase-storage-rules.rules"
+  },
+  "hosting": {
+    "public": "public",
+    "ignore": ["firebase.json", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/plaid-redirect",
+        "destination": "/plaid-redirect.html"
+      }
+    ]
   }
 }
