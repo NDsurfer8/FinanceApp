@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 24,
     paddingTop: 12,
-    paddingHorizontal: 4,
+    paddingHorizontal: 0,
   },
   leftSection: {
     flexDirection: "row",
