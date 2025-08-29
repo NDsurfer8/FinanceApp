@@ -104,9 +104,9 @@ ${user?.displayName || "VectorFi User"}`,
     Linking.openURL("https://vectorfi.ai/");
   };
 
-  const openGitHub = () => {
-    Linking.openURL("https://github.com/ndsurf888/vectorfii");
-  };
+  // const openGitHub = () => {
+  //   Linking.openURL("https://github.com/ndsurf888/vectorfii");
+  // };
 
   const shareApp = async () => {
     try {
@@ -458,7 +458,7 @@ https://vectorfi.ai/
             />
           </TouchableOpacity>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[
               styles.actionButton,
               { backgroundColor: colors.surface, shadowColor: colors.shadow },
@@ -476,7 +476,7 @@ https://vectorfi.ai/
               size={16}
               color={colors.textSecondary}
             />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* Legal */}
