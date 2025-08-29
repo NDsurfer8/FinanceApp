@@ -146,6 +146,7 @@ exports.createLinkToken = onCall(
         products: ["transactions"],
         country_codes: ["US"],
         language: "en",
+        redirect_uri: "https://vectorfi-888.web.app/plaid-redirect",
       };
 
       const createTokenResponse = await client.linkTokenCreate(request);
