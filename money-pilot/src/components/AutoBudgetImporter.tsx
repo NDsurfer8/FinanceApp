@@ -160,11 +160,23 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
 
   // Process bank transactions and categorize them
   useEffect(() => {
+    console.log("AutoBudgetImporter: useEffect triggered", {
+      isVisible,
+      bankTransactionsLength: bankTransactions.length,
+      selectedMonth: selectedMonth?.toISOString(),
+    });
+
     if (isVisible && bankTransactions.length > 0) {
       // Filter transactions for selected month (or current month if not provided)
       const targetMonth = selectedMonth || new Date();
       const targetMonthNumber = targetMonth.getMonth();
       const targetYear = targetMonth.getFullYear();
+
+      console.log("AutoBudgetImporter: Filtering for month", {
+        targetMonth: targetMonth.toISOString(),
+        targetMonthNumber,
+        targetYear,
+      });
 
       const targetMonthTransactions = bankTransactions.filter(
         (transaction: any) => {
@@ -175,6 +187,11 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
           );
         }
       );
+
+      console.log("AutoBudgetImporter: Filtered transactions", {
+        totalBankTransactions: bankTransactions.length,
+        targetMonthTransactions: targetMonthTransactions.length,
+      });
 
       const categorized = targetMonthTransactions
         .filter((transaction: any) => {
@@ -195,9 +212,21 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
           };
         });
 
+      console.log("AutoBudgetImporter: Categorized transactions", {
+        categorizedCount: categorized.length,
+        sampleTransaction: categorized[0]
+          ? {
+              name: categorized[0].name,
+              amount: categorized[0].amount,
+              type: categorized[0].type,
+              category: categorized[0].category,
+            }
+          : null,
+      });
+
       setCategorizedTransactions(categorized);
     }
-  }, [isVisible, bankTransactions]);
+  }, [isVisible, bankTransactions, selectedMonth]);
 
   const toggleTransactionSelection = (transactionId: string) => {
     setCategorizedTransactions((prev) =>
