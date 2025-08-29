@@ -254,7 +254,6 @@ class PlaidService {
         throw new Error("createLinkToken did not return link_token");
       }
 
-      console.log("✅ Link token created successfully");
       return linkToken;
     } catch (firebaseError: any) {
       console.error("Firebase function error:", firebaseError);
@@ -310,8 +309,6 @@ class PlaidService {
   // Create Plaid Link session (preloads Link for better performance)
   async createPlaidLinkSession(linkToken: string): Promise<void> {
     try {
-      console.log("Creating Plaid Link session...");
-
       // Destroy any existing session first (Android only)
       try {
         await destroy();
