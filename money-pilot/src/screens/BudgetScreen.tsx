@@ -89,6 +89,53 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
+  // Calculate available transactions for import (excluding already imported ones)
+  const getAvailableTransactionsCount = () => {
+    if (!bankTransactions.length) return 0;
+
+    const currentMonthTransactions = bankTransactions.filter(
+      (transaction: any) => {
+        const transactionDate = new Date(transaction.date);
+        const currentMonth = selectedMonth.getMonth();
+        const currentYear = selectedMonth.getFullYear();
+        return (
+          transactionDate.getMonth() === currentMonth &&
+          transactionDate.getFullYear() === currentYear
+        );
+      }
+    );
+
+    // Filter out transactions that are already in budget
+    const availableTransactions = currentMonthTransactions.filter(
+      (bankTransaction: any) => {
+        const bankDate = new Date(bankTransaction.date);
+        const bankAmount = Math.abs(bankTransaction.amount);
+        const bankName = bankTransaction.name?.toLowerCase() || "";
+
+        return !transactions.some((budgetTransaction: any) => {
+          const budgetDate = new Date(budgetTransaction.date);
+          const budgetAmount = Math.abs(budgetTransaction.amount);
+          const budgetName = budgetTransaction.description?.toLowerCase() || "";
+
+          // Check if dates are within 1 day of each other
+          const dateDiff = Math.abs(bankDate.getTime() - budgetDate.getTime());
+          const oneDayInMs = 24 * 60 * 60 * 1000;
+
+          // Check if amounts match (within $0.01 tolerance)
+          const amountDiff = Math.abs(bankAmount - budgetAmount);
+
+          // Check if names are similar
+          const nameSimilarity =
+            bankName.includes(budgetName) || budgetName.includes(bankName);
+
+          return dateDiff <= oneDayInMs && amountDiff <= 0.01 && nameSimilarity;
+        });
+      }
+    );
+
+    return availableTransactions.length;
+  };
+
   // Custom Slider Component
   const CustomSlider = ({
     value,
@@ -1645,17 +1692,29 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           {isBankConnected && (
             <TouchableOpacity
               style={{
-                backgroundColor: colors.info,
+                backgroundColor:
+                  getAvailableTransactionsCount() > 0
+                    ? colors.info
+                    : colors.border,
                 borderRadius: 8,
                 padding: 12,
                 alignItems: "center",
                 marginBottom: 20,
                 borderWidth: 1,
-                borderColor: colors.info,
+                borderColor:
+                  getAvailableTransactionsCount() > 0
+                    ? colors.info
+                    : colors.border,
                 flexDirection: "row",
                 justifyContent: "center",
+                opacity: getAvailableTransactionsCount() > 0 ? 1 : 0.6,
               }}
-              onPress={() => setShowAutoImporter(true)}
+              onPress={
+                getAvailableTransactionsCount() > 0
+                  ? () => setShowAutoImporter(true)
+                  : undefined
+              }
+              disabled={getAvailableTransactionsCount() === 0}
             >
               <Ionicons
                 name="download"
@@ -1665,31 +1724,30 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               />
               <Text
                 style={{
-                  color: colors.buttonText,
+                  color:
+                    getAvailableTransactionsCount() > 0
+                      ? colors.buttonText
+                      : colors.textSecondary,
                   fontSize: 14,
                   fontWeight: "500",
                 }}
                 allowFontScaling={true}
               >
-                Import{" "}
-                {selectedMonth ? formatMonth(selectedMonth) : "Current Month"}
-                {bankTransactions.length > 0 && (
-                  <Text style={{ color: colors.buttonText }}>
-                    {" "}
-                    (
-                    {
-                      bankTransactions.filter((transaction: any) => {
-                        const transactionDate = new Date(transaction.date);
-                        const currentMonth = selectedMonth.getMonth();
-                        const currentYear = selectedMonth.getFullYear();
-                        return (
-                          transactionDate.getMonth() === currentMonth &&
-                          transactionDate.getFullYear() === currentYear
-                        );
-                      }).length
-                    }
-                    )
-                  </Text>
+                {getAvailableTransactionsCount() > 0 ? (
+                  <>
+                    Import{" "}
+                    {selectedMonth
+                      ? formatMonth(selectedMonth)
+                      : "Current Month"}
+                    <Text style={{ color: colors.buttonText }}>
+                      {" "}
+                      ({getAvailableTransactionsCount()})
+                    </Text>
+                  </>
+                ) : (
+                  `No New Transactions for ${
+                    selectedMonth ? formatMonth(selectedMonth) : "Current Month"
+                  }`
                 )}
               </Text>
             </TouchableOpacity>
@@ -1874,6 +1932,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         isVisible={showAutoImporter}
         onClose={() => setShowAutoImporter(false)}
         selectedMonth={selectedMonth}
+        onDataRefresh={refreshData}
         onSuccess={(count) => {
           // Refresh data after successful import
           refreshData();

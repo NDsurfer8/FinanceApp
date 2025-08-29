@@ -22,6 +22,7 @@ interface AutoBudgetImporterProps {
   onClose: () => void;
   onSuccess?: (count: number) => void;
   selectedMonth?: Date; // Add selected month prop
+  onDataRefresh?: () => void; // Add callback to refresh data
 }
 
 interface CategorizedTransaction {
@@ -40,14 +41,41 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
   onClose,
   onSuccess,
   selectedMonth,
+  onDataRefresh,
 }) => {
   const { user } = useAuth();
-  const { bankTransactions, isBankConnected } = useData();
+  const { bankTransactions, transactions, isBankConnected } = useData();
   const { colors } = useTheme();
 
   // Helper function to format month
   const formatMonth = (date: Date) => {
     return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  };
+
+  // Helper function to check if a bank transaction already exists in budget
+  const isTransactionAlreadyImported = (bankTransaction: any): boolean => {
+    const bankDate = new Date(bankTransaction.date);
+    const bankAmount = Math.abs(bankTransaction.amount);
+    const bankName = bankTransaction.name?.toLowerCase() || "";
+
+    return transactions.some((budgetTransaction: any) => {
+      const budgetDate = new Date(budgetTransaction.date);
+      const budgetAmount = Math.abs(budgetTransaction.amount);
+      const budgetName = budgetTransaction.description?.toLowerCase() || "";
+
+      // Check if dates are within 1 day of each other (to account for timezone differences)
+      const dateDiff = Math.abs(bankDate.getTime() - budgetDate.getTime());
+      const oneDayInMs = 24 * 60 * 60 * 1000;
+
+      // Check if amounts match (within $0.01 tolerance for rounding differences)
+      const amountDiff = Math.abs(bankAmount - budgetAmount);
+
+      // Check if names are similar (basic fuzzy matching)
+      const nameSimilarity =
+        bankName.includes(budgetName) || budgetName.includes(bankName);
+
+      return dateDiff <= oneDayInMs && amountDiff <= 0.01 && nameSimilarity;
+    });
   };
 
   const [categorizedTransactions, setCategorizedTransactions] = useState<
@@ -200,10 +228,21 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         targetMonthTransactions: targetMonthTransactions.length,
       });
 
+      // Count how many transactions are already imported
+      const alreadyImportedCount = targetMonthTransactions.filter(
+        (transaction: any) => isTransactionAlreadyImported(transaction)
+      ).length;
+
+      console.log("AutoBudgetImporter: Duplicate detection", {
+        totalMonthTransactions: targetMonthTransactions.length,
+        alreadyImportedCount,
+        willShowCount: targetMonthTransactions.length - alreadyImportedCount,
+      });
+
       const categorized = targetMonthTransactions
         .filter((transaction: any) => {
-          // Filter out transactions that are already in budget (you might want to add this logic)
-          return true;
+          // Filter out transactions that are already in budget
+          return !isTransactionAlreadyImported(transaction);
         })
         .map((transaction: any) => {
           const { category, type } = categorizeTransaction(transaction);
@@ -335,6 +374,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             {
               text: "OK",
               onPress: () => {
+                onDataRefresh?.(); // Refresh data to update import button count
                 onSuccess?.(savedCount);
                 onClose();
               },
@@ -351,6 +391,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             {
               text: "OK",
               onPress: () => {
+                onDataRefresh?.(); // Refresh data to update import button count
                 onSuccess?.(savedCount);
                 onClose();
               },
