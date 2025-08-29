@@ -30,7 +30,7 @@ class AIUsageTracker {
   private static instance: AIUsageTracker;
   private config: AIUsageConfig = {
     enabled: true,
-    freeTierLimit: 5,
+    freeTierLimit: 10,
     premiumTierLimit: null, // unlimited for premium
     resetFrequency: "monthly",
     trackingEnabled: true,
