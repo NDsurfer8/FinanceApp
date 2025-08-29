@@ -32,7 +32,8 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   const [lastTapTime, setLastTapTime] = useState(0);
   const BUTTON_DEBOUNCE_TIME = 1000; // 1 second debounce between button taps
   const { user } = useAuth();
-  const { isFeatureAvailable, PREMIUM_FEATURES } = useSubscription();
+  const { isFeatureAvailable, PREMIUM_FEATURES, hasPremiumAccess } =
+    useSubscription();
   const { presentPaywall } = usePaywall();
 
   useEffect(() => {
@@ -44,11 +45,15 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       // Additional immediate check for existing connection
       const immediateCheck = async () => {
         const connected = await plaidService.isBankConnected();
-        if (connected) {
+        const isPremium = hasPremiumAccess();
+
+        if (connected && isPremium) {
           setIsConnected(true);
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
+        } else {
+          setIsConnected(false);
         }
       };
       immediateCheck();
@@ -67,11 +72,18 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     const clearLoadingIfConnected = async () => {
       if (isLoading) {
         const connected = await plaidService.isBankConnected();
-        if (connected) {
+        const isPremium = hasPremiumAccess();
+
+        if (connected && isPremium) {
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
           setIsConnected(true); // Also set the connected state
+        } else if (!isPremium) {
+          setIsLoading(false);
+          onLoadingChange?.(false);
+          setIsButtonDisabled(false);
+          setIsConnected(false);
         }
       }
     };
@@ -85,11 +97,19 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
     const interval = setInterval(async () => {
       const connected = await plaidService.isBankConnected();
-      if (connected) {
+      const isPremium = hasPremiumAccess();
+
+      if (connected && isPremium) {
         setIsLoading(false);
         onLoadingChange?.(false);
         setIsButtonDisabled(false);
         setIsConnected(true);
+        clearInterval(interval);
+      } else if (!isPremium) {
+        setIsLoading(false);
+        onLoadingChange?.(false);
+        setIsButtonDisabled(false);
+        setIsConnected(false);
         clearInterval(interval);
       }
     }, 2000);
@@ -97,13 +117,34 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     return () => clearInterval(interval);
   }, [isLoading]);
 
+  // Monitor subscription changes and update connection status
+  // This ensures the button shows correctly when subscription expires
+  useEffect(() => {
+    const updateConnectionStatus = async () => {
+      const connected = await plaidService.isBankConnected();
+      const isPremium = hasPremiumAccess();
+
+      if (connected && isPremium) {
+        setIsConnected(true);
+      } else {
+        setIsConnected(false);
+      }
+    };
+
+    updateConnectionStatus();
+  }, [hasPremiumAccess]);
+
   const checkConnectionStatus = async () => {
     try {
       const connected = await plaidService.isBankConnected();
+      const isPremium = hasPremiumAccess();
 
       // If user is not premium, don't show as connected even if bank is connected
-      if (!isFeatureAvailable(PREMIUM_FEATURES.PLAID_BANK_CONNECTION)) {
+      if (!isPremium) {
         setIsConnected(false);
+        setIsLoading(false);
+        onLoadingChange?.(false);
+        setIsButtonDisabled(false);
         return;
       }
 
@@ -138,10 +179,14 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     while (attempts < maxAttempts && isLoading) {
       try {
         const connected = await plaidService.isBankConnected();
+        const isPremium = hasPremiumAccess();
 
         // If user is not premium, don't show as connected even if bank is connected
-        if (!isFeatureAvailable(PREMIUM_FEATURES.PLAID_BANK_CONNECTION)) {
+        if (!isPremium) {
           setIsConnected(false);
+          setIsLoading(false);
+          onLoadingChange?.(false);
+          setIsButtonDisabled(false);
           return;
         }
 
@@ -193,8 +238,8 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     // Update last tap time
     setLastTapTime(now);
 
-    // Check if user has premium access for Plaid bank connection
-    if (!isFeatureAvailable(PREMIUM_FEATURES.PLAID_BANK_CONNECTION)) {
+    // Check if user has premium access
+    if (!hasPremiumAccess()) {
       Alert.alert(
         "Premium Feature",
         "Bank connection is a premium feature. Upgrade to Premium to connect your bank account and automatically sync transactions!",
@@ -240,13 +285,21 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       // Immediate check after success processing
       setTimeout(async () => {
         const connected = await plaidService.isBankConnected();
-        if (connected) {
+        const isPremium = hasPremiumAccess();
+
+        if (connected && isPremium) {
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
           setIsConnected(true);
           onSuccess?.();
           return; // Don't start polling if we're already connected
+        } else if (!isPremium) {
+          setIsLoading(false);
+          onLoadingChange?.(false);
+          setIsButtonDisabled(false);
+          setIsConnected(false);
+          return;
         }
       }, 500); // Check after 500ms
 
@@ -265,11 +318,13 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
           // Force set connected state if we're still loading after timeout
           const forceConnected = async () => {
             const connected = await plaidService.isBankConnected();
-            if (connected) {
+            const isPremium = hasPremiumAccess();
+
+            if (connected && isPremium) {
               setIsConnected(true);
             } else {
-              // If still not connected, force it anyway after timeout
-              setIsConnected(true);
+              // If not connected or not premium, show as disconnected
+              setIsConnected(false);
             }
           };
           forceConnected();
@@ -485,7 +540,11 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
               fontSize: 14,
             }}
           >
-            {isLoading ? "Connecting..." : "Connect Bank (Plaid)"}
+            {isLoading
+              ? "Connecting..."
+              : hasPremiumAccess()
+              ? "Connect Bank (Plaid)"
+              : "Upgrade to Connect Bank"}
           </Text>
         </TouchableOpacity>
       )}
