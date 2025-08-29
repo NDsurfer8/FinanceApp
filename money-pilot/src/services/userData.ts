@@ -170,13 +170,6 @@ export interface NetWorthEntry {
 // Create or update user profile
 export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
   try {
-    console.log("Attempting to save user profile:", profile);
-    console.log("Current auth state:", auth.currentUser?.uid);
-    console.log(
-      "Profile UID matches auth UID:",
-      profile.uid === auth.currentUser?.uid
-    );
-
     const userRef = ref(db, `users/${profile.uid}/profile`);
     await set(userRef, {
       ...profile,
@@ -1314,11 +1307,10 @@ export const getUserInvitations = async (
 
     if (snapshot.exists()) {
       const invitations: SharedInvitation[] = [];
-      console.log("Searching for invitations for email:", email);
+
       snapshot.forEach((childSnapshot) => {
         const invitation = childSnapshot.val();
         console.log("Found invitation:", invitation);
-        console.log("Comparing:", invitation.inviteeEmail, "===", email);
         if (
           invitation.inviteeEmail === email &&
           invitation.status === "pending"

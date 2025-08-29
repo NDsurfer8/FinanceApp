@@ -855,8 +855,6 @@ Requirements:
     savingsPercentage?: number;
     debtPayoffPercentage?: number;
   } => {
-    console.log("LOG AI Response text:", text);
-
     const suggestions: {
       savingsPercentage?: number;
       debtPayoffPercentage?: number;
@@ -891,7 +889,6 @@ Requirements:
       const pattern = savingsPatterns[i];
       const matches = text.match(pattern);
       if (matches) {
-        console.log(`Savings pattern ${i} matched:`, matches[0]);
         const percentage = parseInt(matches[0].match(/\d+/)?.[0] || "20");
         if (percentage > 0 && percentage <= 100) {
           // Higher priority for earlier patterns (lower index)
@@ -909,7 +906,6 @@ Requirements:
 
     if (bestSavingsMatch) {
       suggestions.savingsPercentage = bestSavingsMatch;
-      console.log("Final savings percentage detected:", bestSavingsMatch);
     }
 
     // Look for debt payoff percentage suggestions (more comprehensive patterns)
@@ -938,7 +934,6 @@ Requirements:
       const pattern = debtPatterns[i];
       const matches = text.match(pattern);
       if (matches) {
-        console.log(`Debt pattern ${i} matched:`, matches[0]);
         const percentage = parseInt(matches[0].match(/\d+/)?.[0] || "5");
         if (percentage > 0 && percentage <= 100) {
           // Higher priority for earlier patterns (lower index)
@@ -956,7 +951,6 @@ Requirements:
 
     if (bestDebtMatch) {
       suggestions.debtPayoffPercentage = bestDebtMatch;
-      console.log("Final debt percentage detected:", bestDebtMatch);
     }
 
     // Look for dollar amount suggestions for debt payoff and calculate percentage
@@ -971,7 +965,6 @@ Requirements:
     for (const pattern of debtDollarPatterns) {
       const matches = text.match(pattern);
       if (matches && netIncome > 0) {
-        console.log("Debt dollar amount pattern matched:", matches[0]);
         const dollarAmount = parseFloat(matches[0].replace(/[$,]/g, ""));
         if (dollarAmount > 0 && dollarAmount <= netIncome) {
           const calculatedPercentage = Math.round(
@@ -1000,7 +993,6 @@ Requirements:
     for (const pattern of savingsDollarPatterns) {
       const matches = text.match(pattern);
       if (matches && netIncome > 0) {
-        console.log("Savings dollar amount pattern matched:", matches[0]);
         const dollarAmount = parseFloat(matches[0].replace(/[$,]/g, ""));
         if (dollarAmount > 0 && dollarAmount <= netIncome) {
           const calculatedPercentage = Math.round(
@@ -1008,9 +1000,6 @@ Requirements:
           );
           if (calculatedPercentage >= 1 && calculatedPercentage <= 50) {
             suggestions.savingsPercentage = calculatedPercentage;
-            console.log(
-              `Savings dollar amount detected: $${dollarAmount}, calculated percentage: ${calculatedPercentage}%`
-            );
             break;
           }
         }

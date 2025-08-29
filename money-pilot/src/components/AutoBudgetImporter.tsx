@@ -223,11 +223,6 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         }
       );
 
-      console.log("AutoBudgetImporter: Filtered transactions", {
-        totalBankTransactions: bankTransactions.length,
-        targetMonthTransactions: targetMonthTransactions.length,
-      });
-
       // Count how many transactions are already imported
       const alreadyImportedCount = targetMonthTransactions.filter(
         (transaction: any) => isTransactionAlreadyImported(transaction)
@@ -257,18 +252,6 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             originalTransaction: transaction,
           };
         });
-
-      console.log("AutoBudgetImporter: Categorized transactions", {
-        categorizedCount: categorized.length,
-        sampleTransaction: categorized[0]
-          ? {
-              name: categorized[0].name,
-              amount: categorized[0].amount,
-              type: categorized[0].type,
-              category: categorized[0].category,
-            }
-          : null,
-      });
 
       setCategorizedTransactions(categorized);
     }
@@ -341,13 +324,6 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             type: transaction.type,
             createdAt: Date.now(),
           };
-
-          console.log("Attempting to save transaction:", {
-            name: transaction.name,
-            amount: newTransaction.amount,
-            type: newTransaction.type,
-            category: newTransaction.category,
-          });
 
           await saveTransaction(newTransaction);
           savedCount++;
