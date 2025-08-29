@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
@@ -54,6 +55,12 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
   >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState({
+    current: 0,
+    total: 0,
+    currentTransaction: "",
+    startTime: 0,
+  });
 
   // Smart categorization rules
   const categorizeTransaction = (
@@ -263,12 +270,28 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
     }
 
     setIsSaving(true);
+    setSaveProgress({
+      current: 0,
+      total: selectedTransactions.length,
+      currentTransaction: "",
+      startTime: Date.now(),
+    });
+
     try {
       let savedCount = 0;
       let failedCount = 0;
       const failedTransactions: string[] = [];
 
-      for (const transaction of selectedTransactions) {
+      for (let i = 0; i < selectedTransactions.length; i++) {
+        const transaction = selectedTransactions[i];
+
+        // Update progress
+        setSaveProgress((prev) => ({
+          ...prev,
+          current: i + 1,
+          currentTransaction: transaction.name,
+        }));
+
         try {
           const newTransaction = {
             userId: user.uid,
@@ -289,6 +312,11 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
 
           await saveTransaction(newTransaction);
           savedCount++;
+
+          // Small delay to prevent overwhelming the server and show progress
+          if (i < selectedTransactions.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
         } catch (error) {
           console.error(`Error saving transaction ${transaction.name}:`, error);
           failedCount++;
@@ -299,6 +327,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
       // Show detailed results
       if (savedCount > 0 && failedCount === 0) {
         // All succeeded
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert(
           "Success!",
           `Successfully imported ${savedCount} transactions to your budget.`,
@@ -314,6 +343,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         );
       } else if (savedCount > 0 && failedCount > 0) {
         // Partial success
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         Alert.alert(
           "Partial Success",
           `Imported ${savedCount} transactions successfully.\n\n${failedCount} transactions failed to save (likely due to temporary connection issues).\n\nYou can try importing the failed transactions again.`,
@@ -329,6 +359,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         );
       } else {
         // All failed
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         Alert.alert(
           "Import Failed",
           `Failed to import any transactions. This might be due to:\n\n• Temporary connection issues\n• Authentication problems\n• Server maintenance\n\nPlease try again in a few moments.`,
@@ -424,6 +455,107 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
       onRequestClose={onClose}
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        {/* Progress Overlay */}
+        {isSaving && (
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 1000,
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 16,
+                padding: 24,
+                margin: 20,
+                alignItems: "center",
+                minWidth: 280,
+              }}
+            >
+              <ActivityIndicator
+                size="large"
+                color={colors.primary}
+                style={{ marginBottom: 16 }}
+              />
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "600",
+                  color: colors.text,
+                  marginBottom: 8,
+                  textAlign: "center",
+                }}
+              >
+                Importing Transactions...
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 16,
+                  textAlign: "center",
+                }}
+              >
+                {saveProgress.current} of {saveProgress.total}
+                {saveProgress.startTime > 0 && saveProgress.current > 0 && (
+                  <Text style={{ fontSize: 12 }}>
+                    {"\n"}
+                    {Math.round(
+                      (((Date.now() - saveProgress.startTime) /
+                        saveProgress.current) *
+                        (saveProgress.total - saveProgress.current)) /
+                        1000
+                    )}
+                    s remaining
+                  </Text>
+                )}
+              </Text>
+              {saveProgress.currentTransaction && (
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    textAlign: "center",
+                    fontStyle: "italic",
+                    marginBottom: 16,
+                  }}
+                  numberOfLines={2}
+                >
+                  Saving: {saveProgress.currentTransaction}
+                </Text>
+              )}
+              <View
+                style={{
+                  width: "100%",
+                  height: 4,
+                  backgroundColor: colors.border,
+                  borderRadius: 2,
+                  overflow: "hidden",
+                }}
+              >
+                <View
+                  style={{
+                    width: `${
+                      (saveProgress.current / saveProgress.total) * 100
+                    }%`,
+                    height: "100%",
+                    backgroundColor: colors.primary,
+                    borderRadius: 2,
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Modal Header */}
         <View
           style={{
