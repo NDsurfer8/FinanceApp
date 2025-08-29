@@ -734,12 +734,11 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             Privacy & Legal
           </Text>
 
-          <TouchableOpacity
+          <View
             style={[
               styles.settingItem,
               { backgroundColor: colors.surface, shadowColor: colors.shadow },
             ]}
-            onPress={openPrivacyPolicy}
           >
             <View style={styles.settingInfo}>
               <View
@@ -767,20 +766,31 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                   How we protect and use your data
                 </Text>
               </View>
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  {
+                    backgroundColor: colors.surfaceSecondary,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={openPrivacyPolicy}
+                disabled={loading}
+              >
+                <Text
+                  style={[styles.actionButtonText, { color: colors.primary }]}
+                >
+                  View
+                </Text>
+              </TouchableOpacity>
             </View>
-            <Ionicons
-              name="chevron-forward"
-              size={16}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity
+          <View
             style={[
               styles.settingItem,
               { backgroundColor: colors.surface, shadowColor: colors.shadow },
             ]}
-            onPress={openTermsOfService}
           >
             <View style={styles.settingInfo}>
               <View
@@ -804,13 +814,25 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                   Our terms and conditions
                 </Text>
               </View>
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  {
+                    backgroundColor: colors.surfaceSecondary,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={openTermsOfService}
+                disabled={loading}
+              >
+                <Text
+                  style={[styles.actionButtonText, { color: colors.primary }]}
+                >
+                  View
+                </Text>
+              </TouchableOpacity>
             </View>
-            <Ionicons
-              name="chevron-forward"
-              size={16}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
+          </View>
         </View>
 
         {/* Danger Zone */}
