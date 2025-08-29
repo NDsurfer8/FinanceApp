@@ -122,7 +122,7 @@ export const TermsOfServiceScreen: React.FC<TermsOfServiceScreenProps> = ({
           <Text style={styles.paragraph}>
             These terms and conditions apply to the VectorFi app (hereby
             referred to as "Application") for mobile devices that was created by
-            Noah Duran (hereby referred to as "Service Provider") as a Freemium
+            VectorFi (hereby referred to as "Service Provider") as a Freemium
             service.
           </Text>
           <Text style={styles.paragraph}>
