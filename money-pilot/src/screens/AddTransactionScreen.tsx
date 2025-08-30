@@ -10,7 +10,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Modal,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
@@ -58,6 +60,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const { refreshRecurringTransactions, refreshTransactions } = useData();
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const {
     type: initialType,
     selectedMonth,
@@ -88,6 +92,30 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     return tomorrow.toISOString().split("T")[0];
   };
 
+  // Helper function to format transaction date for the date input
+  const formatTransactionDate = (dateValue: any) => {
+    if (!dateValue) return getInitialDate();
+
+    // If it's already a string in YYYY-MM-DD format, return it
+    if (typeof dateValue === "string" && dateValue.includes("-")) {
+      return dateValue;
+    }
+
+    // If it's a timestamp (number), convert to date string
+    if (typeof dateValue === "number") {
+      const date = new Date(dateValue);
+      return date.toISOString().split("T")[0];
+    }
+
+    // If it's a Date object, convert to string
+    if (dateValue instanceof Date) {
+      return dateValue.toISOString().split("T")[0];
+    }
+
+    // Fallback to today's date
+    return getInitialDate();
+  };
+
   const [formData, setFormData] = useState({
     description: editMode ? transaction?.description || "" : "",
     amount: editMode ? transaction?.amount?.toString() || "" : "",
@@ -95,7 +123,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     type: editMode
       ? transaction?.type || initialType || "expense"
       : initialType || "expense",
-    date: editMode ? transaction?.date || getInitialDate() : getInitialDate(),
+    date: editMode
+      ? formatTransactionDate(transaction?.date)
+      : getInitialDate(),
     isRecurring: editMode
       ? transaction?.isRecurring || transaction?.recurringTransactionId || false
       : false,
@@ -117,7 +147,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         type: route.params.type || prev.type,
         isRecurring: route.params.isRecurring || prev.isRecurring,
         frequency: route.params.frequency || prev.frequency,
-        date: route.params.date || prev.date, // Use the date from bank transaction
+        date: route.params.date
+          ? formatTransactionDate(route.params.date)
+          : prev.date, // Use the date from bank transaction
       }));
 
       // Note: Bank suggestions may have biweekly/weekly frequencies, but we'll convert to monthly
@@ -134,6 +166,37 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       }));
     }
   }, [editMode, transaction?.recurringTransactionId]);
+
+  // Date picker handlers
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      const formattedDate = selectedDate.toISOString().split("T")[0];
+      setFormData({ ...formData, date: formattedDate });
+    }
+  };
+
+  const handleEndDateChange = (event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      const formattedDate = selectedDate.toISOString().split("T")[0];
+      setFormData({ ...formData, endDate: formattedDate });
+    }
+  };
+
+  const handleDatePickerDone = () => {
+    setShowDatePicker(false);
+  };
+
+  const handleEndDatePickerDone = () => {
+    setShowEndDatePicker(false);
+  };
+
+  const openDatePicker = () => {
+    setShowDatePicker(true);
+  };
+
+  const openEndDatePicker = () => {
+    setShowEndDatePicker(true);
+  };
 
   const getCategories = (type: string) => {
     if (type === "income") {
@@ -1101,21 +1164,33 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             >
               Date
             </Text>
-            <TextInput
+            <TouchableOpacity
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
                 borderRadius: 8,
                 padding: 12,
-                fontSize: 16,
-                color: colors.text,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
                 backgroundColor: colors.card,
               }}
-              value={formData.date}
-              onChangeText={(text) => setFormData({ ...formData, date: text })}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.textSecondary}
-            />
+              onPress={openDatePicker}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: formData.date ? colors.text : colors.textSecondary,
+                }}
+              >
+                {formData.date || "Select Date"}
+              </Text>
+              <Ionicons
+                name="calendar-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
           </View>
 
           {/* Recurring Transaction Toggle */}
@@ -1246,23 +1321,35 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 >
                   End Date (Optional)
                 </Text>
-                <TextInput
+                <TouchableOpacity
                   style={{
                     borderWidth: 1,
                     borderColor: colors.border,
                     borderRadius: 8,
                     padding: 12,
-                    fontSize: 16,
-                    color: colors.text,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                     backgroundColor: colors.card,
                   }}
-                  value={formData.endDate}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, endDate: text })
-                  }
-                  placeholder="YYYY-MM-DD (leave empty for no end date)"
-                  placeholderTextColor={colors.textSecondary}
-                />
+                  onPress={openEndDatePicker}
+                >
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: formData.endDate
+                        ? colors.text
+                        : colors.textSecondary,
+                    }}
+                  >
+                    {formData.endDate || "Select End Date (Optional)"}
+                  </Text>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
               </View>
             </>
           )}
@@ -1335,6 +1422,180 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Date Picker Modal */}
+      <Modal
+        visible={showDatePicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          activeOpacity={1}
+          onPress={() => setShowDatePicker(false)}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              width: "90%",
+              maxWidth: 400,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.25,
+              shadowRadius: 20,
+              shadowOffset: { width: 0, height: 10 },
+              elevation: 10,
+            }}
+            onStartShouldSetResponder={() => true}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 20,
+                textAlign: "center",
+              }}
+            >
+              Select Date
+            </Text>
+            <View
+              style={{
+                alignItems: "center",
+                marginVertical: 10,
+              }}
+            >
+              <DateTimePicker
+                value={new Date(formData.date)}
+                mode="date"
+                display="spinner"
+                onChange={handleDateChange}
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 12,
+                  width: "100%",
+                }}
+                textColor={colors.text}
+              />
+            </View>
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.primary,
+                padding: 16,
+                borderRadius: 12,
+                marginTop: 20,
+                alignItems: "center",
+              }}
+              onPress={handleDatePickerDone}
+            >
+              <Text
+                style={{
+                  color: "white",
+                  fontSize: 16,
+                  fontWeight: "600",
+                }}
+              >
+                Done
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* End Date Picker Modal */}
+      <Modal
+        visible={showEndDatePicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowEndDatePicker(false)}
+      >
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          activeOpacity={1}
+          onPress={() => setShowEndDatePicker(false)}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              width: "90%",
+              maxWidth: 400,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.25,
+              shadowRadius: 20,
+              shadowOffset: { width: 0, height: 10 },
+              elevation: 10,
+            }}
+            onStartShouldSetResponder={() => true}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 20,
+                textAlign: "center",
+              }}
+            >
+              Select End Date
+            </Text>
+            <View
+              style={{
+                alignItems: "center",
+                marginVertical: 10,
+              }}
+            >
+              <DateTimePicker
+                value={
+                  formData.endDate ? new Date(formData.endDate) : new Date()
+                }
+                mode="date"
+                display="spinner"
+                onChange={handleEndDateChange}
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 12,
+                  width: "100%",
+                }}
+                textColor={colors.text}
+              />
+            </View>
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.primary,
+                padding: 16,
+                borderRadius: 12,
+                marginTop: 20,
+                alignItems: "center",
+              }}
+              onPress={handleEndDatePickerDone}
+            >
+              <Text
+                style={{
+                  color: "white",
+                  fontSize: 16,
+                  fontWeight: "600",
+                }}
+              >
+                Done
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
