@@ -101,7 +101,6 @@ export const MainApp: React.FC = () => {
   useEffect(() => {
     const fallbackTimeout = setTimeout(() => {
       if (isLoading) {
-        console.log("App initialization timeout, proceeding anyway");
         setIsLoading(false);
       }
     }, 10000); // 10 seconds max
@@ -113,7 +112,6 @@ export const MainApp: React.FC = () => {
   useEffect(() => {
     const splashTimeout = setTimeout(() => {
       if (appState === "splash" && !isLoading && !authLoading) {
-        console.log("Splash screen timeout, checking auth state");
         if (isAuthenticated) {
           setAppState("main");
         } else {
@@ -169,7 +167,7 @@ export const MainApp: React.FC = () => {
       }
 
       if (authWaitTime >= maxWaitTime) {
-        console.log("Auth loading timeout, proceeding anyway");
+        // Auth loading timeout, proceeding anyway
       }
 
       setLoadingMessage("Loading app settings...");
@@ -201,9 +199,6 @@ export const MainApp: React.FC = () => {
       }
 
       setIsLoading(false);
-      console.log(
-        "App initialization complete, auth state will determine next screen"
-      );
     } catch (error) {
       console.error("Error initializing app:", error);
       setIsLoading(false);
@@ -315,23 +310,10 @@ export const MainApp: React.FC = () => {
 
   // Handle app state changes based on authentication
   useEffect(() => {
-    console.log("Auth state changed:", {
-      isLoading,
-      authLoading,
-      isAuthenticated,
-      appState,
-      user: user?.uid,
-      isBiometricEnabled,
-      isAutoLockEnabled,
-      isBiometricAuthenticated,
-    });
-
     if (!isLoading && !authLoading && !isTransitioning) {
       // Add a small delay to prevent rapid state changes that might cause network errors
       const timeoutId = setTimeout(() => {
         if (isAuthenticated && appState !== "main") {
-          console.log("User is authenticated, going to main app");
-
           // Prevent rapid state changes by using transition protection
           setIsTransitioning(true);
           setWasPreviouslyAuthenticated(true);
@@ -346,24 +328,18 @@ export const MainApp: React.FC = () => {
         } else if (isAuthenticated && appState === "main") {
           // Ensure wasPreviouslyAuthenticated is true when user is in main app
           if (!wasPreviouslyAuthenticated) {
-            console.log(
-              "User is in main app, setting wasPreviouslyAuthenticated to true"
-            );
             setWasPreviouslyAuthenticated(true);
           }
         } else if (!isAuthenticated && appState === "main") {
-          console.log("User is not authenticated, going to login");
           setIsTransitioning(true);
           setWasPreviouslyAuthenticated(false);
           setAppState("login");
           setTimeout(() => setIsTransitioning(false), 1000);
         } else if (!isAuthenticated && appState === "splash") {
-          console.log("User is not authenticated, going to login from splash");
           setIsTransitioning(true);
           setAppState("login");
           setTimeout(() => setIsTransitioning(false), 1000);
         } else if (isAuthenticated && appState === "splash") {
-          console.log("User is authenticated, going to main app from splash");
           setIsTransitioning(true);
           setWasPreviouslyAuthenticated(true);
           setAppState("main");
@@ -391,13 +367,10 @@ export const MainApp: React.FC = () => {
       const hasSeenIntro = await AsyncStorage.getItem("hasSeenIntro");
 
       if (!hasSeenIntro) {
-        console.log("First launch detected, showing intro");
         setAppState("intro");
-      } else {
-        // Don't set app state here - let the auth state effect handle it
-        // This prevents jumping to login screen during refresh
-        console.log("App has been launched before, waiting for auth state");
       }
+      // Don't set app state here - let the auth state effect handle it
+      // This prevents jumping to login screen during refresh
     } catch (error) {
       console.error("Error checking app state:", error);
       setAppState("intro");

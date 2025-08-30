@@ -144,8 +144,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Comprehensive bank disconnection and data clearing
   const disconnectBankAndClearData = useCallback(async () => {
     try {
-      console.log("DataContext: Disconnecting bank and clearing all data...");
-
       // 1. Disconnect from Plaid service
       await plaidService.disconnectBank();
 
@@ -176,10 +174,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
       // 4. Clear Plaid service cache
       (plaidService as any).requestCache?.clear();
-
-      console.log(
-        "DataContext: Successfully disconnected bank and cleared all data"
-      );
     } catch (error) {
       console.error(
         "DataContext: Error disconnecting bank and clearing data:",
@@ -216,10 +210,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Analyze recurring patterns
   const analyzeRecurringPatterns = useCallback(
     (transactions: any[]) => {
-      console.log(
-        "Analyzing recurring patterns for transactions:",
-        transactions.length
-      );
       const patterns: { [key: string]: any[] } = {};
       const suggestions: any[] = [];
 
@@ -380,13 +370,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         // Don't allow calls more frequent than 5 seconds apart (unless force refresh)
         if (timeSinceLastCall < 5000 && !forceRefresh) {
-          console.log("DataContext: Debouncing API call (too frequent)");
           return;
         }
 
         // Don't load if already loading
         if (isBankDataLoadingRef.current && !forceRefresh) {
-          console.log("DataContext: Already loading, skipping duplicate call");
           return;
         }
 
@@ -395,13 +383,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const isAppJustStarted = now - appStartTime < 30000; // 30 seconds after app start
 
         if (isAppJustStarted && !forceRefresh) {
-          console.log("DataContext: App just started, using cache first");
           // For app refresh, try cache first before making API calls
           const cacheLoaded = await loadCachedBankData();
           if (cacheLoaded) {
-            console.log(
-              "DataContext: App refresh - loaded from cache, skipping API call"
-            );
             return;
           }
         }
