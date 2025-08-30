@@ -10,6 +10,7 @@ import {
   Modal,
   ActivityIndicator,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRoute } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
@@ -53,6 +54,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [newGoal, setNewGoal] = useState({
     name: "",
     targetAmount: "",
@@ -97,6 +99,21 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     high: "#dc2626",
     medium: "#d97706",
     low: "#16a34a",
+  };
+
+  // Date picker handlers
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const day = String(selectedDate.getDate()).padStart(2, "0");
+      const formattedDate = `${year}-${month}-${day}`;
+      setNewGoal({ ...newGoal, targetDate: formattedDate });
+    }
+  };
+
+  const openDatePicker = () => {
+    setShowDatePicker(true);
   };
 
   // Background refresh when screen comes into focus
@@ -1360,23 +1377,35 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   >
                     Target Achievement Date
                   </Text>
-                  <TextInput
+                  <TouchableOpacity
                     style={{
                       borderWidth: 1,
                       borderColor: colors.border,
                       borderRadius: 8,
                       padding: 12,
-                      fontSize: 16,
                       backgroundColor: colors.surfaceSecondary,
-                      color: colors.text,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                     }}
-                    value={newGoal.targetDate}
-                    onChangeText={(text) =>
-                      setNewGoal({ ...newGoal, targetDate: text })
-                    }
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={colors.textSecondary}
-                  />
+                    onPress={openDatePicker}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        color: newGoal.targetDate
+                          ? colors.text
+                          : colors.textSecondary,
+                      }}
+                    >
+                      {newGoal.targetDate || "Select Date"}
+                    </Text>
+                    <Ionicons
+                      name="calendar"
+                      size={20}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
                 </View>
 
                 {/* Buttons */}
@@ -1490,6 +1519,144 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   </TouchableOpacity>
                 )}
               </ScrollView>
+
+              {/* Date Picker Modal - Inside Goal Modal */}
+              {showDatePicker && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: "rgba(0, 0, 0, 0.5)",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    zIndex: 1000,
+                  }}
+                >
+                  <View
+                    style={{
+                      backgroundColor: colors.surface,
+                      borderRadius: 16,
+                      padding: 20,
+                      width: "90%",
+                      maxWidth: 350,
+                      shadowColor: "#000",
+                      shadowOpacity: 0.15,
+                      shadowRadius: 15,
+                      shadowOffset: { width: 0, height: 5 },
+                      elevation: 8,
+                    }}
+                  >
+                    {/* Header with Close Button */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 16,
+                        paddingBottom: 12,
+                        borderBottomWidth: 1,
+                        borderBottomColor: colors.border,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 18,
+                          fontWeight: "700",
+                          color: colors.text,
+                        }}
+                      >
+                        Select Target Date
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setShowDatePicker(false)}
+                        style={{
+                          padding: 4,
+                        }}
+                      >
+                        <Ionicons
+                          name="close"
+                          size={24}
+                          color={colors.textSecondary}
+                        />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* DatePicker Component */}
+                    <View
+                      style={{
+                        alignItems: "center",
+                        marginVertical: 10,
+                      }}
+                    >
+                      <DateTimePicker
+                        value={new Date(newGoal.targetDate)}
+                        mode="date"
+                        display="spinner"
+                        onChange={handleDateChange}
+                        style={{
+                          backgroundColor: colors.surface,
+                          borderRadius: 8,
+                          width: "100%",
+                        }}
+                        textColor={colors.text}
+                      />
+                    </View>
+
+                    {/* Action Buttons */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        gap: 12,
+                        marginTop: 16,
+                      }}
+                    >
+                      <TouchableOpacity
+                        style={{
+                          flex: 1,
+                          backgroundColor: colors.border,
+                          padding: 14,
+                          borderRadius: 10,
+                          alignItems: "center",
+                        }}
+                        onPress={() => setShowDatePicker(false)}
+                      >
+                        <Text
+                          style={{
+                            color: colors.text,
+                            fontSize: 16,
+                            fontWeight: "600",
+                          }}
+                        >
+                          Cancel
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={{
+                          flex: 1,
+                          backgroundColor: colors.primary,
+                          padding: 14,
+                          borderRadius: 10,
+                          alignItems: "center",
+                        }}
+                        onPress={() => setShowDatePicker(false)}
+                      >
+                        <Text
+                          style={{
+                            color: "white",
+                            fontSize: 16,
+                            fontWeight: "600",
+                          }}
+                        >
+                          Done
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              )}
             </View>
           </View>
         </Modal>

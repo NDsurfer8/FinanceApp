@@ -1485,26 +1485,54 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 textColor={colors.text}
               />
             </View>
-            <TouchableOpacity
+            <View
               style={{
-                backgroundColor: colors.primary,
-                padding: 16,
-                borderRadius: 12,
+                flexDirection: "row",
+                gap: 12,
                 marginTop: 20,
-                alignItems: "center",
               }}
-              onPress={handleDatePickerDone}
             >
-              <Text
+              <TouchableOpacity
                 style={{
-                  color: "white",
-                  fontSize: 16,
-                  fontWeight: "600",
+                  flex: 1,
+                  backgroundColor: colors.border,
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: "center",
                 }}
+                onPress={() => setShowDatePicker(false)}
               >
-                Done
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={{
+                    color: colors.text,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.primary,
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: "center",
+                }}
+                onPress={handleDatePickerDone}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Done
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -1573,26 +1601,54 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 textColor={colors.text}
               />
             </View>
-            <TouchableOpacity
+            <View
               style={{
-                backgroundColor: colors.primary,
-                padding: 16,
-                borderRadius: 12,
+                flexDirection: "row",
+                gap: 12,
                 marginTop: 20,
-                alignItems: "center",
               }}
-              onPress={handleEndDatePickerDone}
             >
-              <Text
+              <TouchableOpacity
                 style={{
-                  color: "white",
-                  fontSize: 16,
-                  fontWeight: "600",
+                  flex: 1,
+                  backgroundColor: colors.border,
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: "center",
                 }}
+                onPress={() => setShowEndDatePicker(false)}
               >
-                Done
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={{
+                    color: colors.text,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.primary,
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: "center",
+                }}
+                onPress={handleEndDatePickerDone}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Done
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </TouchableOpacity>
       </Modal>
