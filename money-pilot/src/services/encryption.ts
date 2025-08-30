@@ -139,7 +139,15 @@ export const decryptValue = async (encryptedValue: string): Promise<any> => {
   try {
     // Validate input
     if (!encryptedValue || typeof encryptedValue !== "string") {
-      console.warn("Invalid encrypted value provided");
+      return encryptedValue;
+    }
+
+    // Check if the value looks like it might be encrypted (CryptoJS format)
+    if (
+      !encryptedValue.includes("U2F") &&
+      !encryptedValue.includes("U2FsdGVkX")
+    ) {
+      // This doesn't look like an encrypted value, return as-is
       return encryptedValue;
     }
 
@@ -150,25 +158,18 @@ export const decryptValue = async (encryptedValue: string): Promise<any> => {
 
     // If current key fails, try keys from history
     if (!jsonString || jsonString.trim() === "") {
-      console.log("🔄 Current key failed, trying historical keys...");
       const historicalKey = await getKeyFromHistory();
 
       if (historicalKey) {
         decrypted = CryptoJS.AES.decrypt(encryptedValue, historicalKey);
         jsonString = decrypted.toString(CryptoJS.enc.Utf8);
-        console.log(
-          "🔑 Tried historical key:",
-          jsonString ? "Success" : "Failed"
-        );
       }
     }
 
     // Check if decryption resulted in empty string
     if (!jsonString || jsonString.trim() === "") {
-      console.warn(
-        "Decryption resulted in empty string, returning original value"
-      );
-      return encryptedValue; // Return original encrypted value as fallback
+      // Return original value if decryption fails
+      return encryptedValue;
     }
 
     // Validate UTF-8 encoding
@@ -176,22 +177,18 @@ export const decryptValue = async (encryptedValue: string): Promise<any> => {
       // Test if the string is valid UTF-8
       const testString = decodeURIComponent(escape(jsonString));
       if (testString !== jsonString) {
-        console.warn("Invalid UTF-8 data detected");
         return encryptedValue;
       }
     } catch (utf8Error) {
-      console.warn("UTF-8 validation failed:", utf8Error);
       return encryptedValue;
     }
 
     try {
       return JSON.parse(jsonString);
     } catch (parseError) {
-      console.warn("JSON parse failed, returning original value:", parseError);
       return encryptedValue;
     }
   } catch (error) {
-    console.error("Error decrypting value:", error);
     // Return the original encrypted value instead of throwing
     return encryptedValue;
   }
@@ -259,9 +256,6 @@ export const decryptFields = async (
         // If decryption failed and returned the original encrypted value,
         // use the original field value instead
         if (decryptedValue === data[encryptedField]) {
-          console.warn(
-            `Decryption failed for field ${field}, using original value`
-          );
           decryptedData[field] = data[field];
         } else {
           decryptedData[field] = decryptedValue;
