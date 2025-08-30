@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AppState, AppStateStatus } from "react-native";
+import { AppState, AppStateStatus, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -628,46 +628,55 @@ const MainTabNavigator = () => {
   };
 
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarShowLabel: true,
-        tabBarActiveTintColor: colors.tabBarActive,
-        tabBarInactiveTintColor: colors.tabBarInactive,
-        tabBarStyle: {
-          backgroundColor: colors.tabBar,
-          borderTopColor: colors.border,
-        },
-        tabBarIcon: ({ color, size }) => {
-          const map: Record<
-            keyof BottomTabParamList,
-            keyof typeof Ionicons.glyphMap
-          > = {
-            Dashboard: "trending-up",
-            Budget: "wallet",
-            Goals: "flag",
-            "Assets/Debts": "pie-chart",
-            Settings: "settings",
-          };
-          return (
-            <Ionicons
-              name={map[route.name as keyof BottomTabParamList]}
-              color={color}
-              size={size}
-            />
-          );
-        },
-      })}
-    >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Budget" component={BudgetScreen} />
-      <Tab.Screen name="Goals" component={GoalTrackingScreen} />
-      <Tab.Screen name="Assets/Debts" component={AssetsDebtsScreen} />
-      <Tab.Screen name="Settings">
-        {({ navigation }) => (
-          <SettingsScreen onLogout={handleLogout} navigation={navigation} />
-        )}
-      </Tab.Screen>
-    </Tab.Navigator>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          lazy: false, // Pre-mount all tabs to prevent jumpy behavior
+          animation: "fade",
+          tabBarShowLabel: true,
+          tabBarActiveTintColor: colors.tabBarActive,
+          tabBarInactiveTintColor: colors.tabBarInactive,
+          tabBarStyle: {
+            backgroundColor: colors.tabBar,
+            borderTopColor: colors.border,
+          },
+          // Add theme-aware background to prevent white flash
+          cardStyle: {
+            backgroundColor: colors.background,
+          },
+          tabBarIcon: ({ color, size }) => {
+            const map: Record<
+              keyof BottomTabParamList,
+              keyof typeof Ionicons.glyphMap
+            > = {
+              Dashboard: "trending-up",
+              Budget: "wallet",
+              Goals: "flag",
+              "Assets/Debts": "pie-chart",
+              Settings: "settings",
+            };
+            return (
+              <Ionicons
+                name={map[route.name as keyof BottomTabParamList]}
+                color={color}
+                size={size}
+              />
+            );
+          },
+        })}
+        detachInactiveScreens={false} // Keep screens attached to prevent layout shifts
+      >
+        <Tab.Screen name="Dashboard" component={DashboardScreen} />
+        <Tab.Screen name="Budget" component={BudgetScreen} />
+        <Tab.Screen name="Goals" component={GoalTrackingScreen} />
+        <Tab.Screen name="Assets/Debts" component={AssetsDebtsScreen} />
+        <Tab.Screen name="Settings">
+          {({ navigation }) => (
+            <SettingsScreen onLogout={handleLogout} navigation={navigation} />
+          )}
+        </Tab.Screen>
+      </Tab.Navigator>
+    </View>
   );
 };
