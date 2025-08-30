@@ -22,6 +22,7 @@ import {
   FinancialGoal,
 } from "../services/userData";
 import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
+import { formatDateToLocalString } from "../utils/dateUtils";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
 import { StandardHeader } from "../components/StandardHeader";
@@ -91,12 +92,12 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
       : "",
     targetDate: editMode
       ? goal?.targetDate ||
-        new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0]
-      : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0],
+        formatDateToLocalString(
+          new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        )
+      : formatDateToLocalString(
+          new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        ),
     category: editMode ? goal?.category || "savings" : "savings",
     priority: editMode
       ? goal?.priority || "medium"

@@ -19,6 +19,7 @@ import {
 import { plaidService } from "../services/plaid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import revenueCatService from "../services/revenueCat";
+import { formatDateToLocalString } from "../utils/dateUtils";
 
 interface DataContextType {
   // Data
@@ -342,11 +343,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         // Store the latest transaction date for incremental updates
         if (transactions.length > 0) {
-          const latestDate = transactions
-            .map((t) => new Date(t.date))
-            .sort((a, b) => b.getTime() - a.getTime())[0]
-            .toISOString()
-            .split("T")[0];
+          const latestDate = formatDateToLocalString(
+            transactions
+              .map((t) => new Date(t.date))
+              .sort((a, b) => b.getTime() - a.getTime())[0]
+          );
           await AsyncStorage.setItem(LAST_TRANSACTION_DATE_KEY, latestDate);
         }
       } catch (error) {
@@ -425,14 +426,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const timeSinceLastFetch = now - lastFetch;
 
         let startDate: string;
-        let endDate = new Date().toISOString().split("T")[0];
+        let endDate = formatDateToLocalString(new Date());
         let fetchStrategy: "full" | "incremental" | "recurring-only";
 
         if (forceRefresh || lastFetch === 0) {
           // First time or force refresh: get 3 months of data for recurring analysis
-          startDate = new Date(Date.now() - 3 * 30 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0];
+          startDate = formatDateToLocalString(
+            new Date(Date.now() - 3 * 30 * 24 * 60 * 60 * 1000)
+          );
           fetchStrategy = "full";
         } else if (timeSinceLastFetch > TRANSACTION_UPDATE_INTERVAL) {
           // Check for new transactions (incremental update)
@@ -441,9 +442,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           );
           startDate =
             lastTransactionDate ||
-            new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-              .toISOString()
-              .split("T")[0]; // Fallback to 7 days
+            formatDateToLocalString(
+              new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+            ); // Fallback to 7 days
           fetchStrategy = "incremental";
         } else {
           // Cache is fresh, no need to fetch

@@ -23,6 +23,7 @@ import {
   createRecurringTransaction,
   updateRecurringTransaction,
 } from "../services/transactionService";
+import { formatDateToLocalString } from "../utils/dateUtils";
 
 interface RecurringTransactionsScreenProps {
   navigation: any;
@@ -39,9 +40,9 @@ export const RecurringTransactionsScreen: React.FC<
   const getInitialDate = () => {
     if (selectedMonth) {
       const date = new Date(selectedMonth);
-      return date.toISOString().split("T")[0];
+      return formatDateToLocalString(date);
     }
-    return new Date().toISOString().split("T")[0];
+    return formatDateToLocalString(new Date());
   };
 
   const [recurringTransactions, setRecurringTransactions] = useState<

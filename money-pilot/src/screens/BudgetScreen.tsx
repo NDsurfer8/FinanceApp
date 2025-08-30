@@ -25,6 +25,7 @@ import { AutoBudgetImporter } from "../components/AutoBudgetImporter";
 import { saveBudgetSettings, updateBudgetSettings } from "../services/userData";
 import { getProjectedTransactionsForMonth } from "../services/transactionService";
 import { billReminderService } from "../services/billReminders";
+import { createLocalDate, timestampToDateString } from "../utils/dateUtils";
 
 interface BudgetScreenProps {
   navigation: any;
@@ -97,7 +98,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
     const currentMonthTransactions = bankTransactions.filter(
       (transaction: any) => {
-        const transactionDate = new Date(transaction.date);
+        if (!transaction.date) return false; // Skip transactions without dates
+        const transactionDate = new Date(transaction.date); // timestamp to Date
         const currentMonth = selectedMonth.getMonth();
         const currentYear = selectedMonth.getFullYear();
         return (
@@ -110,12 +112,14 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     // Filter out transactions that are already in budget
     const availableTransactions = currentMonthTransactions.filter(
       (bankTransaction: any) => {
-        const bankDate = new Date(bankTransaction.date);
+        if (!bankTransaction.date) return false; // Skip transactions without dates
+        const bankDate = new Date(bankTransaction.date); // timestamp to Date
         const bankAmount = Math.abs(bankTransaction.amount);
         const bankName = bankTransaction.name?.toLowerCase() || "";
 
         return !transactions.some((budgetTransaction: any) => {
-          const budgetDate = new Date(budgetTransaction.date);
+          if (!budgetTransaction.date) return false; // Skip transactions without dates
+          const budgetDate = new Date(budgetTransaction.date); // timestamp to Date
           const budgetAmount = Math.abs(budgetTransaction.amount);
           const budgetName = budgetTransaction.description?.toLowerCase() || "";
 
@@ -320,7 +324,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     const year = date.getFullYear();
 
     return transactions.filter((transaction) => {
-      const transactionDate = new Date(transaction.date);
+      if (!transaction.date) return false; // Skip transactions without dates
+      const transactionDate = new Date(transaction.date); // timestamp to Date
       return (
         transactionDate.getMonth() === month &&
         transactionDate.getFullYear() === year
@@ -495,8 +500,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   };
 
   const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString();
+    return timestampToDateString(timestamp);
   };
 
   const calculatePaymentsRemaining = (goal: any) => {

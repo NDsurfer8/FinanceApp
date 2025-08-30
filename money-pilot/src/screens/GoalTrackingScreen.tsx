@@ -28,6 +28,7 @@ import {
   FinancialGoal,
 } from "../services/userData";
 import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
+import { formatDateToLocalString, createLocalDate } from "../utils/dateUtils";
 
 interface GoalTrackingScreenProps {
   navigation: any;
@@ -60,9 +61,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     targetAmount: "",
     currentAmount: "",
     monthlyContribution: "",
-    targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split("T")[0],
+    targetDate: formatDateToLocalString(
+      new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+    ),
     category: "savings",
     priority: "medium" as "medium" | "high" | "low",
   });
@@ -104,10 +105,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   // Date picker handlers
   const handleDateChange = (event: any, selectedDate?: Date) => {
     if (selectedDate) {
-      const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
-      const day = String(selectedDate.getDate()).padStart(2, "0");
-      const formattedDate = `${year}-${month}-${day}`;
+      const formattedDate = formatDateToLocalString(selectedDate);
       setNewGoal({ ...newGoal, targetDate: formattedDate });
     }
   };
@@ -141,7 +139,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = createLocalDate(dateString);
     return date.toLocaleDateString();
   };
 
@@ -161,7 +159,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     if (!goal.targetDate) return "No Date";
 
     const now = new Date();
-    const targetDate = new Date(goal.targetDate);
+    const targetDate = createLocalDate(goal.targetDate);
     const timeDiff = targetDate.getTime() - now.getTime();
 
     if (timeDiff <= 0) return "Overdue";
@@ -282,9 +280,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           targetAmount: "",
           currentAmount: "",
           monthlyContribution: "",
-          targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0],
+          targetDate: formatDateToLocalString(
+            new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+          ),
           category: "savings",
           priority: "medium",
         });
@@ -326,9 +324,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           targetAmount: "",
           currentAmount: "",
           monthlyContribution: "",
-          targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0],
+          targetDate: formatDateToLocalString(
+            new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+          ),
           category: "savings",
           priority: "medium",
         });
@@ -416,9 +414,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   targetAmount: "",
                   currentAmount: "",
                   monthlyContribution: "",
-                  targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-                    .toISOString()
-                    .split("T")[0],
+                  targetDate: formatDateToLocalString(
+                    new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                  ),
                   category: "savings",
                   priority: "medium",
                 });
@@ -1077,7 +1075,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     }}
                   >
                     {goal.targetDate
-                      ? new Date(goal.targetDate).toLocaleDateString()
+                      ? formatDate(goal.targetDate)
                       : "No date set"}
                   </Text>
                 </View>
@@ -1428,11 +1426,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         targetAmount: "",
                         currentAmount: "",
                         monthlyContribution: "",
-                        targetDate: new Date(
-                          Date.now() + 365 * 24 * 60 * 60 * 1000
-                        )
-                          .toISOString()
-                          .split("T")[0],
+                        targetDate: formatDateToLocalString(
+                          new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                        ),
                         category: "savings",
                         priority: "medium",
                       });
@@ -1592,7 +1588,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       }}
                     >
                       <DateTimePicker
-                        value={new Date(newGoal.targetDate)}
+                        value={createLocalDate(newGoal.targetDate)}
                         mode="date"
                         display="spinner"
                         onChange={handleDateChange}

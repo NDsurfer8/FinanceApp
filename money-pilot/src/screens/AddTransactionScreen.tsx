@@ -30,6 +30,14 @@ import { billReminderService } from "../services/billReminders";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
 import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
+import {
+  formatDateToLocalString,
+  getTodayString,
+  getTomorrowString,
+  formatTransactionDate,
+  createLocalDate,
+  timestampToDateString,
+} from "../utils/dateUtils";
 
 interface AddTransactionScreenProps {
   navigation: any;
@@ -80,40 +88,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const getInitialDate = () => {
     if (selectedMonth) {
       const date = new Date(selectedMonth);
-      return date.toISOString().split("T")[0];
+      return formatDateToLocalString(date);
     }
-    return new Date().toISOString().split("T")[0];
-  };
-
-  // Helper function to get tomorrow's date
-  const getTomorrowDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split("T")[0];
-  };
-
-  // Helper function to format transaction date for the date input
-  const formatTransactionDate = (dateValue: any) => {
-    if (!dateValue) return getInitialDate();
-
-    // If it's already a string in YYYY-MM-DD format, return it
-    if (typeof dateValue === "string" && dateValue.includes("-")) {
-      return dateValue;
-    }
-
-    // If it's a timestamp (number), convert to date string
-    if (typeof dateValue === "number") {
-      const date = new Date(dateValue);
-      return date.toISOString().split("T")[0];
-    }
-
-    // If it's a Date object, convert to string
-    if (dateValue instanceof Date) {
-      return dateValue.toISOString().split("T")[0];
-    }
-
-    // Fallback to today's date
-    return getInitialDate();
+    return getTodayString();
   };
 
   const [formData, setFormData] = useState({
@@ -124,15 +101,21 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       ? transaction?.type || initialType || "expense"
       : initialType || "expense",
     date: editMode
-      ? formatTransactionDate(transaction?.date)
-      : getInitialDate(),
+      ? typeof transaction?.date === "number"
+        ? transaction.date
+        : new Date(transaction?.date || Date.now()).getTime()
+      : new Date(getInitialDate()).getTime(),
     isRecurring: editMode
       ? transaction?.isRecurring || transaction?.recurringTransactionId || false
       : false,
     frequency: editMode
       ? transaction?.frequency || "monthly"
       : ("monthly" as "weekly" | "biweekly" | "monthly"),
-    endDate: editMode ? transaction?.endDate || "" : "",
+    endDate: editMode
+      ? typeof transaction?.endDate === "number"
+        ? transaction.endDate
+        : new Date(transaction?.endDate || Date.now()).getTime()
+      : 0,
   });
 
   // Handle route params for bank suggestions
@@ -170,15 +153,15 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   // Date picker handlers
   const handleDateChange = (event: any, selectedDate?: Date) => {
     if (selectedDate) {
-      const formattedDate = selectedDate.toISOString().split("T")[0];
-      setFormData({ ...formData, date: formattedDate });
+      const timestamp = selectedDate.getTime(); // Save as timestamp
+      setFormData({ ...formData, date: timestamp });
     }
   };
 
   const handleEndDateChange = (event: any, selectedDate?: Date) => {
     if (selectedDate) {
-      const formattedDate = selectedDate.toISOString().split("T")[0];
-      setFormData({ ...formData, endDate: formattedDate });
+      const timestamp = selectedDate.getTime(); // Save as timestamp
+      setFormData({ ...formData, endDate: timestamp });
     }
   };
 
@@ -1183,7 +1166,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   color: formData.date ? colors.text : colors.textSecondary,
                 }}
               >
-                {formData.date || "Select Date"}
+                {formData.date
+                  ? timestampToDateString(formData.date)
+                  : "Select Date"}
               </Text>
               <Ionicons
                 name="calendar-outline"
