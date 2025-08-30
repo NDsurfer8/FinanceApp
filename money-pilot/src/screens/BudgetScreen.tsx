@@ -25,7 +25,7 @@ import { AutoBudgetImporter } from "../components/AutoBudgetImporter";
 import { saveBudgetSettings, updateBudgetSettings } from "../services/userData";
 import { getProjectedTransactionsForMonth } from "../services/transactionService";
 import { billReminderService } from "../services/billReminders";
-import { createLocalDate, timestampToDateString } from "../utils/dateUtils";
+import { timestampToDateString } from "../utils/dateUtils";
 
 interface BudgetScreenProps {
   navigation: any;

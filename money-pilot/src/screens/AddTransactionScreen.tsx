@@ -30,14 +30,7 @@ import { billReminderService } from "../services/billReminders";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
 import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
-import {
-  formatDateToLocalString,
-  getTodayString,
-  getTomorrowString,
-  formatTransactionDate,
-  createLocalDate,
-  timestampToDateString,
-} from "../utils/dateUtils";
+import { timestampToDateString } from "../utils/dateUtils";
 
 interface AddTransactionScreenProps {
   navigation: any;
@@ -87,10 +80,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   // Use selectedMonth if provided, otherwise use today's date
   const getInitialDate = () => {
     if (selectedMonth) {
-      const date = new Date(selectedMonth);
-      return formatDateToLocalString(date);
+      return new Date(selectedMonth).getTime();
     }
-    return getTodayString();
+    return Date.now();
   };
 
   const [formData, setFormData] = useState({
@@ -131,7 +123,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         isRecurring: route.params.isRecurring || prev.isRecurring,
         frequency: route.params.frequency || prev.frequency,
         date: route.params.date
-          ? formatTransactionDate(route.params.date)
+          ? typeof route.params.date === "number"
+            ? route.params.date
+            : new Date(route.params.date).getTime()
           : prev.date, // Use the date from bank transaction
       }));
 

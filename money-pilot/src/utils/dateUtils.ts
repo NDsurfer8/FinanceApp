@@ -1,33 +1,7 @@
 /**
  * Utility functions for consistent date handling across the app
- * Fixes timezone offset issues by using local date formatting instead of toISOString()
+ * Professional finance app approach: Store timestamps, display in local timezone
  */
-
-/**
- * Creates a Date object from a timestamp or date string in local timezone
- * This prevents the timezone offset issue when parsing dates
- */
-export const createLocalDate = (
-  dateValue: string | number | undefined | null
-): Date => {
-  if (!dateValue) {
-    return new Date(); // Return current date as fallback
-  }
-
-  // If it's a number (timestamp), create Date directly
-  if (typeof dateValue === "number") {
-    return new Date(dateValue);
-  }
-
-  // If it's a string in YYYY-MM-DD format, parse it as local date
-  if (typeof dateValue === "string" && dateValue.includes("-")) {
-    const [year, month, day] = dateValue.split("-").map(Number);
-    return new Date(year, month - 1, day); // month is 0-indexed
-  }
-
-  // For other string formats, use default Date constructor
-  return new Date(dateValue);
-};
 
 /**
  * Converts a timestamp to YYYY-MM-DD format using local timezone
@@ -37,7 +11,7 @@ export const timestampToDateString = (
   timestamp: number | undefined | null
 ): string => {
   if (!timestamp) {
-    return getTodayString();
+    return new Date().toLocaleDateString("en-CA");
   }
 
   const date = new Date(timestamp);
@@ -50,65 +24,46 @@ export const timestampToDateString = (
 
 /**
  * Converts a Date object to YYYY-MM-DD format using local timezone
- * This prevents the one-day offset issue that occurs with toISOString()
+ * Used for date picker inputs and form handling
  */
 export const formatDateToLocalString = (
   date: Date | string | number | undefined | null
 ): string => {
   if (!date) {
-    return getTodayString(); // Return today's date as fallback
+    return new Date().toLocaleDateString("en-CA");
   }
-
-  let dateObj: Date;
 
   if (typeof date === "string") {
     // If it's already in YYYY-MM-DD format, return it
     if (date.includes("-") && date.split("-").length === 3) {
       return date;
     }
-    dateObj = new Date(date);
+    return new Date(date).toLocaleDateString("en-CA"); // YYYY-MM-DD format
   } else if (typeof date === "number") {
     // If it's a timestamp, use our timestamp converter
     return timestampToDateString(date);
   } else {
-    dateObj = date;
+    // Date object
+    return date.toLocaleDateString("en-CA"); // YYYY-MM-DD format
+  }
+};
+
+/**
+ * Creates a Date object from a YYYY-MM-DD string in local timezone
+ * Used for date picker inputs
+ */
+export const createLocalDate = (
+  dateString: string | undefined | null
+): Date => {
+  if (!dateString) {
+    return new Date();
   }
 
-  const year = dateObj.getFullYear();
-  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-  const day = String(dateObj.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-};
-
-/**
- * Gets today's date in YYYY-MM-DD format using local timezone
- */
-export const getTodayString = (): string => {
-  return formatDateToLocalString(new Date());
-};
-
-/**
- * Gets tomorrow's date in YYYY-MM-DD format using local timezone
- */
-export const getTomorrowString = (): string => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return formatDateToLocalString(tomorrow);
-};
-
-/**
- * Formats a date value (Date, string, or number) to YYYY-MM-DD format
- * Handles various input types and returns a consistent format
- */
-export const formatTransactionDate = (dateValue: any): string => {
-  if (!dateValue) return getTodayString();
-
-  // If it's already a string in YYYY-MM-DD format, return it
-  if (typeof dateValue === "string" && dateValue.includes("-")) {
-    return dateValue;
+  // If it's a string in YYYY-MM-DD format, parse it as local date
+  if (typeof dateString === "string" && dateString.includes("-")) {
+    const [year, month, day] = dateString.split("-").map(Number);
+    return new Date(year, month - 1, day); // month is 0-indexed
   }
 
-  // Convert to Date object and format
-  return formatDateToLocalString(dateValue);
+  return new Date(dateString);
 };
