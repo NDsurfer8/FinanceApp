@@ -81,6 +81,7 @@ export const MainApp: React.FC = () => {
   const [wasPreviouslyAuthenticated, setWasPreviouslyAuthenticated] =
     useState(false);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Plaid Update Mode state
   const [showPlaidUpdateMode, setShowPlaidUpdateMode] = useState(false);
@@ -100,12 +101,29 @@ export const MainApp: React.FC = () => {
   useEffect(() => {
     const fallbackTimeout = setTimeout(() => {
       if (isLoading) {
+        console.log("App initialization timeout, proceeding anyway");
         setIsLoading(false);
       }
     }, 10000); // 10 seconds max
 
     return () => clearTimeout(fallbackTimeout);
   }, [isLoading]);
+
+  // Additional timeout to prevent staying on splash screen indefinitely
+  useEffect(() => {
+    const splashTimeout = setTimeout(() => {
+      if (appState === "splash" && !isLoading && !authLoading) {
+        console.log("Splash screen timeout, checking auth state");
+        if (isAuthenticated) {
+          setAppState("main");
+        } else {
+          setAppState("login");
+        }
+      }
+    }, 15000); // 15 seconds max on splash screen
+
+    return () => clearTimeout(splashTimeout);
+  }, [appState, isLoading, authLoading, isAuthenticated]);
 
   const checkPlaidUpdateMode = async () => {
     try {
@@ -151,7 +169,7 @@ export const MainApp: React.FC = () => {
       }
 
       if (authWaitTime >= maxWaitTime) {
-        // Auth loading timeout, proceeding anyway
+        console.log("Auth loading timeout, proceeding anyway");
       }
 
       setLoadingMessage("Loading app settings...");
@@ -183,6 +201,9 @@ export const MainApp: React.FC = () => {
       }
 
       setIsLoading(false);
+      console.log(
+        "App initialization complete, auth state will determine next screen"
+      );
     } catch (error) {
       console.error("Error initializing app:", error);
       setIsLoading(false);
@@ -261,18 +282,19 @@ export const MainApp: React.FC = () => {
         }
       } else if (nextAppState === "active") {
         // When app becomes active, check if biometric auth is required
-        // Add a small delay to prevent immediate trigger after fresh login
+        // Add a longer delay to prevent immediate trigger after fresh login
         setTimeout(() => {
           if (
             isBiometricEnabled &&
             isAutoLockEnabled &&
             wasPreviouslyAuthenticated &&
             !isBiometricAuthenticated &&
-            !justLoggedIn // Don't show biometric overlay if user just logged in
+            !justLoggedIn && // Don't show biometric overlay if user just logged in
+            !showBiometricOverlay // Prevent multiple overlays
           ) {
             setShowBiometricOverlay(true);
           }
-        }, 1000); // 1 second delay to prevent double verification
+        }, 2000); // 2 second delay to prevent double verification
       }
     };
 
@@ -288,6 +310,7 @@ export const MainApp: React.FC = () => {
     isBiometricAuthenticated,
     justLoggedIn,
     setBiometricAuthenticated,
+    showBiometricOverlay,
   ]);
 
   // Handle app state changes based on authentication
@@ -303,36 +326,52 @@ export const MainApp: React.FC = () => {
       isBiometricAuthenticated,
     });
 
-    if (!isLoading && !authLoading) {
-      if (isAuthenticated && appState !== "main") {
-        console.log("User is authenticated, checking biometric auth");
+    if (!isLoading && !authLoading && !isTransitioning) {
+      // Add a small delay to prevent rapid state changes that might cause network errors
+      const timeoutId = setTimeout(() => {
+        if (isAuthenticated && appState !== "main") {
+          console.log("User is authenticated, going to main app");
 
-        // User is authenticated, go to main app
-        console.log("User is authenticated, going to main app");
-        setWasPreviouslyAuthenticated(true);
-        setJustLoggedIn(true);
-        setAppState("main");
-
-        // Clear the justLoggedIn flag after a delay
-        setTimeout(() => {
-          setJustLoggedIn(false);
-        }, 2000); // 2 seconds to prevent immediate biometric prompt
-      } else if (isAuthenticated && appState === "main") {
-        // Ensure wasPreviouslyAuthenticated is true when user is in main app
-        if (!wasPreviouslyAuthenticated) {
-          console.log(
-            "User is in main app, setting wasPreviouslyAuthenticated to true"
-          );
+          // Prevent rapid state changes by using transition protection
+          setIsTransitioning(true);
           setWasPreviouslyAuthenticated(true);
+          setJustLoggedIn(true);
+          setAppState("main");
+
+          // Clear the justLoggedIn flag after a longer delay
+          setTimeout(() => {
+            setJustLoggedIn(false);
+            setIsTransitioning(false);
+          }, 3000); // 3 seconds to prevent immediate biometric prompt
+        } else if (isAuthenticated && appState === "main") {
+          // Ensure wasPreviouslyAuthenticated is true when user is in main app
+          if (!wasPreviouslyAuthenticated) {
+            console.log(
+              "User is in main app, setting wasPreviouslyAuthenticated to true"
+            );
+            setWasPreviouslyAuthenticated(true);
+          }
+        } else if (!isAuthenticated && appState === "main") {
+          console.log("User is not authenticated, going to login");
+          setIsTransitioning(true);
+          setWasPreviouslyAuthenticated(false);
+          setAppState("login");
+          setTimeout(() => setIsTransitioning(false), 1000);
+        } else if (!isAuthenticated && appState === "splash") {
+          console.log("User is not authenticated, going to login from splash");
+          setIsTransitioning(true);
+          setAppState("login");
+          setTimeout(() => setIsTransitioning(false), 1000);
+        } else if (isAuthenticated && appState === "splash") {
+          console.log("User is authenticated, going to main app from splash");
+          setIsTransitioning(true);
+          setWasPreviouslyAuthenticated(true);
+          setAppState("main");
+          setTimeout(() => setIsTransitioning(false), 1000);
         }
-      } else if (!isAuthenticated && appState === "main") {
-        console.log("User is not authenticated, going to login");
-        setWasPreviouslyAuthenticated(false);
-        setAppState("login");
-      } else if (!isAuthenticated && appState === "splash") {
-        console.log("User is not authenticated, going to login from splash");
-        setAppState("login");
-      }
+      }, 500); // 500ms delay to prevent rapid state changes
+
+      return () => clearTimeout(timeoutId);
     }
   }, [
     isLoading,
@@ -344,6 +383,7 @@ export const MainApp: React.FC = () => {
     isAutoLockEnabled,
     isBiometricAuthenticated,
     wasPreviouslyAuthenticated,
+    isTransitioning,
   ]);
 
   const checkFirstLaunch = async () => {
@@ -353,12 +393,10 @@ export const MainApp: React.FC = () => {
       if (!hasSeenIntro) {
         console.log("First launch detected, showing intro");
         setAppState("intro");
-      } else if (!isAuthenticated) {
-        console.log("User not authenticated, showing login");
-        setAppState("login");
       } else {
-        console.log("User authenticated, going to main app");
-        setAppState("main");
+        // Don't set app state here - let the auth state effect handle it
+        // This prevents jumping to login screen during refresh
+        console.log("App has been launched before, waiting for auth state");
       }
     } catch (error) {
       console.error("Error checking app state:", error);
@@ -530,10 +568,26 @@ export const MainApp: React.FC = () => {
                       setBiometricAuthenticated(true);
                       setAppState("main");
                     }}
-                    onCancel={() => {
-                      setShowBiometricOverlay(false);
-                      setBiometricAuthenticated(false);
-                      setAppState("login");
+                    onCancel={async () => {
+                      try {
+                        // Handle Plaid logout cleanup
+                        await plaidService.handleLogout();
+
+                        const { signOutUser } = await import(
+                          "../services/auth"
+                        );
+                        await signOutUser();
+
+                        setShowBiometricOverlay(false);
+                        setBiometricAuthenticated(false);
+                        setAppState("login");
+                      } catch (error) {
+                        console.error("Error signing out on cancel:", error);
+                        // Fallback to login screen even if signout fails
+                        setShowBiometricOverlay(false);
+                        setBiometricAuthenticated(false);
+                        setAppState("login");
+                      }
                     }}
                     onUsePasscode={() => {
                       // Allow access with device passcode fallback

@@ -15,6 +15,7 @@ import { auth } from "./firebase";
 import { saveUserProfile, UserProfile } from "./userData";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
+import { retryWithBackoff, checkNetworkConnectivity } from "./networkUtils";
 
 export interface AuthErrorType {
   code: string;
@@ -282,40 +283,63 @@ export const signIn = async (
   password: string
 ): Promise<UserData> => {
   try {
-    // First, try to refresh any existing session
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      try {
-        await currentUser.reload();
-        // If reload succeeds, user might already be signed in
-        if (currentUser.email === email) {
-          return {
-            uid: currentUser.uid,
-            email: currentUser.email,
-            displayName: currentUser.displayName || undefined,
-          };
-        }
-      } catch (reloadError) {
-        console.log("Session reload failed, proceeding with new sign in");
-      }
+    // Check network connectivity first
+    const isConnected = await checkNetworkConnectivity();
+    if (!isConnected) {
+      throw {
+        code: "auth/network-request-failed",
+        message:
+          "No internet connection. Please check your network and try again.",
+      } as AuthErrorType;
     }
 
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    // Use retry mechanism for sign in
+    return await retryWithBackoff(async () => {
+      // First, try to refresh any existing session
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        try {
+          await currentUser.reload();
+          // If reload succeeds, user might already be signed in
+          if (currentUser.email === email) {
+            return {
+              uid: currentUser.uid,
+              email: currentUser.email,
+              displayName: currentUser.displayName || undefined,
+            };
+          }
+        } catch (reloadError) {
+          console.log("Session reload failed, proceeding with new sign in");
+        }
+      }
 
-    const user = userCredential.user;
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-    return {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName || undefined,
-    };
+      const user = userCredential.user;
+
+      return {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || undefined,
+      };
+    });
   } catch (error) {
     console.error("Firebase auth error:", error);
     const authError = error as AuthError;
+
+    // Handle network errors specifically
+    if (authError.code === "auth/network-request-failed") {
+      console.warn("Network error during sign in, this might be temporary");
+      throw {
+        code: "auth/network-request-failed",
+        message:
+          "Network error. Please check your internet connection and try again.",
+      } as AuthErrorType;
+    }
 
     // Handle specific invalid credential errors
     if (
