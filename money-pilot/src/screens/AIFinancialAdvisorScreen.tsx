@@ -1008,11 +1008,9 @@ Requirements:
 
     // First, try to extract any percentage mentioned in the context of savings/financial advice
     const allPercentages = text.match(/(\d+)%/g);
-    console.log("All percentages found in text:", allPercentages);
 
     if (allPercentages) {
       const percentages = allPercentages.map((p) => parseInt(p));
-      console.log("Parsed percentages:", percentages);
 
       // If there's only one percentage and it's in a financial context, determine if it's savings or debt
       if (
@@ -1047,16 +1045,8 @@ Requirements:
               !context.includes("interest") &&
               !context.includes("rate"))
           ) {
-            console.log(
-              "Single percentage in debt payoff context detected:",
-              percentages[0]
-            );
             return { debtPayoffPercentage: percentages[0] };
           } else {
-            console.log(
-              "Single percentage in financial context detected as savings:",
-              percentages[0]
-            );
             return { savingsPercentage: percentages[0] };
           }
         }
@@ -1090,16 +1080,11 @@ Requirements:
         if (isSavingsRecommendation && isDebtPayoffRecommendation) {
           // Sort percentages: higher one is likely savings, lower one is debt
           const sorted = [...percentages].sort((a, b) => b - a);
-          console.log(
-            "Two percentages detected - assigning higher to savings, lower to debt:",
-            sorted
-          );
           return {
             savingsPercentage: sorted[0],
             debtPayoffPercentage: sorted[1],
           };
         }
-
         // If only debt payoff is mentioned, don't assign the higher percentage to savings
         if (isDebtPayoffRecommendation && !isSavingsRecommendation) {
           console.log(

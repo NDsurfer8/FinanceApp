@@ -8,10 +8,7 @@ export const usePaywall = () => {
 
   const presentPaywall = useCallback(async () => {
     try {
-      console.log("=== PAYWALL PRESENTATION START ===");
-
       // Prepare paywall with preloaded data for better performance
-      console.log("Preparing paywall with optimized loading...");
       const paywallPrep = await revenueCatService.preparePaywall();
 
       if (!paywallPrep.isReady) {
@@ -19,15 +16,7 @@ export const usePaywall = () => {
         return false;
       }
 
-      console.log(`Paywall prepared in ${paywallPrep.loadTime}ms`);
-      console.log("Presenting RevenueCat paywall...");
-
-      const paywallStartTime = Date.now();
       await PurchasesUI.presentPaywall();
-      const paywallTime = Date.now() - paywallStartTime;
-
-      console.log(`Paywall presented and dismissed in ${paywallTime}ms`);
-      console.log("Handling purchase completion...");
 
       // Handle purchase completion with multiple attempts
       let attempts = 0;

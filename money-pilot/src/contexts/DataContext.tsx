@@ -434,7 +434,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             .toISOString()
             .split("T")[0];
           fetchStrategy = "full";
-          console.log("DataContext: Full refresh - fetching 3 months of data");
         } else if (timeSinceLastFetch > TRANSACTION_UPDATE_INTERVAL) {
           // Check for new transactions (incremental update)
           const lastTransactionDate = await AsyncStorage.getItem(
@@ -446,12 +445,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               .toISOString()
               .split("T")[0]; // Fallback to 7 days
           fetchStrategy = "incremental";
-          console.log(
-            "DataContext: Incremental update - fetching recent transactions"
-          );
         } else {
           // Cache is fresh, no need to fetch
-          console.log("DataContext: Cache is fresh, skipping API call");
           setIsBankDataLoading(false);
           return;
         }
@@ -702,12 +697,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           const SIX_HOURS = 6 * 60 * 60 * 1000;
 
           if (timeSinceLastFetch < SIX_HOURS) {
-            console.log("DataContext: Bank data is fresh, skipping API call");
             return;
           }
-
           // 3. Only fetch if data is stale or no cache exists
-          console.log("DataContext: Bank data is stale, fetching fresh data");
           await refreshBankData(false); // Don't force refresh, use smart strategy
         } catch (error) {
           console.error("DataContext: Failed to load bank data:", error);
@@ -754,7 +746,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         subscriptionStatus !== undefined &&
         !subscriptionStatus.isPremium
       ) {
-        console.log("DataContext: Subscription expired, clearing bank data");
         await disconnectBankAndClearData();
       }
     };
