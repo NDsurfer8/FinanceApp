@@ -1,17 +1,31 @@
 /**
  * Utility functions for consistent date handling across the app
- * Professional finance app approach: Store timestamps, display in local timezone
+ * Professional finance app approach: Store timestamps, display in user's locale
  */
 
 /**
- * Converts a timestamp to YYYY-MM-DD format using local timezone
+ * Gets the user's locale for date formatting
+ * Falls back to 'en-US' if locale is not available
+ */
+const getUserLocale = (): string => {
+  try {
+    // Try to get the device locale
+    const locale = Intl.DateTimeFormat().resolvedOptions().locale;
+    return locale || 'en-US';
+  } catch (error) {
+    return 'en-US'; // Fallback to US format
+  }
+};
+
+/**
+ * Converts a timestamp to YYYY-MM-DD format using user's locale
  * This ensures the displayed date matches the actual date without timezone shifts
  */
 export const timestampToDateString = (
   timestamp: number | undefined | null
 ): string => {
   if (!timestamp) {
-    return new Date().toLocaleDateString("en-CA");
+    return new Date().toLocaleDateString(getUserLocale());
   }
 
   const date = new Date(timestamp);
@@ -23,14 +37,14 @@ export const timestampToDateString = (
 };
 
 /**
- * Converts a Date object to YYYY-MM-DD format using local timezone
+ * Converts a Date object to YYYY-MM-DD format using user's locale
  * Used for date picker inputs and form handling
  */
 export const formatDateToLocalString = (
   date: Date | string | number | undefined | null
 ): string => {
   if (!date) {
-    return new Date().toLocaleDateString("en-CA");
+    return new Date().toLocaleDateString(getUserLocale());
   }
 
   if (typeof date === "string") {
@@ -38,13 +52,13 @@ export const formatDateToLocalString = (
     if (date.includes("-") && date.split("-").length === 3) {
       return date;
     }
-    return new Date(date).toLocaleDateString("en-CA"); // YYYY-MM-DD format
+    return new Date(date).toLocaleDateString(getUserLocale());
   } else if (typeof date === "number") {
     // If it's a timestamp, use our timestamp converter
     return timestampToDateString(date);
   } else {
     // Date object
-    return date.toLocaleDateString("en-CA"); // YYYY-MM-DD format
+    return date.toLocaleDateString(getUserLocale());
   }
 };
 
