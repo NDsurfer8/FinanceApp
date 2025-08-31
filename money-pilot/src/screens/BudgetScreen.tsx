@@ -164,7 +164,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   // Calculate budget allocations
   const savingsAmount = (netIncome * parseFloat(savingsPercentage)) / 100;
   const debtPayoffAmount = (netIncome * parseFloat(debtPayoffPercentage)) / 100;
-  const discretionaryIncome = netIncome - savingsAmount - debtPayoffAmount;
+  const goalsAmount = goals.reduce(
+    (sum, goal) => sum + goal.monthlyContribution,
+    0
+  );
+  const discretionaryIncome =
+    netIncome - savingsAmount - debtPayoffAmount - goalsAmount;
   const remainingBalance = discretionaryIncome;
 
   // Check if selected month is in the future
@@ -706,12 +711,48 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           debtPayoffPercentage={debtPayoffPercentage}
           onSavingsChange={setSavingsPercentage}
           onDebtChange={setDebtPayoffPercentage}
-          onSave={handleSaveBudgetSettings}
+          onSave={(localSavingsValue?: string, localDebtValue?: string) => {
+            // Create a custom save function that uses the passed local values
+            const saveWithLocalValues = async () => {
+              if (!user) return;
+
+              try {
+                const newSettings = {
+                  savingsPercentage: parseFloat(
+                    localSavingsValue || savingsPercentage
+                  ),
+                  debtPayoffPercentage: parseFloat(
+                    localDebtValue || debtPayoffPercentage
+                  ),
+                  userId: user.uid,
+                  updatedAt: Date.now(),
+                };
+
+                if (budgetSettings?.id) {
+                  await updateBudgetSettings({
+                    ...newSettings,
+                    id: budgetSettings.id,
+                  });
+                } else {
+                  await saveBudgetSettings(newSettings);
+                }
+
+                setHasUnsavedChanges(false);
+                Alert.alert("Success", "Budget settings saved successfully!");
+              } catch (error) {
+                console.error("Error saving budget settings:", error);
+                Alert.alert("Error", "Failed to save budget settings");
+              }
+            };
+
+            saveWithLocalValues();
+          }}
           hasUnsavedChanges={hasUnsavedChanges}
-          netIncome={netIncome}
+          netIncome={totalIncome}
+          totalExpenses={totalExpenses}
           formatCurrency={formatCurrency}
           goals={goals}
-          onGoalContributionChange={(goalId, contribution) => {
+          onGoalContributionChange={async (goalId, contribution) => {
             // Update the goal's monthly contribution
             const updatedGoals = goals.map((goal) =>
               goal.id === goalId
@@ -720,8 +761,28 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             );
             // Update the UI optimistically
             updateDataOptimistically({ goals: updatedGoals });
-            // Here you would typically save this to your database
-            console.log("Goal contribution updated:", goalId, contribution);
+
+            // Save to database
+            try {
+              const { updateGoal } = await import("../services/userData");
+              const goalToUpdate = goals.find((goal) => goal.id === goalId);
+              if (goalToUpdate) {
+                await updateGoal({
+                  ...goalToUpdate,
+                  monthlyContribution: contribution,
+                });
+                console.log(
+                  "Goal contribution saved to database:",
+                  goalId,
+                  contribution
+                );
+              }
+            } catch (error) {
+              console.error(
+                "Error saving goal contribution to database:",
+                error
+              );
+            }
           }}
         />
       </ScrollView>

@@ -8,6 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
@@ -29,9 +30,10 @@ interface BudgetSettingsModalProps {
   debtPayoffPercentage: string;
   onSavingsChange: (value: string) => void;
   onDebtChange: (value: string) => void;
-  onSave: () => void;
+  onSave: (localSavingsValue?: string, localDebtValue?: string) => void;
   hasUnsavedChanges: boolean;
   netIncome: number;
+  totalExpenses: number;
   formatCurrency: (amount: number) => string;
   goals?: Goal[];
   onGoalContributionChange?: (goalId: string, contribution: number) => void;
@@ -47,6 +49,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
   onSave,
   hasUnsavedChanges,
   netIncome,
+  totalExpenses,
   formatCurrency,
   goals = [],
   onGoalContributionChange,
@@ -56,6 +59,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
   const [localSavings, setLocalSavings] = useState(savingsPercentage);
   const [localDebt, setLocalDebt] = useState(debtPayoffPercentage);
   const [localGoals, setLocalGoals] = useState<Goal[]>(goals);
+  const [originalGoals, setOriginalGoals] = useState<Goal[]>(goals);
 
   useEffect(() => {
     setLocalSavings(savingsPercentage);
@@ -66,15 +70,25 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
     setLocalGoals(goals);
   }, [goals]);
 
-  const savingsAmount = (netIncome * parseFloat(localSavings || "0")) / 100;
-  const debtAmount = (netIncome * parseFloat(localDebt || "0")) / 100;
+  // Reset original goals when modal opens
+  useEffect(() => {
+    if (visible) {
+      setOriginalGoals(goals);
+    }
+  }, [visible]); // Remove goals dependency to prevent updates after modal opens
+
+  const netIncomeAmount = netIncome - totalExpenses;
+  const savingsAmount =
+    (netIncomeAmount * parseFloat(localSavings || "0")) / 100;
+  const debtAmount = (netIncomeAmount * parseFloat(localDebt || "0")) / 100;
 
   // Calculate goals allocation
   const goalsAmount = localGoals.reduce(
     (sum, goal) => sum + goal.monthlyContribution,
     0
   );
-  const goalsPercentage = netIncome > 0 ? (goalsAmount / netIncome) * 100 : 0;
+  const goalsPercentage =
+    netIncomeAmount > 0 ? (goalsAmount / netIncomeAmount) * 100 : 0;
 
   const totalAllocated =
     parseFloat(localSavings || "0") +
@@ -90,17 +104,27 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
       goal.id === goalId ? { ...goal, monthlyContribution: contribution } : goal
     );
     setLocalGoals(updatedGoals);
-    onGoalContributionChange?.(goalId, contribution);
+    // Don't save immediately - save when Done is pressed
   };
 
   const handleSavingsChange = (value: string) => {
     setLocalSavings(value);
-    onSavingsChange(value);
+    // Don't update parent immediately - only when Done is pressed
   };
 
   const handleDebtChange = (value: string) => {
     setLocalDebt(value);
-    onDebtChange(value);
+    // Don't update parent immediately - only when Done is pressed
+  };
+
+  // Check if there are any changes (savings, debt, or goals)
+  const hasChanges = () => {
+    const savingsChanged = localSavings !== savingsPercentage;
+    const debtChanged = localDebt !== debtPayoffPercentage;
+    const goalsChanged =
+      JSON.stringify(localGoals) !== JSON.stringify(originalGoals);
+
+    return savingsChanged || debtChanged || goalsChanged;
   };
 
   const handleClose = () => {
@@ -170,21 +194,74 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
             Budget Settings
           </Text>
           <TouchableOpacity
-            onPress={() => {
-              // All changes are already saved, just close the modal
+            onPress={async () => {
+              // Collect all changes that need to be saved
+              const changesToSave = {
+                savingsChanged: localSavings !== savingsPercentage,
+                debtChanged: localDebt !== debtPayoffPercentage,
+                goalChanges: [] as Array<{
+                  goalId: string;
+                  contribution: number;
+                }>,
+              };
+
+              // Collect goal changes
+              localGoals.forEach((goal) => {
+                const originalGoal = originalGoals.find(
+                  (og) => og.id === goal.id
+                );
+                if (
+                  originalGoal &&
+                  originalGoal.monthlyContribution !== goal.monthlyContribution
+                ) {
+                  changesToSave.goalChanges.push({
+                    goalId: goal.id,
+                    contribution: goal.monthlyContribution,
+                  });
+                }
+              });
+
+              // Save all changes together
+              if (
+                changesToSave.savingsChanged ||
+                changesToSave.debtChanged ||
+                changesToSave.goalChanges.length > 0
+              ) {
+                // Update local state first
+                if (changesToSave.savingsChanged) {
+                  onSavingsChange(localSavings);
+                }
+                if (changesToSave.debtChanged) {
+                  onDebtChange(localDebt);
+                }
+
+                // Save goal changes
+                changesToSave.goalChanges.forEach(
+                  ({ goalId, contribution }) => {
+                    onGoalContributionChange?.(goalId, contribution);
+                  }
+                );
+
+                // Save budget settings to database with local values
+                onSave(localSavings, localDebt);
+              }
+
               onClose();
             }}
             style={{
               padding: 8,
-              backgroundColor: colors.success,
+              backgroundColor: hasChanges()
+                ? colors.success
+                : colors.surfaceSecondary,
               borderRadius: 8,
+              opacity: hasChanges() ? 1 : 0.5,
             }}
           >
             <Text
               style={{
                 fontSize: 14,
                 fontWeight: "600",
-                color: "white",
+                color: hasChanges() ? "white" : colors.textSecondary,
               }}
             >
               Done
@@ -441,11 +518,12 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
               }}
             >
               <TouchableOpacity
-                onPress={() =>
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   handleSavingsChange(
                     Math.max(0, parseFloat(localSavings) - 5).toString()
-                  )
-                }
+                  );
+                }}
                 style={{
                   padding: 8,
                   backgroundColor: colors.surfaceSecondary,
@@ -455,11 +533,12 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                 <Text style={{ color: colors.textSecondary }}>-5%</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() =>
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   handleSavingsChange(
                     Math.min(100, parseFloat(localSavings) + 5).toString()
-                  )
-                }
+                  );
+                }}
                 style={{
                   padding: 8,
                   backgroundColor: colors.surfaceSecondary,
@@ -560,11 +639,12 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
               }}
             >
               <TouchableOpacity
-                onPress={() =>
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   handleDebtChange(
                     Math.max(0, parseFloat(localDebt) - 5).toString()
-                  )
-                }
+                  );
+                }}
                 style={{
                   padding: 8,
                   backgroundColor: colors.surfaceSecondary,
@@ -574,11 +654,12 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                 <Text style={{ color: colors.textSecondary }}>-5%</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() =>
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   handleDebtChange(
                     Math.min(100, parseFloat(localDebt) + 5).toString()
-                  )
-                }
+                  );
+                }}
                 style={{
                   padding: 8,
                   backgroundColor: colors.surfaceSecondary,
@@ -745,6 +826,9 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                       <View style={{ flexDirection: "row", gap: 8 }}>
                         <TouchableOpacity
                           onPress={() => {
+                            Haptics.impactAsync(
+                              Haptics.ImpactFeedbackStyle.Light
+                            );
                             const newContribution = Math.max(
                               0,
                               goal.monthlyContribution - 50
@@ -755,22 +839,32 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                             );
                           }}
                           style={{
-                            padding: 6,
-                            backgroundColor: colors.surfaceSecondary,
-                            borderRadius: 4,
+                            width: 32,
+                            height: 32,
+                            backgroundColor: colors.error + "20",
+                            borderRadius: 16,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            borderWidth: 1,
+                            borderColor: colors.error + "40",
                           }}
+                          activeOpacity={0.7}
                         >
                           <Text
                             style={{
-                              color: colors.textSecondary,
-                              fontSize: 12,
+                              color: colors.error,
+                              fontSize: 14,
+                              fontWeight: "600",
                             }}
                           >
-                            -50
+                            -
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           onPress={() => {
+                            Haptics.impactAsync(
+                              Haptics.ImpactFeedbackStyle.Light
+                            );
                             const newContribution =
                               goal.monthlyContribution + 50;
                             handleGoalContributionChange(
@@ -779,18 +873,25 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                             );
                           }}
                           style={{
-                            padding: 6,
-                            backgroundColor: colors.surfaceSecondary,
-                            borderRadius: 4,
+                            width: 32,
+                            height: 32,
+                            backgroundColor: colors.success + "20",
+                            borderRadius: 16,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            borderWidth: 1,
+                            borderColor: colors.success + "40",
                           }}
+                          activeOpacity={0.7}
                         >
                           <Text
                             style={{
-                              color: colors.textSecondary,
-                              fontSize: 12,
+                              color: colors.success,
+                              fontSize: 14,
+                              fontWeight: "600",
                             }}
                           >
-                            +50
+                            +
                           </Text>
                         </TouchableOpacity>
                       </View>
@@ -850,9 +951,47 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ color: colors.textSecondary }}>Net Income:</Text>
+                <Text style={{ color: colors.textSecondary }}>Income:</Text>
                 <Text style={{ color: colors.text, fontWeight: "600" }}>
                   {formatCurrency(netIncome)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ marginBottom: 8 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={{ color: colors.textSecondary }}>Expenses:</Text>
+                <Text style={{ color: colors.error, fontWeight: "600" }}>
+                  -{formatCurrency(totalExpenses)}
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={{
+                borderTopWidth: 1,
+                borderTopColor: colors.border,
+                paddingTop: 8,
+                marginTop: 8,
+                marginBottom: 16,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={{ color: colors.text, fontWeight: "600" }}>
+                  Net Income:
+                </Text>
+                <Text style={{ color: colors.text, fontWeight: "700" }}>
+                  {formatCurrency(netIncome - totalExpenses)}
                 </Text>
               </View>
             </View>
@@ -928,7 +1067,9 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                   Available for Spending:
                 </Text>
                 <Text style={{ color: colors.warning, fontWeight: "700" }}>
-                  {formatCurrency(netIncome - savingsAmount - debtAmount)}
+                  {formatCurrency(
+                    netIncomeAmount - savingsAmount - debtAmount - goalsAmount
+                  )}
                 </Text>
               </View>
             </View>
