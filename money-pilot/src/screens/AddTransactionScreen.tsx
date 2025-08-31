@@ -146,6 +146,44 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     }
   }, [editMode, transaction?.recurringTransactionId]);
 
+  // Fetch associated recurring transaction data when editing
+  React.useEffect(() => {
+    const fetchRecurringTransactionData = async () => {
+      if (editMode && transaction?.recurringTransactionId && user) {
+        try {
+          const { getUserRecurringTransactions } = await import(
+            "../services/userData"
+          );
+          const recurringTransactions = await getUserRecurringTransactions(
+            user.uid
+          );
+          const associatedRecurringTransaction = recurringTransactions.find(
+            (rt) => rt.id === transaction.recurringTransactionId
+          );
+
+          if (associatedRecurringTransaction) {
+            console.log(
+              "Found associated recurring transaction:",
+              associatedRecurringTransaction
+            );
+            setFormData((prev) => ({
+              ...prev,
+              frequency: associatedRecurringTransaction.frequency,
+              endDate: associatedRecurringTransaction.endDate || undefined,
+            }));
+          }
+        } catch (error) {
+          console.error(
+            "Error fetching associated recurring transaction:",
+            error
+          );
+        }
+      }
+    };
+
+    fetchRecurringTransactionData();
+  }, [editMode, transaction?.recurringTransactionId, user]);
+
   // Date picker handlers
   const handleDateChange = (event: any, selectedDate?: Date) => {
     if (selectedDate) {

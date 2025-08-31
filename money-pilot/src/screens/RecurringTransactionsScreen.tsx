@@ -157,16 +157,6 @@ export const RecurringTransactionsScreen: React.FC<
     }
 
     try {
-      console.log("Form data startDate:", formData.startDate);
-      console.log(
-        "Parsed startDate timestamp:",
-        new Date(formData.startDate).getTime()
-      );
-      console.log(
-        "Parsed startDate ISO:",
-        new Date(formData.startDate).toISOString()
-      );
-
       const recurringTransaction: RecurringTransaction = {
         name: formData.name.trim(),
         amount: amount,
@@ -174,10 +164,9 @@ export const RecurringTransactionsScreen: React.FC<
         category: formData.category.trim(),
         frequency: formData.frequency,
         startDate: new Date(formData.startDate).getTime(),
-        endDate:
-          formData.endDate && formData.endDate.trim() !== ""
-            ? new Date(formData.endDate).getTime()
-            : undefined,
+        endDate: formData.endDate
+          ? new Date(formData.endDate).getTime()
+          : undefined,
         isActive: formData.isActive,
         userId: user.uid,
         createdAt: editingTransaction?.createdAt || Date.now(),
