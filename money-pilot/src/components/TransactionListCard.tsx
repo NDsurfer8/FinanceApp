@@ -416,7 +416,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                 marginLeft: 8,
               }}
             >
-              Add {title}
+              {`Add ${title}`}
             </Text>
           </TouchableOpacity>
         </>
