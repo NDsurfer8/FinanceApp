@@ -1,0 +1,42 @@
+VectorFi - Personal Finance App - Reviewer Instructions
+
+TEST ACCOUNT:
+Email: user@test.com
+Password: password
+
+QUICK TEST FLOW:
+1. Login with test credentials
+2. Navigate to Budget tab → Add Income ($5000) → Add Expense ($100)
+3. Navigate to Debt/Asset tab → Add Asset ($10000) → Add Debt ($5000)
+4. Navigate to Goals tab → Create goal (Emergency Fund, $10000)
+5. Tap floating green chat icon → Ask "How can I save money?"
+6. Navigate to Settings → Test Connect to Bank (shows paywall)
+7. Settings → Help & Support → Toggle Friendly Mode
+8. Settings → Privacy & Security → Test Delete Account
+
+KEY FEATURES TO TEST:
+- Core budget management (income/expenses)
+- Assets & debts tracking with net worth calculation
+- Goal setting with date picker
+- AI financial assistant chat
+- Premium paywall integration
+- Friendly mode for simplified language
+- Account management (logout/delete)
+- Data persistence across app restarts
+- Form validation and error handling
+
+EXPECTED BEHAVIOR:
+- Smooth navigation between 5 main tabs
+- Real-time calculation updates
+- AI responds to financial questions
+- Premium features show paywall
+- Data saves and persists correctly
+- Graceful error handling
+
+TEST ENVIRONMENT NOTES:
+- Uses sandbox payment processing
+- Sample financial data for demonstration
+- Development build may show debug logs
+- All transactions are simulated
+
+Thank you for reviewing VectorFi!
