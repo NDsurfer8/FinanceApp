@@ -91,9 +91,35 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
+  // Helper function to check if a bank transaction already exists in budget (same as AutoBudgetImporter)
+  const isTransactionAlreadyImported = (bankTransaction: any): boolean => {
+    const bankDate = new Date(bankTransaction.date);
+    const bankAmount = Math.abs(bankTransaction.amount);
+    const bankName = bankTransaction.name?.toLowerCase() || "";
+
+    return transactions.some((budgetTransaction: any) => {
+      const budgetDate = new Date(budgetTransaction.date);
+      const budgetAmount = Math.abs(budgetTransaction.amount);
+      const budgetName = budgetTransaction.description?.toLowerCase() || "";
+
+      // Check if dates are within 1 day of each other (to account for timezone differences)
+      const dateDiff = Math.abs(bankDate.getTime() - budgetDate.getTime());
+      const oneDayInMs = 24 * 60 * 60 * 1000;
+
+      // Check if amounts match (within $0.01 tolerance for rounding differences)
+      const amountDiff = Math.abs(bankAmount - budgetAmount);
+
+      // Check if names are similar (basic fuzzy matching)
+      const nameSimilarity =
+        bankName.includes(budgetName) || budgetName.includes(bankName);
+
+      return dateDiff <= oneDayInMs && amountDiff <= 0.01 && nameSimilarity;
+    });
+  };
+
   // Calculate available transactions for import (excluding already imported ones)
   const getAvailableTransactionsCount = () => {
-    if (!bankTransactions.length) return 0;
+    if (!isBankConnected || !bankTransactions.length) return 0;
 
     const currentMonthTransactions = bankTransactions.filter(
       (transaction: any) => {
@@ -105,14 +131,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       }
     );
 
-    // Filter out transactions that are already imported
-    const importedDescriptions = transactions
-      .filter((t) => t.date >= selectedMonth.getTime())
-      .map((t) => t.description.toLowerCase());
-
+    // Filter out transactions that are already imported using the same logic as AutoBudgetImporter
     return currentMonthTransactions.filter(
-      (transaction: any) =>
-        !importedDescriptions.includes(transaction.name.toLowerCase())
+      (transaction: any) => !isTransactionAlreadyImported(transaction)
     ).length;
   };
 
