@@ -335,15 +335,15 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
   const monthlyTransactions = getMonthlyTransactions(selectedMonth);
 
-  // Check if selected month is in the future
+  // Check if selected month is current or future (to show projected transactions)
   const checkIfFutureMonth = (date: Date) => {
     const now = new Date();
     const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const selectedMonthStart = new Date(date.getFullYear(), date.getMonth(), 1);
-    return selectedMonthStart > currentMonth;
+    return selectedMonthStart >= currentMonth;
   };
 
-  // Load projected transactions for future months
+  // Load projected transactions for current and future months
   const loadProjectedTransactions = async (date: Date) => {
     console.log(
       "BudgetScreen: loadProjectedTransactions called with date:",
@@ -383,7 +383,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     .filter((t) => t.type === "expense")
     .sort((a, b) => b.amount - a.amount); // Sort by amount, largest first
 
-  // Include projected transactions for future months
+  // Include projected transactions for current and future months
   const projectedIncomeTransactions = isFutureMonth
     ? projectedTransactions.filter((t) => t.type === "income")
     : [];
@@ -548,23 +548,34 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const generateAvailableMonths = () => {
     const months = [];
     const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
 
     // Generate last 12 months
     for (let i = 12; i >= 1; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
+      const targetMonth = currentMonth - i;
+      const targetYear = currentYear + Math.floor(targetMonth / 12);
+      const adjustedMonth = ((targetMonth % 12) + 12) % 12;
+
+      const date = new Date(targetYear, adjustedMonth, 1);
       months.push(date);
     }
 
     // Add current month
-    months.push(new Date());
+    months.push(new Date(currentYear, currentMonth, 1));
 
     // Generate next 12 months
     for (let i = 1; i <= 12; i++) {
-      const date = new Date();
-      date.setMonth(date.getMonth() + i);
+      const targetMonth = currentMonth + i;
+      const targetYear = currentYear + Math.floor(targetMonth / 12);
+      const adjustedMonth = targetMonth % 12;
+
+      const date = new Date(targetYear, adjustedMonth, 1);
       months.push(date);
     }
+
+    // Sort months chronologically
+    months.sort((a, b) => a.getTime() - b.getTime());
 
     return months;
   };
@@ -1926,7 +1937,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
                 return (
                   <TouchableOpacity
-                    key={index}
+                    key={`${month.getFullYear()}-${month.getMonth()}`}
                     onPress={() => handleMonthSelect(month)}
                     style={{
                       flexDirection: "row",

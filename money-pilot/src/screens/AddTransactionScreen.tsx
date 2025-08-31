@@ -104,10 +104,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       ? transaction?.frequency || "monthly"
       : ("monthly" as "weekly" | "biweekly" | "monthly"),
     endDate: editMode
-      ? typeof transaction?.endDate === "number"
+      ? transaction?.endDate && typeof transaction.endDate === "number"
         ? transaction.endDate
-        : new Date(transaction?.endDate || Date.now()).getTime()
-      : 0,
+        : transaction?.endDate
+        ? new Date(transaction.endDate).getTime()
+        : undefined
+      : undefined,
   });
 
   // Handle route params for bank suggestions
@@ -322,10 +324,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             category: formData.category,
             frequency: formData.frequency,
             startDate: new Date(formData.date).getTime(),
-            endDate:
-              formData.endDate && formData.endDate.trim() !== ""
-                ? new Date(formData.endDate).getTime()
-                : undefined,
+            endDate: formData.endDate ? formData.endDate : undefined,
             isActive: true,
             userId: user.uid,
             createdAt: Date.now(),
@@ -473,10 +472,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             category: formData.category,
             frequency: finalFrequency, // Use monthly for bank suggestions
             startDate: new Date(formData.date).getTime(),
-            endDate:
-              formData.endDate && formData.endDate.trim() !== ""
-                ? new Date(formData.endDate).getTime()
-                : undefined,
+            endDate: formData.endDate ? formData.endDate : undefined,
             updatedAt: Date.now(),
           };
 
@@ -560,10 +556,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           category: formData.category,
           frequency: finalFrequency, // Use monthly for bank suggestions
           startDate: new Date(formData.date).getTime(),
-          endDate:
-            formData.endDate && formData.endDate.trim() !== ""
-              ? new Date(formData.endDate).getTime()
-              : undefined,
+          endDate: formData.endDate ? formData.endDate : undefined,
           isActive: true,
           userId: user.uid,
           createdAt: Date.now(),
@@ -1321,7 +1314,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                         : colors.textSecondary,
                     }}
                   >
-                    {formData.endDate || "Select End Date (Optional)"}
+                    {formData.endDate
+                      ? new Date(formData.endDate).toISOString().split("T")[0]
+                      : "Select End Date (Optional)"}
                   </Text>
                   <Ionicons
                     name="calendar-outline"
