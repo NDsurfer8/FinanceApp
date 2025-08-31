@@ -1461,9 +1461,14 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 {isEditMode && (
                   <TouchableOpacity
                     style={{
-                      padding: 12,
-                      borderRadius: 8,
-                      backgroundColor: colors.error,
+                      backgroundColor: colors.error + "20",
+                      padding: 18,
+                      borderRadius: 12,
+                      alignItems: "center",
+                      flexDirection: "row",
+                      justifyContent: "center",
+                      borderWidth: 1,
+                      borderColor: colors.error,
                       marginBottom: 24,
                       opacity: deleteLoading ? 0.6 : 1,
                     }}
@@ -1480,14 +1485,14 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       >
                         <ActivityIndicator
                           size="small"
-                          color={colors.buttonText}
+                          color={colors.error}
                           style={{ marginRight: 8 }}
                         />
                         <Text
                           style={{
                             textAlign: "center",
-                            color: colors.buttonText,
-                            fontWeight: "600",
+                            color: colors.error,
+                            fontWeight: "700",
                           }}
                         >
                           Deleting...
@@ -1497,8 +1502,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       <Text
                         style={{
                           textAlign: "center",
-                          color: colors.buttonText,
-                          fontWeight: "600",
+                          color: colors.error,
+                          fontWeight: "700",
                         }}
                       >
                         Delete Goal

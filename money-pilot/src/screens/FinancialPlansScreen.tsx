@@ -266,14 +266,18 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
                       <TouchableOpacity
                         style={[
                           styles.deleteButton,
-                          { backgroundColor: colors.error },
+                          {
+                            backgroundColor: colors.error + "20",
+                            borderWidth: 1,
+                            borderColor: colors.error,
+                          },
                         ]}
                         onPress={() => deletePlan(plan.id!)}
                       >
                         <Ionicons
                           name="trash-outline"
                           size={20}
-                          color="white"
+                          color={colors.error}
                         />
                       </TouchableOpacity>
                     </View>
@@ -489,8 +493,8 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   deleteButton: {
-    padding: 8,
-    borderRadius: 6,
+    padding: 12,
+    borderRadius: 8,
   },
   planSummary: {
     flexDirection: "row",

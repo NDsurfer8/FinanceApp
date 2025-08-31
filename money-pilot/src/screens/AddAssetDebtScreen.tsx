@@ -555,12 +555,14 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             {editMode && (
               <TouchableOpacity
                 style={{
-                  backgroundColor: colors.error,
-                  padding: 16,
-                  borderRadius: 8,
+                  backgroundColor: colors.error + "20",
+                  padding: 18,
+                  borderRadius: 12,
                   alignItems: "center",
                   flexDirection: "row",
                   justifyContent: "center",
+                  borderWidth: 1,
+                  borderColor: colors.error,
                 }}
                 onPress={handleDelete}
                 disabled={deleteLoading}
@@ -568,15 +570,15 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 {deleteLoading && (
                   <ActivityIndicator
                     size="small"
-                    color="white"
+                    color={colors.error}
                     style={{ marginRight: 8 }}
                   />
                 )}
                 <Text
                   style={{
-                    color: "white",
+                    color: colors.error,
                     fontSize: 16,
-                    fontWeight: "600",
+                    fontWeight: "700",
                   }}
                 >
                   Delete {type === "asset" ? "Asset" : "Debt"}
