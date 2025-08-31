@@ -127,7 +127,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
               marginBottom: 4,
             }}
           >
-            Available This Month
+            Safe to Spend
           </Text>
           <Text
             style={{
