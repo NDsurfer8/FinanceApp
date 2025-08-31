@@ -130,7 +130,7 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingRight: 20 }}
+        contentContainerStyle={{ paddingRight: 20, paddingTop: 8 }}
       >
         {allActions.map((action) => (
           <TouchableOpacity
@@ -142,6 +142,7 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
               backgroundColor: colors.surfaceSecondary,
               borderRadius: 12,
               padding: 16,
+              paddingTop: action.badge && action.badge > 0 ? 24 : 16,
               alignItems: "center",
               position: "relative",
             }}
@@ -152,8 +153,8 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
               <View
                 style={{
                   position: "absolute",
-                  top: -4,
-                  right: -4,
+                  top: -6,
+                  right: -6,
                   backgroundColor: colors.error,
                   borderRadius: 10,
                   minWidth: 20,
