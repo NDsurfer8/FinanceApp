@@ -11,9 +11,9 @@ const getUserLocale = (): string => {
   try {
     // Try to get the device locale
     const locale = Intl.DateTimeFormat().resolvedOptions().locale;
-    return locale || 'en-US';
+    return locale || "en-US";
   } catch (error) {
-    return 'en-US'; // Fallback to US format
+    return "en-US"; // Fallback to US format
   }
 };
 
