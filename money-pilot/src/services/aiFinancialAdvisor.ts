@@ -6,6 +6,9 @@ export interface FinancialSnapshot {
   netIncome: number;
   savingsRate: number;
   debtPayoffRate: number;
+  monthlySavingsAmount: number;
+  monthlyDebtPayoffAmount: number;
+  totalMonthlyGoalContributions: number;
   totalDebt: number;
   totalSavings: number;
   totalAssets: number;
@@ -72,6 +75,11 @@ class AIFinancialAdvisorService {
         monthlyIncome: snapshot.monthlyIncome,
         monthlyExpenses: snapshot.monthlyExpenses,
         netIncome: snapshot.netIncome,
+        savingsRate: snapshot.savingsRate,
+        debtPayoffRate: snapshot.debtPayoffRate,
+        monthlySavingsAmount: snapshot.monthlySavingsAmount,
+        monthlyDebtPayoffAmount: snapshot.monthlyDebtPayoffAmount,
+        totalMonthlyGoalContributions: snapshot.totalMonthlyGoalContributions,
         totalDebt: snapshot.totalDebt,
         totalSavings: snapshot.totalSavings,
         netWorth: snapshot.netWorth,
@@ -91,6 +99,7 @@ class AIFinancialAdvisorService {
             name: g.name,
             currentAmount: g.currentAmount,
             targetAmount: g.targetAmount,
+            monthlyContribution: g.monthlyContribution,
           })) || [],
       };
 

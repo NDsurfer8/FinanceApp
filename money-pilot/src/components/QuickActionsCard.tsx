@@ -2,8 +2,6 @@ import React from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
-import { useFriendlyMode } from "../contexts/FriendlyModeContext";
-import { translate } from "../services/translations";
 
 interface QuickAction {
   id: string;
@@ -37,19 +35,21 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
   hasGoals = false,
 }) => {
   const { colors } = useTheme();
-  const { isFriendlyMode } = useFriendlyMode();
 
   const defaultActions: QuickAction[] = [
     {
       id: "import",
       title: "Import Transactions",
       subtitle: hasBankConnection
-        ? `${availableTransactionsCount} available`
+        ? String(availableTransactionsCount || 0) + " available"
         : "Connect bank first",
       icon: "download-outline",
       color: colors.primary,
       onPress: onImportTransactions || (() => {}),
-      badge: hasBankConnection ? availableTransactionsCount : undefined,
+      badge:
+        hasBankConnection && availableTransactionsCount
+          ? availableTransactionsCount
+          : undefined,
     },
     {
       id: "recurring",
@@ -71,7 +71,7 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
     },
   ];
 
-  const allActions = [...actions, ...defaultActions];
+  const allActions = [...(actions || []), ...defaultActions];
 
   return (
     <View
@@ -176,7 +176,7 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
               }}
             >
               <Ionicons
-                name={action.icon as any}
+                name={action.icon as keyof typeof Ionicons.glyphMap}
                 size={24}
                 color={action.color}
               />
@@ -254,8 +254,8 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
               lineHeight: 18,
             }}
           >
-            You have {availableTransactionsCount} new transactions ready to
-            import from your bank account.
+            You have {(availableTransactionsCount || 0).toString()} new
+            transactions ready to import from your bank account.
           </Text>
         </View>
       )}

@@ -448,6 +448,16 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     const savingsRate = budgetSettings?.savingsPercentage || 20;
     const debtPayoffRate = budgetSettings?.debtPayoffPercentage || 5;
 
+    // Calculate monthly savings and debt payoff amounts
+    const monthlySavingsAmount = (netIncome * savingsRate) / 100;
+    const monthlyDebtPayoffAmount = (netIncome * debtPayoffRate) / 100;
+
+    // Calculate total monthly goal contributions
+    const totalMonthlyGoalContributions = goals.reduce(
+      (sum, goal) => sum + goal.monthlyContribution,
+      0
+    );
+
     // Get recurring expenses
     const recurringExpenses = recurringTransactions.filter(
       (t) => t.type === "expense" && t.isActive
@@ -459,6 +469,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       netIncome,
       savingsRate,
       debtPayoffRate,
+      monthlySavingsAmount,
+      monthlyDebtPayoffAmount,
+      totalMonthlyGoalContributions,
       totalDebt,
       totalAssets,
       totalSavings,
@@ -536,7 +549,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       // Check cache for common questions (cache for 1 hour) - user-specific
       const cacheKey = `${user?.uid || "anonymous"}_${userMessage.text
         .toLowerCase()
-        .trim()}_${snapshot.netIncome}_${snapshot.totalDebt}`;
+        .trim()}_${snapshot.netIncome}_${snapshot.monthlySavingsAmount}_${
+        snapshot.totalMonthlyGoalContributions
+      }`;
       const cachedResponse = responseCache[cacheKey];
       const cacheAge = Date.now() - (cachedResponse?.timestamp || 0);
       const isCacheValid = cachedResponse && cacheAge < 3600000; // 1 hour
