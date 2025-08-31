@@ -402,8 +402,6 @@ export const saveTransaction = async (
       id: transactionId,
     });
 
-    console.log("Transaction saved successfully");
-
     // Auto-update shared groups
     await updateSharedGroupsForUser(transaction.userId);
 
@@ -411,7 +409,6 @@ export const saveTransaction = async (
     try {
       const { billReminderService } = await import("./billReminders");
       await billReminderService.scheduleAllBillReminders(transaction.userId);
-      console.log("Bill reminders updated after saving transaction");
     } catch (error) {
       console.error("Error updating bill reminders:", error);
     }
@@ -581,7 +578,6 @@ export const removeTransaction = async (
       `users/${userId}/transactions/${transactionId}`
     );
     await remove(transactionRef);
-    console.log("Transaction removed successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(userId);
@@ -590,7 +586,6 @@ export const removeTransaction = async (
     try {
       const { billReminderService } = await import("./billReminders");
       await billReminderService.scheduleAllBillReminders(userId);
-      console.log("Bill reminders updated after removing transaction");
     } catch (error) {
       console.error("Error updating bill reminders:", error);
     }
@@ -616,7 +611,6 @@ export const updateTransaction = async (
       ...encryptedTransaction,
       updatedAt: Date.now(),
     });
-    console.log("Transaction updated successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(transaction.userId);
@@ -625,7 +619,6 @@ export const updateTransaction = async (
     try {
       const { billReminderService } = await import("./billReminders");
       await billReminderService.scheduleAllBillReminders(transaction.userId);
-      console.log("Bill reminders updated after updating transaction");
     } catch (error) {
       console.error("Error updating bill reminders:", error);
     }
@@ -643,7 +636,6 @@ export const removeAsset = async (
   try {
     const assetRef = ref(db, `users/${userId}/assets/${assetId}`);
     await remove(assetRef);
-    console.log("Asset removed successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(userId);
@@ -667,7 +659,6 @@ export const updateAsset = async (asset: Asset): Promise<void> => {
       ...encryptedAsset,
       updatedAt: Date.now(),
     });
-    console.log("Asset updated successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(asset.userId);
