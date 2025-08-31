@@ -2,6 +2,7 @@ export { DashboardScreen } from "./DashboardScreen";
 export { BudgetScreen } from "./BudgetScreen";
 export { AssetsDebtsScreen } from "./AssetsDebtsScreen";
 export { GoalTrackingScreen } from "./GoalTrackingScreen";
+export { AddGoalScreen } from "./AddGoalScreen";
 export { SettingsScreen } from "./SettingsScreen";
 export { LoginScreen } from "./LoginScreen";
 export { SignUpScreen } from "./SignUpScreen";

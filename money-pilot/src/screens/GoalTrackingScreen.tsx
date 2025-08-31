@@ -530,7 +530,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           showBackButton={false}
           rightComponent={
             <TouchableOpacity
-              onPress={() => setShowAddModal(true)}
+              onPress={() => navigation.navigate("AddGoal")}
               style={{
                 backgroundColor: colors.primary,
                 padding: 12,
@@ -724,7 +724,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
               Start by adding your first financial goal
             </Text>
             <TouchableOpacity
-              onPress={() => setShowAddModal(true)}
+              onPress={() => navigation.navigate("AddGoal")}
               style={{
                 backgroundColor: colors.primary,
                 paddingHorizontal: 24,
@@ -762,18 +762,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   borderColor: `${category?.color}15`,
                 }}
                 onPress={() => {
-                  setEditingGoal(goal);
-                  setIsEditMode(true);
-                  setNewGoal({
-                    name: goal.name,
-                    targetAmount: goal.targetAmount.toString(),
-                    currentAmount: goal.currentAmount.toString(),
-                    monthlyContribution: goal.monthlyContribution.toString(),
-                    targetDate: goal.targetDate,
-                    category: goal.category,
-                    priority: goal.priority,
+                  navigation.navigate("AddGoal", {
+                    editMode: true,
+                    goal: goal,
                   });
-                  setShowAddModal(true);
                 }}
                 activeOpacity={0.7}
               >

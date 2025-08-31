@@ -36,6 +36,7 @@ import {
   AddTransactionScreen,
   AddAssetDebtScreen,
   GoalTrackingScreen,
+  AddGoalScreen,
   FinancialRiskScreen,
   SharedFinanceScreen,
   EditProfileScreen,
@@ -470,6 +471,10 @@ export const MainApp: React.FC = () => {
                         <Stack.Screen
                           name="AddAssetDebt"
                           component={AddAssetDebtScreen}
+                        />
+                        <Stack.Screen
+                          name="AddGoal"
+                          component={AddGoalScreen}
                         />
 
                         <Stack.Screen
