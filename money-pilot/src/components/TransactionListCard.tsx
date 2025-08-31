@@ -403,7 +403,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                 marginLeft: 8,
               }}
             >
-              Add {title.slice(0, -1)}
+              Add {title}
             </Text>
           </TouchableOpacity>
         </>
