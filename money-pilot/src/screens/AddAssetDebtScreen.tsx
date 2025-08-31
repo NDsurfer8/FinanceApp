@@ -307,7 +307,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
 
           {/* Form Fields */}
           {/* Name */}
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 16,
@@ -322,8 +322,8 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
+                borderRadius: 12,
+                padding: 16,
                 fontSize: 16,
                 color: colors.text,
                 backgroundColor: colors.card,
@@ -338,7 +338,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           </View>
 
           {/* Balance */}
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 16,
@@ -353,8 +353,8 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
+                borderRadius: 12,
+                padding: 16,
                 fontSize: 16,
                 color: colors.text,
                 backgroundColor: colors.card,
@@ -372,7 +372,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
 
           {/* Asset Type (for assets only) */}
           {type === "asset" && (
-            <View style={{ marginBottom: 20 }}>
+            <View style={{ marginBottom: 24 }}>
               <Text
                 style={{
                   fontSize: 16,
@@ -450,7 +450,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
 
           {/* APR (for debts only) */}
           {type === "debt" && (
-            <View style={{ marginBottom: 20 }}>
+            <View style={{ marginBottom: 24 }}>
               <Text
                 style={{
                   fontSize: 16,
@@ -465,8 +465,8 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 style={{
                   borderWidth: 1,
                   borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
+                  borderRadius: 12,
+                  padding: 16,
                   fontSize: 16,
                   color: colors.text,
                   backgroundColor: colors.card,
@@ -484,7 +484,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
 
           {/* Monthly Payment (for debts only) */}
           {type === "debt" && (
-            <View style={{ marginBottom: 20 }}>
+            <View style={{ marginBottom: 24 }}>
               <Text
                 style={{
                   fontSize: 16,
@@ -499,8 +499,8 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 style={{
                   borderWidth: 1,
                   borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
+                  borderRadius: 12,
+                  padding: 16,
                   fontSize: 16,
                   color: colors.text,
                   backgroundColor: colors.card,
@@ -523,11 +523,16 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             <TouchableOpacity
               style={{
                 backgroundColor: colors.primary,
-                padding: 16,
-                borderRadius: 8,
+                padding: 18,
+                borderRadius: 12,
                 alignItems: "center",
                 flexDirection: "row",
                 justifyContent: "center",
+                shadowColor: colors.primary,
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 8,
               }}
               onPress={handleSave}
               disabled={loading}
@@ -543,7 +548,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 style={{
                   color: "white",
                   fontSize: 16,
-                  fontWeight: "600",
+                  fontWeight: "700",
                 }}
               >
                 {editMode ? "Update" : "Save"}{" "}

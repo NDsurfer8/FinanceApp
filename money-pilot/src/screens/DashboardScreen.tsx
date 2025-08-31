@@ -96,6 +96,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     ? parseFloat(budgetSettings.debtPayoffPercentage)
     : 0;
   const savingsAmount = netIncome * (savingsPercent / 100);
+  const debtPayoffAmount = netIncome * (debtPayoffPercent / 100);
 
   // Calculate total goal contributions
   const totalGoalContributions = goals.reduce((total, goal) => {
@@ -103,9 +104,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   }, 0);
 
   const discretionaryIncome =
-    netIncome - savingsAmount - totalGoalContributions;
-  const debtPayoffAmount = discretionaryIncome * (debtPayoffPercent / 100);
-  const availableAmount = discretionaryIncome - debtPayoffAmount;
+    netIncome - savingsAmount - debtPayoffAmount - totalGoalContributions;
+  const availableAmount = discretionaryIncome;
 
   // Calculate total assets and debts
   const totalAssets = assets.reduce(
