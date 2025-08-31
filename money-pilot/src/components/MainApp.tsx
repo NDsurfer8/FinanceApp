@@ -176,7 +176,7 @@ export const MainApp: React.FC = () => {
       setLoadingMessage("Setting up notifications...");
       await setupNotifications();
 
-      setLoadingMessage("Initializing RevenueCat...");
+      setLoadingMessage("Checking authentication...");
       try {
         await revenueCatService.initialize();
       } catch (error) {
