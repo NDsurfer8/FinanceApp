@@ -401,42 +401,75 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             style={{
               backgroundColor: colors.surface,
               padding: 24,
-              borderRadius: 16,
+              borderRadius: 20,
               margin: 20,
               maxWidth: 400,
+              shadowColor: colors.shadow,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.25,
+              shadowRadius: 12,
+              elevation: 8,
             }}
           >
-            <Text
+            <View
               style={{
-                fontSize: 18,
-                fontWeight: "600",
-                color: colors.text,
-                marginBottom: 16,
-                textAlign: "center",
-              }}
-            >
-              No Bank Connected
-            </Text>
-            <Text
-              style={{
-                color: colors.textSecondary,
-                textAlign: "center",
+                alignItems: "center",
                 marginBottom: 20,
               }}
             >
-              Connect your bank account to automatically import transactions
-              into your budget.
-            </Text>
+              <View
+                style={{
+                  backgroundColor: colors.primaryLight,
+                  padding: 16,
+                  borderRadius: 16,
+                  marginBottom: 16,
+                }}
+              >
+                <Ionicons
+                  name="card-outline"
+                  size={32}
+                  color={colors.primary}
+                />
+              </View>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: colors.text,
+                  marginBottom: 8,
+                  textAlign: "center",
+                }}
+              >
+                No Bank Connected
+              </Text>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  textAlign: "center",
+                  fontSize: 14,
+                  lineHeight: 20,
+                }}
+              >
+                Connect your bank account to automatically import transactions
+                into your budget.
+              </Text>
+            </View>
             <TouchableOpacity
               onPress={onClose}
               style={{
                 backgroundColor: colors.primary,
-                padding: 12,
-                borderRadius: 8,
+                padding: 16,
+                borderRadius: 12,
                 alignItems: "center",
               }}
             >
-              <Text style={{ color: colors.buttonText, fontWeight: "600" }}>
+              <Text
+                style={{
+                  color: colors.buttonText,
+                  fontWeight: "600",
+                  fontSize: 16,
+                }}
+              >
                 Close
               </Text>
             </TouchableOpacity>
@@ -559,31 +592,22 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         <View
           style={{
             flexDirection: "row",
-            alignItems: "center",
             justifyContent: "space-between",
-            padding: 16,
-            paddingTop: 16,
+            alignItems: "center",
+            padding: 20,
+            paddingTop: 60,
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
-            backgroundColor: colors.surface,
           }}
         >
-          <TouchableOpacity
-            onPress={onClose}
-            style={{
-              padding: 8,
-              borderRadius: 8,
-            }}
-          >
+          <TouchableOpacity onPress={onClose} style={{ padding: 8 }}>
             <Ionicons name="close" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text
             style={{
               fontSize: 18,
-              fontWeight: "600",
+              fontWeight: "700",
               color: colors.text,
-              flex: 1,
-              textAlign: "center",
             }}
           >
             Import{" "}
@@ -595,39 +619,48 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         {/* Summary */}
         <View
           style={{
-            padding: 16,
-            paddingHorizontal: 16,
-            backgroundColor: colors.surfaceSecondary,
+            padding: 20,
+            backgroundColor: colors.surface,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
           }}
         >
           <Text
             style={{
               fontSize: 16,
-              fontWeight: "600",
+              fontWeight: "700",
               color: colors.text,
               marginBottom: 8,
             }}
           >
             Smart Import Summary
           </Text>
-          <Text style={{ color: colors.textSecondary, marginBottom: 12 }}>
+          <Text
+            style={{
+              color: colors.textSecondary,
+              marginBottom: 16,
+              fontSize: 14,
+            }}
+          >
             {totalCount} current month transactions • {selectedCount} selected
           </Text>
 
-          <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={{ flexDirection: "row", gap: 12 }}>
             <TouchableOpacity
               onPress={selectAll}
               style={{
                 backgroundColor: colors.primary,
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 6,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 8,
+                flex: 1,
+                alignItems: "center",
               }}
             >
               <Text
                 style={{
                   color: colors.buttonText,
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: "600",
                 }}
               >
@@ -637,14 +670,22 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             <TouchableOpacity
               onPress={deselectAll}
               style={{
-                backgroundColor: colors.border,
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 6,
+                backgroundColor: colors.surface,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 8,
+                flex: 1,
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: colors.border,
               }}
             >
               <Text
-                style={{ color: colors.text, fontSize: 12, fontWeight: "600" }}
+                style={{
+                  color: colors.text,
+                  fontSize: 14,
+                  fontWeight: "600",
+                }}
               >
                 Deselect All
               </Text>
