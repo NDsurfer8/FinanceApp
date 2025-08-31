@@ -161,7 +161,7 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
                     fontWeight: "700",
                   }}
                 >
-                  {action.badge > 99 ? "99+" : String(action.badge)}
+                  {action.badge > 99 ? "99+" : action.badge.toString()}
                 </Text>
               </View>
             )}

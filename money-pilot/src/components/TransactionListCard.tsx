@@ -296,32 +296,15 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                         activeOpacity={0.7}
                       >
                         <View style={{ flex: 1 }}>
-                          <View
+                          <Text
                             style={{
-                              flexDirection: "row",
-                              alignItems: "center",
+                              fontSize: 16,
+                              color: colors.text,
+                              fontWeight: "500",
                             }}
                           >
-                            <Text
-                              style={{
-                                fontSize: 16,
-                                color: colors.text,
-                                fontWeight: "500",
-                                flex: 1,
-                              }}
-                            >
-                              {transaction.description}
-                            </Text>
-                            {(isRecurringTransaction(transaction) ||
-                              transaction.id?.startsWith("projected-")) && (
-                              <Ionicons
-                                name="repeat"
-                                size={12}
-                                color={colors.primary}
-                                style={{ marginLeft: 8 }}
-                              />
-                            )}
-                          </View>
+                            {transaction.description}
+                          </Text>
                           <Text
                             style={{
                               fontSize: 12,
@@ -332,19 +315,49 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                             {formatDate(transaction.date)}
                           </Text>
                         </View>
-                        <Text
+                        <View
                           style={{
-                            fontSize: 16,
-                            fontWeight: "700",
-                            color:
-                              transaction.type === "income"
-                                ? colors.success
-                                : colors.error,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "flex-end",
                           }}
                         >
-                          {transaction.type === "income" ? "+" : "-"}
-                          {formatCurrency(transaction.amount)}
-                        </Text>
+                          {(isRecurringTransaction(transaction) ||
+                            transaction.id?.startsWith("projected-")) && (
+                            <View
+                              style={{
+                                marginRight: 6,
+                                justifyContent: "center",
+                                alignItems: "center",
+                                width: 18,
+                                height: 18,
+                              }}
+                            >
+                              <Ionicons
+                                name="repeat"
+                                size={14}
+                                color={
+                                  transaction.type === "income"
+                                    ? colors.success
+                                    : colors.error
+                                }
+                              />
+                            </View>
+                          )}
+                          <Text
+                            style={{
+                              fontSize: 16,
+                              fontWeight: "700",
+                              color:
+                                transaction.type === "income"
+                                  ? colors.success
+                                  : colors.error,
+                            }}
+                          >
+                            {transaction.type === "income" ? "+" : "-"}
+                            {formatCurrency(transaction.amount)}
+                          </Text>
+                        </View>
                       </TouchableOpacity>
                     ))}
                   </View>
