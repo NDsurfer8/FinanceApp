@@ -346,6 +346,34 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     return months;
   };
 
+  // Scroll to current month when modal opens
+  const scrollToCurrentMonth = () => {
+    const months = generateAvailableMonths();
+    const currentMonthIndex = months.findIndex(
+      (month) =>
+        month.getMonth() === new Date().getMonth() &&
+        month.getFullYear() === new Date().getFullYear()
+    );
+
+    if (currentMonthIndex !== -1 && monthPickerScrollRef.current) {
+      // Scroll to one position before current month for better visibility
+      monthPickerScrollRef.current.scrollTo({
+        y: Math.max(0, (currentMonthIndex - 1) * 60), // One position before current month
+        animated: true,
+      });
+    }
+  };
+
+  // Scroll to current month when modal opens
+  useEffect(() => {
+    if (showMonthPicker) {
+      // Use setTimeout to ensure the modal is fully rendered
+      setTimeout(() => {
+        scrollToCurrentMonth();
+      }, 100);
+    }
+  }, [showMonthPicker]);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
@@ -687,9 +715,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
               backgroundColor: colors.surface,
               borderRadius: 20,
               padding: 24,
-              width: "90%",
-              maxWidth: 400,
-              maxHeight: "80%",
+              width: "85%",
+              maxHeight: "70%",
               shadowColor: colors.shadow,
               shadowOpacity: 0.25,
               shadowRadius: 20,
@@ -698,21 +725,67 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             }}
             onStartShouldSetResponder={() => true}
           >
-            <Text
+            <View
               style={{
-                fontSize: 18,
-                fontWeight: "600",
-                color: colors.text,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
                 marginBottom: 20,
-                textAlign: "center",
               }}
             >
-              Select Month
-            </Text>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
+                Select Month
+              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedMonth(new Date());
+                    setShowMonthPicker(false);
+                  }}
+                  style={{
+                    backgroundColor: colors.primary,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 8,
+                    marginRight: 12,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "600",
+                      color: colors.buttonText,
+                    }}
+                  >
+                    Current
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowMonthPicker(false)}
+                  style={{
+                    padding: 4,
+                  }}
+                >
+                  <Ionicons
+                    name="close"
+                    size={24}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
             <ScrollView
               ref={monthPickerScrollRef}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 20 }}
+              style={{ maxHeight: 400 }}
             >
               {generateAvailableMonths().map((month, index) => {
                 const isSelected =
