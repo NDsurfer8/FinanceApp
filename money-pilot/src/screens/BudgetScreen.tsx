@@ -641,8 +641,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           actions={[]}
           onImportTransactions={() => setShowAutoImporter(true)}
           onViewRecurring={() => navigation.navigate("RecurringTransactions")}
-          onViewGoals={() => navigation.navigate("FinancialPlans")}
-          onViewReports={() => navigation.navigate("AIFinancialAdvisor")}
+          onAddGoal={() => setShowBudgetSettingsModal(true)}
           hasBankConnection={isBankConnected}
           availableTransactionsCount={getAvailableTransactionsCount()}
           hasRecurringTransactions={recurringTransactions.length > 0}
@@ -711,6 +710,19 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           hasUnsavedChanges={hasUnsavedChanges}
           netIncome={netIncome}
           formatCurrency={formatCurrency}
+          goals={goals}
+          onGoalContributionChange={(goalId, contribution) => {
+            // Update the goal's monthly contribution
+            const updatedGoals = goals.map((goal) =>
+              goal.id === goalId
+                ? { ...goal, monthlyContribution: contribution }
+                : goal
+            );
+            // Update the UI optimistically
+            updateDataOptimistically({ goals: updatedGoals });
+            // Here you would typically save this to your database
+            console.log("Goal contribution updated:", goalId, contribution);
+          }}
         />
       </ScrollView>
 

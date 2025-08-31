@@ -19,8 +19,7 @@ interface QuickActionsCardProps {
   actions: QuickAction[];
   onImportTransactions?: () => void;
   onViewRecurring?: () => void;
-  onViewGoals?: () => void;
-  onViewReports?: () => void;
+  onAddGoal?: () => void;
   hasBankConnection?: boolean;
   availableTransactionsCount?: number;
   hasRecurringTransactions?: boolean;
@@ -31,8 +30,7 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
   actions,
   onImportTransactions,
   onViewRecurring,
-  onViewGoals,
-  onViewReports,
+  onAddGoal,
   hasBankConnection = false,
   availableTransactionsCount = 0,
   hasRecurringTransactions = false,
@@ -66,18 +64,10 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
     {
       id: "goals",
       title: "Financial Goals",
-      subtitle: hasGoals ? "Track your progress" : "Set new goals",
+      subtitle: hasGoals ? "Add to savings plan" : "Set new goals",
       icon: "flag-outline",
       color: colors.success,
-      onPress: onViewGoals || (() => {}),
-    },
-    {
-      id: "reports",
-      title: "Reports & Analytics",
-      subtitle: "View detailed insights",
-      icon: "analytics-outline",
-      color: colors.info || "#3b82f6",
-      onPress: onViewReports || (() => {}),
+      onPress: onAddGoal || (() => {}),
     },
   ];
 

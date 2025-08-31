@@ -12,6 +12,16 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 
+interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  monthlyContribution: number;
+  targetDate?: number;
+  category: string;
+}
+
 interface BudgetSettingsModalProps {
   visible: boolean;
   onClose: () => void;
@@ -23,6 +33,8 @@ interface BudgetSettingsModalProps {
   hasUnsavedChanges: boolean;
   netIncome: number;
   formatCurrency: (amount: number) => string;
+  goals?: Goal[];
+  onGoalContributionChange?: (goalId: string, contribution: number) => void;
 }
 
 export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
@@ -36,48 +48,63 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
   hasUnsavedChanges,
   netIncome,
   formatCurrency,
+  goals = [],
+  onGoalContributionChange,
 }) => {
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const [localSavings, setLocalSavings] = useState(savingsPercentage);
   const [localDebt, setLocalDebt] = useState(debtPayoffPercentage);
+  const [localGoals, setLocalGoals] = useState<Goal[]>(goals);
 
   useEffect(() => {
     setLocalSavings(savingsPercentage);
     setLocalDebt(debtPayoffPercentage);
   }, [savingsPercentage, debtPayoffPercentage]);
 
+  useEffect(() => {
+    setLocalGoals(goals);
+  }, [goals]);
+
   const savingsAmount = (netIncome * parseFloat(localSavings || "0")) / 100;
   const debtAmount = (netIncome * parseFloat(localDebt || "0")) / 100;
+
+  // Calculate goals allocation
+  const goalsAmount = localGoals.reduce(
+    (sum, goal) => sum + goal.monthlyContribution,
+    0
+  );
+  const goalsPercentage = netIncome > 0 ? (goalsAmount / netIncome) * 100 : 0;
+
   const totalAllocated =
-    parseFloat(localSavings || "0") + parseFloat(localDebt || "0");
+    parseFloat(localSavings || "0") +
+    parseFloat(localDebt || "0") +
+    goalsPercentage;
   const remainingPercentage = 100 - totalAllocated;
 
-  const handleSave = () => {
-    if (totalAllocated > 100) {
-      Alert.alert("Invalid Allocation", "Total allocation cannot exceed 100%.");
-      return;
-    }
+  const handleGoalContributionChange = (
+    goalId: string,
+    contribution: number
+  ) => {
+    const updatedGoals = localGoals.map((goal) =>
+      goal.id === goalId ? { ...goal, monthlyContribution: contribution } : goal
+    );
+    setLocalGoals(updatedGoals);
+    onGoalContributionChange?.(goalId, contribution);
+  };
 
-    onSavingsChange(localSavings);
-    onDebtChange(localDebt);
-    onSave();
-    onClose();
+  const handleSavingsChange = (value: string) => {
+    setLocalSavings(value);
+    onSavingsChange(value);
+  };
+
+  const handleDebtChange = (value: string) => {
+    setLocalDebt(value);
+    onDebtChange(value);
   };
 
   const handleClose = () => {
-    if (hasUnsavedChanges) {
-      Alert.alert(
-        "Unsaved Changes",
-        "You have unsaved changes. Are you sure you want to close?",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Close", style: "destructive", onPress: onClose },
-        ]
-      );
-    } else {
-      onClose();
-    }
+    onClose();
   };
 
   const getRecommendation = () => {
@@ -143,24 +170,24 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
             Budget Settings
           </Text>
           <TouchableOpacity
-            onPress={handleSave}
-            disabled={!hasUnsavedChanges || totalAllocated > 100}
+            onPress={() => {
+              // All changes are already saved, just close the modal
+              onClose();
+            }}
             style={{
               padding: 8,
-              opacity: hasUnsavedChanges && totalAllocated <= 100 ? 1 : 0.5,
+              backgroundColor: colors.success,
+              borderRadius: 8,
             }}
           >
             <Text
               style={{
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: "600",
-                color:
-                  hasUnsavedChanges && totalAllocated <= 100
-                    ? colors.primary
-                    : colors.textSecondary,
+                color: "white",
               }}
             >
-              Save
+              Done
             </Text>
           </TouchableOpacity>
         </View>
@@ -211,6 +238,15 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                     height: 24,
                   }}
                 />
+                {localGoals.length > 0 && (
+                  <View
+                    style={{
+                      width: `${goalsPercentage}%` as any,
+                      backgroundColor: colors.info || "#3b82f6",
+                      height: 24,
+                    }}
+                  />
+                )}
                 <View
                   style={{
                     width: `${remainingPercentage}%` as any,
@@ -227,15 +263,64 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                   marginTop: 8,
                 }}
               >
-                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                  Savings: {localSavings}%
-                </Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                  Debt: {localDebt}%
-                </Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                  Available: {remainingPercentage.toFixed(1)}%
-                </Text>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: colors.success,
+                      marginRight: 4,
+                    }}
+                  />
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                    {localSavings}%
+                  </Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: colors.error,
+                      marginRight: 4,
+                    }}
+                  />
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                    {localDebt}%
+                  </Text>
+                </View>
+                {localGoals.length > 0 && (
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <View
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: colors.info || "#3b82f6",
+                        marginRight: 4,
+                      }}
+                    />
+                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                      {goalsPercentage.toFixed(1)}%
+                    </Text>
+                  </View>
+                )}
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: colors.warning,
+                      marginRight: 4,
+                    }}
+                  />
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                    {remainingPercentage.toFixed(1)}%
+                  </Text>
+                </View>
               </View>
             </View>
 
@@ -357,7 +442,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
             >
               <TouchableOpacity
                 onPress={() =>
-                  setLocalSavings(
+                  handleSavingsChange(
                     Math.max(0, parseFloat(localSavings) - 5).toString()
                   )
                 }
@@ -371,7 +456,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() =>
-                  setLocalSavings(
+                  handleSavingsChange(
                     Math.min(100, parseFloat(localSavings) + 5).toString()
                   )
                 }
@@ -476,7 +561,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
             >
               <TouchableOpacity
                 onPress={() =>
-                  setLocalDebt(
+                  handleDebtChange(
                     Math.max(0, parseFloat(localDebt) - 5).toString()
                   )
                 }
@@ -490,7 +575,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() =>
-                  setLocalDebt(
+                  handleDebtChange(
                     Math.min(100, parseFloat(localDebt) + 5).toString()
                   )
                 }
@@ -504,6 +589,239 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Financial Goals */}
+          {localGoals.length > 0 && (
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 16,
+                padding: 20,
+                marginBottom: 20,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 16,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View
+                    style={{
+                      backgroundColor: colors.info + "20",
+                      padding: 8,
+                      borderRadius: 8,
+                      marginRight: 12,
+                    }}
+                  >
+                    <Ionicons
+                      name="flag"
+                      size={16}
+                      color={colors.info || "#3b82f6"}
+                    />
+                  </View>
+                  <View>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        color: colors.text,
+                      }}
+                    >
+                      Financial Goals
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: colors.textSecondary,
+                      }}
+                    >
+                      {formatCurrency(goalsAmount)} per month
+                    </Text>
+                  </View>
+                </View>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: colors.info || "#3b82f6",
+                  }}
+                >
+                  {goalsPercentage.toFixed(1)}%
+                </Text>
+              </View>
+
+              {/* Goals List */}
+              <View style={{ marginBottom: 16 }}>
+                {localGoals.map((goal) => (
+                  <View
+                    key={goal.id}
+                    style={{
+                      backgroundColor: colors.surfaceSecondary,
+                      borderRadius: 12,
+                      padding: 16,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            fontWeight: "600",
+                            color: colors.text,
+                          }}
+                        >
+                          {goal.name}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: colors.textSecondary,
+                          }}
+                        >
+                          {formatCurrency(goal.currentAmount)} /{" "}
+                          {formatCurrency(goal.targetAmount)}
+                        </Text>
+                      </View>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "700",
+                          color: colors.info || "#3b82f6",
+                        }}
+                      >
+                        {formatCurrency(goal.monthlyContribution)}
+                      </Text>
+                    </View>
+
+                    {/* Progress Bar */}
+                    <View
+                      style={{
+                        height: 6,
+                        backgroundColor: colors.border,
+                        borderRadius: 3,
+                        marginBottom: 12,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: `${
+                            (goal.currentAmount / goal.targetAmount) * 100
+                          }%`,
+                          height: 6,
+                          backgroundColor: colors.info || "#3b82f6",
+                          borderRadius: 3,
+                        }}
+                      />
+                    </View>
+
+                    {/* Contribution Controls */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: colors.textSecondary,
+                        }}
+                      >
+                        Monthly Contribution:
+                      </Text>
+                      <View style={{ flexDirection: "row", gap: 8 }}>
+                        <TouchableOpacity
+                          onPress={() => {
+                            const newContribution = Math.max(
+                              0,
+                              goal.monthlyContribution - 50
+                            );
+                            handleGoalContributionChange(
+                              goal.id,
+                              newContribution
+                            );
+                          }}
+                          style={{
+                            padding: 6,
+                            backgroundColor: colors.surfaceSecondary,
+                            borderRadius: 4,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: colors.textSecondary,
+                              fontSize: 12,
+                            }}
+                          >
+                            -50
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => {
+                            const newContribution =
+                              goal.monthlyContribution + 50;
+                            handleGoalContributionChange(
+                              goal.id,
+                              newContribution
+                            );
+                          }}
+                          style={{
+                            padding: 6,
+                            backgroundColor: colors.surfaceSecondary,
+                            borderRadius: 4,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: colors.textSecondary,
+                              fontSize: 12,
+                            }}
+                          >
+                            +50
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+
+              {/* Overall Goals Progress Bar - Only show if multiple goals */}
+              {localGoals.length > 1 && (
+                <View
+                  style={{
+                    height: 8,
+                    backgroundColor: colors.border,
+                    borderRadius: 4,
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  <View
+                    style={{
+                      width: `${Math.min(goalsPercentage, 100)}%` as any,
+                      height: 8,
+                      backgroundColor: colors.info || "#3b82f6",
+                      borderRadius: 4,
+                    }}
+                  />
+                </View>
+              )}
+            </View>
+          )}
 
           {/* Summary */}
           <View
@@ -568,6 +886,29 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                 </Text>
               </View>
             </View>
+
+            {localGoals.length > 0 && (
+              <View style={{ marginBottom: 8 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={{ color: colors.textSecondary }}>
+                    Financial Goals:
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.info || "#3b82f6",
+                      fontWeight: "600",
+                    }}
+                  >
+                    -{formatCurrency(goalsAmount)}
+                  </Text>
+                </View>
+              </View>
+            )}
 
             <View
               style={{
