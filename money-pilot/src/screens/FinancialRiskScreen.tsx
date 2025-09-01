@@ -257,10 +257,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                 fontWeight: "800",
                 color:
                   emergencyFundProgress >= 100
-                    ? "#16a34a"
+                    ? colors.success
                     : emergencyFundProgress >= 50
                     ? "#d97706"
-                    : "#dc2626",
+                    : colors.error,
                 marginBottom: 4,
               }}
             >
@@ -299,10 +299,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   height: "100%",
                   backgroundColor:
                     emergencyFundProgress >= 100
-                      ? "#16a34a"
+                      ? colors.success
                       : emergencyFundProgress >= 50
                       ? "#d97706"
-                      : "#dc2626",
+                      : colors.error,
                   width: `${Math.min(emergencyFundProgress, 100)}%`,
                 }}
               />
@@ -350,7 +350,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                 style={{
                   fontSize: 16,
                   fontWeight: "700",
-                  color: "#dc2626",
+                  color: colors.error,
                   textAlign: "center",
                 }}
               >

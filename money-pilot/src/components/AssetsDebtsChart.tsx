@@ -52,7 +52,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                 >
                   Total Assets
                 </Text>
-                <Text style={[styles.summaryValue, styles.assetColor]}>
+                <Text style={[styles.summaryValue, { color: colors.success }]}>
                   ${totalAssets.toLocaleString()}
                 </Text>
               </View>
@@ -62,7 +62,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                 >
                   Total Debts
                 </Text>
-                <Text style={[styles.summaryValue, styles.debtColor]}>
+                <Text style={[styles.summaryValue, { color: colors.error }]}>
                   ${totalDebts.toLocaleString()}
                 </Text>
               </View>
@@ -77,7 +77,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
               <Text
                 style={[
                   styles.netWorthValue,
-                  netWorth >= 0 ? styles.positiveColor : styles.negativeColor,
+                  { color: netWorth >= 0 ? colors.success : colors.error },
                 ]}
               >
                 ${Math.abs(netWorth).toLocaleString()}
@@ -99,10 +99,10 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                     width: `${Math.min(debtToAssetRatio, 100)}%`,
                     backgroundColor:
                       debtToAssetRatio > 50
-                        ? "#ef4444"
+                        ? colors.error
                         : debtToAssetRatio > 30
                         ? "#f59e0b"
-                        : "#10b981",
+                        : colors.success,
                   },
                 ]}
               />
@@ -155,7 +155,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                           styles.breakdownFill,
                           {
                             width: `${percentage}%`,
-                            backgroundColor: "#10b981",
+                            backgroundColor: colors.success,
                           },
                         ]}
                       />
@@ -208,7 +208,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                           styles.breakdownFill,
                           {
                             width: `${percentage}%`,
-                            backgroundColor: "#ef4444",
+                            backgroundColor: colors.error,
                           },
                         ]}
                       />
@@ -269,10 +269,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   assetColor: {
-    color: "#10b981",
+    color: "#10b981", // Will be overridden with theme colors
   },
   debtColor: {
-    color: "#ef4444",
+    color: "#ef4444", // Will be overridden with theme colors
   },
   netWorthContainer: {
     alignItems: "center",

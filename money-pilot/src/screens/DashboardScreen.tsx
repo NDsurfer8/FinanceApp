@@ -480,7 +480,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   style={{
                     fontSize: 20,
                     fontWeight: "700",
-                    color: "#16a34a",
+                    color: colors.success,
                     letterSpacing: -0.3,
                   }}
                 >
@@ -521,7 +521,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   style={{
                     fontSize: 20,
                     fontWeight: "700",
-                    color: "#dc2626",
+                    color: colors.error,
                     letterSpacing: -0.3,
                   }}
                 >
@@ -603,7 +603,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   style={{
                     fontSize: 20,
                     fontWeight: "700",
-                    color: availableAmount >= 0 ? "#2563eb" : "#d97706",
+                    color: availableAmount >= 0 ? colors.success : colors.error,
                     letterSpacing: -0.3,
                   }}
                 >
@@ -644,7 +644,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               style={{
                 fontSize: 36,
                 fontWeight: "800",
-                color: netWorth >= 0 ? "#16a34a" : "#dc2626",
+                color: netWorth >= 0 ? colors.success : colors.error,
                 marginBottom: 8,
               }}
             >

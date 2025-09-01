@@ -1934,10 +1934,10 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
                       : 0;
 
                   const getProgressColor = (progress: number) => {
-                    if (progress >= 100) return "#16a34a";
+                    if (progress >= 100) return colors.success;
                     if (progress >= 75) return "#d97706";
                     if (progress >= 50) return "#f59e0b";
-                    return "#dc2626";
+                    return colors.error;
                   };
 
                   return (

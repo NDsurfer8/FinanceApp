@@ -225,7 +225,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                     fontFamily: fontFamily.bold,
                     fontWeight: "700",
                     fontSize: 18,
-                    color: "#10b981",
+                    color: colors.success,
                   }}
                 >
                   ${assetTotal.toLocaleString()}
@@ -368,7 +368,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                     fontFamily: fontFamily.bold,
                     fontWeight: "700",
                     fontSize: 18,
-                    color: "#ef4444",
+                    color: colors.error,
                   }}
                 >
                   ${totalDebt.toLocaleString()}
@@ -393,7 +393,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               navigation.navigate("AddAssetDebt", { type: "asset" })
             }
             style={{
-              backgroundColor: "#10b981",
+              backgroundColor: colors.success,
               paddingHorizontal: 20,
               paddingVertical: 12,
               borderRadius: 12,
@@ -404,7 +404,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             <Text
               style={{
                 fontFamily: fontFamily.semiBold,
-                color: "#fff",
+                color: colors.buttonText,
                 fontWeight: "600",
                 fontSize: 16,
               }}
@@ -417,7 +417,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               navigation.navigate("AddAssetDebt", { type: "debt" })
             }
             style={{
-              backgroundColor: "#ef4444",
+              backgroundColor: colors.error,
               paddingHorizontal: 20,
               paddingVertical: 12,
               borderRadius: 12,
@@ -428,7 +428,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             <Text
               style={{
                 fontFamily: fontFamily.semiBold,
-                color: "#fff",
+                color: colors.buttonText,
                 fontWeight: "600",
                 fontSize: 16,
               }}
