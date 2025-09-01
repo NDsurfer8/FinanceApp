@@ -32,7 +32,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   navigation,
 }) => {
   const { user } = useAuth();
-  const { transactions, assets, debts, refreshInBackground } = useZeroLoading();
+  const {
+    transactions,
+    assets,
+    debts,
+    recurringTransactions,
+    refreshInBackground,
+  } = useZeroLoading();
   const { goals, budgetSettings, refreshAssetsDebts } = useData();
 
   const [loading, setLoading] = useState(false);
@@ -78,13 +84,47 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     );
   });
 
-  const monthlyIncome = monthlyTransactions
-    .filter((t) => t.type === "income")
-    .reduce((sum: number, t: any) => sum + t.amount, 0);
+  // Calculate recurring monthly amounts
+  const recurringMonthlyIncome = recurringTransactions
+    .filter((t) => t.type === "income" && t.isActive)
+    .reduce((sum: number, rt: any) => {
+      let monthlyAmount = rt.amount;
+      if (rt.frequency === "weekly") {
+        monthlyAmount = rt.amount * 4; // 4 weeks in a month
+      } else if (rt.frequency === "biweekly") {
+        monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
+      } else if (rt.frequency === "monthly") {
+        monthlyAmount = rt.amount * 1; // 1 month period
+      }
+      return sum + monthlyAmount;
+    }, 0);
 
-  const monthlyExpenses = monthlyTransactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum: number, t: any) => sum + t.amount, 0);
+  const recurringMonthlyExpenses = recurringTransactions
+    .filter((t) => t.type === "expense" && t.isActive)
+    .reduce((sum: number, rt: any) => {
+      let monthlyAmount = rt.amount;
+      if (rt.frequency === "weekly") {
+        monthlyAmount = rt.amount * 4; // 4 weeks in a month
+      } else if (rt.frequency === "biweekly") {
+        monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
+      } else if (rt.frequency === "monthly") {
+        monthlyAmount = rt.amount * 1; // 1 month period
+      }
+      return sum + monthlyAmount;
+    }, 0);
+
+  // Total monthly amounts including recurring
+  const monthlyIncome =
+    monthlyTransactions
+      .filter((t) => t.type === "income")
+      .reduce((sum: number, t: any) => sum + t.amount, 0) +
+    recurringMonthlyIncome;
+
+  const monthlyExpenses =
+    monthlyTransactions
+      .filter((t) => t.type === "expense")
+      .reduce((sum: number, t: any) => sum + t.amount, 0) +
+    recurringMonthlyExpenses;
 
   const netIncome = monthlyIncome - monthlyExpenses;
 
@@ -212,6 +252,45 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       });
     }
 
+    // Recurring Transaction Insights
+    if (recurringMonthlyIncome > 0 || recurringMonthlyExpenses > 0) {
+      const totalRecurring = recurringMonthlyIncome + recurringMonthlyExpenses;
+      const recurringPercentage =
+        monthlyIncome > 0 ? (totalRecurring / monthlyIncome) * 100 : 0;
+
+      if (recurringPercentage > 80) {
+        insights.push({
+          id: "high-recurring-commitments",
+          type: "info",
+          icon: "repeat",
+          title: "High Recurring Commitments",
+          message: `${recurringPercentage.toFixed(
+            0
+          )}% of your monthly finances are recurring - good predictability!`,
+        });
+      } else if (recurringPercentage > 50) {
+        insights.push({
+          id: "moderate-recurring-commitments",
+          type: "info",
+          icon: "repeat",
+          title: "Moderate Recurring Commitments",
+          message: `${recurringPercentage.toFixed(
+            0
+          )}% of your monthly finances are recurring - balanced approach!`,
+        });
+      } else if (recurringPercentage > 0) {
+        insights.push({
+          id: "low-recurring-commitments",
+          type: "info",
+          icon: "repeat",
+          title: "Low Recurring Commitments",
+          message: `${recurringPercentage.toFixed(
+            0
+          )}% of your monthly finances are recurring - flexible spending!`,
+        });
+      }
+    }
+
     return insights;
   };
 
@@ -225,6 +304,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       monthlyTransactions.length,
       emergencyFundProgress,
       totalSavings,
+      recurringMonthlyIncome,
+      recurringMonthlyExpenses,
     ]
   );
 
@@ -244,9 +325,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     // Get net worth entries
     const netWorthEntries = await getUserNetWorthEntries(user?.uid || "");
 
+    // Calculate the 6 months ending with the current month
+    // This will show: [5 months ago, 4 months ago, 3 months ago, 2 months ago, 1 month ago, current month]
     for (let i = 5; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
+
+      // Debug: Log what month we're calculating
+      console.log(
+        `Calculating month ${i}: ${date.toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        })}`
+      );
+
       const monthTransactions = transactions.filter((t) => {
         const tDate = new Date(t.date);
         return (
@@ -255,13 +347,65 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         );
       });
 
-      const income = monthTransactions
+      // Calculate actual transactions for this month
+      const actualIncome = monthTransactions
         .filter((t) => t.type === "income")
         .reduce((sum: number, t: any) => sum + t.amount, 0);
 
-      const expenses = monthTransactions
+      const actualExpenses = monthTransactions
         .filter((t) => t.type === "expense")
         .reduce((sum: number, t: any) => sum + t.amount, 0);
+
+      // Calculate recurring amounts for this month (only if recurring transaction was active during this month)
+      const recurringIncome = recurringTransactions
+        .filter((t) => t.type === "income" && t.isActive)
+        .reduce((sum: number, rt: any) => {
+          // Check if this recurring transaction was active during the month we're calculating
+          const transactionStartDate = new Date(rt.startDate);
+          const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+          const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+          // Only include if transaction started before or during this month
+          if (transactionStartDate <= monthEnd) {
+            let monthlyAmount = rt.amount;
+            if (rt.frequency === "weekly") {
+              monthlyAmount = rt.amount * 4;
+            } else if (rt.frequency === "biweekly") {
+              monthlyAmount = rt.amount * 2;
+            } else if (rt.frequency === "monthly") {
+              monthlyAmount = rt.amount * 1;
+            }
+            return sum + monthlyAmount;
+          }
+          return sum;
+        }, 0);
+
+      const recurringExpenses = recurringTransactions
+        .filter((t) => t.type === "expense" && t.isActive)
+        .reduce((sum: number, rt: any) => {
+          // Check if this recurring transaction was active during the month we're calculating
+          const transactionStartDate = new Date(rt.startDate);
+          const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+          const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+          // Only include if transaction started before or during this month
+          if (transactionStartDate <= monthEnd) {
+            let monthlyAmount = rt.amount;
+            if (rt.frequency === "weekly") {
+              monthlyAmount = rt.amount * 4;
+            } else if (rt.frequency === "biweekly") {
+              monthlyAmount = rt.amount * 2;
+            } else if (rt.frequency === "monthly") {
+              monthlyAmount = rt.amount * 1;
+            }
+            return sum + monthlyAmount;
+          }
+          return sum;
+        }, 0);
+
+      // Total monthly amounts including recurring
+      const totalIncome = actualIncome + recurringIncome;
+      const totalExpenses = actualExpenses + recurringExpenses;
 
       // Find net worth for this month
       const monthNetWorthEntry = netWorthEntries.find((entry) => {
@@ -290,11 +434,31 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
       last6Months.push({
         month: date.toLocaleDateString("en-US", { month: "short" }),
-        income,
-        expenses,
+        income: totalIncome,
+        expenses: totalExpenses,
         netWorth,
+        // Additional breakdown for insights
+        actualIncome,
+        actualExpenses,
+        recurringIncome,
+        recurringExpenses,
       });
     }
+
+    // Debug logging to verify recurring transaction calculations
+    console.log(
+      "6-Month Trend Data:",
+      last6Months.map((month) => ({
+        month: month.month,
+        totalIncome: month.income,
+        totalExpenses: month.expenses,
+        actualIncome: month.actualIncome,
+        actualExpenses: month.actualExpenses,
+        recurringIncome: month.recurringIncome,
+        recurringExpenses: month.recurringExpenses,
+      }))
+    );
+
     return last6Months;
   };
 
@@ -313,7 +477,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       }
     };
     loadTrendData();
-  }, [user, transactions]); // Removed assets and debts dependencies to prevent circular updates
+  }, [user, transactions, recurringTransactions]); // Added recurringTransactions dependency
 
   // Prepare data for line chart
   const chartData = trendData.map((month) => ({
@@ -461,18 +625,41 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Ionicons name="trending-up" size={20} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text
+                <View
                   style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
+                    flexDirection: "row",
+                    alignItems: "center",
                     marginBottom: 4,
-                    fontWeight: "600",
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
                   }}
                 >
-                  {translate("income", isFriendlyMode)}
-                </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      fontWeight: "600",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {translate("income", isFriendlyMode)}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Alert.alert(
+                        "Income Breakdown",
+                        "Income includes both actual transactions this month and recurring income (salary, rent, etc.) that automatically occurs each month.",
+                        [{ text: "Got it" }]
+                      );
+                    }}
+                    style={{ marginLeft: 8 }}
+                  >
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
                 <Text
                   style={{
                     fontSize: 20,
@@ -483,6 +670,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 >
                   {formatCurrency(monthlyIncome)}
                 </Text>
+                {/* Show breakdown of actual vs recurring income */}
+                {recurringMonthlyIncome > 0 && (
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {formatCurrency(monthlyIncome - recurringMonthlyIncome)}{" "}
+                    actual + {formatCurrency(recurringMonthlyIncome)} recurring
+                  </Text>
+                )}
               </View>
             </View>
 
@@ -502,18 +702,41 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Ionicons name="trending-down" size={20} color={colors.error} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text
+                <View
                   style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
+                    flexDirection: "row",
+                    alignItems: "center",
                     marginBottom: 4,
-                    fontWeight: "600",
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
                   }}
                 >
-                  {translate("expenses", isFriendlyMode)}
-                </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      fontWeight: "600",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {translate("expenses", isFriendlyMode)}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Alert.alert(
+                        "Expenses Breakdown",
+                        "Expenses include both actual transactions this month and recurring expenses (mortgage, utilities, etc.) that automatically occur each month.",
+                        [{ text: "Got it" }]
+                      );
+                    }}
+                    style={{ marginLeft: 8 }}
+                  >
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
                 <Text
                   style={{
                     fontSize: 20,
@@ -524,6 +747,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 >
                   {formatCurrency(monthlyExpenses)}
                 </Text>
+                {/* Show breakdown of actual vs recurring expenses */}
+                {recurringMonthlyExpenses > 0 && (
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {formatCurrency(monthlyExpenses - recurringMonthlyExpenses)}{" "}
+                    actual + {formatCurrency(recurringMonthlyExpenses)}{" "}
+                    recurring
+                  </Text>
+                )}
               </View>
             </View>
 
@@ -824,7 +1061,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               color: colors.text,
             }}
           >
-            6-Month Trend
+            6-Month Trend (Last 6 Months)
           </Text>
 
           <CustomTrendChart
@@ -833,8 +1070,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             netWorthData={netWorthData}
             height={250}
           />
-        </View>
 
+          {/* Chart Legend and Notes */}
+          <View style={{ marginTop: 16, paddingHorizontal: 8 }}>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+                textAlign: "center",
+                lineHeight: 16,
+              }}
+            >
+              Chart shows the last 6 months ending with the current month.
+              Includes both actual transactions and recurring commitments.
+              Recurring amounts only appear for months after they were created.
+            </Text>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
