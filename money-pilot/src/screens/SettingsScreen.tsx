@@ -572,7 +572,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           style={{
             backgroundColor: colors.surface,
             borderRadius: 16,
-            padding: 16,
+            padding: 20,
             shadowColor: colors.shadow,
             shadowOpacity: 0.06,
             shadowRadius: 8,
@@ -585,7 +585,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             style={{
               fontSize: 16,
               fontWeight: "600",
-              marginBottom: 8,
+              marginBottom: 16,
               color: colors.text,
             }}
           >
@@ -620,14 +620,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             }}
           />
           {isBankConnected ? (
-            <View>
+            <View style={{ marginTop: 12 }}>
               {connectedBankInfo?.accounts &&
                 connectedBankInfo.accounts.length > 0 && (
                   <Text
                     style={{
                       color: colors.textSecondary,
                       fontSize: 12,
-                      marginTop: 8,
                     }}
                   >
                     {connectedBankInfo.accounts.length} account
@@ -637,7 +636,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 )}
             </View>
           ) : (
-            <Text style={{ marginTop: 8, color: colors.textSecondary }}>
+            <Text style={{ marginTop: 12, color: colors.textSecondary }}>
               Or keep it manual—works great from day one.
             </Text>
           )}

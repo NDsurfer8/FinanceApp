@@ -15,6 +15,7 @@ import { useSubscription } from "../contexts/SubscriptionContext";
 import { useData } from "../contexts/DataContext";
 import { usePaywall } from "../hooks/usePaywall";
 import { LinkSuccess, LinkExit } from "react-native-plaid-link-sdk";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface PlaidLinkComponentProps {
   onSuccess?: () => void;
@@ -27,6 +28,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   onExit,
   onLoadingChange,
 }) => {
+  const { colors } = useTheme();
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
@@ -477,82 +479,82 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
   return (
     <View>
-      {isConnected ? (
-        <TouchableOpacity
-          onPress={handleDisconnectBank}
-          style={{
-            backgroundColor: "#16a34a",
-            paddingVertical: 12,
-            paddingHorizontal: 14,
-            borderRadius: 12,
-            alignSelf: "flex-start",
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-        >
+      <TouchableOpacity
+        onPress={isConnected ? handleDisconnectBank : handleConnectBank}
+        disabled={isLoading || isButtonDisabled}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingVertical: 10,
+          paddingHorizontal: 14,
+          backgroundColor: colors.surfaceSecondary,
+          borderRadius: 12,
+          opacity: isLoading || isButtonDisabled ? 0.6 : 1,
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
           <Ionicons
-            name="checkmark-circle"
-            size={16}
-            color="white"
-            style={{ marginRight: 8 }}
+            name={isConnected ? "checkmark-circle" : "link"}
+            size={20}
+            color={colors.textSecondary}
+            style={{ marginRight: 12 }}
           />
-          <Text
-            style={{
-              fontFamily: fontFamily.semiBold,
-              color: "white",
-              fontWeight: "600",
-              fontSize: 14,
-            }}
-          >
-            Bank Connected
-          </Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity
-          onPress={handleConnectBank}
-          disabled={isLoading || isButtonDisabled}
-          style={{
-            backgroundColor: "#111827",
-            paddingVertical: 12,
-            paddingHorizontal: 14,
-            borderRadius: 12,
-            alignSelf: "flex-start",
-            flexDirection: "row",
-            alignItems: "center",
-            opacity: isLoading || isButtonDisabled ? 0.6 : 1,
-          }}
-          activeOpacity={0.7}
-        >
-          {isLoading ? (
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+              }}
+            >
+              {isConnected
+                ? "Connected via Plaid"
+                : hasPremiumAccess()
+                ? "Connect your bank account"
+                : "Upgrade to connect bank"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {isLoading && (
             <ActivityIndicator
               size="small"
-              color="white"
-              style={{ marginRight: 8 }}
-            />
-          ) : (
-            <Ionicons
-              name="link"
-              size={16}
-              color="white"
+              color={colors.primary}
               style={{ marginRight: 8 }}
             />
           )}
           <Text
             style={{
-              fontFamily: fontFamily.semiBold,
-              color: "white",
-              fontWeight: "600",
+              color: colors.textSecondary,
+              marginRight: 8,
               fontSize: 14,
             }}
           >
-            {isLoading
-              ? "Connecting..."
-              : hasPremiumAccess()
-              ? "Connect Bank (Plaid)"
-              : "Upgrade to Connect Bank"}
+            {isConnected ? "Connected" : "Disconnected"}
           </Text>
-        </TouchableOpacity>
-      )}
+          <View
+            style={{
+              width: 44,
+              height: 24,
+              borderRadius: 12,
+              backgroundColor: isConnected ? colors.primary : colors.border,
+              padding: 2,
+            }}
+          >
+            <View
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 10,
+                backgroundColor: "#fff",
+                transform: [{ translateX: isConnected ? 20 : 0 }],
+              }}
+            />
+          </View>
+        </View>
+      </TouchableOpacity>
     </View>
   );
 };
