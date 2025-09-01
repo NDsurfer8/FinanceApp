@@ -417,7 +417,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
 
-    // Calculate monthly income and expenses
+    // Calculate monthly income and expenses from actual transactions
     const monthlyTransactions = transactions.filter((transaction) => {
       const transactionDate = new Date(transaction.date);
       return (
@@ -426,15 +426,57 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       );
     });
 
-    const monthlyIncome = monthlyTransactions
+    const actualMonthlyIncome = monthlyTransactions
       .filter((t) => t.type === "income")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const monthlyExpenses = monthlyTransactions
+    const actualMonthlyExpenses = monthlyTransactions
       .filter((t) => t.type === "expense")
       .reduce((sum, t) => sum + t.amount, 0);
 
+    // Calculate recurring monthly income and expenses
+    const recurringMonthlyIncome = recurringTransactions
+      .filter((t) => t.type === "income" && t.isActive)
+      .reduce((sum, rt) => {
+        let monthlyAmount = rt.amount;
+        if (rt.frequency === "weekly") {
+          monthlyAmount = rt.amount * 4; // 4 weeks in a month
+        } else if (rt.frequency === "biweekly") {
+          monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
+        }
+        return sum + monthlyAmount;
+      }, 0);
+
+    const recurringMonthlyExpenses = recurringTransactions
+      .filter((t) => t.type === "expense" && t.isActive)
+      .reduce((sum, rt) => {
+        let monthlyAmount = rt.amount;
+        if (rt.frequency === "weekly") {
+          monthlyAmount = rt.amount * 4; // 4 weeks in a month
+        } else if (rt.frequency === "biweekly") {
+          monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
+        }
+        return sum + monthlyAmount;
+      }, 0);
+
+    // Total monthly amounts including recurring
+    const monthlyIncome = actualMonthlyIncome + recurringMonthlyIncome;
+    const monthlyExpenses = actualMonthlyExpenses + recurringMonthlyExpenses;
     const netIncome = monthlyIncome - monthlyExpenses;
+
+    // Debug logging to verify calculations
+    console.log("Financial Snapshot Calculations:", {
+      actualMonthlyIncome,
+      actualMonthlyExpenses,
+      recurringMonthlyIncome,
+      recurringMonthlyExpenses,
+      totalMonthlyIncome: monthlyIncome,
+      totalMonthlyExpenses: monthlyExpenses,
+      netIncome,
+      recurringTransactionsCount: recurringTransactions.filter(
+        (t) => t.isActive
+      ).length,
+    });
 
     // Calculate totals
     const totalDebt = debts.reduce((sum, debt) => sum + debt.balance, 0);
@@ -463,6 +505,11 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       (t) => t.type === "expense" && t.isActive
     );
 
+    // Get all recurring transactions for comprehensive analysis
+    const allRecurringTransactions = recurringTransactions.filter(
+      (t) => t.isActive
+    );
+
     return {
       monthlyIncome,
       monthlyExpenses,
@@ -481,6 +528,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       assets,
       debts,
       transactions,
+      recurringTransactions: allRecurringTransactions,
     };
   };
 

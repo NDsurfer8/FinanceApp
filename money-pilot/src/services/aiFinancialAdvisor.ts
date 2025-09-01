@@ -18,6 +18,7 @@ export interface FinancialSnapshot {
   assets: any[];
   debts: any[];
   transactions: any[];
+  recurringTransactions?: any[]; // Full recurring transaction data
 }
 
 class AIFinancialAdvisorService {
@@ -71,7 +72,7 @@ class AIFinancialAdvisorService {
 
       // Prepare financial data for backend - optimized for token usage
       const financialData = {
-        // Core metrics only
+        // Core metrics only (includes recurring transactions)
         monthlyIncome: snapshot.monthlyIncome,
         monthlyExpenses: snapshot.monthlyExpenses,
         netIncome: snapshot.netIncome,
@@ -83,6 +84,7 @@ class AIFinancialAdvisorService {
         totalDebt: snapshot.totalDebt,
         totalSavings: snapshot.totalSavings,
         netWorth: snapshot.netWorth,
+
         // Limit to 10 most important items each
         assets:
           snapshot.assets
@@ -100,6 +102,18 @@ class AIFinancialAdvisorService {
             currentAmount: g.currentAmount,
             targetAmount: g.targetAmount,
             monthlyContribution: g.monthlyContribution,
+          })) || [],
+        // Include recurring transactions for comprehensive analysis
+        recurringTransactions:
+          snapshot.recurringExpenses?.slice(0, 15).map((rt) => ({
+            name: rt.name,
+            amount: rt.amount,
+            type: rt.type,
+            category: rt.category,
+            frequency: rt.frequency,
+            isActive: rt.isActive,
+            startDate: rt.startDate,
+            endDate: rt.endDate,
           })) || [],
       };
 

@@ -179,12 +179,31 @@ class FinancialPlanGenerator {
   private generateMonthlyBudgetPlan(
     snapshot: FinancialSnapshot
   ): MonthlyBudgetPlan {
+    // Calculate recurring monthly expenses from recurring transactions
+    const recurringMonthlyExpenses = (snapshot.recurringExpenses || []).reduce(
+      (sum, rt) => {
+        // Convert different frequencies to monthly amounts
+        let monthlyAmount = rt.amount;
+        if (rt.frequency === "weekly") {
+          monthlyAmount = rt.amount * 4; // 4 weeks in a month
+        } else if (rt.frequency === "biweekly") {
+          monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
+        }
+        return sum + monthlyAmount;
+      },
+      0
+    );
+
+    // Total monthly expenses including recurring
+    const totalMonthlyExpenses =
+      snapshot.monthlyExpenses + recurringMonthlyExpenses;
+
     const savingsAmount = (snapshot.monthlyIncome * snapshot.savingsRate) / 100;
     const debtPayoffAmount =
       (snapshot.monthlyIncome * snapshot.debtPayoffRate) / 100;
     const discretionary =
       snapshot.monthlyIncome -
-      snapshot.monthlyExpenses -
+      totalMonthlyExpenses -
       savingsAmount -
       debtPayoffAmount;
 
@@ -194,6 +213,16 @@ class FinancialPlanGenerator {
         category: "Expenses",
         amount: snapshot.monthlyExpenses,
         percentage: (snapshot.monthlyExpenses / snapshot.monthlyIncome) * 100,
+      },
+      {
+        category: "Recurring Expenses",
+        amount: recurringMonthlyExpenses,
+        percentage: (recurringMonthlyExpenses / snapshot.monthlyIncome) * 100,
+      },
+      {
+        category: "Total Expenses",
+        amount: totalMonthlyExpenses,
+        percentage: (totalMonthlyExpenses / snapshot.monthlyIncome) * 100,
       },
       {
         category: "Savings",
@@ -214,7 +243,7 @@ class FinancialPlanGenerator {
 
     return {
       income: snapshot.monthlyIncome,
-      expenses: snapshot.monthlyExpenses,
+      expenses: totalMonthlyExpenses, // Use total including recurring
       savings: savingsAmount,
       debtPayoff: debtPayoffAmount,
       discretionary,
@@ -382,12 +411,26 @@ class FinancialPlanGenerator {
     const recommendations = [];
 
     // Emergency fund recommendations
-    const emergencyFundTarget = snapshot.monthlyExpenses * 6;
+    const totalMonthlyExpenses =
+      snapshot.monthlyExpenses +
+      (snapshot.recurringExpenses || []).reduce((sum, rt) => {
+        let monthlyAmount = rt.amount;
+        if (rt.frequency === "weekly") {
+          monthlyAmount = rt.amount * 4;
+        } else if (rt.frequency === "biweekly") {
+          monthlyAmount = rt.amount * 2;
+        }
+        return sum + monthlyAmount;
+      }, 0);
+
+    const emergencyFundTarget = totalMonthlyExpenses * 6;
     if (snapshot.totalSavings < emergencyFundTarget) {
       recommendations.push(
         `Build emergency fund to $${emergencyFundTarget.toFixed(
           2
-        )} (currently $${snapshot.totalSavings.toFixed(2)})`
+        )} (currently $${snapshot.totalSavings.toFixed(
+          2
+        )}) - includes recurring expenses`
       );
     }
 
@@ -431,6 +474,45 @@ class FinancialPlanGenerator {
 
       if (totalMonthlyContributions > availableForGoals) {
         recommendations.push("Review goal contributions - may be overextended");
+      }
+    }
+
+    // Recurring transaction recommendations
+    if (snapshot.recurringExpenses && snapshot.recurringExpenses.length > 0) {
+      const recurringMonthlyTotal = snapshot.recurringExpenses.reduce(
+        (sum, rt) => {
+          let monthlyAmount = rt.amount;
+          if (rt.frequency === "weekly") {
+            monthlyAmount = rt.amount * 4;
+          } else if (rt.frequency === "biweekly") {
+            monthlyAmount = rt.amount * 2;
+          }
+          return sum + monthlyAmount;
+        },
+        0
+      );
+
+      const recurringToIncomeRatio =
+        (recurringMonthlyTotal / snapshot.monthlyIncome) * 100;
+
+      if (recurringToIncomeRatio > 50) {
+        recommendations.push(
+          "High recurring expenses - consider reviewing subscriptions and recurring payments"
+        );
+      } else if (recurringToIncomeRatio > 30) {
+        recommendations.push(
+          "Monitor recurring expenses - they represent a significant portion of income"
+        );
+      }
+
+      // Check for inactive recurring transactions
+      const inactiveRecurring = snapshot.recurringExpenses.filter(
+        (rt) => !rt.isActive
+      );
+      if (inactiveRecurring.length > 0) {
+        recommendations.push(
+          "Review inactive recurring transactions - consider cleaning up unused subscriptions"
+        );
       }
     }
 
