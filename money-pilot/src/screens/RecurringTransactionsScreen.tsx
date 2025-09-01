@@ -193,9 +193,13 @@ export const RecurringTransactionsScreen: React.FC<
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Loading...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -313,7 +317,12 @@ export const RecurringTransactionsScreen: React.FC<
               >
                 <View style={styles.transactionHeader}>
                   <View style={styles.transactionInfo}>
-                    <View style={styles.categoryIcon}>
+                    <View
+                      style={[
+                        styles.categoryIcon,
+                        { backgroundColor: colors.surfaceSecondary },
+                      ]}
+                    >
                       <Ionicons
                         name={getCategoryIcon(transaction.category) as any}
                         size={20}
@@ -366,7 +375,12 @@ export const RecurringTransactionsScreen: React.FC<
                   </View>
                 </View>
 
-                <View style={styles.transactionFooter}>
+                <View
+                  style={[
+                    styles.transactionFooter,
+                    { borderTopColor: colors.border },
+                  ]}
+                >
                   <View style={styles.statusContainer}>
                     <View
                       style={[
@@ -391,7 +405,10 @@ export const RecurringTransactionsScreen: React.FC<
                   <View style={styles.actionButtons}>
                     <TouchableOpacity
                       onPress={() => openEditModal(transaction)}
-                      style={styles.editButton}
+                      style={[
+                        styles.editButton,
+                        { backgroundColor: colors.surfaceSecondary },
+                      ]}
                     >
                       <Ionicons
                         name="pencil"
@@ -510,7 +527,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "transparent", // Will be overridden with theme colors
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -543,7 +560,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
+    borderTopColor: "transparent", // Will be overridden with theme colors
   },
   statusContainer: {
     flexDirection: "row",
@@ -557,7 +574,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
-    color: "#6b7280",
+    color: "transparent", // Will be overridden with theme colors
   },
   actionButtons: {
     flexDirection: "row",
@@ -565,7 +582,7 @@ const styles = StyleSheet.create({
   },
   editButton: {
     padding: 8,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "transparent", // Will be overridden with theme colors
     borderRadius: 8,
   },
   loadingContainer: {
@@ -575,6 +592,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: "#6b7280",
+    color: "transparent", // Will be overridden with theme colors
   },
 });
