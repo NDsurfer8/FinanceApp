@@ -63,42 +63,29 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
       <View
         style={{
           flexDirection: "row",
-          justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 20,
         }}
       >
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <View
-            style={{
-              backgroundColor: colors.surfaceSecondary,
-              padding: 12,
-              borderRadius: 12,
-              marginRight: 12,
-            }}
-          >
-            <Ionicons name="pie-chart" size={20} color={colors.primary} />
-          </View>
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "700",
-              color: colors.text,
-            }}
-          >
-            {translate("budget", isFriendlyMode)} Overview
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={onPressSettings}
+        <View
           style={{
+            backgroundColor: colors.surfaceSecondary,
             padding: 12,
             borderRadius: 12,
-            backgroundColor: colors.surfaceSecondary,
+            marginRight: 12,
           }}
         >
-          <Ionicons name="settings-outline" size={20} color={colors.primary} />
-        </TouchableOpacity>
+          <Ionicons name="pie-chart" size={20} color={colors.primary} />
+        </View>
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: "700",
+            color: colors.text,
+          }}
+        >
+          {translate("budget", isFriendlyMode)} Overview
+        </Text>
       </View>
 
       {/* Main Budget Status */}
@@ -298,23 +285,26 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
           onPress={onPressDetails}
           style={{
             flex: 1,
-            backgroundColor: colors.primary,
+            backgroundColor: colors.surfaceSecondary,
             padding: 12,
-            borderRadius: 8,
+            borderRadius: 12,
             alignItems: "center",
             flexDirection: "row",
             justifyContent: "center",
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderStyle: "dashed",
           }}
         >
           <Ionicons
             name="analytics-outline"
             size={16}
-            color="white"
+            color={colors.primary}
             style={{ marginRight: 6 }}
           />
           <Text
             style={{
-              color: "white",
+              color: colors.primary,
               fontSize: 14,
               fontWeight: "600",
             }}
