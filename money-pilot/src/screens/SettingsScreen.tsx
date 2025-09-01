@@ -379,37 +379,50 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   </>
                 );
               })()}
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: colors.textSecondary,
-                  marginBottom: 8,
-                  fontWeight: "500",
-                }}
-              >
-                {currentUser?.email || "No email"}
-              </Text>
+
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View
                   style={{
-                    backgroundColor: "#dcfce7",
+                    backgroundColor: "#f0fdf4",
                     paddingHorizontal: 8,
                     paddingVertical: 4,
                     borderRadius: 12,
-                    marginRight: 8,
+                    marginRight: 10,
+                    shadowColor: "#16a34a",
+                    shadowOpacity: 0.2,
+                    shadowRadius: 6,
+                    shadowOffset: { width: 0, height: 3 },
+                    elevation: 4,
+                    borderWidth: 1.5,
+                    borderColor: "#bbf7d0",
                   }}
                 >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: "#16a34a",
-                      fontWeight: "600",
-                      textTransform: "uppercase",
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    Active
-                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <View
+                      style={{
+                        width: 4,
+                        height: 4,
+                        borderRadius: 2,
+                        backgroundColor: "#16a34a",
+                        marginRight: 5,
+                        shadowColor: "#16a34a",
+                        shadowOpacity: 0.3,
+                        shadowRadius: 2,
+                        shadowOffset: { width: 0, height: 1 },
+                      }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        color: "#15803d",
+                        fontWeight: "800",
+                        textTransform: "uppercase",
+                        letterSpacing: 1,
+                      }}
+                    >
+                      Active
+                    </Text>
+                  </View>
                 </View>
                 <Text style={{ fontSize: 12, color: colors.textSecondary }}>
                   Member since{" "}
