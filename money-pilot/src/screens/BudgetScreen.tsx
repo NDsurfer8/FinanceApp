@@ -146,14 +146,39 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     );
   });
 
-  const incomeTransactions = selectedMonthTransactions.filter(
+  // Combine actual transactions with projected recurring transactions for the selected month
+  // The transactionService already handles duplicates, so we just filter by type
+  const uniqueProjectedTransactions = isFutureMonth
+    ? projectedTransactions
+    : [];
+
+  const allMonthTransactions = [
+    ...selectedMonthTransactions,
+    ...uniqueProjectedTransactions,
+  ];
+
+  // Debug logging for projected transactions
+  if (isFutureMonth && projectedTransactions.length > 0) {
+    console.log(
+      "Debug - Projected Transactions:",
+      projectedTransactions.map((t) => ({
+        id: t.id,
+        recurringTransactionId: t.recurringTransactionId,
+        description: t.description,
+        amount: t.amount,
+        type: t.type,
+      }))
+    );
+  }
+
+  const incomeTransactions = allMonthTransactions.filter(
     (t) => t.type === "income"
   );
-  const expenseTransactions = selectedMonthTransactions.filter(
+  const expenseTransactions = allMonthTransactions.filter(
     (t) => t.type === "expense"
   );
 
-  // Calculate totals
+  // Calculate totals including projected transactions
   const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
   const totalExpenses = expenseTransactions.reduce(
     (sum, t) => sum + t.amount,
@@ -215,13 +240,13 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       }
     }
 
-    if (selectedMonthTransactions.length >= 10) {
+    if (allMonthTransactions.length >= 10) {
       insights.push({
         id: "active-month",
         type: "info",
         icon: "analytics",
         title: "Active Month",
-        message: `${selectedMonthTransactions.length} transactions tracked`,
+        message: `${allMonthTransactions.length} transactions tracked`,
       });
     }
 
@@ -253,7 +278,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       totalIncome,
       totalExpenses,
       remainingBalance,
-      selectedMonthTransactions.length,
+      allMonthTransactions.length,
       savingsPercentage,
       dismissedInsights,
     ]
@@ -297,6 +322,12 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
     loadProjectedTransactions();
   }, [selectedMonth, recurringTransactions, user]);
+
+  // Recalculate budget when month changes or projected transactions update
+  useEffect(() => {
+    // This effect will trigger a re-render and recalculate budget values
+    // when selectedMonth or projectedTransactions change
+  }, [selectedMonth, projectedTransactions]);
 
   // Set budget settings from saved data
   useEffect(() => {
@@ -849,7 +880,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           title="Income"
           icon="trending-up"
           iconColor={colors.success}
-          transactions={incomeTransactions}
+          transactions={selectedMonthTransactions.filter(
+            (t) => t.type === "income"
+          )}
           projectedTransactions={projectedTransactions.filter(
             (t) => t.type === "income"
           )}
@@ -874,7 +907,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           title="Expenses"
           icon="trending-down"
           iconColor={colors.error}
-          transactions={expenseTransactions}
+          transactions={selectedMonthTransactions.filter(
+            (t) => t.type === "expense"
+          )}
           projectedTransactions={projectedTransactions.filter(
             (t) => t.type === "expense"
           )}

@@ -199,34 +199,12 @@ export const updateRecurringTransaction = async (
     await updateRecurringTransactionEncrypted(recurringTransaction);
     console.log("Recurring transaction updated successfully");
 
-    // Update the linked transaction to reflect the recurring transaction changes
-    const { getUserTransactions } = await import("./userData");
-    const allTransactions = await getUserTransactions(
-      recurringTransaction.userId
+    // CRITICAL: DO NOT update linked actual transactions
+    // Historical actual transactions should NEVER be modified when recurring transactions change
+    // This preserves data integrity and prevents historical data from disappearing
+    console.log(
+      "Recurring transaction template updated - linked actual transactions preserved"
     );
-
-    // Find the transaction linked to this recurring transaction
-    const linkedTransaction = allTransactions.find(
-      (transaction) =>
-        transaction.recurringTransactionId === recurringTransaction.id
-    );
-
-    if (linkedTransaction) {
-      // Update the linked transaction with the new recurring transaction data
-      const updatedTransaction: Transaction = {
-        ...linkedTransaction,
-        description: recurringTransaction.name,
-        amount: recurringTransaction.amount,
-        type: recurringTransaction.type,
-        category: recurringTransaction.category,
-        date: recurringTransaction.startDate, // Use the start date as the transaction date
-        updatedAt: Date.now(),
-      };
-
-      // Update the transaction in the database
-      await updateTransaction(updatedTransaction);
-      console.log("Linked transaction updated to match recurring transaction");
-    }
   } catch (error) {
     console.error("Error updating recurring transaction:", error);
     throw error;
@@ -318,8 +296,37 @@ export const getProjectedTransactionsForMonth = async (
       0
     );
 
+    // Get current date for comparison
+    const currentDate = new Date();
+    const currentMonthStart = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    );
+
+    // Debug: Log the month comparison
+    console.log(
+      `Month comparison: Target: ${targetMonthStart.toLocaleDateString()}, Current: ${currentMonthStart.toLocaleDateString()}, Is Past: ${
+        targetMonthStart < currentMonthStart
+      }`
+    );
+
     for (const recurringTransaction of recurringTransactions) {
       if (!recurringTransaction.isActive) continue;
+
+      // CRITICAL: Only create projected transactions for current and future months
+      // Past months should never get projected transactions
+      if (targetMonthStart < currentMonthStart) {
+        console.log(
+          `Skipping past month ${targetMonthStart.toLocaleDateString()} for recurring transaction:`,
+          {
+            description: recurringTransaction.name,
+            amount: recurringTransaction.amount,
+            type: recurringTransaction.type,
+          }
+        );
+        continue; // Skip past months entirely
+      }
 
       // Check if this recurring transaction should occur in the target month
       const shouldOccur = checkIfTransactionShouldOccur(
@@ -329,32 +336,74 @@ export const getProjectedTransactionsForMonth = async (
       );
 
       if (shouldOccur) {
-        // Check if it already exists as an actual transaction
+        // Check if an actual transaction already exists for this recurring transaction in this month
         const alreadyExists = actualTransactions.some(
           (transaction) =>
-            transaction.description === recurringTransaction.name &&
-            transaction.amount === recurringTransaction.amount &&
-            transaction.type === recurringTransaction.type
+            transaction.recurringTransactionId === recurringTransaction.id
         );
 
         if (!alreadyExists) {
-          // Create projected transaction
-          const transactionDate = getNextOccurrenceDate(
-            recurringTransaction,
-            targetMonthStart
+          // Additional check: Make sure we don't already have a projected transaction for this recurring transaction in this month
+          const alreadyProjected = projectedTransactions.some(
+            (projected) =>
+              projected.recurringTransactionId === recurringTransaction.id
           );
 
-          const projectedTransaction: Transaction = {
-            id: `projected-${recurringTransaction.id}-${targetMonth.getTime()}`,
-            amount: recurringTransaction.amount,
-            type: recurringTransaction.type,
-            category: recurringTransaction.category,
-            description: recurringTransaction.name,
-            date: transactionDate.getTime(),
-            userId: userId,
-          };
+          if (!alreadyProjected) {
+            // Create projected transaction for this month
+            const transactionDate = getNextOccurrenceDate(
+              recurringTransaction,
+              targetMonthStart
+            );
 
-          projectedTransactions.push(projectedTransaction);
+            const projectedTransaction: Transaction = {
+              id: `projected-${
+                recurringTransaction.id
+              }-${targetMonth.getTime()}-${Date.now()}-${Math.random()
+                .toString(36)
+                .substr(2, 9)}`,
+              amount: recurringTransaction.amount,
+              type: recurringTransaction.type,
+              category: recurringTransaction.category,
+              description: recurringTransaction.name,
+              date: transactionDate.getTime(),
+              userId: userId,
+              recurringTransactionId: recurringTransaction.id,
+            };
+
+            projectedTransactions.push(projectedTransaction);
+
+            console.log(
+              `Created projected transaction for ${targetMonthStart.toLocaleDateString()}:`,
+              {
+                description: projectedTransaction.description,
+                amount: projectedTransaction.amount,
+                type: projectedTransaction.type,
+                recurringTransactionId:
+                  projectedTransaction.recurringTransactionId,
+              }
+            );
+          } else {
+            console.log(
+              `Skipped projected transaction for ${targetMonthStart.toLocaleDateString()} - already projected:`,
+              {
+                description: recurringTransaction.name,
+                amount: recurringTransaction.amount,
+                type: recurringTransaction.type,
+                recurringTransactionId: recurringTransaction.id,
+              }
+            );
+          }
+        } else {
+          console.log(
+            `Skipped projected transaction for ${targetMonthStart.toLocaleDateString()} - actual transaction exists:`,
+            {
+              description: recurringTransaction.name,
+              amount: recurringTransaction.amount,
+              type: recurringTransaction.type,
+              recurringTransactionId: recurringTransaction.id,
+            }
+          );
         }
       }
     }

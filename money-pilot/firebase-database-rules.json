@@ -241,61 +241,57 @@
               ".validate": "newData.isNumber() && newData.val() > 0"
             }
           }
-        }
-      }
-    },
+        },
 
-    "recurringTransactions": {
-      ".read": "auth != null",
-      ".write": "auth != null",
-      "$recurringTransactionId": {
-        ".read": "auth != null && data.child('userId').val() === auth.uid",
-        ".write": "auth != null && newData.child('userId').val() === auth.uid",
-        ".validate": "newData.hasChildren(['id', 'name', 'amount', 'type', 'category', 'frequency', 'startDate', 'isActive', 'userId', 'createdAt', 'updatedAt']) && (!newData.hasChild('endDate') || newData.child('endDate').isNumber())",
-        "id": {
-          ".validate": "newData.val() === $recurringTransactionId"
-        },
-        "name": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
-        },
-        "nameEncrypted": {
-          ".validate": "newData.isString()"
-        },
-        "amount": {
-          ".validate": "newData.isNumber() && newData.val() > 0"
-        },
-        "amountEncrypted": {
-          ".validate": "newData.isString()"
-        },
-        "type": {
-          ".validate": "newData.val() === 'income' || newData.val() === 'expense'"
-        },
-        "category": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
-        },
-        "categoryEncrypted": {
-          ".validate": "newData.isString()"
-        },
-        "frequency": {
-          ".validate": "newData.val() === 'weekly' || newData.val() === 'biweekly' || newData.val() === 'monthly' || newData.val() === 'quarterly' || newData.val() === 'yearly'"
-        },
-        "startDate": {
-          ".validate": "newData.isNumber() && newData.val() > 0"
-        },
-        "endDate": {
-          ".validate": "newData.isNumber() && newData.val() > 0"
-        },
-        "isActive": {
-          ".validate": "newData.isBoolean()"
-        },
-        "userId": {
-          ".validate": "newData.val() === auth.uid"
-        },
-        "createdAt": {
-          ".validate": "newData.isNumber() && newData.val() > 0"
-        },
-        "updatedAt": {
-          ".validate": "newData.isNumber() && newData.val() > 0"
+        "recurringTransactions": {
+          "$recurringTransactionId": {
+            ".validate": "newData.hasChildren(['id', 'name', 'amount', 'type', 'category', 'frequency', 'startDate', 'isActive', 'userId', 'createdAt', 'updatedAt']) && (!newData.hasChild('endDate') || newData.child('endDate').isNumber())",
+            "id": {
+              ".validate": "newData.val() === $recurringTransactionId"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+            },
+            "nameEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "amount": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "amountEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "type": {
+              ".validate": "newData.val() === 'income' || newData.val() === 'expense'"
+            },
+            "category": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            "categoryEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "frequency": {
+              ".validate": "newData.val() === 'weekly' || newData.val() === 'biweekly' || newData.val() === 'monthly' || newData.val() === 'quarterly' || newData.val() === 'yearly'"
+            },
+            "startDate": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "endDate": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "isActive": {
+              ".validate": "newData.isBoolean()"
+            },
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "updatedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            }
+          }
         }
       }
     },

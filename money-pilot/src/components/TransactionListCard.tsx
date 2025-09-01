@@ -281,7 +281,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
 
                     {categoryTransactions.map((transaction, index) => (
                       <TouchableOpacity
-                        key={transaction.id}
+                        key={`${transaction.id}-${transaction.date}-${index}`}
                         style={{
                           flexDirection: "row",
                           justifyContent: "space-between",
