@@ -72,7 +72,7 @@ class AIFinancialAdvisorService {
 
       // Prepare financial data for backend - optimized for token usage
       const financialData = {
-        // Core metrics only (includes recurring transactions)
+        // Core metrics (includes recurring transactions)
         monthlyIncome: snapshot.monthlyIncome,
         monthlyExpenses: snapshot.monthlyExpenses,
         netIncome: snapshot.netIncome,
@@ -84,6 +84,66 @@ class AIFinancialAdvisorService {
         totalDebt: snapshot.totalDebt,
         totalSavings: snapshot.totalSavings,
         netWorth: snapshot.netWorth,
+
+        // Income breakdown for better analysis
+        incomeBreakdown: {
+          total: snapshot.monthlyIncome,
+          recurring:
+            snapshot.recurringTransactions
+              ?.filter((rt) => rt.type === "income" && rt.isActive)
+              .reduce((sum, rt) => {
+                let monthlyAmount = rt.amount;
+                if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+                else if (rt.frequency === "biweekly")
+                  monthlyAmount = rt.amount * 2;
+                else if (rt.frequency === "monthly")
+                  monthlyAmount = rt.amount * 1;
+                return sum + monthlyAmount;
+              }, 0) || 0,
+          nonRecurring:
+            snapshot.monthlyIncome -
+            (snapshot.recurringTransactions
+              ?.filter((rt) => rt.type === "income" && rt.isActive)
+              .reduce((sum, rt) => {
+                let monthlyAmount = rt.amount;
+                if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+                else if (rt.frequency === "biweekly")
+                  monthlyAmount = rt.amount * 2;
+                else if (rt.frequency === "monthly")
+                  monthlyAmount = rt.amount * 1;
+                return sum + monthlyAmount;
+              }, 0) || 0),
+        },
+
+        // Expense breakdown for better analysis
+        expenseBreakdown: {
+          total: snapshot.monthlyExpenses,
+          recurring:
+            snapshot.recurringTransactions
+              ?.filter((rt) => rt.type === "expense" && rt.isActive)
+              .reduce((sum, rt) => {
+                let monthlyAmount = rt.amount;
+                if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+                else if (rt.frequency === "biweekly")
+                  monthlyAmount = rt.amount * 2;
+                else if (rt.frequency === "monthly")
+                  monthlyAmount = rt.amount * 1;
+                return sum + monthlyAmount;
+              }, 0) || 0,
+          nonRecurring:
+            snapshot.monthlyExpenses -
+            (snapshot.recurringTransactions
+              ?.filter((rt) => rt.type === "expense" && rt.isActive)
+              .reduce((sum, rt) => {
+                let monthlyAmount = rt.amount;
+                if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+                else if (rt.frequency === "biweekly")
+                  monthlyAmount = rt.amount * 2;
+                else if (rt.frequency === "monthly")
+                  monthlyAmount = rt.amount * 1;
+                return sum + monthlyAmount;
+              }, 0) || 0),
+        },
 
         // Limit to 10 most important items each
         assets:
@@ -104,8 +164,9 @@ class AIFinancialAdvisorService {
             monthlyContribution: g.monthlyContribution,
           })) || [],
         // Include recurring transactions for comprehensive analysis
-        recurringTransactions:
-          snapshot.recurringExpenses?.slice(0, 15).map((rt) => ({
+        recurringTransactions: (snapshot.recurringTransactions || [])
+          .slice(0, 15)
+          .map((rt) => ({
             name: rt.name,
             amount: rt.amount,
             type: rt.type,
@@ -114,7 +175,57 @@ class AIFinancialAdvisorService {
             isActive: rt.isActive,
             startDate: rt.startDate,
             endDate: rt.endDate,
-          })) || [],
+          })),
+
+        // Financial stability indicators
+        financialStability: {
+          incomeStability:
+            (snapshot.recurringTransactions || []).filter(
+              (rt) => rt.type === "income" && rt.isActive
+            ).length > 0
+              ? "stable"
+              : "variable",
+          expensePredictability:
+            (snapshot.recurringTransactions || []).filter(
+              (rt) => rt.type === "expense" && rt.isActive
+            ).length > 0
+              ? "predictable"
+              : "variable",
+          recurringIncomePercentage:
+            snapshot.monthlyIncome > 0
+              ? ((snapshot.recurringTransactions || [])
+                  .filter((rt) => rt.type === "income" && rt.isActive)
+                  .reduce((sum, rt) => {
+                    let monthlyAmount = rt.amount;
+                    if (rt.frequency === "weekly")
+                      monthlyAmount = rt.amount * 4;
+                    else if (rt.frequency === "biweekly")
+                      monthlyAmount = rt.amount * 2;
+                    else if (rt.frequency === "monthly")
+                      monthlyAmount = rt.amount * 1;
+                    return sum + monthlyAmount;
+                  }, 0) /
+                  snapshot.monthlyIncome) *
+                100
+              : 0,
+          recurringExpensePercentage:
+            snapshot.monthlyExpenses > 0
+              ? ((snapshot.recurringTransactions || [])
+                  .filter((rt) => rt.type === "expense" && rt.isActive)
+                  .reduce((sum, rt) => {
+                    let monthlyAmount = rt.amount;
+                    if (rt.frequency === "weekly")
+                      monthlyAmount = rt.amount * 4;
+                    else if (rt.frequency === "biweekly")
+                      monthlyAmount = rt.amount * 2;
+                    else if (rt.frequency === "monthly")
+                      monthlyAmount = rt.amount * 1;
+                    return sum + monthlyAmount;
+                  }, 0) /
+                  snapshot.monthlyExpenses) *
+                100
+              : 0,
+        },
       };
 
       const result = await callBackendAI(

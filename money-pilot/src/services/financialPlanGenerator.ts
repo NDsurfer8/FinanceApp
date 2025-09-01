@@ -188,6 +188,8 @@ class FinancialPlanGenerator {
           monthlyAmount = rt.amount * 4; // 4 weeks in a month
         } else if (rt.frequency === "biweekly") {
           monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
+        } else if (rt.frequency === "monthly") {
+          monthlyAmount = rt.amount * 1; // 1 month period
         }
         return sum + monthlyAmount;
       },
@@ -419,6 +421,8 @@ class FinancialPlanGenerator {
           monthlyAmount = rt.amount * 4;
         } else if (rt.frequency === "biweekly") {
           monthlyAmount = rt.amount * 2;
+        } else if (rt.frequency === "monthly") {
+          monthlyAmount = rt.amount * 1;
         }
         return sum + monthlyAmount;
       }, 0);
@@ -486,6 +490,8 @@ class FinancialPlanGenerator {
             monthlyAmount = rt.amount * 4;
           } else if (rt.frequency === "biweekly") {
             monthlyAmount = rt.amount * 2;
+          } else if (rt.frequency === "monthly") {
+            monthlyAmount = rt.amount * 1;
           }
           return sum + monthlyAmount;
         },
@@ -512,6 +518,46 @@ class FinancialPlanGenerator {
       if (inactiveRecurring.length > 0) {
         recommendations.push(
           "Review inactive recurring transactions - consider cleaning up unused subscriptions"
+        );
+      }
+    }
+
+    // Income stability recommendations
+    if (snapshot.recurringExpenses && snapshot.recurringExpenses.length > 0) {
+      const recurringIncome = snapshot.recurringExpenses
+        .filter((rt) => rt.type === "income" && rt.isActive)
+        .reduce((sum, rt) => {
+          let monthlyAmount = rt.amount;
+          if (rt.frequency === "weekly") {
+            monthlyAmount = rt.amount * 4;
+          } else if (rt.frequency === "biweekly") {
+            monthlyAmount = rt.amount * 2;
+          } else if (rt.frequency === "monthly") {
+            monthlyAmount = rt.amount * 1;
+          }
+          return sum + monthlyAmount;
+        }, 0);
+
+      const recurringIncomePercentage =
+        snapshot.monthlyIncome > 0
+          ? (recurringIncome / snapshot.monthlyIncome) * 100
+          : 0;
+
+      if (recurringIncomePercentage > 80) {
+        recommendations.push(
+          "Excellent income stability! Your income is highly predictable with strong recurring sources"
+        );
+      } else if (recurringIncomePercentage > 60) {
+        recommendations.push(
+          "Good income stability - consider building additional recurring income streams"
+        );
+      } else if (recurringIncomePercentage > 40) {
+        recommendations.push(
+          "Moderate income stability - focus on building reliable income sources"
+        );
+      } else if (recurringIncomePercentage < 20) {
+        recommendations.push(
+          "Low income stability - prioritize building recurring income for financial security"
         );
       }
     }
