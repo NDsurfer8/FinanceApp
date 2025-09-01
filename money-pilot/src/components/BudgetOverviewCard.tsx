@@ -17,6 +17,9 @@ interface BudgetOverviewCardProps {
   onPressSettings: () => void;
   onPressIncome: () => void;
   onPressExpense: () => void;
+  onPressImport?: () => void;
+  isBankConnected?: boolean;
+  availableTransactionsCount?: number;
 }
 
 export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
@@ -31,6 +34,9 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
   onPressSettings,
   onPressIncome,
   onPressExpense,
+  onPressImport,
+  isBankConnected,
+  availableTransactionsCount,
 }) => {
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
@@ -68,28 +74,65 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
         style={{
           flexDirection: "row",
           alignItems: "center",
+          justifyContent: "space-between",
           marginBottom: 20,
         }}
       >
-        <View
-          style={{
-            backgroundColor: colors.surfaceSecondary,
-            padding: 12,
-            borderRadius: 12,
-            marginRight: 12,
-          }}
-        >
-          <Ionicons name="pie-chart" size={20} color={colors.primary} />
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "700",
+              color: colors.text,
+            }}
+          >
+            {translate("budget", isFriendlyMode)} Overview
+          </Text>
         </View>
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "700",
-            color: colors.text,
-          }}
-        >
-          {translate("budget", isFriendlyMode)} Overview
-        </Text>
+
+        {/* Import Transactions Button */}
+        {isBankConnected && onPressImport && (
+          <TouchableOpacity
+            onPress={onPressImport}
+            style={{
+              position: "relative",
+              padding: 8,
+              borderRadius: 8,
+              backgroundColor: colors.surfaceSecondary,
+            }}
+          >
+            <Ionicons name="download" size={18} color={colors.primary} />
+            {availableTransactionsCount && availableTransactionsCount > 0 && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -4,
+                  right: -4,
+                  backgroundColor: colors.error,
+                  borderRadius: 10,
+                  minWidth: 18,
+                  height: 18,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderWidth: 2,
+                  borderColor: colors.surface,
+                }}
+              >
+                <Text
+                  style={{
+                    color: colors.buttonText,
+                    fontSize: 9,
+                    fontWeight: "700",
+                  }}
+                >
+                  {availableTransactionsCount > 99
+                    ? "99+"
+                    : availableTransactionsCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Main Budget Status */}
@@ -120,7 +163,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
             style={{
               fontSize: 24,
               fontWeight: "800",
-              color: budgetStatus.color,
+              color: colors.warning,
             }}
           >
             $

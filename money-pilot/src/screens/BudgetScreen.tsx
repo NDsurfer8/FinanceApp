@@ -172,6 +172,97 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     netIncome - savingsAmount - debtPayoffAmount - goalsAmount;
   const remainingBalance = discretionaryIncome;
 
+  // Smart Insights generation
+  const getInsights = () => {
+    const insights = [];
+
+    if (totalIncome > 0) {
+      // Calculate discretionary savings rate (what's actually available after all allocations)
+      const discretionarySavingsRate = (remainingBalance / totalIncome) * 100;
+      if (discretionarySavingsRate >= 20) {
+        insights.push({
+          id: "excellent-savings-rate",
+          type: "success",
+          icon: "trending-up",
+          title: "Excellent Discretionary Savings!",
+          message: `You have ${discretionarySavingsRate.toFixed(
+            1
+          )}% of your income available for additional savings`,
+        });
+      } else if (discretionarySavingsRate < 0) {
+        insights.push({
+          id: "spending-more-than-income",
+          type: "warning",
+          icon: "alert-circle",
+          title: "Over Budget",
+          message: "Your expenses and allocations exceed your income",
+        });
+      }
+    }
+
+    if (totalExpenses > 0 && totalIncome > 0) {
+      const expenseToIncomeRatio = (totalExpenses / totalIncome) * 100;
+      if (expenseToIncomeRatio > 90) {
+        insights.push({
+          id: "high-expense-ratio",
+          type: "warning",
+          icon: "trending-down",
+          title: "High Expense Ratio",
+          message: `${expenseToIncomeRatio.toFixed(
+            1
+          )}% of income goes to expenses`,
+        });
+      }
+    }
+
+    if (selectedMonthTransactions.length >= 10) {
+      insights.push({
+        id: "active-month",
+        type: "info",
+        icon: "analytics",
+        title: "Active Month",
+        message: `${selectedMonthTransactions.length} transactions tracked`,
+      });
+    }
+
+    // Savings percentage insight
+    if (parseFloat(savingsPercentage) >= 25) {
+      insights.push({
+        id: "high-savings-rate",
+        type: "success",
+        icon: "trending-up",
+        title: "High Savings Rate!",
+        message: `${savingsPercentage}% savings rate is excellent`,
+      });
+    } else if (parseFloat(savingsPercentage) < 10) {
+      insights.push({
+        id: "low-savings-rate",
+        type: "warning",
+        icon: "trending-down",
+        title: "Low Savings Rate",
+        message: `Consider increasing your ${savingsPercentage}% savings rate`,
+      });
+    }
+
+    return insights;
+  };
+
+  const insights = React.useMemo(
+    () => getInsights().filter((insight) => !dismissedInsights.has(insight.id)),
+    [
+      totalIncome,
+      totalExpenses,
+      remainingBalance,
+      selectedMonthTransactions.length,
+      savingsPercentage,
+      dismissedInsights,
+    ]
+  );
+
+  const handleDismissInsight = (insightId: string) => {
+    setDismissedInsights((prev) => new Set([...prev, insightId]));
+  };
+
   // Check if selected month is in the future
   const currentMonth = new Date();
   currentMonth.setDate(1);
@@ -641,19 +732,117 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           onPressSettings={() => setShowBudgetSettingsModal(true)}
           onPressIncome={handleAddIncome}
           onPressExpense={handleAddExpense}
+          onPressImport={() => setShowAutoImporter(true)}
+          isBankConnected={isBankConnected}
+          availableTransactionsCount={getAvailableTransactionsCount()}
         />
 
-        {/* Quick Actions Card */}
-        <QuickActionsCard
-          actions={[]}
-          onImportTransactions={() => setShowAutoImporter(true)}
-          onViewRecurring={() => navigation.navigate("RecurringTransactions")}
-          onAddGoal={() => setShowBudgetSettingsModal(true)}
-          hasBankConnection={isBankConnected}
-          availableTransactionsCount={getAvailableTransactionsCount()}
-          hasRecurringTransactions={recurringTransactions.length > 0}
-          hasGoals={goals.length > 0}
-        />
+        {/* Smart Insights - Only show if there are insights */}
+        {insights.length > 0 && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              marginBottom: 20,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: colors.warningLight,
+                  padding: 8,
+                  borderRadius: 10,
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="bulb" size={20} color={colors.warning} />
+              </View>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
+                {translate("smartInsights", isFriendlyMode)}
+              </Text>
+            </View>
+
+            {insights.map((insight, index) => (
+              <View
+                key={`insight-${insight.id}-${index}`}
+                style={{ marginBottom: 12 }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 4,
+                  }}
+                >
+                  <Ionicons
+                    name={insight.icon as any}
+                    size={16}
+                    color={
+                      insight.type === "success"
+                        ? colors.success
+                        : insight.type === "warning"
+                        ? colors.error
+                        : colors.primary
+                    }
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: colors.text,
+                      flex: 1,
+                    }}
+                  >
+                    {insight.title}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => handleDismissInsight(insight.id)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={{
+                      padding: 4,
+                      borderRadius: 12,
+                      backgroundColor: colors.surfaceSecondary,
+                    }}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={14}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                    marginLeft: 24,
+                  }}
+                >
+                  {insight.message}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Income Section */}
         <TransactionListCard
