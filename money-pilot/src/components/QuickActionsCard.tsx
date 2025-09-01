@@ -97,9 +97,9 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
       >
         <View
           style={{
-            backgroundColor: colors.primaryLight,
-            padding: 8,
-            borderRadius: 10,
+            backgroundColor: colors.surfaceSecondary,
+            padding: 12,
+            borderRadius: 12,
             marginRight: 12,
           }}
         >
@@ -169,16 +169,16 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
             {/* Icon */}
             <View
               style={{
-                backgroundColor: action.color + "20",
+                backgroundColor: colors.surfaceSecondary,
                 padding: 12,
-                borderRadius: 10,
+                borderRadius: 12,
                 marginBottom: 8,
               }}
             >
               <Ionicons
                 name={action.icon as keyof typeof Ionicons.glyphMap}
-                size={24}
-                color={action.color}
+                size={20}
+                color={colors.primary}
               />
             </View>
 

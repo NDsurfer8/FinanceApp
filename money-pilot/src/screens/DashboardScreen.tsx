@@ -502,11 +502,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   alignItems: "center",
                 }}
               >
-                <Ionicons
-                  name="trending-down"
-                  size={20}
-                  color={colors.primary}
-                />
+                <Ionicons name="trending-down" size={20} color={colors.error} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text

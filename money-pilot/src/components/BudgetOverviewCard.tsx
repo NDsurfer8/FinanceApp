@@ -71,9 +71,9 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View
             style={{
-              backgroundColor: colors.primaryLight,
-              padding: 8,
-              borderRadius: 10,
+              backgroundColor: colors.surfaceSecondary,
+              padding: 12,
+              borderRadius: 12,
               marginRight: 12,
             }}
           >
@@ -92,16 +92,12 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
         <TouchableOpacity
           onPress={onPressSettings}
           style={{
-            padding: 8,
-            borderRadius: 8,
+            padding: 12,
+            borderRadius: 12,
             backgroundColor: colors.surfaceSecondary,
           }}
         >
-          <Ionicons
-            name="settings-outline"
-            size={20}
-            color={colors.textSecondary}
-          />
+          <Ionicons name="settings-outline" size={20} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -145,12 +141,16 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
         </View>
         <View
           style={{
-            backgroundColor: budgetStatus.color,
-            padding: 8,
-            borderRadius: 8,
+            backgroundColor: colors.surfaceSecondary,
+            padding: 12,
+            borderRadius: 12,
           }}
         >
-          <Ionicons name={budgetStatus.icon as any} size={24} color="white" />
+          <Ionicons
+            name={budgetStatus.icon as any}
+            size={20}
+            color={budgetStatus.color}
+          />
         </View>
       </View>
 
@@ -165,13 +165,13 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
         <View style={{ flex: 1, marginRight: 12 }}>
           <View
             style={{
-              backgroundColor: colors.successLight,
+              backgroundColor: colors.surfaceSecondary,
               padding: 16,
               borderRadius: 12,
               alignItems: "center",
             }}
           >
-            <Ionicons name="trending-up" size={20} color={colors.success} />
+            <Ionicons name="trending-up" size={20} color={colors.primary} />
             <Text
               style={{
                 fontSize: 18,
@@ -201,7 +201,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
         <View style={{ flex: 1, marginLeft: 12 }}>
           <View
             style={{
-              backgroundColor: colors.errorLight,
+              backgroundColor: colors.surfaceSecondary,
               padding: 16,
               borderRadius: 12,
               alignItems: "center",

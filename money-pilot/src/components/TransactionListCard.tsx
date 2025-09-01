@@ -133,9 +133,9 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
         <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
           <View
             style={{
-              backgroundColor: iconColor + "20",
-              padding: 8,
-              borderRadius: 10,
+              backgroundColor: colors.surfaceSecondary,
+              padding: 12,
+              borderRadius: 12,
               marginRight: 12,
             }}
           >
@@ -166,8 +166,8 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
         <TouchableOpacity
           onPress={onToggleCollapse}
           style={{
-            padding: 8,
-            borderRadius: 8,
+            padding: 12,
+            borderRadius: 12,
             backgroundColor: colors.surfaceSecondary,
           }}
           activeOpacity={0.7}
@@ -175,7 +175,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
           <Ionicons
             name={isCollapsed ? "chevron-down" : "chevron-up"}
             size={20}
-            color={colors.textSecondary}
+            color={colors.primary}
           />
         </TouchableOpacity>
       </View>
@@ -400,17 +400,31 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
               justifyContent: "center",
               paddingVertical: 12,
               marginTop: 16,
-              backgroundColor: iconColor + "20",
+              backgroundColor: title.toLowerCase().includes("expense")
+                ? colors.error + "20"
+                : colors.surfaceSecondary,
               borderRadius: 12,
               borderWidth: 1,
-              borderColor: iconColor + "40",
+              borderColor: title.toLowerCase().includes("expense")
+                ? colors.error
+                : colors.border,
               borderStyle: "dashed",
             }}
           >
-            <Ionicons name="add-circle" size={20} color={iconColor} />
+            <Ionicons
+              name="add-circle"
+              size={20}
+              color={
+                title.toLowerCase().includes("expense")
+                  ? colors.error
+                  : colors.primary
+              }
+            />
             <Text
               style={{
-                color: iconColor,
+                color: title.toLowerCase().includes("expense")
+                  ? colors.error
+                  : colors.primary,
                 fontSize: 14,
                 fontWeight: "600",
                 marginLeft: 8,
