@@ -332,10 +332,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   }));
 
   const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+    return `$${Math.round(amount).toLocaleString()}`;
   };
 
   return (
@@ -603,7 +600,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   style={{
                     fontSize: 20,
                     fontWeight: "700",
-                    color: availableAmount >= 0 ? colors.success : colors.error,
+                    color: availableAmount >= 0 ? colors.warning : colors.error,
                     letterSpacing: -0.3,
                   }}
                 >
