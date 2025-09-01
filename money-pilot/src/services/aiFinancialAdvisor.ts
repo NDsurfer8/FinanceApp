@@ -92,12 +92,22 @@ class AIFinancialAdvisorService {
             snapshot.recurringTransactions
               ?.filter((rt) => rt.type === "income" && rt.isActive)
               .reduce((sum, rt) => {
-                let monthlyAmount = rt.amount;
-                if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+                // Get current month's effective amount (base + month overrides)
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                const monthKey = `${currentYear}-${String(
+                  currentMonth + 1
+                ).padStart(2, "0")}`;
+                const monthOverride = rt.monthOverrides?.[monthKey];
+                const effectiveAmount = monthOverride?.amount || rt.amount;
+
+                let monthlyAmount = effectiveAmount;
+                if (rt.frequency === "weekly")
+                  monthlyAmount = effectiveAmount * 4;
                 else if (rt.frequency === "biweekly")
-                  monthlyAmount = rt.amount * 2;
+                  monthlyAmount = effectiveAmount * 2;
                 else if (rt.frequency === "monthly")
-                  monthlyAmount = rt.amount * 1;
+                  monthlyAmount = effectiveAmount * 1;
                 return sum + monthlyAmount;
               }, 0) || 0,
           nonRecurring:
@@ -105,12 +115,22 @@ class AIFinancialAdvisorService {
             (snapshot.recurringTransactions
               ?.filter((rt) => rt.type === "income" && rt.isActive)
               .reduce((sum, rt) => {
-                let monthlyAmount = rt.amount;
-                if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+                // Get current month's effective amount (base + month overrides)
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                const monthKey = `${currentYear}-${String(
+                  currentMonth + 1
+                ).padStart(2, "0")}`;
+                const monthOverride = rt.monthOverrides?.[monthKey];
+                const effectiveAmount = monthOverride?.amount || rt.amount;
+
+                let monthlyAmount = effectiveAmount;
+                if (rt.frequency === "weekly")
+                  monthlyAmount = effectiveAmount * 4;
                 else if (rt.frequency === "biweekly")
-                  monthlyAmount = rt.amount * 2;
+                  monthlyAmount = effectiveAmount * 2;
                 else if (rt.frequency === "monthly")
-                  monthlyAmount = rt.amount * 1;
+                  monthlyAmount = effectiveAmount * 1;
                 return sum + monthlyAmount;
               }, 0) || 0),
         },
@@ -122,12 +142,22 @@ class AIFinancialAdvisorService {
             snapshot.recurringTransactions
               ?.filter((rt) => rt.type === "expense" && rt.isActive)
               .reduce((sum, rt) => {
-                let monthlyAmount = rt.amount;
-                if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+                // Get current month's effective amount (base + month overrides)
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                const monthKey = `${currentYear}-${String(
+                  currentMonth + 1
+                ).padStart(2, "0")}`;
+                const monthOverride = rt.monthOverrides?.[monthKey];
+                const effectiveAmount = monthOverride?.amount || rt.amount;
+
+                let monthlyAmount = effectiveAmount;
+                if (rt.frequency === "weekly")
+                  monthlyAmount = effectiveAmount * 4;
                 else if (rt.frequency === "biweekly")
-                  monthlyAmount = rt.amount * 2;
+                  monthlyAmount = effectiveAmount * 2;
                 else if (rt.frequency === "monthly")
-                  monthlyAmount = rt.amount * 1;
+                  monthlyAmount = effectiveAmount * 1;
                 return sum + monthlyAmount;
               }, 0) || 0,
           nonRecurring:
@@ -135,12 +165,22 @@ class AIFinancialAdvisorService {
             (snapshot.recurringTransactions
               ?.filter((rt) => rt.type === "expense" && rt.isActive)
               .reduce((sum, rt) => {
-                let monthlyAmount = rt.amount;
-                if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+                // Get current month's effective amount (base + month overrides)
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                const monthKey = `${currentYear}-${String(
+                  currentMonth + 1
+                ).padStart(2, "0")}`;
+                const monthOverride = rt.monthOverrides?.[monthKey];
+                const effectiveAmount = monthOverride?.amount || rt.amount;
+
+                let monthlyAmount = effectiveAmount;
+                if (rt.frequency === "weekly")
+                  monthlyAmount = effectiveAmount * 4;
                 else if (rt.frequency === "biweekly")
-                  monthlyAmount = rt.amount * 2;
+                  monthlyAmount = effectiveAmount * 2;
                 else if (rt.frequency === "monthly")
-                  monthlyAmount = rt.amount * 1;
+                  monthlyAmount = effectiveAmount * 1;
                 return sum + monthlyAmount;
               }, 0) || 0),
         },
@@ -176,17 +216,33 @@ class AIFinancialAdvisorService {
         // Include recurring transactions for comprehensive analysis
         recurringTransactions: (snapshot.recurringTransactions || [])
           .slice(0, 15)
-          .map((rt) => ({
-            name: rt.name,
-            amount: rt.amount,
-            type: rt.type,
-            category: rt.category,
-            frequency: rt.frequency,
-            isActive: rt.isActive,
-            startDate: rt.startDate,
-            endDate: rt.endDate,
-            description: rt.description || "", // Add description if available
-          })),
+          .map((rt) => {
+            // Get current month's effective values (base + month overrides)
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            const monthKey = `${currentYear}-${String(
+              currentMonth + 1
+            ).padStart(2, "0")}`;
+            const monthOverride = rt.monthOverrides?.[monthKey];
+
+            return {
+              name: monthOverride?.name || rt.name,
+              amount: monthOverride?.amount || rt.amount,
+              type: rt.type,
+              category: monthOverride?.category || rt.category,
+              frequency: rt.frequency,
+              isActive: rt.isActive,
+              startDate: rt.startDate,
+              endDate: rt.endDate,
+              description: rt.description || "",
+              // Add month override information
+              hasMonthOverride: !!monthOverride,
+              baseAmount: rt.amount,
+              baseCategory: rt.category,
+              baseName: rt.name,
+              currentMonthKey: monthKey,
+            };
+          }),
 
         // Financial stability indicators
         financialStability: {
@@ -207,13 +263,22 @@ class AIFinancialAdvisorService {
               ? ((snapshot.recurringTransactions || [])
                   .filter((rt) => rt.type === "income" && rt.isActive)
                   .reduce((sum, rt) => {
-                    let monthlyAmount = rt.amount;
+                    // Get current month's effective amount (base + month overrides)
+                    const currentMonth = new Date().getMonth();
+                    const currentYear = new Date().getFullYear();
+                    const monthKey = `${currentYear}-${String(
+                      currentMonth + 1
+                    ).padStart(2, "0")}`;
+                    const monthOverride = rt.monthOverrides?.[monthKey];
+                    const effectiveAmount = monthOverride?.amount || rt.amount;
+
+                    let monthlyAmount = effectiveAmount;
                     if (rt.frequency === "weekly")
-                      monthlyAmount = rt.amount * 4;
+                      monthlyAmount = effectiveAmount * 4;
                     else if (rt.frequency === "biweekly")
-                      monthlyAmount = rt.amount * 2;
+                      monthlyAmount = effectiveAmount * 2;
                     else if (rt.frequency === "monthly")
-                      monthlyAmount = rt.amount * 1;
+                      monthlyAmount = effectiveAmount * 1;
                     return sum + monthlyAmount;
                   }, 0) /
                   snapshot.monthlyIncome) *
@@ -224,13 +289,22 @@ class AIFinancialAdvisorService {
               ? ((snapshot.recurringTransactions || [])
                   .filter((rt) => rt.type === "expense" && rt.isActive)
                   .reduce((sum, rt) => {
-                    let monthlyAmount = rt.amount;
+                    // Get current month's effective amount (base + month overrides)
+                    const currentMonth = new Date().getMonth();
+                    const currentYear = new Date().getFullYear();
+                    const monthKey = `${currentYear}-${String(
+                      currentMonth + 1
+                    ).padStart(2, "0")}`;
+                    const monthOverride = rt.monthOverrides?.[monthKey];
+                    const effectiveAmount = monthOverride?.amount || rt.amount;
+
+                    let monthlyAmount = effectiveAmount;
                     if (rt.frequency === "weekly")
-                      monthlyAmount = rt.amount * 4;
+                      monthlyAmount = effectiveAmount * 4;
                     else if (rt.frequency === "biweekly")
-                      monthlyAmount = rt.amount * 2;
+                      monthlyAmount = effectiveAmount * 2;
                     else if (rt.frequency === "monthly")
-                      monthlyAmount = rt.amount * 1;
+                      monthlyAmount = effectiveAmount * 1;
                     return sum + monthlyAmount;
                   }, 0) /
                   snapshot.monthlyExpenses) *
@@ -244,14 +318,25 @@ class AIFinancialAdvisorService {
           topExpenseCategories: (snapshot.recurringTransactions || [])
             .filter((rt) => rt.type === "expense" && rt.isActive)
             .reduce((acc, rt) => {
-              let monthlyAmount = rt.amount;
-              if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
-              else if (rt.frequency === "biweekly")
-                monthlyAmount = rt.amount * 2;
-              else if (rt.frequency === "monthly")
-                monthlyAmount = rt.amount * 1;
+              // Get current month's effective amount (base + month overrides)
+              const currentMonth = new Date().getMonth();
+              const currentYear = new Date().getFullYear();
+              const monthKey = `${currentYear}-${String(
+                currentMonth + 1
+              ).padStart(2, "0")}`;
+              const monthOverride = rt.monthOverrides?.[monthKey];
+              const effectiveAmount = monthOverride?.amount || rt.amount;
+              const effectiveCategory = monthOverride?.category || rt.category;
 
-              const category = rt.category || "Uncategorized";
+              let monthlyAmount = effectiveAmount;
+              if (rt.frequency === "weekly")
+                monthlyAmount = effectiveAmount * 4;
+              else if (rt.frequency === "biweekly")
+                monthlyAmount = effectiveAmount * 2;
+              else if (rt.frequency === "monthly")
+                monthlyAmount = effectiveAmount * 1;
+
+              const category = effectiveCategory || "Uncategorized";
               acc[category] = (acc[category] || 0) + monthlyAmount;
               return acc;
             }, {} as Record<string, number>),
@@ -260,14 +345,25 @@ class AIFinancialAdvisorService {
           topIncomeCategories: (snapshot.recurringTransactions || [])
             .filter((rt) => rt.type === "income" && rt.isActive)
             .reduce((acc, rt) => {
-              let monthlyAmount = rt.amount;
-              if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
-              else if (rt.frequency === "biweekly")
-                monthlyAmount = rt.amount * 2;
-              else if (rt.frequency === "monthly")
-                monthlyAmount = rt.amount * 1;
+              // Get current month's effective amount (base + month overrides)
+              const currentMonth = new Date().getMonth();
+              const currentYear = new Date().getFullYear();
+              const monthKey = `${currentYear}-${String(
+                currentMonth + 1
+              ).padStart(2, "0")}`;
+              const monthOverride = rt.monthOverrides?.[monthKey];
+              const effectiveAmount = monthOverride?.amount || rt.amount;
+              const effectiveCategory = monthOverride?.category || rt.category;
 
-              const category = rt.category || "Uncategorized";
+              let monthlyAmount = effectiveAmount;
+              if (rt.frequency === "weekly")
+                monthlyAmount = effectiveAmount * 4;
+              else if (rt.frequency === "biweekly")
+                monthlyAmount = effectiveAmount * 2;
+              else if (rt.frequency === "monthly")
+                monthlyAmount = effectiveAmount * 1;
+
+              const category = effectiveCategory || "Uncategorized";
               acc[category] = (acc[category] || 0) + monthlyAmount;
               return acc;
             }, {} as Record<string, number>),
