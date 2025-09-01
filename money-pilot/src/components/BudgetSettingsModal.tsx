@@ -19,7 +19,7 @@ interface Goal {
   targetAmount: number;
   currentAmount: number;
   monthlyContribution: number;
-  targetDate?: number;
+  targetDate?: string;
   category: string;
 }
 
@@ -67,8 +67,12 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
   }, [savingsPercentage, debtPayoffPercentage]);
 
   useEffect(() => {
-    setLocalGoals(goals);
-  }, [goals]);
+    // Only update local goals if the modal is not visible
+    // This prevents interference with goal editing in other screens
+    if (!visible) {
+      setLocalGoals(goals);
+    }
+  }, [goals, visible]);
 
   // Reset original goals when modal opens
   useEffect(() => {
@@ -426,6 +430,157 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
               >
                 {recommendation.message}
               </Text>
+            </View>
+          </View>
+
+          {/* Monthly Summary */}
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 20,
+              marginBottom: 20,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 12,
+              }}
+            >
+              Monthly Summary
+            </Text>
+
+            <View style={{ marginBottom: 8 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={{ color: colors.textSecondary }}>Income:</Text>
+                <Text style={{ color: colors.text, fontWeight: "600" }}>
+                  {formatCurrency(netIncome)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ marginBottom: 8 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={{ color: colors.textSecondary }}>Expenses:</Text>
+                <Text style={{ color: colors.error, fontWeight: "600" }}>
+                  -{formatCurrency(totalExpenses)}
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={{
+                borderTopWidth: 1,
+                borderTopColor: colors.border,
+                paddingTop: 8,
+                marginTop: 8,
+                marginBottom: 16,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={{ color: colors.text, fontWeight: "600" }}>
+                  Net Income:
+                </Text>
+                <Text style={{ color: colors.text, fontWeight: "700" }}>
+                  {formatCurrency(netIncome - totalExpenses)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ marginBottom: 8 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={{ color: colors.textSecondary }}>Savings:</Text>
+                <Text style={{ color: colors.success, fontWeight: "600" }}>
+                  -{formatCurrency(savingsAmount)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ marginBottom: 8 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={{ color: colors.textSecondary }}>
+                  Debt Payoff:
+                </Text>
+                <Text style={{ color: colors.error, fontWeight: "600" }}>
+                  -{formatCurrency(debtAmount)}
+                </Text>
+              </View>
+            </View>
+
+            {localGoals.length > 0 && (
+              <View style={{ marginBottom: 8 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={{ color: colors.textSecondary }}>
+                    Financial Goals:
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.info || "#3b82f6",
+                      fontWeight: "600",
+                    }}
+                  >
+                    -{formatCurrency(goalsAmount)}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <View
+              style={{
+                borderTopWidth: 1,
+                borderTopColor: colors.border,
+                paddingTop: 8,
+                marginTop: 8,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={{ color: colors.text, fontWeight: "600" }}>
+                  Available for Spending:
+                </Text>
+                <Text style={{ color: colors.warning, fontWeight: "700" }}>
+                  {formatCurrency(
+                    netIncomeAmount - savingsAmount - debtAmount - goalsAmount
+                  )}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -923,157 +1078,6 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
               )}
             </View>
           )}
-
-          {/* Summary */}
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 16,
-              padding: 20,
-              marginBottom: 20,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-                color: colors.text,
-                marginBottom: 12,
-              }}
-            >
-              Monthly Summary
-            </Text>
-
-            <View style={{ marginBottom: 8 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ color: colors.textSecondary }}>Income:</Text>
-                <Text style={{ color: colors.text, fontWeight: "600" }}>
-                  {formatCurrency(netIncome)}
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ marginBottom: 8 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ color: colors.textSecondary }}>Expenses:</Text>
-                <Text style={{ color: colors.error, fontWeight: "600" }}>
-                  -{formatCurrency(totalExpenses)}
-                </Text>
-              </View>
-            </View>
-
-            <View
-              style={{
-                borderTopWidth: 1,
-                borderTopColor: colors.border,
-                paddingTop: 8,
-                marginTop: 8,
-                marginBottom: 16,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ color: colors.text, fontWeight: "600" }}>
-                  Net Income:
-                </Text>
-                <Text style={{ color: colors.text, fontWeight: "700" }}>
-                  {formatCurrency(netIncome - totalExpenses)}
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ marginBottom: 8 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ color: colors.textSecondary }}>Savings:</Text>
-                <Text style={{ color: colors.success, fontWeight: "600" }}>
-                  -{formatCurrency(savingsAmount)}
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ marginBottom: 8 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ color: colors.textSecondary }}>
-                  Debt Payoff:
-                </Text>
-                <Text style={{ color: colors.error, fontWeight: "600" }}>
-                  -{formatCurrency(debtAmount)}
-                </Text>
-              </View>
-            </View>
-
-            {localGoals.length > 0 && (
-              <View style={{ marginBottom: 8 }}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Text style={{ color: colors.textSecondary }}>
-                    Financial Goals:
-                  </Text>
-                  <Text
-                    style={{
-                      color: colors.info || "#3b82f6",
-                      fontWeight: "600",
-                    }}
-                  >
-                    -{formatCurrency(goalsAmount)}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            <View
-              style={{
-                borderTopWidth: 1,
-                borderTopColor: colors.border,
-                paddingTop: 8,
-                marginTop: 8,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={{ color: colors.text, fontWeight: "600" }}>
-                  Available for Spending:
-                </Text>
-                <Text style={{ color: colors.warning, fontWeight: "700" }}>
-                  {formatCurrency(
-                    netIncomeAmount - savingsAmount - debtAmount - goalsAmount
-                  )}
-                </Text>
-              </View>
-            </View>
-          </View>
         </ScrollView>
       </View>
     </Modal>
