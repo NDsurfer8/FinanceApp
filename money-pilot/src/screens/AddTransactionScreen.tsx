@@ -728,7 +728,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     // Show confirmation
     Alert.alert(
       "Stop Future Recurring",
-      "This will stop all future recurring transactions from this point forward. Historical data and month overrides will be preserved.\n\nThis action cannot be undone.",
+      "Stop creating future recurring transactions?\n\nYour custom amounts for other months will be preserved.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -766,7 +766,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
               Alert.alert(
                 "Success",
-                "Future recurring transactions have been stopped! Historical data and month overrides are preserved.",
+                "Future recurring transactions stopped! Your custom amounts are preserved.",
                 [{ text: "OK", onPress: () => navigation.goBack() }]
               );
             } catch (error) {
@@ -810,8 +810,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         Alert.alert(
           "Delete Recurring Transaction",
           isFutureMonth
-            ? `This will:\n\n• Delete the month override for ${monthKey}\n• Keep the current transaction\n• Keep the base recurring template\n\nThis action cannot be undone.`
-            : "This will:\n\n• Delete all future recurring transactions\n• Keep the current transaction\n\nThis action cannot be undone.",
+            ? `Delete this month's custom amount?\n\nThis month will use the standard recurring amount instead.`
+            : "Delete this recurring transaction?\n\nFuture recurring transactions will stop, but this transaction will remain.",
           [
             {
               text: "Cancel",
@@ -821,7 +821,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               },
             },
             {
-              text: isFutureMonth ? "Delete Month Override" : "Delete Template",
+              text: isFutureMonth ? "Delete Custom Amount" : "Delete Recurring",
               style: "destructive" as const,
               onPress: async () => {
                 try {
@@ -868,8 +868,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   Alert.alert(
                     "Success",
                     isFutureMonth
-                      ? `Month override deleted for ${monthKey}! This month will now use the base recurring template.`
-                      : "Recurring transaction stopped! Future occurrences will no longer be created.",
+                      ? `Custom amount deleted! This month will use the standard recurring amount.`
+                      : "Recurring transaction deleted! Future recurring transactions will stop.",
                     [{ text: "OK", onPress: () => navigation.goBack() }]
                   );
                 } catch (error) {
