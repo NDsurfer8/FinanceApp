@@ -909,21 +909,13 @@ class PlaidService {
   ): Promise<PlaidTransaction[]> {
     try {
       const getTransactions = httpsCallable(this.functions, "getTransactions");
-      console.log(
-        `[${new Date().toISOString()}] Plaid API: getTransactions (sync) for user: ${
-          this.userId
-        }`
-      );
-      console.log("📞 Calling Firebase Function: getTransactions (sync)");
 
-      const startTime = Date.now();
       const result = await getTransactions({
         accessToken: this.accessToken,
         cursor: null, // Start with null cursor for initial fetch
         // Note: /transactions/sync doesn't use date parameters
         // It fetches all available transactions and uses cursor-based pagination
       });
-      const duration = Date.now() - startTime;
 
       const { transactions } = result.data as { transactions: any[] };
 
