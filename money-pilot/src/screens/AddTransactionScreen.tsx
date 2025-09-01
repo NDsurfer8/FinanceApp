@@ -61,6 +61,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const { refreshRecurringTransactions, refreshTransactions } = useData();
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [stopFutureLoading, setStopFutureLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const {
@@ -710,6 +711,79 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     }
   };
 
+  const handleStopFutureRecurring = async () => {
+    if (!user || !editMode || !transaction) {
+      Alert.alert("Error", "Cannot stop future recurring");
+      return;
+    }
+
+    // Check if this is a recurring transaction
+    const isRecurringTransaction =
+      transaction.isRecurring || transaction.recurringTransactionId;
+    if (!isRecurringTransaction) {
+      Alert.alert("Error", "This is not a recurring transaction");
+      return;
+    }
+
+    // Show confirmation
+    Alert.alert(
+      "Stop Future Recurring",
+      "This will stop all future recurring transactions from this point forward. Historical data and month overrides will be preserved.\n\nThis action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Stop Future Recurring",
+          style: "destructive",
+          onPress: async () => {
+            setStopFutureLoading(true);
+            try {
+              const recurringTransactionId =
+                transaction.recurringTransactionId || transaction.id;
+              const { updateRecurringTransactionEndDate } = await import(
+                "../services/transactionService"
+              );
+
+              // Set end date to the end of the current month being edited
+              const editDate = new Date(transaction.date);
+              const endOfMonth = new Date(
+                editDate.getFullYear(),
+                editDate.getMonth() + 1,
+                0
+              );
+              endOfMonth.setHours(23, 59, 59, 999);
+
+              await updateRecurringTransactionEndDate(
+                user.uid,
+                recurringTransactionId,
+                endOfMonth.getTime()
+              );
+
+              // Refresh data
+              await Promise.all([
+                refreshTransactions(),
+                refreshRecurringTransactions(),
+              ]);
+
+              Alert.alert(
+                "Success",
+                "Future recurring transactions have been stopped! Historical data and month overrides are preserved.",
+                [{ text: "OK", onPress: () => navigation.goBack() }]
+              );
+            } catch (error) {
+              console.error("Error stopping future recurring:", error);
+              Alert.alert(
+                "Error",
+                "Failed to stop future recurring. Please try again."
+              );
+            } finally {
+              setStopFutureLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleDelete = async () => {
     if (!user || !editMode || !transaction) {
       Alert.alert("Error", "Cannot delete transaction");
@@ -734,7 +808,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
         // Show confirmation for deleting recurring transaction
         Alert.alert(
-          "Manage Recurring Transaction",
+          "Delete Recurring Transaction",
           isFutureMonth
             ? `This will:\n\n• Delete the month override for ${monthKey}\n• Keep the current transaction\n• Keep the base recurring template\n\nThis action cannot be undone.`
             : "This will:\n\n• Delete all future recurring transactions\n• Keep the current transaction\n\nThis action cannot be undone.",
@@ -748,7 +822,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             },
             {
               text: isFutureMonth ? "Delete Month Override" : "Delete Template",
-              style: "destructive",
+              style: "destructive" as const,
               onPress: async () => {
                 try {
                   // Optimistic update - remove all related transactions
@@ -1466,6 +1540,44 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 {editMode ? "Update" : "Save"} Transaction
               </Text>
             </TouchableOpacity>
+
+            {/* Stop Future Recurring Button (only for active recurring transactions in edit mode) */}
+            {editMode &&
+              (transaction?.isRecurring ||
+                transaction?.recurringTransactionId) &&
+              !formData.endDate && (
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: colors.warning + "20",
+                    padding: 18,
+                    borderRadius: 12,
+                    alignItems: "center",
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    borderWidth: 1,
+                    borderColor: colors.warning,
+                  }}
+                  onPress={handleStopFutureRecurring}
+                  disabled={stopFutureLoading}
+                >
+                  {stopFutureLoading && (
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.warning}
+                      style={{ marginRight: 8 }}
+                    />
+                  )}
+                  <Text
+                    style={{
+                      color: colors.warning,
+                      fontSize: 16,
+                      fontWeight: "700",
+                    }}
+                  >
+                    Stop Future Recurring
+                  </Text>
+                </TouchableOpacity>
+              )}
 
             {/* Delete Button (only in edit mode) */}
             {editMode && (
