@@ -31,6 +31,9 @@ import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
 import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
 import { timestampToDateString } from "../utils/dateUtils";
+import { useTransactionActions } from "../hooks/useTransactionActions";
+import { TransactionBusinessService } from "../services/TransactionBusinessService";
+import { TransactionActionsService } from "../services/TransactionActionsService";
 
 interface AddTransactionScreenProps {
   navigation: any;
@@ -113,6 +116,30 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       : undefined,
   });
 
+  // Store original recurring transaction data for comparison
+  const [originalRecurringData, setOriginalRecurringData] = useState<{
+    amount: number;
+    category: string;
+    name: string;
+  } | null>(null);
+
+  // Use the custom hook for transaction actions
+  const {
+    actions,
+    isFutureMonth,
+    monthKey,
+    isModified,
+    canShowDeleteButton,
+    canShowStopFutureButton,
+    canShowModificationIndicator,
+    deleteButtonText,
+    stopFutureButtonText,
+  } = useTransactionActions({
+    transaction,
+    originalRecurringData,
+    isEditMode: editMode || false,
+  });
+
   // Handle route params for bank suggestions
   React.useEffect(() => {
     // Handle pre-filled data from bank suggestions
@@ -172,6 +199,13 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               frequency: associatedRecurringTransaction.frequency,
               endDate: associatedRecurringTransaction.endDate || undefined,
             }));
+
+            // Store original data for comparison
+            setOriginalRecurringData({
+              amount: associatedRecurringTransaction.amount,
+              category: associatedRecurringTransaction.category,
+              name: associatedRecurringTransaction.name,
+            });
           }
         } catch (error) {
           console.error(
@@ -258,23 +292,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
   const categories = getCategories(formData.type);
 
-  // Calculate monthly equivalent amount based on frequency
-  const calculateMonthlyAmount = (
-    amount: string,
-    frequency: string
-  ): number => {
-    const numAmount = parseFloat(amount) || 0;
-    switch (frequency) {
-      case "weekly":
-        return numAmount * 4; // 4 weeks in a month
-      case "biweekly":
-        return numAmount * 2; // 2 bi-weekly periods in a month
-      case "monthly":
-        return numAmount; // No multiplication needed
-      default:
-        return numAmount;
-    }
-  };
+  // Use the service for calculating monthly amounts
+  const calculateMonthlyAmount =
+    TransactionActionsService.calculateMonthlyAmount;
 
   // Get the monthly equivalent amount for display
   const monthlyEquivalentAmount =
@@ -345,242 +365,161 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           !transaction.isRecurring &&
           !transaction.recurringTransactionId
         ) {
-          // Create recurring transaction and delete the original
-          const { createRecurringTransaction } = await import(
-            "../services/transactionService"
+          // Use business service to convert to recurring
+          const template = TransactionActionsService.createRecurringTemplate(
+            {
+              description: formData.description,
+              amount: formData.amount,
+              category: formData.category,
+              type: formData.type,
+              frequency: formData.frequency,
+              date: formData.date,
+              endDate: formData.endDate,
+            },
+            user.uid
           );
 
-          // Calculate the monthly equivalent amount for recurring transactions
-          const monthlyAmount = calculateMonthlyAmount(
-            formData.amount,
-            formData.frequency
-          );
-
-          const recurringTransaction = {
-            name: formData.description,
-            amount: monthlyAmount, // Save the monthly equivalent amount
-            type: formData.type as "income" | "expense",
-            category: formData.category,
-            frequency: formData.frequency,
-            startDate: new Date(formData.date).getTime(),
-            endDate: formData.endDate ? formData.endDate : undefined,
-            isActive: true,
-            userId: user.uid,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          };
-
-          // Remove the original transaction from UI
-          const updatedTransactions = transactions.filter(
-            (t) => t.id !== transaction.id
-          );
-          updateDataOptimistically({ transactions: updatedTransactions });
-
-          // Delete original transaction and create recurring one
-          await removeTransaction(user.uid, transaction.id);
-          // Pass the selected month to create a transaction for that month
           const selectedMonthDate = selectedMonth
             ? new Date(selectedMonth)
             : undefined;
-          await createRecurringTransaction(
-            recurringTransaction,
+          const result = await TransactionBusinessService.convertToRecurring(
+            transaction,
+            template,
+            user.uid,
             selectedMonthDate
           );
 
-          // Refresh DataContext to update other screens and ensure consistency
-          await Promise.all([
-            refreshTransactions(),
-            refreshRecurringTransactions(),
-          ]);
+          if (result.success) {
+            // Remove the original transaction from UI
+            const updatedTransactions = transactions.filter(
+              (t) => t.id !== transaction.id
+            );
+            updateDataOptimistically({ transactions: updatedTransactions });
 
-          Alert.alert(
-            "Success",
-            "Transaction converted to recurring successfully!",
-            [{ text: "OK", onPress: () => navigation.goBack() }]
-          );
+            // Refresh DataContext to update other screens and ensure consistency
+            await Promise.all([
+              refreshTransactions(),
+              refreshRecurringTransactions(),
+            ]);
+
+            Alert.alert("Success", result.message, [
+              { text: "OK", onPress: () => navigation.goBack() },
+            ]);
+          } else {
+            Alert.alert("Error", result.message);
+          }
         } else if (
           !formData.isRecurring &&
           (transaction.isRecurring || transaction.recurringTransactionId)
         ) {
-          // Convert recurring transaction to regular transaction
-          const newTransaction = {
-            id: Date.now().toString(),
-            description: formData.description,
-            amount: parseFloat(removeCommas(formData.amount)),
-            category: formData.category,
-            type: formData.type as "income" | "expense",
-            date: new Date(formData.date).getTime(),
-            userId: user.uid,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          };
-
-          // Remove the recurring transaction from UI
-          const updatedTransactions = transactions.filter(
-            (t) => t.id !== transaction.id
-          );
-          updateDataOptimistically({ transactions: updatedTransactions });
-
-          console.log("Converted recurring to regular - removed from UI");
-
-          // Delete recurring transaction and create regular one
-          const { deleteRecurringTransaction } = await import(
-            "../services/transactionService"
+          // Use business service to convert to regular
+          const result = await TransactionBusinessService.convertToRegular(
+            transaction,
+            {
+              description: formData.description,
+              amount: formData.amount,
+              category: formData.category,
+              type: formData.type,
+              date: formData.date,
+            },
+            user.uid
           );
 
-          // Use recurringTransactionId if available, otherwise use transaction.id
-          const recurringTransactionId =
-            transaction.recurringTransactionId || transaction.id;
-          await deleteRecurringTransaction(recurringTransactionId, user.uid);
-          const savedTransaction = await saveTransaction(newTransaction);
+          if (result.success) {
+            // Remove the recurring transaction from UI
+            const updatedTransactions = transactions.filter(
+              (t) => t.id !== transaction.id
+            );
+            updateDataOptimistically({ transactions: updatedTransactions });
 
-          console.log(
-            "Converted recurring to regular - created new transaction with ID:",
-            savedTransaction
-          );
+            // Add the new transaction to UI
+            const finalTransactions = [
+              ...updatedTransactions,
+              {
+                id: result.data.newTransactionId,
+                description: formData.description,
+                amount: parseFloat(removeCommas(formData.amount)),
+                category: formData.category,
+                type: formData.type,
+                date: formData.date,
+                userId: user.uid,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+              },
+            ];
+            updateDataOptimistically({ transactions: finalTransactions });
 
-          // Add the new transaction to UI
-          const finalTransactions = [
-            ...updatedTransactions,
-            { ...newTransaction, id: savedTransaction },
-          ];
-          updateDataOptimistically({ transactions: finalTransactions });
+            // Only refresh recurring transactions to update limits, preserve optimistic transaction updates
+            await refreshRecurringTransactions();
 
-          console.log(
-            "Converted recurring to regular - added new transaction to UI"
-          );
-
-          // Only refresh recurring transactions to update limits, preserve optimistic transaction updates
-          await refreshRecurringTransactions();
-
-          console.log(
-            "Converted recurring to regular - refreshed recurring transactions only"
-          );
-
-          Alert.alert(
-            "Success",
-            "Recurring transaction converted to regular transaction!",
-            [{ text: "OK", onPress: () => navigation.goBack() }]
-          );
+            Alert.alert("Success", result.message, [
+              { text: "OK", onPress: () => navigation.goBack() },
+            ]);
+          } else {
+            Alert.alert("Error", result.message);
+          }
         } else if (
           formData.isRecurring &&
           (transaction.isRecurring || transaction.recurringTransactionId)
         ) {
-          // Update existing recurring transaction
-          const { updateRecurringTransaction } = await import(
-            "../services/transactionService"
-          );
-
-          // Get the recurring transaction ID
-          const recurringTransactionId =
-            transaction.recurringTransactionId || transaction.id;
-
-          // Get the current recurring transaction to update it
-          const { getUserRecurringTransactions } = await import(
-            "../services/userData"
-          );
-          const recurringTransactions = await getUserRecurringTransactions(
-            user.uid
-          );
-          const currentRecurringTransaction = recurringTransactions.find(
-            (rt) => rt.id === recurringTransactionId
-          );
-
-          if (!currentRecurringTransaction) {
-            Alert.alert("Error", "Recurring transaction not found");
-            return;
-          }
-
-          // Calculate the monthly equivalent amount for recurring transactions
-          const monthlyAmount = calculateMonthlyAmount(
-            formData.amount,
-            formData.frequency
-          );
-
-          // For bank suggestions, always save as monthly frequency to ensure consistent display
+          // Use business service to update recurring transaction
           const finalFrequency = route.params?.fromBankSuggestion
             ? "monthly"
             : formData.frequency;
 
-          // Check if this is a future month edit
-          const editDate = new Date(formData.date);
-          const currentDate = new Date();
-          const isFutureMonth = editDate > currentDate;
-          const monthKey = `${editDate.getFullYear()}-${String(
-            editDate.getMonth() + 1
-          ).padStart(2, "0")}`;
-
-          // Update the recurring transaction
-          let updatedRecurringTransaction;
-
-          if (isFutureMonth) {
-            // For future months, create a month-specific override
-            const monthOverrides =
-              currentRecurringTransaction.monthOverrides || {};
-            monthOverrides[monthKey] = {
-              amount: monthlyAmount,
-              category: formData.category,
-              name: formData.description,
-            };
-
-            updatedRecurringTransaction = {
-              ...currentRecurringTransaction,
-              monthOverrides,
-              updatedAt: Date.now(),
-            };
-
-            console.log(
-              `Created month override for ${monthKey}:`,
-              monthOverrides[monthKey]
-            );
-          } else {
-            // For current/past months, update the template (affects all future projections)
-            updatedRecurringTransaction = {
-              ...currentRecurringTransaction,
-              name: formData.description,
-              amount: monthlyAmount, // Save the monthly equivalent amount
-              type: formData.type as "income" | "expense",
-              category: formData.category,
-              frequency: finalFrequency, // Use monthly for bank suggestions
-              // DO NOT update startDate - preserve when the recurring transaction originally started
-              endDate: formData.endDate ? formData.endDate : undefined,
-              updatedAt: Date.now(),
-            };
-          }
-
-          await updateRecurringTransaction(updatedRecurringTransaction);
-
-          // Optimistic update - update the transaction to reflect the new recurring transaction ID
-          const updatedTransactions = transactions.map((t) => {
-            if (t.id === transaction.id) {
-              return {
-                ...t,
+          const result =
+            await TransactionBusinessService.updateRecurringTransaction(
+              transaction,
+              {
                 description: formData.description,
-                amount: monthlyAmount, // Show the monthly equivalent amount
+                amount: formData.amount,
                 category: formData.category,
-                type: formData.type as "income" | "expense",
-                date: new Date(formData.date).getTime(),
-                recurringTransactionId: recurringTransactionId, // Keep the recurring transaction ID
-                updatedAt: Date.now(),
-              };
-            }
-            return t;
-          });
-          updateDataOptimistically({ transactions: updatedTransactions });
+                type: formData.type,
+                frequency: finalFrequency,
+                date: formData.date,
+                endDate: formData.endDate,
+              },
+              user.uid,
+              isFutureMonth,
+              monthKey || ""
+            );
 
-          // Refresh DataContext to update both transactions and recurring transactions
-          await Promise.all([
-            refreshTransactions(),
-            refreshRecurringTransactions(),
-          ]);
+          if (result.success) {
+            // Optimistic update - update the transaction to reflect the new recurring transaction ID
+            const monthlyAmount = calculateMonthlyAmount(
+              formData.amount,
+              finalFrequency
+            );
+            const updatedTransactions = transactions.map((t) => {
+              if (t.id === transaction.id) {
+                return {
+                  ...t,
+                  description: formData.description,
+                  amount: monthlyAmount,
+                  category: formData.category,
+                  type: formData.type,
+                  date: new Date(formData.date).getTime(),
+                  recurringTransactionId:
+                    transaction.recurringTransactionId || transaction.id,
+                  updatedAt: Date.now(),
+                };
+              }
+              return t;
+            });
+            updateDataOptimistically({ transactions: updatedTransactions });
 
-          Alert.alert(
-            "Success",
-            isFutureMonth
-              ? `Recurring transaction updated for ${monthKey}! This change only affects this specific month.`
-              : "Recurring transaction updated! Future occurrences will reflect these changes.",
-            [{ text: "OK", onPress: () => navigation.goBack() }]
-          );
+            // Refresh DataContext to update both transactions and recurring transactions
+            await Promise.all([
+              refreshTransactions(),
+              refreshRecurringTransactions(),
+            ]);
+
+            Alert.alert("Success", result.message, [
+              { text: "OK", onPress: () => navigation.goBack() },
+            ]);
+          } else {
+            Alert.alert("Error", result.message);
+          }
         } else {
           // Regular update (no change in recurring status)
           const updatedTransaction = {
@@ -607,57 +546,42 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           ]);
         }
       } else if (formData.isRecurring) {
-        // Create recurring transaction
-        const { createRecurringTransaction } = await import(
-          "../services/transactionService"
-        );
-
-        // Calculate the monthly equivalent amount for recurring transactions
-        const monthlyAmount = calculateMonthlyAmount(
-          formData.amount,
-          formData.frequency
-        );
-
-        // For bank suggestions, always save as monthly frequency to ensure consistent display
+        // Use business service to create new recurring transaction
         const finalFrequency = route.params?.fromBankSuggestion
           ? "monthly"
           : formData.frequency;
 
-        const recurringTransaction = {
-          name: formData.description,
-          amount: monthlyAmount, // Save the monthly equivalent amount
-          type: formData.type as "income" | "expense",
-          category: formData.category,
-          frequency: finalFrequency, // Use monthly for bank suggestions
-          startDate: new Date(formData.date).getTime(),
-          endDate: formData.endDate ? formData.endDate : undefined,
-          isActive: true,
-          userId: user.uid,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
-
-        // Pass the selected month to create a transaction for that month
-        const selectedMonthDate = selectedMonth
-          ? new Date(selectedMonth)
-          : undefined;
-        await createRecurringTransaction(
-          recurringTransaction,
-          selectedMonthDate
+        const template = TransactionActionsService.createRecurringTemplate(
+          {
+            description: formData.description,
+            amount: formData.amount,
+            category: formData.category,
+            type: formData.type,
+            frequency: finalFrequency,
+            date: formData.date,
+            endDate: formData.endDate,
+          },
+          user.uid
         );
 
-        // Refresh both to ensure the newly created transaction appears
-        await Promise.all([
-          refreshTransactions(),
-          refreshRecurringTransactions(),
-        ]);
+        const result =
+          await TransactionBusinessService.createNewRecurringTransaction(
+            template
+          );
 
-        console.log("Recurring transaction created, refreshing DataContext...");
-        console.log("Refreshed transactions and recurring transactions");
+        if (result.success) {
+          // Refresh both to ensure the newly created transaction appears
+          await Promise.all([
+            refreshTransactions(),
+            refreshRecurringTransactions(),
+          ]);
 
-        Alert.alert("Success", "Recurring transaction created successfully!", [
-          { text: "OK", onPress: () => navigation.goBack() },
-        ]);
+          Alert.alert("Success", result.message, [
+            { text: "OK", onPress: () => navigation.goBack() },
+          ]);
+        } else {
+          Alert.alert("Error", result.message);
+        }
       } else {
         // Create regular transaction
         const newTransaction = {
@@ -737,38 +661,25 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           onPress: async () => {
             setStopFutureLoading(true);
             try {
-              const recurringTransactionId =
-                transaction.recurringTransactionId || transaction.id;
-              const { updateRecurringTransactionEndDate } = await import(
-                "../services/transactionService"
-              );
+              const result =
+                await TransactionBusinessService.stopFutureRecurring(
+                  transaction,
+                  user.uid
+                );
 
-              // Set end date to the end of the current month being edited
-              const editDate = new Date(transaction.date);
-              const endOfMonth = new Date(
-                editDate.getFullYear(),
-                editDate.getMonth() + 1,
-                0
-              );
-              endOfMonth.setHours(23, 59, 59, 999);
+              if (result.success) {
+                // Refresh data
+                await Promise.all([
+                  refreshTransactions(),
+                  refreshRecurringTransactions(),
+                ]);
 
-              await updateRecurringTransactionEndDate(
-                user.uid,
-                recurringTransactionId,
-                endOfMonth.getTime()
-              );
-
-              // Refresh data
-              await Promise.all([
-                refreshTransactions(),
-                refreshRecurringTransactions(),
-              ]);
-
-              Alert.alert(
-                "Success",
-                "Future recurring transactions stopped! Your custom amounts are preserved.",
-                [{ text: "OK", onPress: () => navigation.goBack() }]
-              );
+                Alert.alert("Success", result.message, [
+                  { text: "OK", onPress: () => navigation.goBack() },
+                ]);
+              } else {
+                Alert.alert("Error", result.message);
+              }
             } catch (error) {
               console.error("Error stopping future recurring:", error);
               Alert.alert(
@@ -798,20 +709,16 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         transaction.isRecurring || transaction.recurringTransactionId;
 
       if (isRecurringTransaction) {
-        // Check if this is a future month with a month override
-        const editDate = new Date(transaction.date);
-        const currentDate = new Date();
-        const isFutureMonth = editDate > currentDate;
-        const monthKey = `${editDate.getFullYear()}-${String(
-          editDate.getMonth() + 1
-        ).padStart(2, "0")}`;
+        // Use hook values for future month and month key
+        const futureMonth = isFutureMonth;
+        const monthKeyValue = monthKey;
 
         // Show confirmation for deleting recurring transaction
         Alert.alert(
           "Delete Recurring Transaction",
-          isFutureMonth
+          futureMonth
             ? `Delete this month's custom amount?\n\nThis month will use the standard recurring amount instead.`
-            : "Delete this recurring transaction?\n\nFuture recurring transactions will stop, but this transaction will remain.",
+            : "Delete this recurring transaction?\n\nThis will delete this transaction and all future projections.",
           [
             {
               text: "Cancel",
@@ -821,7 +728,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               },
             },
             {
-              text: isFutureMonth ? "Delete Custom Amount" : "Delete Recurring",
+              text: deleteButtonText,
               style: "destructive" as const,
               onPress: async () => {
                 try {
@@ -837,41 +744,28 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     transactions: updatedTransactions,
                   });
 
-                  // Delete the recurring transaction or month override
-                  if (isFutureMonth) {
-                    // Delete only the month override
-                    const { deleteMonthOverride } = await import(
-                      "../services/transactionService"
-                    );
-                    await deleteMonthOverride(
+                  // Use business service to delete recurring transaction
+                  const result =
+                    await TransactionBusinessService.deleteRecurringTransaction(
+                      transaction,
                       user.uid,
-                      recurringTransactionId,
-                      monthKey
+                      futureMonth,
+                      monthKeyValue || ""
                     );
+
+                  if (result.success) {
+                    // Refresh DataContext to update transaction limits and ensure consistency
+                    await Promise.all([
+                      refreshTransactions(),
+                      refreshRecurringTransactions(),
+                    ]);
+
+                    Alert.alert("Success", result.message, [
+                      { text: "OK", onPress: () => navigation.goBack() },
+                    ]);
                   } else {
-                    // Delete the entire recurring transaction
-                    const { deleteRecurringTransaction } = await import(
-                      "../services/transactionService"
-                    );
-                    await deleteRecurringTransaction(
-                      recurringTransactionId,
-                      user.uid
-                    );
+                    Alert.alert("Error", result.message);
                   }
-
-                  // Refresh DataContext to update transaction limits and ensure consistency
-                  await Promise.all([
-                    refreshTransactions(),
-                    refreshRecurringTransactions(),
-                  ]);
-
-                  Alert.alert(
-                    "Success",
-                    isFutureMonth
-                      ? `Custom amount deleted! This month will use the standard recurring amount.`
-                      : "Recurring transaction deleted! Future recurring transactions will stop.",
-                    [{ text: "OK", onPress: () => navigation.goBack() }]
-                  );
                 } catch (error) {
                   console.error("Error deleting recurring transaction:", error);
                   Alert.alert(
@@ -1541,46 +1435,73 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               </Text>
             </TouchableOpacity>
 
-            {/* Stop Future Recurring Button (only for active recurring transactions in edit mode) */}
-            {editMode &&
-              (transaction?.isRecurring ||
-                transaction?.recurringTransactionId) &&
-              !formData.endDate && (
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: colors.warning + "20",
-                    padding: 18,
-                    borderRadius: 12,
-                    alignItems: "center",
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    borderWidth: 1,
-                    borderColor: colors.warning,
-                  }}
-                  onPress={handleStopFutureRecurring}
-                  disabled={stopFutureLoading}
-                >
-                  {stopFutureLoading && (
-                    <ActivityIndicator
-                      size="small"
-                      color={colors.warning}
-                      style={{ marginRight: 8 }}
-                    />
-                  )}
+            {/* Show modification indicator for recurring transactions */}
+            {canShowModificationIndicator && (
+              <View style={{ marginBottom: 16, alignItems: "center" }}>
+                {isModified ? (
                   <Text
                     style={{
                       color: colors.warning,
-                      fontSize: 16,
-                      fontWeight: "700",
+                      fontSize: 14,
+                      textAlign: "center",
+                      fontStyle: "italic",
                     }}
                   >
-                    Stop Future Recurring
+                    This transaction has been modified from the original
+                    recurring amount
                   </Text>
-                </TouchableOpacity>
-              )}
+                ) : (
+                  <Text
+                    style={{
+                      color: colors.textSecondary,
+                      fontSize: 14,
+                      textAlign: "center",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    This is the original recurring transaction amount
+                  </Text>
+                )}
+              </View>
+            )}
 
-            {/* Delete Button (only in edit mode) */}
-            {editMode && (
+            {/* Stop Future Recurring Button (always show for recurring transactions in edit mode) */}
+            {canShowStopFutureButton && (
+              <TouchableOpacity
+                style={{
+                  backgroundColor: colors.warning + "20",
+                  padding: 18,
+                  borderRadius: 12,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  borderWidth: 1,
+                  borderColor: colors.warning,
+                }}
+                onPress={handleStopFutureRecurring}
+                disabled={stopFutureLoading}
+              >
+                {stopFutureLoading && (
+                  <ActivityIndicator
+                    size="small"
+                    color={colors.warning}
+                    style={{ marginRight: 8 }}
+                  />
+                )}
+                <Text
+                  style={{
+                    color: colors.warning,
+                    fontSize: 16,
+                    fontWeight: "700",
+                  }}
+                >
+                  Stop Future Recurring
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Delete Button (always show in edit mode) */}
+            {canShowDeleteButton && (
               <TouchableOpacity
                 style={{
                   backgroundColor: colors.error + "20",
@@ -1609,7 +1530,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     fontWeight: "700",
                   }}
                 >
-                  Delete Transaction
+                  {deleteButtonText}
                 </Text>
               </TouchableOpacity>
             )}
