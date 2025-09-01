@@ -335,14 +335,66 @@ export const encryptRecurringTransaction = async (
   transaction: any
 ): Promise<any> => {
   const fieldsToEncrypt = ["name", "amount", "category"];
-  return await encryptFields(transaction, fieldsToEncrypt);
+  let encryptedTransaction = await encryptFields(transaction, fieldsToEncrypt);
+
+  // Handle monthOverrides encryption
+  if (
+    transaction.monthOverrides &&
+    typeof transaction.monthOverrides === "object"
+  ) {
+    const encryptedMonthOverrides: any = {};
+
+    for (const [monthKey, override] of Object.entries(
+      transaction.monthOverrides
+    )) {
+      if (override && typeof override === "object") {
+        const overrideFieldsToEncrypt = ["amount", "category", "name"];
+        encryptedMonthOverrides[monthKey] = await encryptFields(
+          override,
+          overrideFieldsToEncrypt
+        );
+      } else {
+        encryptedMonthOverrides[monthKey] = override;
+      }
+    }
+
+    encryptedTransaction.monthOverrides = encryptedMonthOverrides;
+  }
+
+  return encryptedTransaction;
 };
 
 export const decryptRecurringTransaction = async (
   transaction: any
 ): Promise<any> => {
   const fieldsToDecrypt = ["name", "amount", "category"];
-  return await decryptFields(transaction, fieldsToDecrypt);
+  let decryptedTransaction = await decryptFields(transaction, fieldsToDecrypt);
+
+  // Handle monthOverrides decryption
+  if (
+    transaction.monthOverrides &&
+    typeof transaction.monthOverrides === "object"
+  ) {
+    const decryptedMonthOverrides: any = {};
+
+    for (const [monthKey, override] of Object.entries(
+      transaction.monthOverrides
+    )) {
+      if (override && typeof override === "object") {
+        const overrideFieldsToDecrypt = ["amount", "category", "name"];
+        decryptedMonthOverrides[monthKey] = await decryptFields(
+          override,
+          overrideFieldsToDecrypt
+        );
+      } else {
+        decryptedMonthOverrides[monthKey] = override;
+      }
+    }
+
+    decryptedTransaction.monthOverrides = decryptedMonthOverrides;
+  }
+
+  return decryptedTransaction;
 };
 
 // Budget Settings encryption/decryption

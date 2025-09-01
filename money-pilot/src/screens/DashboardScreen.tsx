@@ -834,6 +834,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             height={250}
           />
         </View>
+
       </ScrollView>
     </SafeAreaView>
   );

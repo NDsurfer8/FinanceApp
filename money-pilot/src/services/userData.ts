@@ -20,6 +20,8 @@ export interface Transaction {
   recurringTransactionId?: string; // Reference to the recurring transaction that created this
   createdAt?: number;
   updatedAt?: number;
+  // Flag to distinguish actual vs projected transactions
+  isProjected?: boolean;
 }
 
 export interface Asset {
@@ -81,9 +83,16 @@ export interface RecurringTransaction {
   endDate?: number; // Optional end date
   isActive: boolean;
   skippedMonths?: string[]; // Array of "YYYY-MM" strings for skipped months
+  monthOverrides?: {
+    [monthKey: string]: { amount: number; category?: string; name?: string };
+  }; // Month-specific overrides
   userId: string;
   createdAt: number;
   updatedAt: number;
+  // New fields for smart recurring system
+  lastGeneratedDate?: number; // Last time a transaction was generated
+  nextDueDate?: number; // Next expected occurrence
+  totalOccurrences?: number; // Count of times generated
 }
 
 // ===== SHARED FINANCE INTERFACES =====
@@ -1830,7 +1839,7 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
 
 export const saveRecurringTransaction = async (
   recurringTransaction: RecurringTransaction
-): Promise<void> => {
+): Promise<string> => {
   try {
     const { encryptRecurringTransaction } = await import("./encryption");
     const encryptedTransaction = await encryptRecurringTransaction(
@@ -1843,6 +1852,11 @@ export const saveRecurringTransaction = async (
       `users/${recurringTransaction.userId}/recurringTransactions`
     );
     const newRecurringTransactionRef = push(recurringTransactionRef);
+    const transactionId = newRecurringTransactionRef.key;
+
+    if (!transactionId) {
+      throw new Error("Failed to generate recurring transaction ID");
+    }
 
     // Remove undefined values before saving to Firebase
     const transactionToSave = { ...encryptedTransaction };
@@ -1852,7 +1866,7 @@ export const saveRecurringTransaction = async (
 
     await set(newRecurringTransactionRef, {
       ...transactionToSave,
-      id: newRecurringTransactionRef.key,
+      id: transactionId,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -1860,6 +1874,8 @@ export const saveRecurringTransaction = async (
     console.log(
       "Recurring transaction saved successfully under user collection"
     );
+
+    return transactionId;
   } catch (error) {
     console.error("Error saving recurring transaction:", error);
     throw new Error("Failed to save recurring transaction");
@@ -1938,48 +1954,70 @@ export const updateRecurringTransaction = async (
 };
 
 export const deleteRecurringTransaction = async (
-  recurringTransactionId: string
+  recurringTransactionId: string,
+  userId: string
 ): Promise<void> => {
   try {
-    // We need to search through all users to find the recurring transaction
-    // This is a limitation of the new structure, but it's more secure
-    const usersRef = ref(db, "users");
-    const usersSnapshot = await get(usersRef);
-
-    if (!usersSnapshot.exists()) {
-      throw new Error("No users found");
-    }
-
-    let recurringTransaction: any = null;
-    let userId: string | null = null;
-
-    // Search through all users to find the recurring transaction
-    const users = usersSnapshot.val() as Record<string, any>;
-    for (const [uid, userData] of Object.entries(users)) {
-      if (
-        userData.recurringTransactions &&
-        userData.recurringTransactions[recurringTransactionId]
-      ) {
-        recurringTransaction =
-          userData.recurringTransactions[recurringTransactionId];
-        userId = uid;
-        break;
-      }
-    }
-
-    if (!recurringTransaction || !userId) {
-      throw new Error("Recurring transaction not found");
-    }
-
     // Delete the recurring transaction from the user's collection
     const recurringTransactionRef = ref(
       db,
       `users/${userId}/recurringTransactions/${recurringTransactionId}`
     );
+
+    // First check if it exists
+    const snapshot = await get(recurringTransactionRef);
+    if (!snapshot.exists()) {
+      throw new Error("Recurring transaction not found");
+    }
+
+    // Delete the recurring transaction
     await remove(recurringTransactionRef);
     console.log(
       "Recurring transaction deleted successfully from user collection"
     );
+
+    // Optionally clean up any actual transactions that reference this recurring transaction
+    // This is optional - you might want to keep historical data
+    try {
+      const transactionsRef = ref(db, `users/${userId}/transactions`);
+      const transactionsSnapshot = await get(transactionsRef);
+
+      if (transactionsSnapshot.exists()) {
+        const transactions = transactionsSnapshot.val();
+        const transactionIdsToUpdate: string[] = [];
+
+        // Find transactions that reference this recurring transaction
+        Object.keys(transactions).forEach((transactionId) => {
+          const transaction = transactions[transactionId];
+          if (transaction.recurringTransactionId === recurringTransactionId) {
+            transactionIdsToUpdate.push(transactionId);
+          }
+        });
+
+        // Remove the recurring transaction reference (but keep the actual transaction)
+        for (const transactionId of transactionIdsToUpdate) {
+          const transactionRef = ref(
+            db,
+            `users/${userId}/transactions/${transactionId}`
+          );
+          await update(transactionRef, {
+            recurringTransactionId: null,
+          });
+        }
+
+        if (transactionIdsToUpdate.length > 0) {
+          console.log(
+            `Updated ${transactionIdsToUpdate.length} transactions to remove recurring reference`
+          );
+        }
+      }
+    } catch (cleanupError) {
+      console.warn(
+        "Warning: Could not clean up transaction references:",
+        cleanupError
+      );
+      // Don't fail the main deletion if cleanup fails
+    }
   } catch (error) {
     console.error("Error deleting recurring transaction:", error);
     throw new Error("Failed to delete recurring transaction");
@@ -1988,39 +2026,22 @@ export const deleteRecurringTransaction = async (
 
 export const skipRecurringTransactionForMonth = async (
   recurringTransactionId: string,
-  monthKey: string
+  monthKey: string,
+  userId: string
 ): Promise<void> => {
   try {
-    // We need to search through all users to find the recurring transaction
-    // This is a limitation of the new structure, but it's more secure
-    const usersRef = ref(db, "users");
-    const usersSnapshot = await get(usersRef);
+    // Get the recurring transaction from the user's collection
+    const recurringTransactionRef = ref(
+      db,
+      `users/${userId}/recurringTransactions/${recurringTransactionId}`
+    );
 
-    if (!usersSnapshot.exists()) {
-      throw new Error("No users found");
-    }
-
-    let recurringTransaction: any = null;
-    let userId: string | null = null;
-
-    // Search through all users to find the recurring transaction
-    const users = usersSnapshot.val() as Record<string, any>;
-    for (const [uid, userData] of Object.entries(users)) {
-      if (
-        userData.recurringTransactions &&
-        userData.recurringTransactions[recurringTransactionId]
-      ) {
-        recurringTransaction =
-          userData.recurringTransactions[recurringTransactionId];
-        userId = uid;
-        break;
-      }
-    }
-
-    if (!recurringTransaction || !userId) {
+    const snapshot = await get(recurringTransactionRef);
+    if (!snapshot.exists()) {
       throw new Error("Recurring transaction not found");
     }
 
+    const recurringTransaction = snapshot.val();
     const skippedMonths = recurringTransaction.skippedMonths || [];
 
     // Add the month to skipped months if not already there
@@ -2029,10 +2050,6 @@ export const skipRecurringTransactionForMonth = async (
     }
 
     // Update the recurring transaction in the user's collection
-    const recurringTransactionRef = ref(
-      db,
-      `users/${userId}/recurringTransactions/${recurringTransactionId}`
-    );
     await update(recurringTransactionRef, {
       skippedMonths,
       updatedAt: Date.now(),

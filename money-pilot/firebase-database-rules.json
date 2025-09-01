@@ -62,6 +62,9 @@
             },
             "recurringTransactionId": {
               ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "isProjected": {
+              ".validate": "newData.isBoolean()"
             }
           }
         },
@@ -290,6 +293,21 @@
             },
             "updatedAt": {
               ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "lastGeneratedDate": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "nextDueDate": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "totalOccurrences": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "skippedMonths": {
+              ".validate": "newData.hasChildren() || newData.val() == null"
+            },
+            "monthOverrides": {
+              ".validate": "newData.hasChildren() || newData.val() == null"
             }
           }
         }

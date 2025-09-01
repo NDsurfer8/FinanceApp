@@ -430,7 +430,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           // Use recurringTransactionId if available, otherwise use transaction.id
           const recurringTransactionId =
             transaction.recurringTransactionId || transaction.id;
-          await deleteRecurringTransaction(recurringTransactionId);
+          await deleteRecurringTransaction(recurringTransactionId, user.uid);
           const savedTransaction = await saveTransaction(newTransaction);
 
           console.log(
@@ -501,18 +501,51 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             ? "monthly"
             : formData.frequency;
 
+          // Check if this is a future month edit
+          const editDate = new Date(formData.date);
+          const currentDate = new Date();
+          const isFutureMonth = editDate > currentDate;
+          const monthKey = `${editDate.getFullYear()}-${String(
+            editDate.getMonth() + 1
+          ).padStart(2, "0")}`;
+
           // Update the recurring transaction
-          const updatedRecurringTransaction = {
-            ...currentRecurringTransaction,
-            name: formData.description,
-            amount: monthlyAmount, // Save the monthly equivalent amount
-            type: formData.type as "income" | "expense",
-            category: formData.category,
-            frequency: finalFrequency, // Use monthly for bank suggestions
-            startDate: new Date(formData.date).getTime(),
-            endDate: formData.endDate ? formData.endDate : undefined,
-            updatedAt: Date.now(),
-          };
+          let updatedRecurringTransaction;
+
+          if (isFutureMonth) {
+            // For future months, create a month-specific override
+            const monthOverrides =
+              currentRecurringTransaction.monthOverrides || {};
+            monthOverrides[monthKey] = {
+              amount: monthlyAmount,
+              category: formData.category,
+              name: formData.description,
+            };
+
+            updatedRecurringTransaction = {
+              ...currentRecurringTransaction,
+              monthOverrides,
+              updatedAt: Date.now(),
+            };
+
+            console.log(
+              `Created month override for ${monthKey}:`,
+              monthOverrides[monthKey]
+            );
+          } else {
+            // For current/past months, update the template (affects all future projections)
+            updatedRecurringTransaction = {
+              ...currentRecurringTransaction,
+              name: formData.description,
+              amount: monthlyAmount, // Save the monthly equivalent amount
+              type: formData.type as "income" | "expense",
+              category: formData.category,
+              frequency: finalFrequency, // Use monthly for bank suggestions
+              // DO NOT update startDate - preserve when the recurring transaction originally started
+              endDate: formData.endDate ? formData.endDate : undefined,
+              updatedAt: Date.now(),
+            };
+          }
 
           await updateRecurringTransaction(updatedRecurringTransaction);
 
@@ -542,7 +575,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
           Alert.alert(
             "Success",
-            "Recurring transaction updated successfully!",
+            isFutureMonth
+              ? `Recurring transaction updated for ${monthKey}! This change only affects this specific month.`
+              : "Recurring transaction updated! Future occurrences will reflect these changes.",
             [{ text: "OK", onPress: () => navigation.goBack() }]
           );
         } else {
@@ -689,10 +724,20 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         transaction.isRecurring || transaction.recurringTransactionId;
 
       if (isRecurringTransaction) {
+        // Check if this is a future month with a month override
+        const editDate = new Date(transaction.date);
+        const currentDate = new Date();
+        const isFutureMonth = editDate > currentDate;
+        const monthKey = `${editDate.getFullYear()}-${String(
+          editDate.getMonth() + 1
+        ).padStart(2, "0")}`;
+
         // Show confirmation for deleting recurring transaction
         Alert.alert(
-          "Delete Recurring Transaction",
-          "This will delete the recurring transaction and all future occurrences. This action cannot be undone.",
+          "Manage Recurring Transaction",
+          isFutureMonth
+            ? `This will:\n\n• Delete the month override for ${monthKey}\n• Keep the current transaction\n• Keep the base recurring template\n\nThis action cannot be undone.`
+            : "This will:\n\n• Delete all future recurring transactions\n• Keep the current transaction\n\nThis action cannot be undone.",
           [
             {
               text: "Cancel",
@@ -702,7 +747,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               },
             },
             {
-              text: "Delete Recurring & All Future",
+              text: isFutureMonth ? "Delete Month Override" : "Delete Template",
               style: "destructive",
               onPress: async () => {
                 try {
@@ -718,11 +763,27 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     transactions: updatedTransactions,
                   });
 
-                  // Delete the recurring transaction and all its generated transactions
-                  const { deleteRecurringTransaction } = await import(
-                    "../services/transactionService"
-                  );
-                  await deleteRecurringTransaction(recurringTransactionId);
+                  // Delete the recurring transaction or month override
+                  if (isFutureMonth) {
+                    // Delete only the month override
+                    const { deleteMonthOverride } = await import(
+                      "../services/transactionService"
+                    );
+                    await deleteMonthOverride(
+                      user.uid,
+                      recurringTransactionId,
+                      monthKey
+                    );
+                  } else {
+                    // Delete the entire recurring transaction
+                    const { deleteRecurringTransaction } = await import(
+                      "../services/transactionService"
+                    );
+                    await deleteRecurringTransaction(
+                      recurringTransactionId,
+                      user.uid
+                    );
+                  }
 
                   // Refresh DataContext to update transaction limits and ensure consistency
                   await Promise.all([
@@ -732,7 +793,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
                   Alert.alert(
                     "Success",
-                    "Recurring transaction and all future occurrences deleted!",
+                    isFutureMonth
+                      ? `Month override deleted for ${monthKey}! This month will now use the base recurring template.`
+                      : "Recurring transaction stopped! Future occurrences will no longer be created.",
                     [{ text: "OK", onPress: () => navigation.goBack() }]
                   );
                 } catch (error) {
