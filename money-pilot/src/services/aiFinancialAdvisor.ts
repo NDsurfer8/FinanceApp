@@ -163,6 +163,16 @@ class AIFinancialAdvisorService {
             targetAmount: g.targetAmount,
             monthlyContribution: g.monthlyContribution,
           })) || [],
+
+        // Regular transactions with categories for complete analysis
+        transactions: (snapshot.transactions || []).slice(0, 20).map((t) => ({
+          name: t.name,
+          amount: t.amount,
+          type: t.type,
+          category: t.category || "Uncategorized",
+          date: t.date,
+          description: t.description || "",
+        })),
         // Include recurring transactions for comprehensive analysis
         recurringTransactions: (snapshot.recurringTransactions || [])
           .slice(0, 15)
@@ -175,6 +185,7 @@ class AIFinancialAdvisorService {
             isActive: rt.isActive,
             startDate: rt.startDate,
             endDate: rt.endDate,
+            description: rt.description || "", // Add description if available
           })),
 
         // Financial stability indicators
@@ -225,6 +236,61 @@ class AIFinancialAdvisorService {
                   snapshot.monthlyExpenses) *
                 100
               : 0,
+        },
+
+        // Category analysis for better insights
+        categoryAnalysis: {
+          // Top spending categories
+          topExpenseCategories: (snapshot.recurringTransactions || [])
+            .filter((rt) => rt.type === "expense" && rt.isActive)
+            .reduce((acc, rt) => {
+              let monthlyAmount = rt.amount;
+              if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+              else if (rt.frequency === "biweekly")
+                monthlyAmount = rt.amount * 2;
+              else if (rt.frequency === "monthly")
+                monthlyAmount = rt.amount * 1;
+
+              const category = rt.category || "Uncategorized";
+              acc[category] = (acc[category] || 0) + monthlyAmount;
+              return acc;
+            }, {} as Record<string, number>),
+
+          // Top income categories
+          topIncomeCategories: (snapshot.recurringTransactions || [])
+            .filter((rt) => rt.type === "income" && rt.isActive)
+            .reduce((acc, rt) => {
+              let monthlyAmount = rt.amount;
+              if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+              else if (rt.frequency === "biweekly")
+                monthlyAmount = rt.amount * 2;
+              else if (rt.frequency === "monthly")
+                monthlyAmount = rt.amount * 1;
+
+              const category = rt.category || "Uncategorized";
+              acc[category] = (acc[category] || 0) + monthlyAmount;
+              return acc;
+            }, {} as Record<string, number>),
+
+          // Category breakdown summary
+          categoryBreakdown: {
+            totalExpenseCategories: Object.keys(
+              (snapshot.recurringTransactions || [])
+                .filter((rt) => rt.type === "expense" && rt.isActive)
+                .reduce((acc, rt) => {
+                  acc[rt.category || "Uncategorized"] = true;
+                  return acc;
+                }, {} as Record<string, boolean>)
+            ).length,
+            totalIncomeCategories: Object.keys(
+              (snapshot.recurringTransactions || [])
+                .filter((rt) => rt.type === "income" && rt.isActive)
+                .reduce((acc, rt) => {
+                  acc[rt.category || "Uncategorized"] = true;
+                  return acc;
+                }, {} as Record<string, boolean>)
+            ).length,
+          },
         },
       };
 
