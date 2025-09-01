@@ -827,9 +827,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     style={{ marginLeft: 8 }}
                   >
                     <Ionicons
-                      name="information-circle"
+                      name="information-circle-outline"
                       size={16}
-                      color={colors.textTertiary}
+                      color={colors.textSecondary}
                     />
                   </TouchableOpacity>
                 </View>
