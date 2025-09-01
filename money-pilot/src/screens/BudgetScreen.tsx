@@ -639,6 +639,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           remainingBalance={remainingBalance}
           onPressDetails={() => setShowBudgetSettingsModal(true)}
           onPressSettings={() => setShowBudgetSettingsModal(true)}
+          onPressIncome={handleAddIncome}
+          onPressExpense={handleAddExpense}
         />
 
         {/* Quick Actions Card */}

@@ -15,6 +15,8 @@ interface BudgetOverviewCardProps {
   remainingBalance: number;
   onPressDetails: () => void;
   onPressSettings: () => void;
+  onPressIncome: () => void;
+  onPressExpense: () => void;
 }
 
 export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
@@ -27,6 +29,8 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
   remainingBalance,
   onPressDetails,
   onPressSettings,
+  onPressIncome,
+  onPressExpense,
 }) => {
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
@@ -149,7 +153,11 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
           marginBottom: 20,
         }}
       >
-        <View style={{ flex: 1, marginRight: 12 }}>
+        <TouchableOpacity
+          style={{ flex: 1, marginRight: 12 }}
+          onPress={onPressIncome}
+          activeOpacity={0.7}
+        >
           <View
             style={{
               backgroundColor: colors.surfaceSecondary,
@@ -183,9 +191,13 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
               Income
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
-        <View style={{ flex: 1, marginLeft: 12 }}>
+        <TouchableOpacity
+          style={{ flex: 1, marginLeft: 12 }}
+          onPress={onPressExpense}
+          activeOpacity={0.7}
+        >
           <View
             style={{
               backgroundColor: colors.surfaceSecondary,
@@ -219,7 +231,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
               Expenses
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Savings Progress */}
