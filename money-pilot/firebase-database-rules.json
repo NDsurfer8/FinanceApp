@@ -4,7 +4,6 @@
       "$uid": {
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid",
-
         "profile": {
           ".validate": "newData.hasChildren(['uid', 'email', 'displayName', 'createdAt', 'updatedAt'])",
           "uid": {
@@ -90,6 +89,21 @@
             "type": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
             },
+            "category": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50 || newData.val() == null"
+            },
+            "source": {
+              ".validate": "newData.val() === 'plaid' || newData.val() === 'manual' || newData.val() == null"
+            },
+            "plaidAccountId": {
+              ".validate": "newData.isString() || newData.val() == null"
+            },
+            "lastUpdated": {
+              ".validate": "newData.isString() || newData.val() == null"
+            },
+            "isAutoImported": {
+              ".validate": "newData.isBoolean() || newData.val() == null"
+            },
             "userId": {
               ".validate": "newData.val() === auth.uid"
             }
@@ -98,7 +112,7 @@
 
         "debts": {
           "$debtId": {
-            ".validate": "newData.hasChildren(['id', 'name', 'balance', 'rate', 'payment', 'userId'])",
+            ".validate": "newData.hasChildren(['id', 'name', 'balance', 'userId'])",
             "id": {
               ".validate": "newData.val() === $debtId"
             },
@@ -114,17 +128,35 @@
             "balanceEncrypted": {
               ".validate": "newData.isString()"
             },
+            "type": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50 || newData.val() == null"
+            },
+            "category": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50 || newData.val() == null"
+            },
+            "source": {
+              ".validate": "newData.val() === 'plaid' || newData.val() === 'manual' || newData.val() == null"
+            },
+            "plaidAccountId": {
+              ".validate": "newData.isString() || newData.val() == null"
+            },
+            "lastUpdated": {
+              ".validate": "newData.isString() || newData.val() == null"
+            },
+            "isAutoImported": {
+              ".validate": "newData.isBoolean() || newData.val() == null"
+            },
             "rate": {
-              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100 || newData.val() == null"
             },
             "rateEncrypted": {
-              ".validate": "newData.isString()"
+              ".validate": "newData.isString() || newData.val() == null"
             },
             "payment": {
-              ".validate": "newData.isNumber() && newData.val() >= 0"
+              ".validate": "newData.isNumber() && newData.val() >= 0 || newData.val() == null"
             },
             "paymentEncrypted": {
-              ".validate": "newData.isString()"
+              ".validate": "newData.isString() || newData.val() == null"
             },
             "userId": {
               ".validate": "newData.val() === auth.uid"

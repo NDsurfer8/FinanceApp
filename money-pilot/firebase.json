@@ -13,6 +13,9 @@
       "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run lint"]
     }
   ],
+  "database": {
+    "rules": "firebase-database-rules.json"
+  },
   "storage": {
     "rules": "firebase-storage-rules.rules"
   },

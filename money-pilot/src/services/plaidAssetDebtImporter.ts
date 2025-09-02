@@ -27,6 +27,7 @@ export interface ImportedAsset {
   plaidAccountId: string;
   lastUpdated: string;
   isAutoImported: boolean;
+  userId: string;
 }
 
 export interface ImportedDebt {
@@ -39,6 +40,7 @@ export interface ImportedDebt {
   plaidAccountId: string;
   lastUpdated: string;
   isAutoImported: boolean;
+  userId: string;
   interestRate?: number;
   monthlyPayment?: number;
 }
@@ -161,6 +163,7 @@ class PlaidAssetDebtImporter {
           plaidAccountId: account.id,
           lastUpdated: now,
           isAutoImported: true,
+          userId: userId,
         };
 
         importedAssets.push(asset);
@@ -176,6 +179,7 @@ class PlaidAssetDebtImporter {
           plaidAccountId: account.id,
           lastUpdated: now,
           isAutoImported: true,
+          userId: userId,
         };
 
         // Add credit limit for credit cards

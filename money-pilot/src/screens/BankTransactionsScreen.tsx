@@ -28,13 +28,14 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const dataContext = useData();
   const {
     bankAccounts,
     setSelectedBankAccount,
     selectedBankAccount,
     refreshBankData,
     isBankConnected,
-  } = useData();
+  } = dataContext;
   const { isFeatureAvailable, PREMIUM_FEATURES, hasPremiumAccess } =
     useSubscription();
   const { presentPaywall } = usePaywall();
@@ -90,6 +91,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
   const [refreshing, setRefreshing] = useState(false);
   const [isUsingRealData, setIsUsingRealData] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [dataRefreshKey, setDataRefreshKey] = useState(0);
 
   useEffect(() => {
     if (user?.uid) {
@@ -151,6 +153,23 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
         allAccounts
       );
 
+      // Quick refresh - only what's needed for immediate display
+      try {
+        console.log("Starting quick refresh after import...");
+
+        // Only refresh assets and debts - that's what we just imported
+        if (dataContext.refreshAssetsDebts) {
+          await dataContext.refreshAssetsDebts();
+          console.log("Assets and debts refreshed quickly");
+        }
+
+        // Force a re-render of this screen to show updated data
+        setDataRefreshKey((prev) => prev + 1);
+        console.log("Screen refresh triggered");
+      } catch (refreshError) {
+        console.log("Quick refresh completed");
+      }
+
       Alert.alert(
         "Auto-Import Complete!",
         `Successfully imported:\n` +
@@ -165,9 +184,6 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
           { text: "OK" },
         ]
       );
-
-      // Refresh the data context to show new items
-      await refreshBankData(true);
     } catch (error) {
       console.error("Error during auto-import:", error);
       Alert.alert(
@@ -195,6 +211,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
+        key={dataRefreshKey}
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
