@@ -22,33 +22,48 @@ interface BudgetOverviewCardProps {
   availableTransactionsCount?: number;
 }
 
-export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
-  netIncome,
-  totalIncome,
-  totalExpenses,
-  savingsAmount,
-  savingsPercentage,
-  discretionaryIncome,
-  remainingBalance,
-  onPressDetails,
-  onPressSettings,
-  onPressIncome,
-  onPressExpense,
-  onPressImport,
-  isBankConnected,
-  availableTransactionsCount,
-}) => {
+export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
+  props
+) => {
+  const {
+    netIncome = 0,
+    totalIncome = 0,
+    totalExpenses = 0,
+    savingsAmount = 0,
+    savingsPercentage = 0,
+    discretionaryIncome = 0,
+    remainingBalance = 0,
+    onPressDetails = () => {},
+    onPressSettings = () => {},
+    onPressIncome = () => {},
+    onPressExpense = () => {},
+    onPressImport,
+    isBankConnected = false,
+    availableTransactionsCount = 0,
+  } = props;
+
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
+  // Ensure all values are safe numbers
+  const safeNetIncome = Number(netIncome) || 0;
+  const safeTotalIncome = Number(totalIncome) || 0;
+  const safeTotalExpenses = Number(totalExpenses) || 0;
+  const safeSavingsAmount = Number(savingsAmount) || 0;
+  const safeSavingsPercentage = Number(savingsPercentage) || 0;
+  const safeDiscretionaryIncome = Number(discretionaryIncome) || 0;
+  const safeRemainingBalance = Number(remainingBalance) || 0;
+  const safeAvailableTransactionsCount =
+    Number(availableTransactionsCount) || 0;
+
   const getBudgetStatus = () => {
-    if (remainingBalance >= 0)
+    if (safeRemainingBalance >= 0)
       return {
         status: "healthy",
         color: colors.success,
         icon: "checkmark-circle",
       };
-    if (remainingBalance >= -100)
+    if (safeRemainingBalance >= -100)
       return { status: "warning", color: colors.warning, icon: "warning" };
     return { status: "danger", color: colors.error, icon: "alert-circle" };
   };
@@ -102,7 +117,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
             }}
           >
             <Ionicons name="download" size={18} color={colors.primary} />
-            {availableTransactionsCount && availableTransactionsCount > 0 && (
+            {safeAvailableTransactionsCount > 0 && (
               <View
                 style={{
                   position: "absolute",
@@ -125,9 +140,9 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
                     fontWeight: "700",
                   }}
                 >
-                  {availableTransactionsCount > 99
+                  {safeAvailableTransactionsCount > 99
                     ? "99+"
-                    : availableTransactionsCount}
+                    : String(safeAvailableTransactionsCount || 0)}
                 </Text>
               </View>
             )}
@@ -167,7 +182,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
             }}
           >
             $
-            {remainingBalance.toLocaleString(undefined, {
+            {safeRemainingBalance.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
@@ -219,7 +234,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
               }}
             >
               $
-              {totalIncome.toLocaleString(undefined, {
+              {safeTotalIncome.toLocaleString(undefined, {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
               })}
@@ -259,7 +274,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
               }}
             >
               $
-              {totalExpenses.toLocaleString(undefined, {
+              {safeTotalExpenses.toLocaleString(undefined, {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
               })}
@@ -294,7 +309,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
               fontWeight: "500",
             }}
           >
-            Savings ({savingsPercentage}%)
+            Savings ({safeSavingsPercentage}%)
           </Text>
           <Text
             style={{
@@ -304,7 +319,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
             }}
           >
             $
-            {savingsAmount.toLocaleString(undefined, {
+            {safeSavingsAmount.toLocaleString(undefined, {
               minimumFractionDigits: 0,
               maximumFractionDigits: 0,
             })}
@@ -320,7 +335,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
         >
           <View
             style={{
-              width: `${savingsPercentage}%`,
+              width: `${safeSavingsPercentage}%`,
               height: 6,
               backgroundColor: colors.success,
               borderRadius: 3,
