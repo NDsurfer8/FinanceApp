@@ -29,6 +29,7 @@ import { saveBudgetSettings, updateBudgetSettings } from "../services/userData";
 import { getProjectedTransactionsForMonth } from "../services/transactionService";
 import { billReminderService } from "../services/billReminders";
 import { timestampToDateString } from "../utils/dateUtils";
+import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 
 interface BudgetScreenProps {
   navigation: any;
@@ -1201,6 +1202,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           setTimeout(() => setImportSuccess(null), 5000);
         }}
       />
+
+      {/* Floating AI Chatbot - only show on main tab screens */}
+      <FloatingAIChatbot />
     </SafeAreaView>
   );
 };

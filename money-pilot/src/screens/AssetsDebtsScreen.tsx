@@ -19,6 +19,7 @@ import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
 import { getAssetTypeLabel } from "../utils/assetMigration";
 import { useData } from "../contexts/DataContext";
+import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 
 interface AssetsDebtsScreenProps {
   navigation: any;
@@ -466,6 +467,9 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           <AssetsDebtsChart assets={chartAssets} debts={chartDebts} />
         </View>
       </ScrollView>
+      
+      {/* Floating AI Chatbot - only show on main tab screens */}
+      <FloatingAIChatbot />
     </SafeAreaView>
   );
 };

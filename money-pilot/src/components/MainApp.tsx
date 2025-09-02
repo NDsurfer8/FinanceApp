@@ -451,10 +451,6 @@ export const MainApp: React.FC = () => {
                 <FriendlyModeProvider>
                   <DataPreloader>
                     <NavigationContainer>
-                      {/* Floating AI Chatbot - only show on main app screens */}
-                      {appState === "main" && (
-                        <FloatingAIChatbot hideOnAIScreen={false} />
-                      )}
                       <Stack.Navigator
                         screenOptions={{
                           headerShown: false,

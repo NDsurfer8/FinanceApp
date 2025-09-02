@@ -1,5 +1,10 @@
-import React from "react";
-import { TouchableOpacity, Animated, StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  TouchableOpacity,
+  Animated,
+  StyleSheet,
+  Dimensions,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
@@ -13,85 +18,147 @@ export const FloatingAIChatbot: React.FC<FloatingAIChatbotProps> = ({
   hideOnAIScreen = false,
 }) => {
   const { isVisible } = useChatbot();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { colors } = useTheme();
 
-  // Animation values
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [screenDimensions, setScreenDimensions] = useState(
+    Dimensions.get("window")
+  );
+
   const scale = React.useRef(new Animated.Value(1)).current;
   const opacity = React.useRef(new Animated.Value(1)).current;
 
-  // Animate in when component mounts and add subtle pulse
-  React.useEffect(() => {
-    if (isVisible) {
-      // Initial animation
-      Animated.sequence([
-        Animated.timing(scale, {
-          toValue: 1.1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scale, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
+  const BUBBLE_SIZE = 56;
+  const BUBBLE_MARGIN = 20;
+  const BOTTOM_TAB_HEIGHT = 100;
+  const TOP_SAFE_MARGIN = 80;
 
-      // Subtle pulse animation every 3 seconds
-      const pulseInterval = setInterval(() => {
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener("change", ({ window }) => {
+      setScreenDimensions(window);
+    });
+    return () => subscription?.remove();
+  }, []);
+
+  useEffect(() => {
+    if (screenDimensions.width > 0) {
+      const optimalPosition = calculateOptimalPosition();
+      setPosition(optimalPosition);
+    }
+  }, [screenDimensions]);
+
+  const calculateOptimalPosition = () => {
+    const { width, height } = screenDimensions;
+
+    // Preferred: bottom-right above tab bar
+    const preferredX = width - BUBBLE_SIZE - BUBBLE_MARGIN;
+    const preferredY = height - BUBBLE_SIZE - BUBBLE_MARGIN - BOTTOM_TAB_HEIGHT;
+
+    if (isPositionSafe(preferredX, preferredY)) {
+      return { x: preferredX, y: preferredY };
+    }
+
+    // Alternative positions
+    const alternatives = [
+      {
+        x: BUBBLE_MARGIN,
+        y: height - BUBBLE_SIZE - BUBBLE_MARGIN - BOTTOM_TAB_HEIGHT,
+      },
+      { x: width - BUBBLE_SIZE - BUBBLE_MARGIN, y: TOP_SAFE_MARGIN },
+      { x: BUBBLE_MARGIN, y: TOP_SAFE_MARGIN },
+      { x: width - BUBBLE_SIZE - BUBBLE_MARGIN, y: (height - BUBBLE_SIZE) / 2 },
+      { x: BUBBLE_MARGIN, y: (height - BUBBLE_SIZE) / 2 },
+    ];
+
+    for (const pos of alternatives) {
+      if (isPositionSafe(pos.x, pos.y)) {
+        return pos;
+      }
+    }
+
+    return { x: BUBBLE_MARGIN, y: TOP_SAFE_MARGIN };
+  };
+
+  const isPositionSafe = (x: number, y: number) => {
+    if (
+      x < 0 ||
+      y < 0 ||
+      x + BUBBLE_SIZE > screenDimensions.width ||
+      y + BUBBLE_SIZE > screenDimensions.height
+    ) {
+      return false;
+    }
+
+    const criticalZones = [
+      {
+        x: 0,
+        y: screenDimensions.height - BOTTOM_TAB_HEIGHT,
+        width: screenDimensions.width,
+        height: BOTTOM_TAB_HEIGHT,
+      },
+      { x: 0, y: 0, width: screenDimensions.width, height: TOP_SAFE_MARGIN },
+      {
+        x: screenDimensions.width / 2 - 60,
+        y: screenDimensions.height - 160,
+        width: 120,
+        height: 80,
+      },
+    ];
+
+    for (const zone of criticalZones) {
+      if (
+        x < zone.x + zone.width &&
+        x + BUBBLE_SIZE > zone.x &&
+        y < zone.y + zone.height &&
+        y + BUBBLE_SIZE > zone.y
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  useEffect(() => {
+    if (isVisible) {
+      const pulseAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(scale, {
-            toValue: 1.05,
-            duration: 300,
+            toValue: 1.1,
+            duration: 1000,
             useNativeDriver: true,
           }),
           Animated.timing(scale, {
             toValue: 1,
-            duration: 300,
+            duration: 1000,
             useNativeDriver: true,
           }),
-        ]).start();
-      }, 3000);
-
-      return () => clearInterval(pulseInterval);
+        ])
+      );
+      pulseAnimation.start();
+      return () => pulseAnimation.stop();
     }
-  }, [isVisible]);
+  }, [isVisible, scale]);
 
-  // Handle press to open AI advisor
   const handlePress = () => {
-    // Animate press effect
     Animated.sequence([
-      Animated.parallel([
-        Animated.timing(scale, {
-          toValue: 0.9,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0.8,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(scale, {
-          toValue: 1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-      ]),
+      Animated.timing(scale, {
+        toValue: 0.9,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
     ]).start();
 
-    // Navigate to AI advisor screen
-    navigation.navigate("AIFinancialAdvisor" as never);
+    navigation.navigate("AIFinancialAdvisor");
   };
 
-  if (!isVisible || hideOnAIScreen) return null;
+  if (!isVisible || hideOnAIScreen || position.x === 0) return null;
 
   return (
     <Animated.View
@@ -100,16 +167,15 @@ export const FloatingAIChatbot: React.FC<FloatingAIChatbotProps> = ({
         {
           transform: [{ scale }],
           opacity,
+          left: position.x,
+          top: position.y,
         },
       ]}
     >
       <TouchableOpacity
         style={[
           styles.chatbotButton,
-          {
-            backgroundColor: colors.primary,
-            shadowColor: colors.primary,
-          },
+          { backgroundColor: colors.primary, shadowColor: colors.primary },
         ]}
         onPress={handlePress}
         activeOpacity={0.8}
@@ -123,8 +189,6 @@ export const FloatingAIChatbot: React.FC<FloatingAIChatbotProps> = ({
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 120, // Moved up to avoid overlap with totals
-    right: 20,
     zIndex: 1000,
   },
   chatbotButton: {
@@ -133,12 +197,9 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
     elevation: 8,
   },
 });

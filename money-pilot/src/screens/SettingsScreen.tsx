@@ -25,6 +25,7 @@ import { translate } from "../services/translations";
 import { useChatbot } from "../contexts/ChatbotContext";
 import { useData } from "../contexts/DataContext";
 import { AIUsageAdminScreen } from "./AIUsageAdminScreen";
+import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -1106,6 +1107,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </View>
         </TouchableOpacity>
       </ScrollView>
+      
+      {/* Floating AI Chatbot - only show on main tab screens */}
+      <FloatingAIChatbot />
     </SafeAreaView>
   );
 };

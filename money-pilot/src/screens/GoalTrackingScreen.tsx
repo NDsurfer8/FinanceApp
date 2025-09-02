@@ -29,6 +29,7 @@ import {
 } from "../services/userData";
 import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
 import { formatDateToLocalString, createLocalDate } from "../utils/dateUtils";
+import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 
 interface GoalTrackingScreenProps {
   navigation: any;
@@ -1654,6 +1655,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           </View>
         </Modal>
       </ScrollView>
+      
+      {/* Floating AI Chatbot - only show on main tab screens */}
+      <FloatingAIChatbot />
     </SafeAreaView>
   );
 };

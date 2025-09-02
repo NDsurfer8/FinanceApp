@@ -23,6 +23,7 @@ import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
 import { CustomTrendChart } from "../components/CustomTrendChart";
+import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 
 interface DashboardScreenProps {
   navigation: any;
@@ -59,13 +60,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     React.useCallback(() => {
       if (user) {
         refreshInBackground();
-        // Also refresh trend data specifically with a small delay to ensure context is updated
+        // Refresh trend data when dashboard comes into focus
         const refreshTrendData = async () => {
-          // Small delay to ensure context has been updated
-          setTimeout(async () => {
-            const data = await getTrendData();
-            setTrendData(data);
-          }, 500); // Increased delay to ensure context is fully updated
+          console.log("🔄 Dashboard focused - refreshing trend data");
+          const data = await getTrendData();
+          setTrendData(data);
         };
         refreshTrendData();
       }
@@ -477,23 +476,55 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       }
     };
     loadTrendData();
-  }, [user, transactions, recurringTransactions]); // Added recurringTransactions dependency
+  }, [user, transactions, recurringTransactions, netWorth, assets, debts]); // Added assets and debts dependencies
 
-  // Prepare data for line chart
-  const chartData = trendData.map((month) => ({
-    x: month.month,
-    y: month.income,
-  }));
+  // Force refresh when assets or debts change (immediate update)
+  useEffect(() => {
+    if (user && (assets.length > 0 || debts.length > 0)) {
+      const forceRefresh = async () => {
+        console.log(
+          "🔄 Force refreshing chart data due to assets/debts change"
+        );
+        const data = await getTrendData();
+        setTrendData(data);
+      };
+      forceRefresh();
+    }
+  }, [assets, debts, user]);
 
-  const expensesData = trendData.map((month) => ({
-    x: month.month,
-    y: month.expenses,
-  }));
+  // Prepare data for line chart - Make it reactive to source data
+  const chartData = React.useMemo(() => {
+    if (!user || !assets || !debts || !transactions || !recurringTransactions)
+      return [];
 
-  const netWorthData = trendData.map((month) => ({
-    x: month.month,
-    y: month.netWorth,
-  }));
+    // Use the existing trendData state which is already calculated
+    return trendData.map((month) => ({
+      x: month.month,
+      y: month.income,
+    }));
+  }, [trendData, user, assets, debts, transactions, recurringTransactions]);
+
+  const expensesData = React.useMemo(() => {
+    if (!user || !assets || !debts || !transactions || !recurringTransactions)
+      return [];
+
+    // Use the existing trendData state which is already calculated
+    return trendData.map((month) => ({
+      x: month.month,
+      y: month.expenses,
+    }));
+  }, [trendData, user, assets, debts, transactions, recurringTransactions]);
+
+  const netWorthData = React.useMemo(() => {
+    if (!user || !assets || !debts || !transactions || !recurringTransactions)
+      return [];
+
+    // Use the existing trendData state which is already calculated
+    return trendData.map((month) => ({
+      x: month.month,
+      y: month.netWorth,
+    }));
+  }, [trendData, user, assets, debts, transactions, recurringTransactions]);
 
   const formatCurrency = (amount: number) => {
     return `$${Math.round(amount).toLocaleString()}`;
@@ -1065,6 +1096,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </Text>
 
           <CustomTrendChart
+            key={`chart-${trendData.length}-${JSON.stringify(
+              trendData.map((m) => m.netWorth)
+            )}`}
             incomeData={chartData}
             expensesData={expensesData}
             netWorthData={netWorthData}
@@ -1088,6 +1122,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </View>
         </View>
       </ScrollView>
+      <FloatingAIChatbot />
     </SafeAreaView>
   );
 };
