@@ -129,11 +129,39 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
 
+  // Calculate recurring monthly expenses
+  const recurringMonthlyExpenses = recurringTransactions
+    .filter((rt) => rt.type === "expense")
+    .reduce((sum, rt) => {
+      let monthlyAmount = 0;
+      if (rt.frequency === "weekly") {
+        monthlyAmount = rt.amount * 4.33; // Average weeks per month
+      } else if (rt.frequency === "biweekly") {
+        monthlyAmount = rt.amount * 2.17; // Average biweekly periods per month
+      } else if (rt.frequency === "monthly") {
+        monthlyAmount = rt.amount * 1;
+      }
+      return sum + monthlyAmount;
+    }, 0);
+
+  // Total monthly expenses including recurring
+  const totalMonthlyExpenses = monthlyExpenses + recurringMonthlyExpenses;
+
+  console.log("DEBUG monthlyExpenses calculation:", {
+    monthlyTransactions: monthlyTransactions.length,
+    expenseTransactions: monthlyTransactions.filter((t) => t.type === "expense")
+      .length,
+    monthlyExpenses,
+    recurringMonthlyExpenses,
+    totalMonthlyExpenses,
+    emergencyFundTarget: totalMonthlyExpenses * 6,
+  });
+
   // Calculate savings breakdown
   const totalSavings = assets
     .filter((asset) => asset.type === "savings")
     .reduce((sum, asset) => sum + asset.balance, 0);
-  const emergencyFundTarget = monthlyExpenses * 6;
+  const emergencyFundTarget = totalMonthlyExpenses * 6;
   const emergencyFundProgress =
     emergencyFundTarget > 0 ? (totalSavings / emergencyFundTarget) * 100 : 0;
 
@@ -141,7 +169,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
   const liquidityRatio =
     totalLiabilities > 0 ? totalAssets / totalLiabilities : 0;
   const monthlyLivingExpensesCoverage =
-    monthlyExpenses > 0 ? totalAssets / monthlyExpenses : 0;
+    totalMonthlyExpenses > 0 ? totalAssets / totalMonthlyExpenses : 0;
   const debtAssetRatio = totalAssets > 0 ? totalLiabilities / totalAssets : 0;
   const debtSafetyRatio =
     totalMonthlyIncome > 0 ? totalMonthlyDebtPayments / totalMonthlyIncome : 0;
@@ -379,7 +407,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                 style={{
                   fontSize: 16,
                   fontWeight: "700",
-                  color: colors.error,
+                  color:
+                    emergencyFundTarget - totalSavings <= 0
+                      ? colors.success
+                      : colors.error,
                   textAlign: "center",
                 }}
               >
@@ -407,8 +438,8 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   textAlign: "center",
                 }}
               >
-                {monthlyExpenses > 0
-                  ? (totalSavings / monthlyExpenses).toFixed(1)
+                {totalMonthlyExpenses > 0
+                  ? (totalSavings / totalMonthlyExpenses).toFixed(1)
                   : "0"}
               </Text>
             </View>
