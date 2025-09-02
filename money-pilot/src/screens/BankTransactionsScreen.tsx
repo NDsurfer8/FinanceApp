@@ -17,6 +17,7 @@ import { usePaywall } from "../hooks/usePaywall";
 import { plaidService } from "../services/plaid";
 import { AccountSelector } from "../components/AccountSelector";
 import { PlaidAccount, PlaidTransaction } from "../services/plaid";
+import { plaidAssetDebtImporter } from "../services/plaidAssetDebtImporter";
 
 interface BankTransactionsScreenProps {
   navigation: any;
@@ -49,9 +50,46 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
   const loanAccounts = bankAccounts.filter(
     (account: any) => account.type === "loan"
   );
+
+  // Filter credit card accounts from Plaid
+  const creditCardAccounts = bankAccounts.filter(
+    (account: any) =>
+      account.type === "credit" && account.subtype === "credit card"
+  );
+
+  // Filter investment accounts from Plaid
+  const investmentAccounts = bankAccounts.filter(
+    (account: any) =>
+      account.type === "investment" ||
+      ["401k", "ira", "brokerage", "cd", "mutual fund"].includes(
+        account.subtype
+      )
+  );
+
+  // Calculate total balances by account type
+  const totalCheckingBalance = checkingAccounts.reduce(
+    (sum: number, account: any) => sum + account.balances.current,
+    0
+  );
+
+  const totalCreditCardBalance = creditCardAccounts.reduce(
+    (sum: number, account: any) => sum + Math.abs(account.balances.current),
+    0
+  );
+
+  const totalInvestmentBalance = investmentAccounts.reduce(
+    (sum: number, account: any) => sum + account.balances.current,
+    0
+  );
+
+  const totalLoanBalance = loanAccounts.reduce(
+    (sum: number, account: any) => sum + Math.abs(account.balances.current),
+    0
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isUsingRealData, setIsUsingRealData] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
     if (user?.uid) {
@@ -93,6 +131,52 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
       console.error("Error refreshing bank data:", error);
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const handleAutoImport = async () => {
+    if (isImporting) return;
+
+    setIsImporting(true);
+    try {
+      // Get all accounts that can be imported
+      const allAccounts = [
+        ...checkingAccounts,
+        ...creditCardAccounts,
+        ...investmentAccounts,
+        ...loanAccounts,
+      ];
+
+      const result = await plaidAssetDebtImporter.importFromPlaidAccounts(
+        allAccounts
+      );
+
+      Alert.alert(
+        "Auto-Import Complete!",
+        `Successfully imported:\n` +
+          `• ${result.importedAssets.length} assets (401ks, investments, etc.)\n` +
+          `• ${result.importedDebts.length} debts (credit cards, loans)\n\n` +
+          `Navigate to Assets & Debts to see your imported items!`,
+        [
+          {
+            text: "View Assets & Debts",
+            onPress: () => navigation.goBack(),
+          },
+          { text: "OK" },
+        ]
+      );
+
+      // Refresh the data context to show new items
+      await refreshBankData(true);
+    } catch (error) {
+      console.error("Error during auto-import:", error);
+      Alert.alert(
+        "Import Error",
+        "There was an error importing your accounts. Please try again.",
+        [{ text: "OK" }]
+      );
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -172,6 +256,204 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
             </Text>
           </View>
         </View>
+
+        {/* Account Summary Section - Show when bank is connected */}
+        {isBankConnected && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 20,
+              marginBottom: 16,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: colors.text,
+                marginBottom: 16,
+              }}
+            >
+              Account Summary
+            </Text>
+
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+              {/* Checking & Savings */}
+              {checkingAccounts.length > 0 && (
+                <View
+                  style={{
+                    backgroundColor: colors.success + "15",
+                    padding: 12,
+                    borderRadius: 12,
+                    flex: 1,
+                    minWidth: 120,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginBottom: 4,
+                    }}
+                  >
+                    Checking & Savings
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: colors.success,
+                    }}
+                  >
+                    {formatCurrency(totalCheckingBalance)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {checkingAccounts.length} account
+                    {checkingAccounts.length !== 1 ? "s" : ""}
+                  </Text>
+                </View>
+              )}
+
+              {/* Credit Cards */}
+              {creditCardAccounts.length > 0 && (
+                <View
+                  style={{
+                    backgroundColor: colors.error + "15",
+                    padding: 12,
+                    borderRadius: 12,
+                    flex: 1,
+                    minWidth: 120,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginBottom: 4,
+                    }}
+                  >
+                    Credit Cards
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: colors.error,
+                    }}
+                  >
+                    {formatCurrency(totalCreditCardBalance)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {creditCardAccounts.length} account
+                    {creditCardAccounts.length !== 1 ? "s" : ""}
+                  </Text>
+                </View>
+              )}
+
+              {/* Investments */}
+              {investmentAccounts.length > 0 && (
+                <View
+                  style={{
+                    backgroundColor: colors.success + "15",
+                    padding: 12,
+                    borderRadius: 12,
+                    flex: 1,
+                    minWidth: 120,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginBottom: 4,
+                    }}
+                  >
+                    Investments
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: colors.success,
+                    }}
+                  >
+                    {formatCurrency(totalInvestmentBalance)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {investmentAccounts.length} account
+                    {investmentAccounts.length !== 1 ? "s" : ""}
+                  </Text>
+                </View>
+              )}
+
+              {/* Loans */}
+              {loanAccounts.length > 0 && (
+                <View
+                  style={{
+                    backgroundColor: colors.error + "15",
+                    padding: 12,
+                    borderRadius: 12,
+                    flex: 1,
+                    minWidth: 120,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginBottom: 4,
+                    }}
+                  >
+                    Loans
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: colors.error,
+                    }}
+                  >
+                    {formatCurrency(totalLoanBalance)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {loanAccounts.length} account
+                    {loanAccounts.length !== 1 ? "s" : ""}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Premium Upgrade Card - Show when no bank connected and not premium */}
         {!isBankConnected && !hasPremiumAccess() && (
@@ -636,6 +918,346 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
             </Text>
           </View>
         )}
+
+        {/* Connected Credit Card Accounts Section */}
+        {isBankConnected && creditCardAccounts.length > 0 && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 20,
+              marginBottom: 16,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <Ionicons
+                name="card"
+                size={20}
+                color={colors.error}
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
+                Connected Credit Cards
+              </Text>
+            </View>
+
+            {creditCardAccounts.map((account: any) => (
+              <View
+                key={account.id}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  borderBottomWidth:
+                    account.id ===
+                    creditCardAccounts[creditCardAccounts.length - 1].id
+                      ? 0
+                      : 1,
+                  borderBottomColor: colors.border,
+                }}
+              >
+                <View style={{ flex: 1, marginRight: 12 }}>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "600",
+                      color: colors.text,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {account.name}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                    numberOfLines={1}
+                  >
+                    Credit Card • ****{account.mask}
+                  </Text>
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: "#dc2626",
+                    }}
+                  >
+                    {formatCurrency(Math.abs(account.balances.current))}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    Current Balance
+                  </Text>
+                  {account.balances.limit && (
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        color: colors.textSecondary,
+                        marginTop: 1,
+                      }}
+                    >
+                      Limit: {formatCurrency(account.balances.limit)}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            ))}
+
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+                marginTop: 12,
+                fontStyle: "italic",
+              }}
+            >
+              Credit card balances are automatically synced from your bank
+            </Text>
+          </View>
+        )}
+
+        {/* Connected Investment Accounts Section */}
+        {isBankConnected && investmentAccounts.length > 0 && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 20,
+              marginBottom: 16,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <Ionicons
+                name="trending-up"
+                size={20}
+                color={colors.success}
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
+                Connected Investment Accounts
+              </Text>
+            </View>
+
+            {investmentAccounts.map((account: any) => (
+              <View
+                key={account.id}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  borderBottomWidth:
+                    account.id ===
+                    investmentAccounts[investmentAccounts.length - 1].id
+                      ? 0
+                      : 1,
+                  borderBottomColor: colors.border,
+                }}
+              >
+                <View style={{ flex: 1, marginRight: 12 }}>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "600",
+                      color: colors.text,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {account.name}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {account.subtype} • ****{account.mask}
+                  </Text>
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: colors.success,
+                    }}
+                  >
+                    {formatCurrency(account.balances.current)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    Current Value
+                  </Text>
+                </View>
+              </View>
+            ))}
+
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+                marginTop: 12,
+                fontStyle: "italic",
+              }}
+            >
+              Investment account values are automatically synced from your bank
+            </Text>
+          </View>
+        )}
+
+        {/* Auto-Import Section */}
+        {isBankConnected &&
+          (creditCardAccounts.length > 0 ||
+            loanAccounts.length > 0 ||
+            investmentAccounts.length > 0) && (
+            <View
+              style={{
+                backgroundColor: colors.primary + "10",
+                borderRadius: 16,
+                padding: 20,
+                marginBottom: 16,
+                borderWidth: 1,
+                borderColor: colors.primary + "30",
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 12,
+                }}
+              >
+                <Ionicons
+                  name="sync"
+                  size={20}
+                  color={colors.primary}
+                  style={{ marginRight: 8 }}
+                />
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: colors.primary,
+                  }}
+                >
+                  Auto-Import Assets & Debts
+                </Text>
+              </View>
+
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 16,
+                  lineHeight: 20,
+                }}
+              >
+                Your connected accounts can automatically populate the Assets &
+                Debts screen. Credit cards and loans appear as debts, while
+                investment accounts appear as assets.
+              </Text>
+
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <TouchableOpacity
+                  onPress={handleAutoImport}
+                  disabled={isImporting}
+                  style={{
+                    backgroundColor: colors.primary,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    alignItems: "center",
+                    flex: 1,
+                    opacity: isImporting ? 0.6 : 1,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: colors.buttonText,
+                      fontSize: 14,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {isImporting ? "Importing..." : "Auto-Import Now"}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => navigation.goBack()}
+                  style={{
+                    backgroundColor: colors.surface,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    alignItems: "center",
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: colors.text,
+                      fontSize: 14,
+                      fontWeight: "600",
+                    }}
+                  >
+                    View Assets & Debts
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
       </ScrollView>
     </SafeAreaView>
   );
