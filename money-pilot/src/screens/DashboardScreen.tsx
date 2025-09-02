@@ -711,7 +711,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     }}
                   >
                     {formatCurrency(monthlyIncome - recurringMonthlyIncome)}{" "}
-                    actual + {formatCurrency(recurringMonthlyIncome)} recurring
+                    recorded + {formatCurrency(recurringMonthlyIncome)}{" "}
+                    recurring
                   </Text>
                 )}
               </View>
@@ -788,7 +789,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     }}
                   >
                     {formatCurrency(monthlyExpenses - recurringMonthlyExpenses)}{" "}
-                    actual + {formatCurrency(recurringMonthlyExpenses)}{" "}
+                    recorded + {formatCurrency(recurringMonthlyExpenses)}{" "}
                     recurring
                   </Text>
                 )}
