@@ -19,6 +19,7 @@ import {
   getUserAssets,
   getUserDebts,
   getUserTransactions,
+  getUserRecurringTransactions,
 } from "../services/userData";
 
 interface FinancialRiskScreenProps {
@@ -34,6 +35,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
   const [assets, setAssets] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [recurringTransactions, setRecurringTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
@@ -41,14 +43,21 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
 
     try {
       setLoading(true);
-      const [userAssets, userDebts, userTransactions] = await Promise.all([
+      const [
+        userAssets,
+        userDebts,
+        userTransactions,
+        userRecurringTransactions,
+      ] = await Promise.all([
         getUserAssets(user.uid),
         getUserDebts(user.uid),
         getUserTransactions(user.uid),
+        getUserRecurringTransactions(user.uid),
       ]);
       setAssets(userAssets);
       setDebts(userDebts);
       setTransactions(userTransactions);
+      setRecurringTransactions(userRecurringTransactions);
     } catch (error) {
       console.error("Error loading balance sheet data:", error);
       Alert.alert("Error", "Failed to load data");
@@ -79,6 +88,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
     (sum, debt) => sum + debt.payment,
     0
   );
+  console.log("totalMonthlyDebtPayments", totalMonthlyDebtPayments);
 
   // Calculate current month income and expenses
   const currentMonth = new Date().getMonth();
@@ -94,6 +104,26 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
   const monthlyIncome = monthlyTransactions
     .filter((t) => t.type === "income")
     .reduce((sum, t) => sum + t.amount, 0);
+
+  // Calculate recurring monthly income from recurring transactions
+
+  const recurringMonthlyIncome = recurringTransactions
+    .filter((rt) => rt.type === "income")
+    .reduce((sum, rt) => {
+      let monthlyAmount = 0;
+      if (rt.frequency === "weekly") {
+        monthlyAmount = rt.amount * 4.33; // Average weeks per month
+      } else if (rt.frequency === "biweekly") {
+        monthlyAmount = rt.amount * 2.17; // Average biweekly periods per month
+      } else if (rt.frequency === "monthly") {
+        monthlyAmount = rt.amount * 1;
+      }
+      return sum + monthlyAmount;
+    }, 0);
+
+  // Total monthly income including recurring
+  const totalMonthlyIncome = monthlyIncome + recurringMonthlyIncome;
+  console.log("totalMonthlyIncome", totalMonthlyIncome);
 
   const monthlyExpenses = monthlyTransactions
     .filter((t) => t.type === "expense")
@@ -112,10 +142,9 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
     totalLiabilities > 0 ? totalAssets / totalLiabilities : 0;
   const monthlyLivingExpensesCoverage =
     monthlyExpenses > 0 ? totalAssets / monthlyExpenses : 0;
-  const debtAssetRatio =
-    totalAssets > 0 ? (totalLiabilities / totalAssets) * 100 : 0;
+  const debtAssetRatio = totalAssets > 0 ? totalLiabilities / totalAssets : 0;
   const debtSafetyRatio =
-    monthlyIncome > 0 ? (totalMonthlyDebtPayments / monthlyIncome) * 100 : 0;
+    totalMonthlyIncome > 0 ? totalMonthlyDebtPayments / totalMonthlyIncome : 0;
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString()}`;
@@ -552,7 +581,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
             <Text
               style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
             >
-              {fmt.pct(debtAssetRatio)}
+              {fmt.ratio(debtAssetRatio)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               {translate("totalLiabilitiesTotalAssets", isFriendlyMode)}
@@ -593,7 +622,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
             <Text
               style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
             >
-              {fmt.pct(debtSafetyRatio)}
+              {fmt.ratio(debtSafetyRatio)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               {translate("totalMonthlyDebtPaymentsTotalIncome", isFriendlyMode)}
