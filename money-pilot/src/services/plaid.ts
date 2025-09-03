@@ -17,7 +17,7 @@ import {
 // Plaid configuration - you'll need to get these from your Plaid dashboard
 export const PLAID_CONFIG = {
   clientName: "VectorFi",
-  products: ["transactions"],
+  products: ["transactions", "liabilities", "investments"],
   countryCodes: ["US"],
   language: "en",
 };
