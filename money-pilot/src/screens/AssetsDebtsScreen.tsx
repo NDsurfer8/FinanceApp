@@ -47,28 +47,13 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   const { hasPremiumAccess } = useSubscription();
   const { presentPaywall } = usePaywall();
 
-  // Animation values
-  const fadeAnim = new Animated.Value(0);
-  const slideAnim = new Animated.Value(50);
+
 
   // Background refresh when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       if (user) {
         refreshInBackground();
-        // Trigger entrance animation
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-        ]).start();
       }
     }, [user, refreshInBackground])
   );
@@ -201,12 +186,8 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   );
 
   const renderAssetItem = (asset: any, index: number) => (
-    <Animated.View
+    <View
       key={asset.id}
-      style={{
-        opacity: fadeAnim,
-        transform: [{ translateY: slideAnim }],
-      }}
     >
       <TouchableOpacity
         style={{
@@ -306,16 +287,12 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           </View>
         </View>
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
 
   const renderDebtItem = (debt: any, index: number) => (
-    <Animated.View
+    <View
       key={debt.id}
-      style={{
-        opacity: fadeAnim,
-        transform: [{ translateY: slideAnim }],
-      }}
     >
       <TouchableOpacity
         style={{
@@ -433,7 +410,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           </View>
         </View>
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
 
   const renderFinancialInsights = () => (
