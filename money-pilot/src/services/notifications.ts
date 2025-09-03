@@ -346,6 +346,75 @@ export class NotificationService {
     });
   }
 
+  // Webhook notification methods for real-time updates
+  async notifyNewTransactions(transactionCount: number): Promise<string> {
+    return this.scheduleNotification({
+      id: `webhook-transactions-${Date.now()}`,
+      title: "🔄 New Transactions Available",
+      body: `${transactionCount} new transaction${
+        transactionCount !== 1 ? "s" : ""
+      } have been synced from your bank.`,
+      data: {
+        type: "webhook-transactions",
+        transactionCount,
+        timestamp: Date.now(),
+      },
+      trigger: null, // Send immediately
+    });
+  }
+
+  async notifyNewAccounts(accountCount: number): Promise<string> {
+    return this.scheduleNotification({
+      id: `webhook-accounts-${Date.now()}`,
+      title: "🏦 New Accounts Detected",
+      body: `${accountCount} new account${
+        accountCount !== 1 ? "s" : ""
+      } have been found in your bank connection.`,
+      data: {
+        type: "webhook-accounts",
+        accountCount,
+        timestamp: Date.now(),
+      },
+      trigger: null, // Send immediately
+    });
+  }
+
+  async notifyBalanceUpdate(
+    accountName: string,
+    newBalance: number
+  ): Promise<string> {
+    return this.scheduleNotification({
+      id: `webhook-balance-${Date.now()}`,
+      title: "💰 Balance Updated",
+      body: `${accountName} balance has been updated to $${newBalance.toLocaleString()}.`,
+      data: {
+        type: "webhook-balance",
+        accountName,
+        newBalance,
+        timestamp: Date.now(),
+      },
+      trigger: null, // Send immediately
+    });
+  }
+
+  async notifyBankConnectionIssue(
+    issueType: string,
+    message: string
+  ): Promise<string> {
+    return this.scheduleNotification({
+      id: `webhook-issue-${Date.now()}`,
+      title: "⚠️ Bank Connection Issue",
+      body: message,
+      data: {
+        type: "webhook-issue",
+        issueType,
+        message,
+        timestamp: Date.now(),
+      },
+      trigger: null, // Send immediately
+    });
+  }
+
   // Setup notification listeners
   setupNotificationListeners(
     onNotificationReceived?: (notification: Notifications.Notification) => void,
@@ -424,6 +493,22 @@ export class NotificationService {
       case "savings-reminder":
         // Navigate to savings/goals screen
         console.log("Navigating to goals screen");
+        break;
+      case "webhook-transactions":
+        // Navigate to bank transactions screen
+        console.log("Navigating to bank transactions screen");
+        break;
+      case "webhook-accounts":
+        // Navigate to bank transactions screen to see new accounts
+        console.log("Navigating to bank transactions screen");
+        break;
+      case "webhook-balance":
+        // Navigate to assets/debts screen to see updated balances
+        console.log("Navigating to assets/debts screen");
+        break;
+      case "webhook-issue":
+        // Navigate to settings or bank connection screen
+        console.log("Navigating to bank connection settings");
         break;
     }
   };

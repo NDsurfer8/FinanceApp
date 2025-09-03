@@ -22,6 +22,7 @@ import revenueCatService from "../services/revenueCat";
 import { formatDateToLocalString } from "../utils/dateUtils";
 import { ref, onValue, off } from "firebase/database";
 import { db } from "../services/firebase";
+import { notificationService } from "../services/notifications";
 
 interface DataContextType {
   // Data
@@ -776,12 +777,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     );
     setIsWebhookMonitoringActive(true);
 
+    // Webhook debouncing to prevent rapid successive calls
+    let webhookDebounceTimer: NodeJS.Timeout | null = null;
+    let lastWebhookProcessed = 0;
+    const WEBHOOK_DEBOUNCE_MS = 2000; // 2 second debounce
+
     // Listen to Plaid webhook status changes in real-time
     const plaidRef = ref(db, `users/${user.uid}/plaid`);
     const unsubscribe = onValue(plaidRef, async (snapshot) => {
       const plaidData = snapshot.val();
 
       if (!plaidData) return;
+
+      // Debounce webhook processing to prevent rapid successive calls
+      const now = Date.now();
+      if (now - lastWebhookProcessed < WEBHOOK_DEBOUNCE_MS) {
+        console.log("DataContext: Webhook debounced, skipping rapid update");
+        return;
+      }
 
       console.log("DataContext: Webhook status update received:", {
         webhookType: plaidData.lastWebhook?.type,
@@ -791,57 +804,129 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         lastUpdated: plaidData.lastUpdated,
       });
 
-      // Auto-refresh when new transactions are available
+      // Smart webhook handling: consolidate multiple webhook events into single refresh
+      let shouldRefresh = false;
+      let refreshReason = "";
+      let notificationData: { type: string; count?: number } | null = null;
+
+      // Check all webhook conditions and determine if refresh is needed
       if (plaidData.transactionsSyncAvailable) {
-        console.log(
-          "DataContext: New transactions available, auto-refreshing bank data"
-        );
-        try {
-          await refreshBankData(true);
-          // Clear the flag after refreshing
-          const updates = { transactionsSyncAvailable: false };
-          await plaidService.updatePlaidStatus(updates);
-        } catch (error) {
-          console.error(
-            "DataContext: Failed to auto-refresh bank data:",
-            error
-          );
-        }
-      }
-
-      // Auto-refresh when new accounts are available
-      if (plaidData.hasNewAccounts) {
-        console.log(
-          "DataContext: New accounts available, auto-refreshing bank data"
-        );
-        try {
-          await refreshBankData(true);
-          // Clear the flag after refreshing
-          const updates = { hasNewAccounts: false };
-          await plaidService.updatePlaidStatus(updates);
-        } catch (error) {
-          console.error(
-            "DataContext: Failed to auto-refresh bank data:",
-            error
-          );
-        }
-      }
-
-      // Auto-refresh when webhook indicates significant changes
-      if (
+        shouldRefresh = true;
+        refreshReason = "transactions";
+        notificationData = { type: "transactions", count: 1 };
+      } else if (plaidData.hasNewAccounts) {
+        shouldRefresh = true;
+        refreshReason = "accounts";
+        const newAccountsCount =
+          plaidData.lastWebhook?.newAccounts?.length || 1;
+        notificationData = { type: "accounts", count: newAccountsCount };
+      } else if (
         plaidData.lastWebhook?.type === "TRANSACTIONS" &&
         plaidData.lastWebhook?.code === "SYNC_UPDATES_AVAILABLE"
       ) {
-        console.log(
-          "DataContext: Transaction sync updates available, auto-refreshing"
-        );
-        try {
-          await refreshBankData(true);
-        } catch (error) {
-          console.error(
-            "DataContext: Failed to auto-refresh after transaction sync:",
-            error
+        shouldRefresh = true;
+        refreshReason = "sync_updates";
+        notificationData = { type: "transactions", count: 1 };
+      }
+
+      // Single refresh call for all webhook events
+      if (shouldRefresh) {
+        // Clear any existing debounce timer
+        if (webhookDebounceTimer) {
+          clearTimeout(webhookDebounceTimer);
+        }
+
+        // Set debounce timer to process webhook
+        webhookDebounceTimer = setTimeout(async () => {
+          console.log(
+            `DataContext: Processing webhook refresh (${refreshReason}) after debounce`
           );
+
+          try {
+            await refreshBankData(true);
+
+            // Clear all relevant flags after successful refresh
+            const updates: any = {};
+            if (plaidData.transactionsSyncAvailable)
+              updates.transactionsSyncAvailable = false;
+            if (plaidData.hasNewAccounts) updates.hasNewAccounts = false;
+
+            // Only update Firebase if we have changes to make
+            if (Object.keys(updates).length > 0) {
+              // Use batched updates to reduce Firebase writes
+              await plaidService.queuePlaidStatusUpdate(updates);
+            }
+
+            // Send notification if we have notification data
+            if (notificationData) {
+              try {
+                if (notificationData.type === "transactions") {
+                  await notificationService.notifyNewTransactions(
+                    notificationData.count || 1
+                  );
+                } else if (notificationData.type === "accounts") {
+                  await notificationService.notifyNewAccounts(
+                    notificationData.count || 1
+                  );
+                }
+              } catch (notifError) {
+                console.log("Failed to send webhook notification:", notifError);
+              }
+            }
+
+            // Update last processed time
+            lastWebhookProcessed = Date.now();
+          } catch (error) {
+            console.error(
+              "DataContext: Failed to auto-refresh bank data:",
+              error
+            );
+          }
+        }, WEBHOOK_DEBOUNCE_MS);
+      }
+
+      // Handle bank connection issues and send notifications
+      if (plaidData.lastWebhook?.type === "ITEM") {
+        switch (plaidData.lastWebhook?.code) {
+          case "ITEM_LOGIN_REQUIRED":
+            try {
+              await notificationService.notifyBankConnectionIssue(
+                "login_required",
+                "Your bank credentials have expired. Please reconnect your account."
+              );
+            } catch (notifError) {
+              console.log(
+                "Failed to send connection issue notification:",
+                notifError
+              );
+            }
+            break;
+          case "ITEM_PENDING_EXPIRATION":
+            try {
+              await notificationService.notifyBankConnectionIssue(
+                "expiring_soon",
+                "Your bank connection will expire soon. Please reconnect to maintain access."
+              );
+            } catch (notifError) {
+              console.log(
+                "Failed to send connection issue notification:",
+                notifError
+              );
+            }
+            break;
+          case "ITEM_PENDING_DISCONNECT":
+            try {
+              await notificationService.notifyBankConnectionIssue(
+                "disconnecting",
+                "Your bank connection is being disconnected. Please reconnect if you want to continue using this feature."
+              );
+            } catch (notifError) {
+              console.log(
+                "Failed to send connection issue notification:",
+                notifError
+              );
+            }
+            break;
         }
       }
     });
@@ -849,6 +934,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return () => {
       console.log("DataContext: Cleaning up webhook monitoring");
       setIsWebhookMonitoringActive(false);
+
+      // Clear any pending debounce timer
+      if (webhookDebounceTimer) {
+        clearTimeout(webhookDebounceTimer);
+      }
+
       off(plaidRef);
       unsubscribe();
     };

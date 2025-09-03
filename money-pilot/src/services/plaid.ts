@@ -1257,6 +1257,13 @@ class PlaidService {
         throw new Error("User ID not set");
       }
 
+      // Clear any pending status updates
+      if (this.statusUpdateTimer) {
+        clearTimeout(this.statusUpdateTimer);
+        this.statusUpdateTimer = null;
+      }
+      this.pendingStatusUpdates = {};
+
       // Remove from Firebase
       const plaidRef = ref(db, `users/${this.userId}/plaid`);
       await remove(plaidRef);
@@ -1325,6 +1332,13 @@ class PlaidService {
         return; // No user ID, nothing to disconnect
       }
 
+      // Clear any pending status updates
+      if (this.statusUpdateTimer) {
+        clearTimeout(this.statusUpdateTimer);
+        this.statusUpdateTimer = null;
+      }
+      this.pendingStatusUpdates = {};
+
       // Remove from Firebase
       const plaidRef = ref(db, `users/${this.userId}/plaid`);
       await remove(plaidRef);
@@ -1345,6 +1359,14 @@ class PlaidService {
         throw new Error("User ID not set");
       }
 
+      // Only update if we have actual changes
+      if (!updates || Object.keys(updates).length === 0) {
+        console.log(
+          "PlaidService: No updates to apply, skipping Firebase write"
+        );
+        return;
+      }
+
       const plaidRef = ref(db, `users/${this.userId}/plaid`);
       await update(plaidRef, updates);
       console.log("PlaidService: Updated Plaid status:", updates);
@@ -1352,6 +1374,32 @@ class PlaidService {
       console.error("PlaidService: Error updating Plaid status:", error);
       throw error;
     }
+  }
+
+  // Batch update Plaid status to reduce Firebase writes
+  private pendingStatusUpdates: any = {};
+  private statusUpdateTimer: NodeJS.Timeout | null = null;
+
+  async queuePlaidStatusUpdate(updates: any): Promise<void> {
+    // Merge updates with pending ones
+    this.pendingStatusUpdates = { ...this.pendingStatusUpdates, ...updates };
+
+    // Clear existing timer
+    if (this.statusUpdateTimer) {
+      clearTimeout(this.statusUpdateTimer);
+    }
+
+    // Set timer to batch update after 1 second
+    this.statusUpdateTimer = setTimeout(async () => {
+      if (Object.keys(this.pendingStatusUpdates).length > 0) {
+        try {
+          await this.updatePlaidStatus(this.pendingStatusUpdates);
+          this.pendingStatusUpdates = {}; // Clear pending updates
+        } catch (error) {
+          console.error("PlaidService: Failed to batch update status:", error);
+        }
+      }
+    }, 1000);
   }
 }
 
