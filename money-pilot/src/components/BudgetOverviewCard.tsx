@@ -18,8 +18,16 @@ interface BudgetOverviewCardProps {
   onPressIncome: () => void;
   onPressExpense: () => void;
   onPressImport?: () => void;
+  onPressBudgetAnalysis?: () => void;
   isBankConnected?: boolean;
   availableTransactionsCount?: number;
+  hasBudgetData?: boolean;
+  budgetSummary?: {
+    totalCategories: number;
+    overBudget: number;
+    closeToLimit: number;
+    underBudget: number;
+  };
 }
 
 export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
@@ -38,8 +46,11 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
     onPressIncome = () => {},
     onPressExpense = () => {},
     onPressImport,
+    onPressBudgetAnalysis,
     isBankConnected = false,
     availableTransactionsCount = 0,
+    hasBudgetData = false,
+    budgetSummary,
   } = props;
 
   const { colors } = useTheme();
@@ -344,6 +355,135 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
         </View>
       </View>
 
+      {/* Budget Status - New Section */}
+      {budgetSummary && budgetSummary.totalCategories > 0 && (
+        <View style={{ marginBottom: 16 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                fontWeight: "500",
+              }}
+            >
+              Budget Status
+            </Text>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+              }}
+            >
+              {budgetSummary.totalCategories} categories
+            </Text>
+          </View>
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 8,
+            }}
+          >
+            {budgetSummary.overBudget > 0 && (
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.errorLight,
+                  padding: 8,
+                  borderRadius: 8,
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "600",
+                    color: colors.error,
+                  }}
+                >
+                  {budgetSummary.overBudget}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: colors.error,
+                  }}
+                >
+                  Over
+                </Text>
+              </View>
+            )}
+
+            {budgetSummary.closeToLimit > 0 && (
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.warningLight,
+                  padding: 8,
+                  borderRadius: 8,
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "600",
+                    color: colors.warning,
+                  }}
+                >
+                  {budgetSummary.closeToLimit}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: colors.warning,
+                  }}
+                >
+                  Close
+                </Text>
+              </View>
+            )}
+
+            {budgetSummary.underBudget > 0 && (
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.successLight,
+                  padding: 8,
+                  borderRadius: 8,
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "600",
+                    color: colors.success,
+                  }}
+                >
+                  {budgetSummary.underBudget}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: colors.success,
+                  }}
+                >
+                  Good
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
+
       {/* Quick Actions */}
       <View
         style={{
@@ -382,6 +522,37 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
             View Details
           </Text>
         </TouchableOpacity>
+
+        {onPressBudgetAnalysis && (
+          <TouchableOpacity
+            onPress={onPressBudgetAnalysis}
+            style={{
+              flex: 1,
+              backgroundColor: colors.primary,
+              padding: 12,
+              borderRadius: 12,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons
+              name="calculator-outline"
+              size={16}
+              color="white"
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={{
+                color: "white",
+                fontSize: 14,
+                fontWeight: "600",
+              }}
+            >
+              Budget Analysis
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

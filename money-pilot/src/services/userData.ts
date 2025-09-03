@@ -62,6 +62,13 @@ export interface Transaction {
   updatedAt?: number;
   // Flag to distinguish actual vs projected transactions
   isProjected?: boolean;
+
+  // New fields for reconciliation system
+  transactionType?: "expected" | "actual" | "budgeted" | "planned";
+  expectedAmount?: number; // For budgeted/planned transactions
+  reconciliationId?: string; // Links expected with actual transactions
+  isReconciled?: boolean; // Whether this transaction has been reconciled
+  notes?: string; // User notes about the transaction
 }
 
 export interface Asset {
@@ -133,6 +140,11 @@ export interface RecurringTransaction {
   lastGeneratedDate?: number; // Last time a transaction was generated
   nextDueDate?: number; // Next expected occurrence
   totalOccurrences?: number; // Count of times generated
+
+  // New fields for budget planning
+  isBudgeted?: boolean; // Whether this is used for budget planning
+  budgetCategory?: string; // Budget category this belongs to
+  expectedMonthlyAmount?: number; // Expected monthly total for budgeting
 }
 
 // ===== SHARED FINANCE INTERFACES =====

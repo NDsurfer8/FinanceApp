@@ -31,6 +31,12 @@ import { billReminderService } from "../services/billReminders";
 import { timestampToDateString } from "../utils/dateUtils";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 
+// Reconciliation system imports
+import {
+  findReconciliationMatches,
+  calculateBudgetComparison,
+} from "../services/reconciliationService";
+
 interface BudgetScreenProps {
   navigation: any;
 }
@@ -82,12 +88,20 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   } | null>(null);
   const [isIncomeCollapsed, setIsIncomeCollapsed] = useState(false);
   const [isExpensesCollapsed, setIsExpensesCollapsed] = useState(false);
+
   const [showAutoImporter, setShowAutoImporter] = useState(false);
   const [showBudgetSettingsModal, setShowBudgetSettingsModal] = useState(false);
   const [importSuccess, setImportSuccess] = useState<{
     count: number;
     message: string;
   } | null>(null);
+
+  // Reconciliation system state
+  const [showReconciliationModal, setShowReconciliationModal] = useState(false);
+  const [showBudgetAnalysisModal, setShowBudgetAnalysisModal] = useState(false);
+  const [reconciliationMatches, setReconciliationMatches] = useState<any[]>([]);
+  const [budgetComparisons, setBudgetComparisons] = useState<any[]>([]);
+
   const monthPickerScrollRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
@@ -189,9 +203,109 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     netIncome - savingsAmount - debtPayoffAmount - goalsAmount;
   const remainingBalance = discretionaryIncome;
 
+  // Calculate budget vs. actual comparisons
+  const calculateBudgetVsActual = () => {
+    // Get expected transactions (identified by description prefix "Expected:" and exclude income)
+    const expectedTransactions = allMonthTransactions.filter(
+      (t) => t.description?.startsWith("Expected:") && t.type !== "income"
+    );
+
+    // Also include recurring transactions as expected expenses for the current month (exclude income)
+    const currentMonth = selectedMonth.toISOString().slice(0, 7); // YYYY-MM format
+    const recurringAsExpected = recurringTransactions
+      .filter((rt) => rt.isActive && rt.type !== "income")
+      .map((rt) => ({
+        id: `recurring_${rt.id}`,
+        amount: rt.amount,
+        type: rt.type,
+        category: rt.category,
+        description: `Expected: ${rt.name}`,
+        date: selectedMonth.getTime(),
+        userId: user?.uid || "",
+        createdAt: Date.now(),
+        isRecurring: true,
+        recurringId: rt.id,
+      }));
+
+    // Combine manual expected transactions with recurring ones
+    const allExpectedTransactions = [
+      ...expectedTransactions,
+      ...recurringAsExpected,
+    ];
+
+    // Get actual transactions (anything that doesn't start with "Expected:", isn't projected, and isn't income)
+    const actualTransactions = allMonthTransactions.filter(
+      (t) =>
+        !t.description?.startsWith("Expected:") &&
+        !t.isProjected &&
+        t.type !== "income"
+    );
+
+    // Calculate comparisons
+    const comparisons = calculateBudgetComparison(
+      allExpectedTransactions,
+      actualTransactions
+    );
+
+    setBudgetComparisons(comparisons);
+
+    return comparisons;
+  };
+
   // Smart Insights generation
   const getInsights = () => {
     const insights = [];
+
+    // Add budget-related insights if we have budget comparisons
+    if (budgetComparisons.length > 0) {
+      // Find categories that are over budget
+      const overBudgetCategories = budgetComparisons.filter(
+        (c) => c.status === "over_budget"
+      );
+      if (overBudgetCategories.length > 0) {
+        insights.push({
+          id: "budget-over",
+          type: "warning",
+          icon: "alert-circle",
+          title: "Budget Alert",
+          message: `${overBudgetCategories.length} category${
+            overBudgetCategories.length > 1 ? "ies are" : " is"
+          } over budget. Consider adjusting your spending.`,
+        });
+      }
+
+      // Find categories that are close to budget limit
+      const closeToLimitCategories = budgetComparisons.filter(
+        (c) => c.status === "close_to_limit"
+      );
+      if (closeToLimitCategories.length > 0) {
+        insights.push({
+          id: "budget-close",
+          type: "warning",
+          icon: "warning",
+          title: "Budget Warning",
+          message: `${closeToLimitCategories.length} category${
+            closeToLimitCategories.length > 1 ? "ies are" : " is"
+          } close to budget limit.`,
+        });
+      }
+
+      // Find categories that are under budget (positive insight)
+      const underBudgetCategories = budgetComparisons.filter(
+        (c) => c.status === "under_budget"
+      );
+      if (underBudgetCategories.length > 0) {
+        insights.push({
+          id: "budget-under",
+          type: "success",
+          icon: "checkmark-circle",
+          title: "Great Job!",
+          message: `${underBudgetCategories.length} category${
+            underBudgetCategories.length > 1 ? "ies are" : " is"
+          } under budget. You're managing your money well!`,
+        });
+      }
+    }
 
     if (totalIncome > 0) {
       // Calculate discretionary savings rate (what's actually available after all allocations)
@@ -756,8 +870,47 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           onPressIncome={handleAddIncome}
           onPressExpense={handleAddExpense}
           onPressImport={() => setShowAutoImporter(true)}
+          onPressBudgetAnalysis={() => {
+            console.log("🔍 Budget Analysis button pressed");
+            console.log(
+              "📊 Current month transactions:",
+              allMonthTransactions.length
+            );
+
+            console.log("🔍 Budget Analysis button pressed");
+
+            // Run the budget analysis
+            const comparisons = calculateBudgetVsActual();
+            if (comparisons.length > 0) {
+              setShowBudgetAnalysisModal(true);
+              console.log(
+                "✅ Budget analysis completed:",
+                comparisons.length,
+                "categories"
+              );
+            } else {
+              console.log("ℹ️ No budget data to analyze yet");
+            }
+          }}
           isBankConnected={isBankConnected}
           availableTransactionsCount={getAvailableTransactionsCount()}
+          hasBudgetData={budgetComparisons.length > 0}
+          budgetSummary={
+            budgetComparisons.length > 0
+              ? {
+                  totalCategories: budgetComparisons.length,
+                  overBudget: budgetComparisons.filter(
+                    (c) => c.status === "over_budget"
+                  ).length,
+                  closeToLimit: budgetComparisons.filter(
+                    (c) => c.status === "close_to_limit"
+                  ).length,
+                  underBudget: budgetComparisons.filter(
+                    (c) => c.status === "under_budget"
+                  ).length,
+                }
+              : undefined
+          }
         />
 
         {/* Smart Insights - Only show if there are insights */}
@@ -893,6 +1046,198 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           formatDate={formatDate}
           isRecurringTransaction={isRecurringTransaction}
         />
+        {/* Budget Summary for Expenses */}
+        {budgetComparisons.length > 0 && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 16,
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <Ionicons
+                name="trending-down"
+                size={20}
+                color={colors.error}
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "600",
+                  color: colors.text,
+                }}
+              >
+                Expenses Budget Summary
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 16,
+              }}
+            >
+              <View style={{ alignItems: "center", flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: colors.primary,
+                  }}
+                >
+                  {formatCurrency(
+                    budgetComparisons.reduce((sum, c) => sum + c.expected, 0)
+                  )}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    textAlign: "center",
+                  }}
+                >
+                  Budgeted
+                </Text>
+              </View>
+
+              <View style={{ alignItems: "center", flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: colors.text,
+                  }}
+                >
+                  {formatCurrency(
+                    budgetComparisons.reduce((sum, c) => sum + c.actual, 0)
+                  )}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    textAlign: "center",
+                  }}
+                >
+                  Actual
+                </Text>
+              </View>
+
+              <View style={{ alignItems: "center", flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: (() => {
+                      const variance = budgetComparisons.reduce(
+                        (sum, c) => sum + (c.expected - c.actual),
+                        0
+                      );
+                      return variance >= 0 ? colors.success : colors.error;
+                    })(),
+                  }}
+                >
+                  {formatCurrency(
+                    budgetComparisons.reduce(
+                      (sum, c) => sum + (c.expected - c.actual),
+                      0
+                    )
+                  )}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    textAlign: "center",
+                  }}
+                >
+                  Remaining
+                </Text>
+              </View>
+            </View>
+
+            {/* Progress Bar */}
+            <View style={{ marginBottom: 8 }}>
+              <View
+                style={{
+                  height: 8,
+                  backgroundColor: colors.border,
+                  borderRadius: 4,
+                  overflow: "hidden",
+                }}
+              >
+                <View
+                  style={{
+                    height: "100%",
+                    width: `${Math.min(
+                      (budgetComparisons.reduce((sum, c) => sum + c.actual, 0) /
+                        Math.max(
+                          budgetComparisons.reduce(
+                            (sum, c) => sum + c.expected,
+                            0
+                          ),
+                          1
+                        )) *
+                        100,
+                      100
+                    )}%`,
+                    backgroundColor: (() => {
+                      const percentage =
+                        (budgetComparisons.reduce(
+                          (sum, c) => sum + c.actual,
+                          0
+                        ) /
+                          Math.max(
+                            budgetComparisons.reduce(
+                              (sum, c) => sum + c.expected,
+                              0
+                            ),
+                            1
+                          )) *
+                        100;
+                      return percentage >= 100
+                        ? colors.error
+                        : percentage >= 80
+                        ? colors.warning
+                        : colors.success;
+                    })(),
+                    borderRadius: 4,
+                  }}
+                />
+              </View>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                  textAlign: "center",
+                  marginTop: 4,
+                }}
+              >
+                {Math.round(
+                  (budgetComparisons.reduce((sum, c) => sum + c.actual, 0) /
+                    Math.max(
+                      budgetComparisons.reduce((sum, c) => sum + c.expected, 0),
+                      1
+                    )) *
+                    100
+                )}
+                % of budget used
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Expenses Section */}
         <TransactionListCard
@@ -1192,6 +1537,250 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
       {/* Floating AI Chatbot - only show on main tab screens */}
       <FloatingAIChatbot />
+
+      {/* Budget Analysis Modal */}
+      {showBudgetAnalysisModal && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              margin: 20,
+              maxHeight: "80%",
+              width: "90%",
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.2,
+              shadowRadius: 20,
+              shadowOffset: { width: 0, height: 10 },
+              elevation: 10,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
+                Budget Analysis
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowBudgetAnalysisModal(false)}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: colors.surfaceSecondary,
+                }}
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {budgetComparisons.map((comparison, index) => (
+                <View
+                  key={`modal-comparison-${comparison.category}-${index}`}
+                  style={{
+                    marginBottom: 16,
+                    padding: 16,
+                    backgroundColor: colors.surfaceSecondary,
+                    borderRadius: 12,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: "600",
+                        color: colors.text,
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {comparison.category}
+                    </Text>
+                    <View
+                      style={{
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 8,
+                        backgroundColor:
+                          comparison.status === "over_budget"
+                            ? colors.errorLight
+                            : comparison.status === "close_to_limit"
+                            ? colors.warningLight
+                            : comparison.status === "under_budget"
+                            ? colors.successLight
+                            : colors.primaryLight,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "600",
+                          color:
+                            comparison.status === "over_budget"
+                              ? colors.error
+                              : comparison.status === "close_to_limit"
+                              ? colors.warning
+                              : comparison.status === "under_budget"
+                              ? colors.success
+                              : colors.primary,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {comparison.status.replace("_", " ")}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <View style={{ alignItems: "center", flex: 1 }}>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: colors.textSecondary,
+                          marginBottom: 4,
+                        }}
+                      >
+                        Expected
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "600",
+                          color: colors.text,
+                        }}
+                      >
+                        {formatCurrency(comparison.expected)}
+                      </Text>
+                    </View>
+
+                    <View style={{ alignItems: "center", flex: 1 }}>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: colors.textSecondary,
+                          marginBottom: 4,
+                        }}
+                      >
+                        Actual
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "600",
+                          color:
+                            comparison.variance > 0
+                              ? colors.error
+                              : comparison.variance < 0
+                              ? colors.success
+                              : colors.text,
+                        }}
+                      >
+                        {formatCurrency(comparison.actual)}
+                      </Text>
+                    </View>
+
+                    <View style={{ alignItems: "center", flex: 1 }}>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: colors.textSecondary,
+                          marginBottom: 4,
+                        }}
+                      >
+                        Variance
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "600",
+                          color:
+                            comparison.variance > 0
+                              ? colors.error
+                              : comparison.variance < 0
+                              ? colors.success
+                              : colors.text,
+                        }}
+                      >
+                        {comparison.variance > 0 ? "+" : ""}
+                        {formatCurrency(comparison.variance)}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View
+                    style={{
+                      height: 6,
+                      backgroundColor: colors.surface,
+                      borderRadius: 3,
+                      marginBottom: 8,
+                    }}
+                  >
+                    <View
+                      style={{
+                        height: "100%",
+                        borderRadius: 3,
+                        width: `${Math.min(comparison.percentage, 100)}%`,
+                        backgroundColor:
+                          comparison.percentage > 100
+                            ? colors.error
+                            : comparison.percentage > 90
+                            ? colors.warning
+                            : colors.success,
+                      }}
+                    />
+                  </View>
+
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      textAlign: "center",
+                    }}
+                  >
+                    {comparison.percentage.toFixed(1)}% of budget used
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
