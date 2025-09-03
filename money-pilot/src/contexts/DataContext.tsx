@@ -1,3 +1,10 @@
+/**
+ * 🔒 SECURITY NOTICE: This file handles sensitive financial data
+ * - NEVER log access tokens, account numbers, or transaction details
+ * - NEVER expose sensitive data in console logs or error messages
+ * - ONLY log metadata, status, and non-sensitive identifiers
+ * - Use hashes or truncated values for debugging when needed
+ */
 import React, {
   createContext,
   useContext,
@@ -791,6 +798,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       "DataContext: Webhook monitoring ACTIVE - listening for updates"
     );
 
+    // 🔒 SECURITY: Never log sensitive financial data
+    // - No access tokens, account numbers, or transaction details
+    // - Only log metadata, status, and non-sensitive identifiers
+    // - Use hashes or truncated values for debugging when needed
+
     // Webhook debouncing to prevent rapid successive calls
     let webhookDebounceTimer: NodeJS.Timeout | null = null;
     let lastWebhookProcessed = 0;
@@ -816,7 +828,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         transactionsSyncAvailable: plaidData.transactionsSyncAvailable,
         hasNewAccounts: plaidData.hasNewAccounts,
         lastUpdated: plaidData.lastUpdated,
-        fullPlaidData: plaidData, // Log full data for debugging
+        // ✅ SECURE: Only log non-sensitive metadata
+        hasWebhookData: !!plaidData.lastWebhook,
+        dataTimestamp: plaidData.lastWebhook?.timestamp || "none",
       });
 
       // Smart webhook handling: consolidate multiple webhook events into single refresh
@@ -902,10 +916,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             // Update last processed time
             lastWebhookProcessed = Date.now();
           } catch (error) {
-            console.error(
-              "DataContext: Failed to auto-refresh bank data:",
-              error
-            );
+            // 🔒 SECURE: Log error type, not sensitive details
+            console.error("DataContext: Failed to auto-refresh bank data:", {
+              errorType: error?.constructor?.name || "Unknown",
+              errorMessage: (error as any)?.message || "No message",
+              hasStack: !!(error as any)?.stack,
+              // ✅ Never log: access tokens, account numbers, transaction data
+            });
           }
         }, WEBHOOK_DEBOUNCE_MS);
       }
