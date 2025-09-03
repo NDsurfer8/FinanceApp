@@ -113,6 +113,14 @@ export const NotificationSettingsScreen: React.FC<
           type: "balance",
         },
         {
+          id: "goal-reminders",
+          title: "Goal Progress Alerts",
+          description: "Get notified about your financial goal progress",
+          icon: "trophy",
+          enabled: false,
+          type: "goals",
+        },
+        {
           id: "webhook-transactions",
           title: "New Transaction Alerts",
           description:
@@ -336,6 +344,11 @@ export const NotificationSettingsScreen: React.FC<
             500
           );
           break;
+        case "goals":
+          // Goal reminders are scheduled when goals are created/updated
+          // This toggle just enables/disables the feature
+          console.log("Goal reminder notifications enabled");
+          break;
         case "webhook-transactions":
           // Webhook notifications are handled automatically by the system
           // This toggle just enables/disables the feature
@@ -365,6 +378,17 @@ export const NotificationSettingsScreen: React.FC<
       } else if (settingId === "budget-reminders") {
         // Cancel all budget reminders specifically
         await budgetReminderService.cancelAllBudgetReminders();
+      } else if (settingId === "goal-reminders") {
+        // Cancel all goal reminders specifically
+        const scheduledNotifications =
+          await notificationService.getScheduledNotifications();
+        for (const notification of scheduledNotifications) {
+          if (notification.content.data?.type === "goal-reminder") {
+            await notificationService.cancelNotification(
+              notification.identifier
+            );
+          }
+        }
       } else {
         // Cancel all notifications for this setting type
         const scheduledNotifications =
@@ -498,6 +522,8 @@ export const NotificationSettingsScreen: React.FC<
               </Text>
             </TouchableOpacity>
           )}
+
+
         </View>
 
         {/* Notification Settings */}
@@ -893,4 +919,5 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     lineHeight: 16,
   },
+
 });

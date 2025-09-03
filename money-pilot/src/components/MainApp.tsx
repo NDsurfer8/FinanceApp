@@ -250,6 +250,8 @@ export const MainApp: React.FC = () => {
       console.error("Error clearing badge on app open:", error);
     }
 
+
+
     // Setup notification listeners
     const cleanup = notificationService.setupNotificationListeners(
       (notification) => {
