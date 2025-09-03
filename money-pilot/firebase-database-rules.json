@@ -350,8 +350,8 @@
       ".read": "auth != null",
       ".write": "auth != null",
       "$groupId": {
-        ".read": "auth != null",
-        ".write": "auth != null",
+        ".read": "auth != null && root.child('sharedGroups').child($groupId).child('members').child(auth.uid).exists()",
+        ".write": "auth != null && root.child('sharedGroups').child($groupId).child('members').child(auth.uid).exists()",
         ".validate": "newData.hasChildren(['name', 'type', 'ownerId', 'members', 'settings', 'createdAt', 'updatedAt'])",
         "name": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
@@ -404,8 +404,8 @@
       ".read": "auth != null",
       ".write": "auth != null",
       "$invitationId": {
-        ".read": "auth != null",
-        ".write": "auth != null",
+        ".read": "auth != null && (data.child('inviterId').val() === auth.uid || data.child('inviteeEmail').val() === root.child('users').child(auth.uid).child('profile').child('email').val())",
+        ".write": "auth != null && newData.child('inviterId').val() === auth.uid",
         ".validate": "newData.hasChildren(['groupId', 'groupName', 'inviterId', 'inviterName', 'inviteeEmail', 'role', 'status', 'expiresAt', 'createdAt'])",
         "groupId": {
           ".validate": "newData.isString() && newData.val().length > 0"
@@ -433,6 +433,21 @@
         },
         "createdAt": {
           ".validate": "newData.isNumber() && newData.val() > 0"
+        }
+      }
+    },
+
+    "sharedFinanceData": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$groupId": {
+        ".read": "auth != null && root.child('sharedGroups').child($groupId).child('members').child(auth.uid).exists()",
+        ".write": "auth != null && root.child('sharedGroups').child($groupId).child('members').child(auth.uid).exists()",
+        "members": {
+          "$memberId": {
+            ".read": "auth != null && root.child('sharedGroups').child($groupId).child('members').child(auth.uid).exists()",
+            ".write": "auth != null && $memberId === auth.uid && root.child('sharedGroups').child($groupId).child('members').child(auth.uid).exists()"
+          }
         }
       }
     },

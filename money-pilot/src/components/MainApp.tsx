@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Font from "expo-font";
 import { fontsToLoad } from "../config/fonts";
 import { BottomTabParamList } from "../types/finance";
+import { RootStackParamList } from "../types/navigation";
 import { useAuth } from "../hooks/useAuth";
 import { notificationService } from "../services/notifications";
 import { billReminderService } from "../services/billReminders";
@@ -39,6 +40,10 @@ import {
   AddGoalScreen,
   FinancialRiskScreen,
   SharedFinanceScreen,
+  SharedGroupDetail,
+  SharedGroupDetailFixed,
+  DataSharingSettingsScreen,
+  GroupDataSharingScreen,
   EditProfileScreen,
   NotificationSettingsScreen,
   PrivacySecurityScreen,
@@ -54,9 +59,10 @@ import {
 import { AIUsageAdminScreen } from "../screens/AIUsageAdminScreen";
 import { PrivacyPolicyScreen } from "../screens/PrivacyPolicyScreen";
 import { TermsOfServiceScreen } from "../screens/TermsOfServiceScreen";
+import GroupMembersScreen from "../screens/GroupMembersScreen";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<RootStackParamList>();
 
 type AppScreenState =
   | "splash"
@@ -249,8 +255,6 @@ export const MainApp: React.FC = () => {
     } catch (error) {
       console.error("Error clearing badge on app open:", error);
     }
-
-
 
     // Setup notification listeners
     const cleanup = notificationService.setupNotificationListeners(
@@ -482,6 +486,28 @@ export const MainApp: React.FC = () => {
                         <Stack.Screen
                           name="SharedFinance"
                           component={SharedFinanceScreen}
+                        />
+                        <Stack.Screen
+                          name="SharedGroupDetail"
+                          component={SharedGroupDetail}
+                        />
+                        <Stack.Screen
+                          name="SharedGroupDetailFixed"
+                          component={SharedGroupDetailFixed}
+                        />
+                        <Stack.Screen
+                          name="DataSharingSettings"
+                          component={DataSharingSettingsScreen}
+                        />
+                        <Stack.Screen
+                          name="GroupDataSharing"
+                          component={GroupDataSharingScreen}
+                          options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                          name="GroupMembers"
+                          component={GroupMembersScreen}
+                          options={{ headerShown: false }}
                         />
                         <Stack.Screen
                           name="EditProfile"

@@ -1,12 +1,52 @@
 import { ref, set, get, push, update, remove } from "firebase/database";
 import { db, auth } from "./firebase";
 
+/**
+ * Cleans data by removing undefined values before writing to Firebase
+ * Firebase doesn't allow undefined values - they must be null or removed
+ */
+const cleanDataForFirebase = <T>(data: T): T => {
+  if (data === null || data === undefined) {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    return data
+      .map((item) => cleanDataForFirebase(item))
+      .filter((item) => item !== undefined) as T;
+  }
+
+  if (typeof data === "object") {
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        cleaned[key] = cleanDataForFirebase(value);
+      }
+    }
+    return cleaned;
+  }
+
+  return data;
+};
+
+export interface DataSharingSettings {
+  shareNetWorth: boolean;
+  shareMonthlyIncome: boolean;
+  shareMonthlyExpenses: boolean;
+  shareTransactions: boolean;
+  shareRecurringTransactions: boolean;
+  shareAssets: boolean;
+  shareDebts: boolean;
+  shareGoals: boolean;
+}
+
 export interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
   createdAt: number;
   updatedAt: number;
+  dataSharingSettings?: DataSharingSettings;
 }
 
 export interface Transaction {
@@ -1220,7 +1260,20 @@ export const removeGroupMember = async (
       members: updatedMembers,
       updatedAt: Date.now(),
     });
-    console.log("Member removed from group successfully");
+
+    // Remove group from the removed member's user profile
+    const userGroupsRef = ref(db, `users/${memberId}/sharedGroups/${groupId}`);
+    await remove(userGroupsRef);
+
+    // Remove the member's shared finance data from the group
+    const sharedFinanceDataRef = ref(
+      db,
+      `sharedFinanceData/${groupId}/members/${memberId}`
+    );
+    await remove(sharedFinanceDataRef);
+
+    console.log("✅ Member removed from group successfully");
+    console.log("✅ Member's shared finance data cleaned up");
   } catch (error) {
     console.error("Error removing member from group:", error);
     throw error;
@@ -1252,17 +1305,119 @@ export const deleteSharedGroup = async (
       throw new Error("Only group owners can delete groups");
     }
 
-    // Delete the group
+    // Delete all shared financial data for this group
+    const sharedFinanceDataRef = ref(db, `sharedFinanceData/${groupId}`);
+    await remove(sharedFinanceDataRef);
+    console.log("✅ Shared financial data deleted for group:", groupId);
+
+    // Delete all invitations for this group
+    const invitationsRef = ref(db, `invitations`);
+    const invitationsSnapshot = await get(invitationsRef);
+    if (invitationsSnapshot.exists()) {
+      const invitations = invitationsSnapshot.val();
+      const invitationsToDelete: string[] = [];
+
+      // Find all invitations for this group
+      Object.keys(invitations).forEach((invitationId) => {
+        if (invitations[invitationId].groupId === groupId) {
+          invitationsToDelete.push(invitationId);
+        }
+      });
+
+      // Delete each invitation
+      for (const invitationId of invitationsToDelete) {
+        const invitationRef = ref(db, `invitations/${invitationId}`);
+        await remove(invitationRef);
+      }
+      console.log(
+        "✅ Deleted",
+        invitationsToDelete.length,
+        "invitations for group:",
+        groupId
+      );
+    }
+
+    // Remove group from all members' user profiles
+    if (group.members) {
+      for (const member of group.members) {
+        try {
+          const userGroupsRef = ref(
+            db,
+            `users/${member.userId}/sharedGroups/${groupId}`
+          );
+          await remove(userGroupsRef);
+        } catch (error) {
+          console.error(
+            `Error removing group from user ${member.userId}:`,
+            error
+          );
+          // Continue with other members even if one fails
+        }
+      }
+      console.log("✅ Removed group references from all member profiles");
+    }
+
+    // Delete the group itself
     await remove(groupRef);
+    console.log("✅ Shared group deleted successfully");
 
-    // Also remove from user's groups list
-    const userGroupsRef = ref(db, `users/${userId}/sharedGroups/${groupId}`);
-    await remove(userGroupsRef);
-
-    console.log("Shared group deleted successfully");
+    console.log("✅ Complete cleanup completed for group:", groupId);
   } catch (error) {
     console.error("Error deleting shared group:", error);
     throw error;
+  }
+};
+
+/**
+ * Clean up orphaned shared finance data for groups that no longer exist
+ * This is a utility function to maintain data integrity
+ */
+export const cleanupOrphanedSharedData = async (): Promise<void> => {
+  try {
+    console.log("🧹 Starting cleanup of orphaned shared finance data...");
+
+    const sharedFinanceDataRef = ref(db, `sharedFinanceData`);
+    const sharedDataSnapshot = await get(sharedFinanceDataRef);
+
+    if (!sharedDataSnapshot.exists()) {
+      console.log("✅ No shared finance data to clean up");
+      return;
+    }
+
+    const sharedData = sharedDataSnapshot.val();
+    const groupsRef = ref(db, `sharedGroups`);
+    const groupsSnapshot = await get(groupsRef);
+
+    if (!groupsSnapshot.exists()) {
+      console.log("⚠️ No shared groups found, cleaning up all shared data");
+      await remove(sharedFinanceDataRef);
+      console.log("✅ All shared finance data cleaned up");
+      return;
+    }
+
+    const groups = groupsSnapshot.val();
+    let cleanedCount = 0;
+
+    // Check each shared finance data entry
+    for (const groupId of Object.keys(sharedData)) {
+      if (!groups[groupId]) {
+        // Group doesn't exist, clean up this data
+        const orphanedDataRef = ref(db, `sharedFinanceData/${groupId}`);
+        await remove(orphanedDataRef);
+        cleanedCount++;
+        console.log(`🗑️ Cleaned up orphaned data for group: ${groupId}`);
+      }
+    }
+
+    if (cleanedCount > 0) {
+      console.log(
+        `✅ Cleanup completed. Removed ${cleanedCount} orphaned shared data entries.`
+      );
+    } else {
+      console.log("✅ No orphaned data found");
+    }
+  } catch (error) {
+    console.error("❌ Error during cleanup of orphaned shared data:", error);
   }
 };
 
@@ -1361,13 +1516,18 @@ export const addUserDataToGroup = async (
     ]);
 
     // Store in group's shared data
-    await set(groupRef, {
+    const userData = {
       assets,
       debts,
       transactions,
       goals,
       lastUpdated: Date.now(),
-    });
+    };
+
+    // Clean the data before writing to Firebase
+    const cleanUserData = cleanDataForFirebase(userData);
+
+    await set(groupRef, cleanUserData);
 
     console.log("User data added to shared group successfully");
   } catch (error) {
@@ -1416,14 +1576,19 @@ export const addSelectiveUserDataToGroup = async (
       : allGoals;
 
     // Store filtered data in group's shared data
-    await set(groupRef, {
+    const selectiveUserData = {
       assets: filteredAssets,
       debts: filteredDebts,
       transactions: filteredTransactions,
       goals: filteredGoals,
       lastUpdated: Date.now(),
       syncSettings: selectedData, // Store sync settings for future reference
-    });
+    };
+
+    // Clean the data before writing to Firebase
+    const cleanSelectiveUserData = cleanDataForFirebase(selectiveUserData);
+
+    await set(groupRef, cleanSelectiveUserData);
 
     console.log("Selective user data added to shared group successfully");
   } catch (error) {
@@ -2332,5 +2497,170 @@ const getNextOccurrenceDate = (
       );
     default:
       return monthStart;
+  }
+};
+
+// ===== DATA SHARING FUNCTIONS =====
+
+export const updateUserDataSharingSettings = async (
+  userId: string,
+  settings: DataSharingSettings
+): Promise<void> => {
+  try {
+    const userRef = ref(db, `users/${userId}/profile`);
+    const userSnapshot = await get(userRef);
+
+    if (userSnapshot.exists()) {
+      const currentProfile = userSnapshot.val();
+      await update(userRef, {
+        ...currentProfile,
+        dataSharingSettings: settings,
+        updatedAt: Date.now(),
+      });
+    } else {
+      // Create profile if it doesn't exist
+      await set(userRef, {
+        uid: userId,
+        dataSharingSettings: settings,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    }
+  } catch (error) {
+    console.error("Error updating data sharing settings:", error);
+    throw error;
+  }
+};
+
+export const getUserDataSharingSettings = async (
+  userId: string
+): Promise<DataSharingSettings | null> => {
+  try {
+    const userRef = ref(db, `users/${userId}/profile`);
+    const userSnapshot = await get(userRef);
+
+    if (userSnapshot.exists()) {
+      const profile = userSnapshot.val();
+      return profile.dataSharingSettings || null;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting data sharing settings:", error);
+    throw error;
+  }
+};
+
+// Transfer group ownership
+export const transferGroupOwnership = async (
+  groupId: string,
+  currentOwnerId: string,
+  newOwnerId: string
+): Promise<void> => {
+  try {
+    const groupRef = ref(db, `sharedGroups/${groupId}`);
+    const snapshot = await get(groupRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("Group not found");
+    }
+
+    const group = snapshot.val();
+
+    // Check if current user is the owner
+    const isOwner = group.members.some(
+      (member: SharedGroupMember) =>
+        member.id === currentOwnerId && member.role === "owner"
+    );
+
+    if (!isOwner) {
+      throw new Error("Only group owners can transfer ownership");
+    }
+
+    // Check if new owner is a member of the group
+    const newOwnerExists = group.members.some(
+      (member: SharedGroupMember) => member.id === newOwnerId
+    );
+
+    if (!newOwnerExists) {
+      throw new Error("New owner must be a member of the group");
+    }
+
+    // Update member roles
+    const updatedMembers = group.members.map((member: SharedGroupMember) => {
+      if (member.id === currentOwnerId) {
+        return { ...member, role: "member" };
+      }
+      if (member.id === newOwnerId) {
+        return { ...member, role: "owner" };
+      }
+      return member;
+    });
+
+    await update(groupRef, {
+      members: updatedMembers,
+      ownerId: newOwnerId,
+      updatedAt: Date.now(),
+    });
+
+    console.log("Group ownership transferred successfully");
+  } catch (error) {
+    console.error("Error transferring group ownership:", error);
+    throw error;
+  }
+};
+
+// User leaves a group (self-removal)
+export const leaveGroup = async (
+  groupId: string,
+  userId: string
+): Promise<void> => {
+  try {
+    const groupRef = ref(db, `sharedGroups/${groupId}`);
+    const snapshot = await get(groupRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("Group not found");
+    }
+
+    const group = snapshot.val();
+
+    // Check if user is the owner
+    const isOwner = group.members.some(
+      (member: SharedGroupMember) =>
+        member.id === userId && member.role === "owner"
+    );
+
+    if (isOwner) {
+      throw new Error(
+        "Group owners cannot leave their own group. Transfer ownership or delete the group instead."
+      );
+    }
+
+    // Remove user from group members
+    const updatedMembers = group.members.filter(
+      (member: SharedGroupMember) => member.id !== userId
+    );
+
+    await update(groupRef, {
+      members: updatedMembers,
+      updatedAt: Date.now(),
+    });
+
+    // Remove group from user's groups list
+    const userGroupsRef = ref(db, `users/${userId}/sharedGroups/${groupId}`);
+    await remove(userGroupsRef);
+
+    // Remove user's shared finance data from the group
+    const sharedFinanceDataRef = ref(
+      db,
+      `sharedFinanceData/${groupId}/members/${userId}`
+    );
+    await remove(sharedFinanceDataRef);
+
+    console.log("✅ User left group successfully");
+    console.log("✅ User's shared finance data cleaned up");
+  } catch (error) {
+    console.error("Error leaving group:", error);
+    throw error;
   }
 };

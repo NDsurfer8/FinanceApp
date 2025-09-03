@@ -1,0 +1,281 @@
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  SafeAreaView,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { useTheme } from "../contexts/ThemeContext";
+import { useAuth } from "../hooks/useAuth";
+import { SharedGroup, removeGroupMember } from "../services/userData";
+import { stopRealTimeDataSharing } from "../services/sharedFinanceDataSync";
+
+interface GroupMembersScreenProps {
+  navigation: any;
+  route: {
+    params: {
+      groupId: string;
+      group: SharedGroup;
+    };
+  };
+}
+
+export default function GroupMembersScreen({
+  navigation,
+  route,
+}: GroupMembersScreenProps) {
+  const { groupId, group } = route.params;
+  const { colors } = useTheme();
+  const { user } = useAuth();
+  const [removingMember, setRemovingMember] = useState<string | null>(null);
+
+  const isOwner = group?.members?.some(
+    (member) => member.userId === user?.uid && member.role === "owner"
+  );
+
+  const handleRemoveMember = async (member: any) => {
+    if (!user?.uid || !group) return;
+
+    // Don't allow removing yourself
+    if (member.userId === user.uid) {
+      Alert.alert("Cannot Remove Self", "You cannot remove yourself from the group. Use 'Leave Group' instead.");
+      return;
+    }
+
+    Alert.alert(
+      "Remove Member",
+      `Are you sure you want to remove ${member.displayName} from "${group.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove Member",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setRemovingMember(member.userId);
+              
+              // Stop real-time data sharing for the removed member
+              stopRealTimeDataSharing(member.userId, groupId);
+              
+              // Remove the member
+              await removeGroupMember(groupId, member.userId);
+              
+              Alert.alert("Success", `${member.displayName} has been removed from the group.`);
+              navigation.goBack();
+            } catch (error) {
+              console.error("Error removing member:", error);
+              Alert.alert("Error", "Failed to remove member. Please try again.");
+            } finally {
+              setRemovingMember(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const renderMember = (member: any) => (
+    <View key={member.userId} style={[styles.memberCard, { backgroundColor: colors.surface }]}>
+      <View style={styles.memberInfo}>
+        <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
+          <Text style={[styles.avatarText, { color: colors.primary }]}>
+            {member.displayName.charAt(0).toUpperCase()}
+          </Text>
+        </View>
+        <View style={styles.memberDetails}>
+          <Text style={[styles.memberName, { color: colors.text }]}>
+            {member.displayName}
+          </Text>
+          <Text style={[styles.memberRole, { color: colors.textSecondary }]}>
+            {member.role === "owner" ? "👑 Owner" : "👤 Member"}
+          </Text>
+          <Text style={[styles.memberEmail, { color: colors.textTertiary }]}>
+            {member.email}
+          </Text>
+        </View>
+      </View>
+      
+      {isOwner && member.role !== "owner" && (
+        <TouchableOpacity
+          style={[
+            styles.removeButton,
+            { backgroundColor: colors.error + "20" },
+            removingMember === member.userId && { opacity: 0.5 }
+          ]}
+          onPress={() => handleRemoveMember(member)}
+          disabled={removingMember === member.userId}
+        >
+          <Ionicons name="trash" size={16} color={colors.error} />
+          <Text style={[styles.removeButtonText, { color: colors.error }]}>
+            {removingMember === member.userId ? "Removing..." : "Remove"}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.primary} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Group Members</Text>
+        <View style={styles.placeholder} />
+      </View>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.groupInfo}>
+          <Text style={[styles.groupName, { color: colors.text }]}>{group.name}</Text>
+          <Text style={[styles.memberCount, { color: colors.textSecondary }]}>
+            {group.members?.length || 0} members
+          </Text>
+        </View>
+
+        <View style={styles.membersList}>
+          {group.members?.map(renderMember) || (
+            <View style={styles.emptyState}>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                No members found
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {isOwner && (
+          <View style={styles.ownerNote}>
+            <Ionicons name="information-circle" size={20} color={colors.info} />
+            <Text style={[styles.ownerNoteText, { color: colors.info }]}>
+              As the group owner, you can remove members and manage the group.
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    flex: 1,
+    textAlign: "center",
+  },
+  placeholder: {
+    width: 40,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  groupInfo: {
+    alignItems: "center",
+    paddingVertical: 24,
+  },
+  groupName: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  memberCount: {
+    fontSize: 16,
+  },
+  membersList: {
+    marginBottom: 24,
+  },
+  memberCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  memberInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 16,
+  },
+  avatarText: {
+    fontSize: 20,
+    fontWeight: "600",
+  },
+  memberDetails: {
+    flex: 1,
+  },
+  memberName: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  memberRole: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  memberEmail: {
+    fontSize: 12,
+  },
+  removeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  removeButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginLeft: 6,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+  },
+  ownerNote: {
+    flexDirection: "row",
+    backgroundColor: "rgba(0,0,0,0.05)",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+  },
+  ownerNoteText: {
+    flex: 1,
+    fontSize: 14,
+    marginLeft: 12,
+    lineHeight: 20,
+  },
+});
