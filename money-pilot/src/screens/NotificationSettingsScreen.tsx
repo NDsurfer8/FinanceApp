@@ -8,6 +8,7 @@ import {
   Switch,
   Alert,
   StyleSheet,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { notificationService } from "../services/notifications";
@@ -41,6 +42,9 @@ export const NotificationSettingsScreen: React.FC<
   const [isLoading, setIsLoading] = useState(true);
 
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [balanceThresholds, setBalanceThresholds] = useState<{
+    [accountName: string]: number;
+  }>({});
 
   useEffect(() => {
     checkPermissions();
@@ -50,6 +54,12 @@ export const NotificationSettingsScreen: React.FC<
   const loadSavedSettings = async () => {
     try {
       console.log("Loading saved settings...");
+
+      // Load balance thresholds
+      const savedThresholds = await AsyncStorage.getItem("balance_thresholds");
+      if (savedThresholds) {
+        setBalanceThresholds(JSON.parse(savedThresholds));
+      }
 
       // First, check badge indicator preference and update notification handler
       const badgeEnabled = await AsyncStorage.getItem(
@@ -95,30 +105,6 @@ export const NotificationSettingsScreen: React.FC<
           type: "bills",
         },
         {
-          id: "goal-updates",
-          title: "Goal Progress Updates",
-          description: "Track your financial goals progress",
-          icon: "flag",
-          enabled: false,
-          type: "goals",
-        },
-        // {
-        //   id: "weekly-reports",
-        //   title: "Weekly Reports",
-        //   description: "Receive weekly financial summaries",
-        //   icon: "bar-chart",
-        //   enabled: false,
-        //   type: "weekly",
-        // },
-        // {
-        //   id: "monthly-reports",
-        //   title: "Monthly Reports",
-        //   description: "Get monthly financial reviews",
-        //   icon: "trending-up",
-        //   enabled: false,
-        //   type: "monthly",
-        // },
-        {
           id: "low-balance-alerts",
           title: "Low Balance Alerts",
           description: "Get notified when account balances are low",
@@ -127,12 +113,29 @@ export const NotificationSettingsScreen: React.FC<
           type: "balance",
         },
         {
-          id: "savings-reminders",
-          title: "Savings Reminders",
-          description: "Stay on track with your savings goals",
-          icon: "diamond",
+          id: "webhook-transactions",
+          title: "New Transaction Alerts",
+          description:
+            "Get notified when new transactions arrive from your bank",
+          icon: "refresh",
           enabled: false,
-          type: "savings",
+          type: "webhook-transactions",
+        },
+        {
+          id: "webhook-accounts",
+          title: "New Account Alerts",
+          description: "Get notified when new bank accounts are detected",
+          icon: "card",
+          enabled: false,
+          type: "webhook-accounts",
+        },
+        {
+          id: "webhook-connection-issues",
+          title: "Connection Issue Alerts",
+          description: "Get notified about bank connection problems",
+          icon: "alert-circle",
+          enabled: false,
+          type: "webhook-issue",
         },
       ];
 
@@ -327,27 +330,25 @@ export const NotificationSettingsScreen: React.FC<
             await billReminderService.scheduleAllBillReminders(user.uid);
           }
           break;
-        case "goals":
-          await notificationService.scheduleGoalReminder(
-            "Emergency Fund",
-            10000,
-            7500
-          );
-          break;
-        case "weekly":
-          await notificationService.scheduleWeeklyReport();
-          break;
-        case "monthly":
-          await notificationService.scheduleMonthlyReport();
-          break;
         case "balance":
           await notificationService.scheduleLowBalanceAlert(
             "Checking Account",
             500
           );
           break;
-        case "savings":
-          await notificationService.scheduleSavingsReminder(5000, 3000);
+        case "webhook-transactions":
+          // Webhook notifications are handled automatically by the system
+          // This toggle just enables/disables the feature
+          console.log("Webhook transaction notifications enabled");
+          break;
+        case "webhook-accounts":
+          // Webhook notifications are handled automatically by the system
+          console.log("Webhook account notifications enabled");
+          break;
+
+        case "webhook-issue":
+          // Webhook notifications are handled automatically by the system
+          console.log("Webhook connection issue notifications enabled");
           break;
       }
     } catch (error) {
@@ -378,6 +379,35 @@ export const NotificationSettingsScreen: React.FC<
       }
     } catch (error) {
       console.error("Error canceling notification:", error);
+    }
+  };
+
+  const updateBalanceThreshold = async (
+    accountName: string,
+    threshold: number
+  ) => {
+    try {
+      const newThresholds = { ...balanceThresholds, [accountName]: threshold };
+      setBalanceThresholds(newThresholds);
+      await AsyncStorage.setItem(
+        "balance_thresholds",
+        JSON.stringify(newThresholds)
+      );
+
+      // Schedule low balance alert for this account
+      if (threshold > 0) {
+        await notificationService.scheduleLowBalanceAlert(
+          accountName,
+          threshold
+        );
+      }
+
+      console.log(
+        `Updated balance threshold for ${accountName}: $${threshold}`
+      );
+    } catch (error) {
+      console.error("Error updating balance threshold:", error);
+      Alert.alert("Error", "Failed to update balance threshold");
     }
   };
 
@@ -527,6 +557,142 @@ export const NotificationSettingsScreen: React.FC<
           ))}
         </View>
 
+        {/* Balance Thresholds */}
+        <View style={styles.settingsContainer}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Balance Alert Thresholds
+          </Text>
+          <View
+            style={[styles.thresholdCard, { backgroundColor: colors.surface }]}
+          >
+            <Text
+              style={[
+                styles.thresholdDescription,
+                { color: colors.textSecondary },
+              ]}
+            >
+              Set thresholds to receive alerts when account balances are low or
+              credit is running out
+            </Text>
+
+            {/* Default account thresholds */}
+            <View style={styles.thresholdItem}>
+              <Text style={[styles.accountName, { color: colors.text }]}>
+                Checking Account
+              </Text>
+              <View style={styles.thresholdInput}>
+                <Text
+                  style={[
+                    styles.currencySymbol,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  $
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: colors.background,
+                    },
+                  ]}
+                  value={
+                    balanceThresholds["Checking Account"]?.toString() || "500"
+                  }
+                  onChangeText={(text) => {
+                    const value = parseFloat(text) || 0;
+                    updateBalanceThreshold("Checking Account", value);
+                  }}
+                  keyboardType="numeric"
+                  placeholder="500"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+            </View>
+
+            <View style={styles.thresholdItem}>
+              <Text style={[styles.accountName, { color: colors.text }]}>
+                Savings Account
+              </Text>
+              <View style={styles.thresholdInput}>
+                <Text
+                  style={[
+                    styles.currencySymbol,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  $
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: colors.background,
+                    },
+                  ]}
+                  value={
+                    balanceThresholds["Savings Account"]?.toString() || "1000"
+                  }
+                  onChangeText={(text) => {
+                    const value = parseFloat(text) || 0;
+                    updateBalanceThreshold("Savings Account", value);
+                  }}
+                  keyboardType="numeric"
+                  placeholder="1000"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+            </View>
+
+            <View style={styles.thresholdItem}>
+              <Text style={[styles.accountName, { color: colors.text }]}>
+                Credit Card
+              </Text>
+              <View style={styles.thresholdInput}>
+                <Text
+                  style={[
+                    styles.currencySymbol,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  $
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: colors.background,
+                    },
+                  ]}
+                  value={balanceThresholds["Credit Card"]?.toString() || "500"}
+                  onChangeText={(text) => {
+                    const value = parseFloat(text) || 0;
+                    updateBalanceThreshold("Credit Card", value);
+                  }}
+                  keyboardType="numeric"
+                  placeholder="500"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+            </View>
+
+            {/* Credit Card Threshold Hint */}
+            <View style={styles.thresholdHintContainer}>
+              <Text
+                style={[styles.thresholdHint, { color: colors.textSecondary }]}
+              >
+                💳 Alert when available credit falls below this amount
+              </Text>
+            </View>
+          </View>
+        </View>
+
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -671,5 +837,60 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 12,
+  },
+  thresholdCard: {
+    borderRadius: 16,
+    padding: 20,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  thresholdDescription: {
+    fontSize: 14,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  thresholdItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+  },
+  accountName: {
+    fontSize: 16,
+    fontWeight: "500",
+    flex: 1,
+  },
+  thresholdInput: {
+    flexDirection: "row",
+    alignItems: "center",
+    minWidth: 120,
+  },
+  currencySymbol: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginRight: 8,
+  },
+  input: {
+    fontSize: 16,
+    fontWeight: "600",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minWidth: 80,
+    textAlign: "center",
+  },
+  thresholdHintContainer: {
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  thresholdHint: {
+    fontSize: 12,
+    fontStyle: "italic",
+    lineHeight: 16,
   },
 });

@@ -857,16 +857,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               await plaidService.queuePlaidStatusUpdate(updates);
             }
 
-            // Send notification if we have notification data
+            // Send notification if we have notification data and user has enabled them
             if (notificationData) {
               try {
-                if (notificationData.type === "transactions") {
-                  await notificationService.notifyNewTransactions(
-                    notificationData.count || 1
-                  );
-                } else if (notificationData.type === "accounts") {
-                  await notificationService.notifyNewAccounts(
-                    notificationData.count || 1
+                // Check if user has enabled this type of notification
+                const notificationKey = `notification_webhook-${notificationData.type}`;
+                const isEnabled = await AsyncStorage.getItem(notificationKey);
+
+                if (isEnabled === "true") {
+                  if (notificationData.type === "transactions") {
+                    await notificationService.notifyNewTransactions(
+                      notificationData.count || 1
+                    );
+                  } else if (notificationData.type === "accounts") {
+                    await notificationService.notifyNewAccounts(
+                      notificationData.count || 1
+                    );
+                  }
+                } else {
+                  console.log(
+                    `Webhook ${notificationData.type} notifications disabled by user`
                   );
                 }
               } catch (notifError) {
@@ -887,46 +897,55 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
       // Handle bank connection issues and send notifications
       if (plaidData.lastWebhook?.type === "ITEM") {
-        switch (plaidData.lastWebhook?.code) {
-          case "ITEM_LOGIN_REQUIRED":
-            try {
-              await notificationService.notifyBankConnectionIssue(
-                "login_required",
-                "Your bank credentials have expired. Please reconnect your account."
-              );
-            } catch (notifError) {
-              console.log(
-                "Failed to send connection issue notification:",
-                notifError
-              );
-            }
-            break;
-          case "ITEM_PENDING_EXPIRATION":
-            try {
-              await notificationService.notifyBankConnectionIssue(
-                "expiring_soon",
-                "Your bank connection will expire soon. Please reconnect to maintain access."
-              );
-            } catch (notifError) {
-              console.log(
-                "Failed to send connection issue notification:",
-                notifError
-              );
-            }
-            break;
-          case "ITEM_PENDING_DISCONNECT":
-            try {
-              await notificationService.notifyBankConnectionIssue(
-                "disconnecting",
-                "Your bank connection is being disconnected. Please reconnect if you want to continue using this feature."
-              );
-            } catch (notifError) {
-              console.log(
-                "Failed to send connection issue notification:",
-                notifError
-              );
-            }
-            break;
+        // Check if connection issue notifications are enabled
+        const connectionNotificationsEnabled = await AsyncStorage.getItem(
+          "notification_webhook-connection-issues"
+        );
+
+        if (connectionNotificationsEnabled === "true") {
+          switch (plaidData.lastWebhook?.code) {
+            case "ITEM_LOGIN_REQUIRED":
+              try {
+                await notificationService.notifyBankConnectionIssue(
+                  "login_required",
+                  "Your bank credentials have expired. Please reconnect your account."
+                );
+              } catch (notifError) {
+                console.log(
+                  "Failed to send connection issue notification:",
+                  notifError
+                );
+              }
+              break;
+            case "ITEM_PENDING_EXPIRATION":
+              try {
+                await notificationService.notifyBankConnectionIssue(
+                  "expiring_soon",
+                  "Your bank connection will expire soon. Please reconnect to maintain access."
+                );
+              } catch (notifError) {
+                console.log(
+                  "Failed to send connection issue notification:",
+                  notifError
+                );
+              }
+              break;
+            case "ITEM_PENDING_DISCONNECT":
+              try {
+                await notificationService.notifyBankConnectionIssue(
+                  "disconnecting",
+                  "Your bank connection is being disconnected. Please reconnect if you want to continue using this feature."
+                );
+              } catch (notifError) {
+                console.log(
+                  "Failed to send connection issue notification:",
+                  notifError
+                );
+              }
+              break;
+          }
+        } else {
+          console.log("Connection issue notifications disabled by user");
         }
       }
     });

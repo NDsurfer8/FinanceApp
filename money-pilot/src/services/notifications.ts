@@ -379,24 +379,6 @@ export class NotificationService {
     });
   }
 
-  async notifyBalanceUpdate(
-    accountName: string,
-    newBalance: number
-  ): Promise<string> {
-    return this.scheduleNotification({
-      id: `webhook-balance-${Date.now()}`,
-      title: "💰 Balance Updated",
-      body: `${accountName} balance has been updated to $${newBalance.toLocaleString()}.`,
-      data: {
-        type: "webhook-balance",
-        accountName,
-        newBalance,
-        timestamp: Date.now(),
-      },
-      trigger: null, // Send immediately
-    });
-  }
-
   async notifyBankConnectionIssue(
     issueType: string,
     message: string
@@ -502,10 +484,7 @@ export class NotificationService {
         // Navigate to bank transactions screen to see new accounts
         console.log("Navigating to bank transactions screen");
         break;
-      case "webhook-balance":
-        // Navigate to assets/debts screen to see updated balances
-        console.log("Navigating to assets/debts screen");
-        break;
+
       case "webhook-issue":
         // Navigate to settings or bank connection screen
         console.log("Navigating to bank connection settings");
