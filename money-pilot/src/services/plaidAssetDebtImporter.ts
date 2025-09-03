@@ -118,8 +118,13 @@ class PlaidAssetDebtImporter {
       return true;
     }
 
-    // Don't auto-import checking/savings by default (user can add manually)
-    if (type === "depository" && ["checking", "savings"].includes(subtype)) {
+    // Import savings accounts as assets (cash)
+    if (type === "depository" && subtype === "savings") {
+      return true;
+    }
+
+    // Don't auto-import checking accounts (user can add manually)
+    if (type === "depository" && subtype === "checking") {
       return false;
     }
 
