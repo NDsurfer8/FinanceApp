@@ -13,11 +13,11 @@ import {
   LinkLogLevel,
   LinkIOSPresentationStyle,
 } from "react-native-plaid-link-sdk";
-// used to just have transactions
+
 // Plaid configuration - you'll need to get these from your Plaid dashboard
 export const PLAID_CONFIG = {
   clientName: "VectorFi",
-  products: ["transactions", "liabilities", "investments"],
+  products: ["transactions"],
   countryCodes: ["US"],
   language: "en",
 };
