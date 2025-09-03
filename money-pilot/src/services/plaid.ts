@@ -1337,6 +1337,22 @@ class PlaidService {
       // Don't throw for silent disconnection
     }
   }
+
+  // Update Plaid status in Firebase (for webhook monitoring)
+  async updatePlaidStatus(updates: any): Promise<void> {
+    try {
+      if (!this.userId) {
+        throw new Error("User ID not set");
+      }
+
+      const plaidRef = ref(db, `users/${this.userId}/plaid`);
+      await update(plaidRef, updates);
+      console.log("PlaidService: Updated Plaid status:", updates);
+    } catch (error) {
+      console.error("PlaidService: Error updating Plaid status:", error);
+      throw error;
+    }
+  }
 }
 
 export const plaidService = new PlaidService();

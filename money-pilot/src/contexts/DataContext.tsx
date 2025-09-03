@@ -20,6 +20,8 @@ import { plaidService } from "../services/plaid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import revenueCatService from "../services/revenueCat";
 import { formatDateToLocalString } from "../utils/dateUtils";
+import { ref, onValue, off } from "firebase/database";
+import { db } from "../services/firebase";
 
 interface DataContextType {
   // Data
@@ -68,6 +70,9 @@ interface DataContextType {
 
   // Bank disconnection
   disconnectBankAndClearData: () => Promise<void>;
+
+  // Webhook monitoring status
+  isWebhookMonitoringActive: boolean;
 
   // Optimistic update methods
   updateTransactionsOptimistically: (transactions: any[]) => void;
@@ -125,6 +130,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Loading states
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // Webhook monitoring state
+  const [isWebhookMonitoringActive, setIsWebhookMonitoringActive] =
+    useState<boolean>(false);
 
   // Refs for tracking staleness
   const lastDataRefresh = useRef<Date | null>(null);
@@ -754,6 +763,97 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     handleSubscriptionExpiration();
   }, [subscriptionStatus?.isPremium, disconnectBankAndClearData]);
 
+  // Real-time webhook monitoring for automatic data updates
+  useEffect(() => {
+    if (!user?.uid || !isBankConnected) {
+      setIsWebhookMonitoringActive(false);
+      return;
+    }
+
+    console.log(
+      "DataContext: Setting up real-time webhook monitoring for user:",
+      user.uid
+    );
+    setIsWebhookMonitoringActive(true);
+
+    // Listen to Plaid webhook status changes in real-time
+    const plaidRef = ref(db, `users/${user.uid}/plaid`);
+    const unsubscribe = onValue(plaidRef, async (snapshot) => {
+      const plaidData = snapshot.val();
+
+      if (!plaidData) return;
+
+      console.log("DataContext: Webhook status update received:", {
+        webhookType: plaidData.lastWebhook?.type,
+        webhookCode: plaidData.lastWebhook?.code,
+        transactionsSyncAvailable: plaidData.transactionsSyncAvailable,
+        hasNewAccounts: plaidData.hasNewAccounts,
+        lastUpdated: plaidData.lastUpdated,
+      });
+
+      // Auto-refresh when new transactions are available
+      if (plaidData.transactionsSyncAvailable) {
+        console.log(
+          "DataContext: New transactions available, auto-refreshing bank data"
+        );
+        try {
+          await refreshBankData(true);
+          // Clear the flag after refreshing
+          const updates = { transactionsSyncAvailable: false };
+          await plaidService.updatePlaidStatus(updates);
+        } catch (error) {
+          console.error(
+            "DataContext: Failed to auto-refresh bank data:",
+            error
+          );
+        }
+      }
+
+      // Auto-refresh when new accounts are available
+      if (plaidData.hasNewAccounts) {
+        console.log(
+          "DataContext: New accounts available, auto-refreshing bank data"
+        );
+        try {
+          await refreshBankData(true);
+          // Clear the flag after refreshing
+          const updates = { hasNewAccounts: false };
+          await plaidService.updatePlaidStatus(updates);
+        } catch (error) {
+          console.error(
+            "DataContext: Failed to auto-refresh bank data:",
+            error
+          );
+        }
+      }
+
+      // Auto-refresh when webhook indicates significant changes
+      if (
+        plaidData.lastWebhook?.type === "TRANSACTIONS" &&
+        plaidData.lastWebhook?.code === "SYNC_UPDATES_AVAILABLE"
+      ) {
+        console.log(
+          "DataContext: Transaction sync updates available, auto-refreshing"
+        );
+        try {
+          await refreshBankData(true);
+        } catch (error) {
+          console.error(
+            "DataContext: Failed to auto-refresh after transaction sync:",
+            error
+          );
+        }
+      }
+    });
+
+    return () => {
+      console.log("DataContext: Cleaning up webhook monitoring");
+      setIsWebhookMonitoringActive(false);
+      off(plaidRef);
+      unsubscribe();
+    };
+  }, [user?.uid, isBankConnected, refreshBankData]);
+
   const value: DataContextType = {
     transactions,
     assets,
@@ -771,6 +871,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     bankConnectionError,
     isLoading,
     lastUpdated,
+    isWebhookMonitoringActive,
     refreshData,
     refreshTransactions,
     refreshAssetsDebts,
