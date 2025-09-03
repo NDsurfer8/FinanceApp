@@ -116,17 +116,17 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
               backgroundColor: colors.surfaceSecondary,
             }}
           >
-            <Ionicons name="download" size={18} color={colors.primary} />
+            <Ionicons name="download" size={28} color={colors.primary} />
             {safeAvailableTransactionsCount > 0 && (
               <View
                 style={{
                   position: "absolute",
-                  top: -4,
-                  right: -4,
+                  top: -8,
+                  right: -6,
                   backgroundColor: colors.error,
                   borderRadius: 10,
-                  minWidth: 18,
-                  height: 18,
+                  minWidth: 20,
+                  height: 20,
                   justifyContent: "center",
                   alignItems: "center",
                   borderWidth: 2,

@@ -3,6 +3,7 @@ import { ref, set, get, update } from "firebase/database";
 import { db } from "./firebase";
 import { encryptFields, decryptFields } from "./encryption";
 import { getAuth } from "firebase/auth";
+import { updateNetWorthFromAssetsAndDebts } from "./userData";
 
 export interface PlaidAccountForImport {
   id: string;
@@ -192,6 +193,11 @@ class PlaidAssetDebtImporter {
       }
     }
 
+    // Update net worth after all imports are complete
+    if (importedAssets.length > 0 || importedDebts.length > 0) {
+      await updateNetWorthFromAssetsAndDebts(userId);
+    }
+
     return { importedAssets, importedDebts, skippedAccounts };
   }
 
@@ -204,6 +210,8 @@ class PlaidAssetDebtImporter {
       const assetRef = ref(db, `users/${userId}/assets/${asset.id}`);
       await set(assetRef, asset);
       console.log(`✅ Asset imported: ${asset.name}`);
+
+      // Note: Net worth will be updated after all imports are complete
     } catch (error) {
       console.error(`❌ Error saving asset ${asset.name}:`, error);
       throw error;
@@ -219,6 +227,8 @@ class PlaidAssetDebtImporter {
       const debtRef = ref(db, `users/${userId}/debts/${debt.id}`);
       await set(debtRef, debt);
       console.log(`✅ Debt imported: ${debt.name}`);
+
+      // Note: Net worth will be updated after all imports are complete
     } catch (error) {
       console.error(`❌ Error saving debt ${debt.name}:`, error);
       throw error;
@@ -266,6 +276,11 @@ class PlaidAssetDebtImporter {
       } catch (error) {
         console.error(`❌ Error updating ${type} ${account.name}:`, error);
       }
+    }
+
+    // Update net worth after updating balances
+    if (updatedAssets > 0 || updatedDebts > 0) {
+      await updateNetWorthFromAssetsAndDebts(userId);
     }
 
     return { updatedAssets, updatedDebts };
@@ -325,6 +340,11 @@ class PlaidAssetDebtImporter {
       }
     } catch (error) {
       console.error("❌ Error removing orphaned imports:", error);
+    }
+
+    // Update net worth after removing orphaned items
+    if (removedAssets > 0 || removedDebts > 0) {
+      await updateNetWorthFromAssetsAndDebts(userId);
     }
 
     return { removedAssets, removedDebts };

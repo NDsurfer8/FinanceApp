@@ -22,6 +22,8 @@ import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
 import { getAssetTypeLabel } from "../utils/assetMigration";
 import { useData } from "../contexts/DataContext";
+import { useSubscription } from "../contexts/SubscriptionContext";
+import { usePaywall } from "../hooks/usePaywall";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 
 interface AssetsDebtsScreenProps {
@@ -40,6 +42,8 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   const [loading, setLoading] = useState(false);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
+  const { hasPremiumAccess } = useSubscription();
+  const { presentPaywall } = usePaywall();
 
   // Animation values
   const fadeAnim = new Animated.Value(0);
@@ -615,7 +619,13 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         }}
       >
         <TouchableOpacity
-          onPress={() => navigation.navigate("BankTransactions")}
+          onPress={() => {
+            if (hasPremiumAccess()) {
+              navigation.navigate("BankTransactions");
+            } else {
+              presentPaywall();
+            }
+          }}
           style={{
             backgroundColor: colors.surfaceSecondary,
             paddingHorizontal: 20,
@@ -641,6 +651,27 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           >
             View Financial Accounts
           </Text>
+          {!hasPremiumAccess() && (
+            <View
+              style={{
+                backgroundColor: colors.primary,
+                borderRadius: 8,
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+                marginLeft: 8,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.buttonText,
+                  fontSize: 10,
+                  fontFamily: fontFamily.bold,
+                }}
+              >
+                PREMIUM
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
     </View>
