@@ -159,16 +159,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   // Get introductory offer eligibility from RevenueCat
   const introOfferEligible = isEligibleForIntroOffer();
 
-  // Debug logging
-  useEffect(() => {
-    // User data updated
-  }, [user, currentUser]);
-
-  // Debug subscription status
-  useEffect(() => {
-    // Subscription status updated
-  }, [subscriptionStatus, introOfferEligible]);
-
   // Check bank connection status
   useEffect(() => {
     const checkBankConnection = async () => {
