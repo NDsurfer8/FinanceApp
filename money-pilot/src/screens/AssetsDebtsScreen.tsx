@@ -40,6 +40,8 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
     useZeroLoading();
   const { bankAccounts } = useData();
   const [loading, setLoading] = useState(false);
+  const [isAssetsCollapsed, setIsAssetsCollapsed] = useState(false);
+  const [isDebtsCollapsed, setIsDebtsCollapsed] = useState(false);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const { hasPremiumAccess } = useSubscription();
@@ -752,6 +754,21 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 {assetTotal.toLocaleString()}
               </Text>
             </View>
+            <TouchableOpacity
+              onPress={() => setIsAssetsCollapsed(!isAssetsCollapsed)}
+              style={{
+                padding: 12,
+                borderRadius: 12,
+                backgroundColor: colors.surfaceSecondary,
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isAssetsCollapsed ? "chevron-down" : "chevron-up"}
+                size={20}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
           </View>
 
           {!hasAssets ? (
@@ -765,42 +782,46 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             )
           ) : (
             <>
-              {assets.map((asset, i) => renderAssetItem(asset, i))}
-              <View
-                style={{
-                  height: 1,
-                  backgroundColor: colors.border,
-                  marginVertical: 16,
-                }}
-              />
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: fontFamily.semiBold,
-                    fontWeight: "600",
-                    fontSize: 16,
-                    color: colors.text,
-                  }}
-                >
-                  Total Assets
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: fontFamily.bold,
-                    fontWeight: "700",
-                    fontSize: 20,
-                    color: colors.success,
-                  }}
-                >
-                  ${assetTotal.toLocaleString()}
-                </Text>
-              </View>
+              {!isAssetsCollapsed && (
+                <>
+                  {assets.map((asset, i) => renderAssetItem(asset, i))}
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: colors.border,
+                      marginVertical: 16,
+                    }}
+                  />
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fontFamily.semiBold,
+                        fontWeight: "600",
+                        fontSize: 16,
+                        color: colors.text,
+                      }}
+                    >
+                      Total Assets
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: fontFamily.bold,
+                        fontWeight: "700",
+                        fontSize: 20,
+                        color: colors.success,
+                      }}
+                    >
+                      ${assetTotal.toLocaleString()}
+                    </Text>
+                  </View>
+                </>
+              )}
             </>
           )}
         </View>
@@ -861,6 +882,21 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 {totalDebt.toLocaleString()}
               </Text>
             </View>
+            <TouchableOpacity
+              onPress={() => setIsDebtsCollapsed(!isDebtsCollapsed)}
+              style={{
+                padding: 12,
+                borderRadius: 12,
+                backgroundColor: colors.surfaceSecondary,
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isDebtsCollapsed ? "chevron-down" : "chevron-up"}
+                size={20}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
           </View>
 
           {!hasDebts ? (
@@ -874,42 +910,46 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             )
           ) : (
             <>
-              {debts.map((debt, i) => renderDebtItem(debt, i))}
-              <View
-                style={{
-                  height: 1,
-                  backgroundColor: colors.border,
-                  marginVertical: 16,
-                }}
-              />
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: fontFamily.semiBold,
-                    fontWeight: "600",
-                    fontSize: 16,
-                    color: colors.text,
-                  }}
-                >
-                  Total Debt
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: fontFamily.bold,
-                    fontWeight: "700",
-                    fontSize: 20,
-                    color: colors.error,
-                  }}
-                >
-                  ${totalDebt.toLocaleString()}
-                </Text>
-              </View>
+              {!isDebtsCollapsed && (
+                <>
+                  {debts.map((debt, i) => renderDebtItem(debt, i))}
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: colors.border,
+                      marginVertical: 16,
+                    }}
+                  />
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fontFamily.semiBold,
+                        fontWeight: "600",
+                        fontSize: 16,
+                        color: colors.text,
+                      }}
+                    >
+                      Total Debt
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: fontFamily.bold,
+                        fontWeight: "700",
+                        fontSize: 20,
+                        color: colors.error,
+                      }}
+                    >
+                      ${totalDebt.toLocaleString()}
+                    </Text>
+                  </View>
+                </>
+              )}
             </>
           )}
         </View>
