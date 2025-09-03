@@ -62,7 +62,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         refreshInBackground();
         // Refresh trend data when dashboard comes into focus
         const refreshTrendData = async () => {
-          console.log("🔄 Dashboard focused - refreshing trend data");
+          // Dashboard focused - refreshing trend data
           const data = await getTrendData();
           setTrendData(data);
         };
@@ -331,12 +331,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       date.setMonth(date.getMonth() - i);
 
       // Debug: Log what month we're calculating
-      console.log(
-        `Calculating month ${i}: ${date.toLocaleDateString("en-US", {
-          month: "long",
-          year: "numeric",
-        })}`
-      );
 
       const monthTransactions = transactions.filter((t) => {
         const tDate = new Date(t.date);
@@ -445,18 +439,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     }
 
     // Debug logging to verify recurring transaction calculations
-    console.log(
-      "6-Month Trend Data:",
-      last6Months.map((month) => ({
-        month: month.month,
-        totalIncome: month.income,
-        totalExpenses: month.expenses,
-        actualIncome: month.actualIncome,
-        actualExpenses: month.actualExpenses,
-        recurringIncome: month.recurringIncome,
-        recurringExpenses: month.recurringExpenses,
-      }))
-    );
 
     return last6Months;
   };
@@ -482,9 +464,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   useEffect(() => {
     if (user && (assets.length > 0 || debts.length > 0)) {
       const forceRefresh = async () => {
-        console.log(
-          "🔄 Force refreshing chart data due to assets/debts change"
-        );
+        // Force refreshing chart data due to assets/debts change
         const data = await getTrendData();
         setTrendData(data);
       };

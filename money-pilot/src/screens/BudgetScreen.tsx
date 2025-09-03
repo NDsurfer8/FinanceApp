@@ -160,16 +160,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
   // Debug logging for projected transactions
   if (isFutureMonth && projectedTransactions.length > 0) {
-    console.log(
-      "Debug - Projected Transactions:",
-      projectedTransactions.map((t) => ({
-        id: t.id,
-        recurringTransactionId: t.recurringTransactionId,
-        description: t.description,
-        amount: t.amount,
-        type: t.type,
-      }))
-    );
+    // Projected transactions available
   }
 
   const incomeTransactions = allMonthTransactions.filter(
@@ -998,11 +989,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   ...goalToUpdate,
                   monthlyContribution: contribution,
                 });
-                console.log(
-                  "Goal contribution saved to database:",
-                  goalId,
-                  contribution
-                );
+                // Goal contribution saved to database
               }
             } catch (error) {
               console.error(

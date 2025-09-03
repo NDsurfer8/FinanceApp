@@ -105,20 +105,20 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     try {
       const isConnected = await plaidService.isBankConnected();
       if (!isConnected) {
-        console.log("No bank connected, using cached data");
+        // No bank connected, using cached data
         setIsUsingRealData(false);
         // Use DataContext data instead of making duplicate API calls
         return;
       }
 
-      console.log("Bank connected, using DataContext data");
+      // Bank connected, using DataContext data
       setIsUsingRealData(true);
 
       // DataContext already manages bank data, no need for duplicate calls
       // The data is automatically loaded and cached by DataContext
     } catch (error) {
       console.error("Error checking bank connection:", error);
-      console.log("Using fallback data due to error");
+      // Using fallback data due to error
     } finally {
       setIsLoading(false);
     }
@@ -155,19 +155,19 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
 
       // Quick refresh - only what's needed for immediate display
       try {
-        console.log("Starting quick refresh after import...");
+        // Starting quick refresh after import
 
         // Only refresh assets and debts - that's what we just imported
         if (dataContext.refreshAssetsDebts) {
           await dataContext.refreshAssetsDebts();
-          console.log("Assets and debts refreshed quickly");
+          // Assets and debts refreshed quickly
         }
 
         // Force a re-render of this screen to show updated data
         setDataRefreshKey((prev) => prev + 1);
-        console.log("Screen refresh triggered");
+        // Screen refresh triggered
       } catch (refreshError) {
-        console.log("Quick refresh completed");
+        // Quick refresh completed
       }
 
       Alert.alert(

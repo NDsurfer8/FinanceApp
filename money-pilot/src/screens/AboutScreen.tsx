@@ -140,12 +140,12 @@ https://vectorfi.ai/
 
       if (result.action === Share.sharedAction) {
         if (result.activityType) {
-          console.log("Shared with activity type:", result.activityType);
+          // Shared with activity type
         } else {
-          console.log("Shared successfully");
+          // Shared successfully
         }
       } else if (result.action === Share.dismissedAction) {
-        console.log("Share dismissed");
+        // Share dismissed
       }
     } catch (error) {
       console.error("Error sharing app:", error);

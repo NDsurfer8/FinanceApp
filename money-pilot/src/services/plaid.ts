@@ -183,10 +183,7 @@ class PlaidService {
     if (!this.userId) throw new Error("User ID not set");
     if (!this.auth.currentUser) throw new Error("User not authenticated");
 
-    console.log(
-      `[${new Date().toISOString()}] Initializing Plaid Link for user:`,
-      this.userId
-    );
+    // Initializing Plaid Link for user
 
     // Enhanced rate limiting: prevent rapid successive calls and track attempts
     const now = Date.now();
@@ -416,9 +413,7 @@ class PlaidService {
       this.lastLinkFlowCall = now;
       this.linkFlowAttemptCount++;
 
-      console.log(
-        `🔄 Starting Link flow attempt ${this.linkFlowAttemptCount}/${this.MAX_LINK_FLOW_ATTEMPTS}`
-      );
+      // Starting Link flow attempt
 
       // Get link token
       const linkToken = await this.initializePlaidLink();

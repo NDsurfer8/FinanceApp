@@ -161,24 +161,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   // Debug logging
   useEffect(() => {
-    console.log("SettingsScreen: User data updated", {
-      authUserPhotoURL: user?.photoURL,
-      contextUserPhotoURL: currentUser?.photoURL,
-      authUserDisplayName: user?.displayName,
-      contextUserDisplayName: currentUser?.displayName,
-    });
+    // User data updated
   }, [user, currentUser]);
 
   // Debug subscription status
   useEffect(() => {
-    console.log("SettingsScreen: Subscription status updated", {
-      isPremium: subscriptionStatus?.isPremium,
-      isActive: subscriptionStatus?.isActive,
-      features: subscriptionStatus?.features,
-      expirationDate: subscriptionStatus?.expirationDate,
-      productId: subscriptionStatus?.productId,
-      isEligibleForIntroOffer: introOfferEligible,
-    });
+    // Subscription status updated
   }, [subscriptionStatus, introOfferEligible]);
 
   // Check bank connection status
@@ -186,13 +174,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     const checkBankConnection = async () => {
       try {
         const connected = await plaidService.isBankConnected();
-        console.log("SettingsScreen: Bank connection status:", connected);
+        // Bank connection status
 
         // If bank is connected, stop any loading state
         if (connected && bankConnectionLoading) {
-          console.log(
-            "SettingsScreen: Bank is connected, clearing loading state"
-          );
+          // Bank is connected, clearing loading state
           setBankConnectionLoading(false);
         }
 
@@ -214,7 +200,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   // Force re-render when photo URL changes
   useEffect(() => {
     if (currentUser?.photoURL) {
-      console.log("SettingsScreen: Photo URL changed, updating key");
+      // Photo URL changed, updating key
       setPhotoKey(Date.now()); // Use timestamp for unique key
     }
   }, [currentUser?.photoURL]);
@@ -222,7 +208,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   // Refresh user data when screen comes into focus (optimized)
   useFocusEffect(
     React.useCallback(() => {
-      console.log("SettingsScreen: Screen focused, checking data freshness...");
+      // Screen focused, checking data freshness
 
       // Only refresh user data if it's stale (older than 5 minutes)
       const lastRefresh = (forceRefresh as any).lastCallTime || 0;
@@ -230,11 +216,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       const FIVE_MINUTES = 5 * 60 * 1000;
 
       if (timeSinceLastRefresh > FIVE_MINUTES) {
-        console.log("SettingsScreen: Data is stale, refreshing...");
+        // Data is stale, refreshing
         forceRefresh();
         (forceRefresh as any).lastCallTime = Date.now();
       } else {
-        console.log("SettingsScreen: Data is fresh, skipping refresh");
+        // Data is fresh, skipping refresh
       }
 
       // Check bank connection status only if not already checked recently
@@ -607,7 +593,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </Text>
           <PlaidLinkComponent
             onSuccess={async () => {
-              console.log("Bank connected successfully");
+              // Bank connected successfully
 
               // Get the bank information after successful connection
               try {
@@ -615,9 +601,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 setConnectedBankInfo(bankInfo);
 
                 // Refresh bank data to load transactions
-                console.log("Refreshing bank data after connection...");
+                // Refreshing bank data after connection
                 await refreshBankData(true);
-                console.log("Bank data refreshed successfully");
+                // Bank data refreshed successfully
               } catch (error) {
                 console.error(
                   "Failed to get bank info after connection:",
@@ -626,7 +612,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               }
             }}
             onExit={() => {
-              console.log("Plaid link exited");
+              // Plaid link exited
               // Don't stop loading here - let it continue until connection is confirmed
             }}
             onLoadingChange={(loading) => {
@@ -1107,7 +1093,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </View>
         </TouchableOpacity>
       </ScrollView>
-      
+
       {/* Floating AI Chatbot - only show on main tab screens */}
       <FloatingAIChatbot />
     </SafeAreaView>

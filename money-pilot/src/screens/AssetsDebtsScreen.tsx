@@ -110,7 +110,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           style: "destructive",
           onPress: () => {
             // Handle deletion logic here
-            console.log(`Deleting ${type}:`, item);
+            // Deleting item
           },
         },
       ]

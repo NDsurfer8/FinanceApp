@@ -88,7 +88,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
     (sum, debt) => sum + debt.payment,
     0
   );
-  console.log("totalMonthlyDebtPayments", totalMonthlyDebtPayments);
+  // Total monthly debt payments
 
   // Calculate current month income and expenses
   const currentMonth = new Date().getMonth();
@@ -123,7 +123,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
 
   // Total monthly income including recurring
   const totalMonthlyIncome = monthlyIncome + recurringMonthlyIncome;
-  console.log("totalMonthlyIncome", totalMonthlyIncome);
+  // Total monthly income
 
   const monthlyExpenses = monthlyTransactions
     .filter((t) => t.type === "expense")
@@ -147,15 +147,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
   // Total monthly expenses including recurring
   const totalMonthlyExpenses = monthlyExpenses + recurringMonthlyExpenses;
 
-  console.log("DEBUG monthlyExpenses calculation:", {
-    monthlyTransactions: monthlyTransactions.length,
-    expenseTransactions: monthlyTransactions.filter((t) => t.type === "expense")
-      .length,
-    monthlyExpenses,
-    recurringMonthlyExpenses,
-    totalMonthlyExpenses,
-    emergencyFundTarget: totalMonthlyExpenses * 6,
-  });
+  // DEBUG monthlyExpenses calculation
 
   // Calculate savings breakdown
   const totalSavings = assets

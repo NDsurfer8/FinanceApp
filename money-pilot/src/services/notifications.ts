@@ -175,7 +175,7 @@ export class NotificationService {
         // Store the token for future use
         await AsyncStorage.setItem("expo_push_token", token.data);
 
-        console.log("Expo push token obtained:", token.data);
+        // Expo push token obtained
         return token.data;
       } catch (error) {
         console.error("Error getting push token:", error);

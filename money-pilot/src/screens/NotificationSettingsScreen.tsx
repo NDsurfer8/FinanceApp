@@ -53,7 +53,7 @@ export const NotificationSettingsScreen: React.FC<
 
   const loadSavedSettings = async () => {
     try {
-      console.log("Loading saved settings...");
+      // Loading saved settings
 
       // Load balance thresholds
       const savedThresholds = await AsyncStorage.getItem("balance_thresholds");
@@ -73,7 +73,7 @@ export const NotificationSettingsScreen: React.FC<
             "../services/notifications"
           );
           await notificationService.getBadgeCount();
-          console.log("Badge count initialized");
+          // Badge count initialized
         } catch (error) {
           console.error("Error initializing badge count:", error);
         }
@@ -153,16 +153,14 @@ export const NotificationSettingsScreen: React.FC<
             `notification_${setting.id}`
           );
           const isEnabled = savedValue === "true";
-          console.log(
-            `Loaded from AsyncStorage: notification_${setting.id} = ${savedValue} (enabled: ${isEnabled})`
-          );
+          // Loaded from AsyncStorage
           return {
             ...setting,
             enabled: isEnabled,
           };
         })
       );
-      console.log("Final saved settings:", savedSettings);
+      // Final saved settings loaded
       setSettings(savedSettings);
 
       // Then check actual notification status
@@ -195,9 +193,7 @@ export const NotificationSettingsScreen: React.FC<
         (notification) => notification.content.data?.type === "budget-reminder"
       );
 
-      console.log(
-        `Found ${scheduledNotifications.length} scheduled notifications, bill reminders: ${hasBillReminders}, budget reminders: ${hasBudgetReminders}`
-      );
+      // Found scheduled notifications
 
       // Check saved state and update if needed for bill reminders
       const savedBillValue = await AsyncStorage.getItem(
@@ -205,21 +201,15 @@ export const NotificationSettingsScreen: React.FC<
       );
       const savedBillEnabled = savedBillValue === "true";
 
-      console.log(
-        `Bill reminder status check - saved: ${savedBillEnabled}, actual: ${hasBillReminders}`
-      );
+      // Bill reminder status check
 
       // Only update if there are actual notifications and they don't match saved state
       // If saved is true but no notifications exist, keep the saved state (user wants them enabled)
       if (savedBillEnabled && !hasBillReminders) {
-        console.log(
-          `Saved state is true but no notifications found - keeping saved state`
-        );
+        // Saved state is true but no notifications found - keeping saved state
         // Don't update - keep the saved state
       } else if (savedBillEnabled !== hasBillReminders) {
-        console.log(
-          `Updating bill reminder state from ${savedBillEnabled} to ${hasBillReminders}`
-        );
+        // Updating bill reminder state
         await AsyncStorage.setItem(
           `notification_bill-reminders`,
           hasBillReminders ? "true" : "false"
@@ -232,7 +222,7 @@ export const NotificationSettingsScreen: React.FC<
           )
         );
       } else {
-        console.log(`Bill reminder state matches, no update needed`);
+        // Bill reminder state matches, no update needed
       }
 
       // Check saved state and update if needed for budget reminders
@@ -241,19 +231,13 @@ export const NotificationSettingsScreen: React.FC<
       );
       const savedBudgetEnabled = savedBudgetValue === "true";
 
-      console.log(
-        `Budget reminder status check - saved: ${savedBudgetEnabled}, actual: ${hasBudgetReminders}`
-      );
+      // Budget reminder status check
 
       if (savedBudgetEnabled && !hasBudgetReminders) {
-        console.log(
-          `Saved budget state is true but no notifications found - keeping saved state`
-        );
+        // Saved budget state is true but no notifications found - keeping saved state
         // Don't update - keep the saved state
       } else if (savedBudgetEnabled !== hasBudgetReminders) {
-        console.log(
-          `Updating budget reminder state from ${savedBudgetEnabled} to ${hasBudgetReminders}`
-        );
+        // Updating budget reminder state
         await AsyncStorage.setItem(
           `notification_budget-reminders`,
           hasBudgetReminders ? "true" : "false"
@@ -266,7 +250,7 @@ export const NotificationSettingsScreen: React.FC<
           )
         );
       } else {
-        console.log(`Budget reminder state matches, no update needed`);
+        // Budget reminder state matches, no update needed
       }
     } catch (error) {
       console.error("Error checking reminder status:", error);
@@ -279,7 +263,7 @@ export const NotificationSettingsScreen: React.FC<
   };
 
   const toggleSetting = async (settingId: string) => {
-    console.log(`Toggling ${settingId} - current settings:`, settings);
+    // Toggling setting
 
     const updatedSettings = settings.map((setting) =>
       setting.id === settingId
@@ -289,13 +273,13 @@ export const NotificationSettingsScreen: React.FC<
     setSettings(updatedSettings);
 
     const setting = updatedSettings.find((s) => s.id === settingId);
-    console.log(`New setting state for ${settingId}:`, setting?.enabled);
+    // New setting state
 
     // Save the setting state to AsyncStorage
     const storageKey = `notification_${settingId}`;
     const storageValue = setting?.enabled ? "true" : "false";
     await AsyncStorage.setItem(storageKey, storageValue);
-    console.log(`Saved to AsyncStorage: ${storageKey} = ${storageValue}`);
+    // Saved to AsyncStorage
 
     if (setting?.enabled) {
       await scheduleNotification(setting);
@@ -313,9 +297,7 @@ export const NotificationSettingsScreen: React.FC<
     try {
       const { notificationService } = await import("../services/notifications");
       await notificationService.updateNotificationHandler(badgeEnabled);
-      console.log(
-        `Updated notification handler - badge enabled: ${badgeEnabled}`
-      );
+      // Updated notification handler
     } catch (error) {
       console.error("Error updating notification handler:", error);
     }
@@ -347,21 +329,21 @@ export const NotificationSettingsScreen: React.FC<
         case "goals":
           // Goal reminders are scheduled when goals are created/updated
           // This toggle just enables/disables the feature
-          console.log("Goal reminder notifications enabled");
+          // Goal reminder notifications enabled
           break;
         case "webhook-transactions":
           // Webhook notifications are handled automatically by the system
           // This toggle just enables/disables the feature
-          console.log("Webhook transaction notifications enabled");
+          // Webhook transaction notifications enabled
           break;
         case "webhook-accounts":
           // Webhook notifications are handled automatically by the system
-          console.log("Webhook account notifications enabled");
+          // Webhook account notifications enabled
           break;
 
         case "webhook-issue":
           // Webhook notifications are handled automatically by the system
-          console.log("Webhook connection issue notifications enabled");
+          // Webhook connection issue notifications enabled
           break;
       }
     } catch (error) {
@@ -426,9 +408,7 @@ export const NotificationSettingsScreen: React.FC<
         );
       }
 
-      console.log(
-        `Updated balance threshold for ${accountName}: $${threshold}`
-      );
+      // Updated balance threshold
     } catch (error) {
       console.error("Error updating balance threshold:", error);
       Alert.alert("Error", "Failed to update balance threshold");
@@ -522,8 +502,6 @@ export const NotificationSettingsScreen: React.FC<
               </Text>
             </TouchableOpacity>
           )}
-
-
         </View>
 
         {/* Notification Settings */}
@@ -919,5 +897,4 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     lineHeight: 16,
   },
-
 });

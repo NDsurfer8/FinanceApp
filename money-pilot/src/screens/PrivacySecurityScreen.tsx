@@ -204,7 +204,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             }
 
             // Enable biometric authentication
-            console.log("Enabling biometric authentication in settings...");
+            // Enabling biometric authentication in settings
             await setBiometricAuthEnabled(true);
 
             // Update the UI

@@ -465,18 +465,6 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     const netIncome = monthlyIncome - monthlyExpenses;
 
     // Debug logging to verify calculations
-    console.log("Financial Snapshot Calculations:", {
-      actualMonthlyIncome,
-      actualMonthlyExpenses,
-      recurringMonthlyIncome,
-      recurringMonthlyExpenses,
-      totalMonthlyIncome: monthlyIncome,
-      totalMonthlyExpenses: monthlyExpenses,
-      netIncome,
-      recurringTransactionsCount: recurringTransactions.filter(
-        (t) => t.isActive
-      ).length,
-    });
 
     // Calculate totals
     const totalDebt = debts.reduce((sum, debt) => sum + debt.balance, 0);
@@ -618,13 +606,10 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       // Check for local responses first (no API call needed)
       const localResponse = getLocalResponse(userMessage.text);
       if (localResponse) {
-        console.log(
-          "Using local response (no API call) for:",
-          userMessage.text
-        );
+        // Using local response (no API call)
         aiResponse = localResponse.response;
       } else if (isCacheValid && !isPlanRequest) {
-        console.log("Using cached response for:", userMessage.text);
+        // Using cached response
         aiResponse = cachedResponse.response;
       } else if (isPlanRequest && user) {
         // Generate a comprehensive financial plan
@@ -959,9 +944,7 @@ Requirements:
           if (priority > bestSavingsPriority) {
             bestSavingsMatch = percentage;
             bestSavingsPriority = priority;
-            console.log(
-              `New best savings match: ${percentage}% (priority: ${priority})`
-            );
+            // New best savings match
           }
         }
       }
@@ -1004,9 +987,7 @@ Requirements:
           if (priority > bestDebtPriority) {
             bestDebtMatch = percentage;
             bestDebtPriority = priority;
-            console.log(
-              `New best debt match: ${percentage}% (priority: ${priority})`
-            );
+            // New best debt match
           }
         }
       }
@@ -1035,9 +1016,7 @@ Requirements:
           );
           if (calculatedPercentage >= 1 && calculatedPercentage <= 50) {
             suggestions.debtPayoffPercentage = calculatedPercentage;
-            console.log(
-              `Debt dollar amount detected: $${dollarAmount}, calculated percentage: ${calculatedPercentage}%`
-            );
+            // Debt dollar amount detected
             break;
           }
         }
@@ -1150,18 +1129,13 @@ Requirements:
         }
         // If only debt payoff is mentioned, don't assign the higher percentage to savings
         if (isDebtPayoffRecommendation && !isSavingsRecommendation) {
-          console.log(
-            "Only debt payoff context detected - not assigning percentages automatically"
-          );
+          // Only debt payoff context detected - not assigning percentages automatically
           return suggestions; // Return existing suggestions without auto-assignment
         }
       }
     }
 
-    console.log(
-      "LOG AI Response percentage suggestions detected:",
-      suggestions
-    );
+    // AI Response percentage suggestions detected
     return suggestions;
   };
 
@@ -1243,18 +1217,12 @@ Original Request: ${basePrompt}
       // Send feedback to backend AI
       try {
         await sendBackendAIFeedback(messageId, type, userPreferences);
-        console.log("✅ Feedback sent to backend AI");
+        // Feedback sent to backend AI
       } catch (error) {
         console.error("❌ Failed to send feedback to backend:", error);
       }
 
       // Debug logging
-      console.log("🧠 Feedback processed:", {
-        characteristics: feedbackData.characteristics,
-        feedback: feedbackData.feedback,
-        messageId: feedbackData.messageId,
-        newPreferences: userPreferences,
-      });
     }
 
     setFeedbackStates((prev) => ({

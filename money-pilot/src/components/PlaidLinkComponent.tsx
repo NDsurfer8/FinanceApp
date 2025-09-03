@@ -260,7 +260,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     setIsLoading(true);
     onLoadingChange?.(true);
     try {
-      console.log("Starting Plaid Link flow...");
+      // Starting Plaid Link flow
 
       // Use the new modern pattern with better error handling
       await plaidService.startPlaidLinkFlow(
@@ -392,12 +392,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
             "There were too many connection attempts in a short time. For security, the bank has temporarily paused new logins. Try again in about an hour.";
           // Log the request IDs for debugging
           if (linkExit.metadata) {
-            console.log(
-              "Plaid request_id:",
-              linkExit.metadata.requestId,
-              "link_session_id:",
-              linkExit.metadata.linkSessionId
-            );
+            // Plaid request metadata available
           }
           // Reset rate limiting counters when we hit a rate limit
           plaidService.resetRateLimiting();
@@ -423,9 +418,6 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
             ) {
               // Don't show error for PRODUCT_NOT_READY during link process
               // This is handled by retry logic in the background
-              console.log(
-                "Product not ready during link - will retry in background"
-              );
               onExit?.();
               return;
             } else if (

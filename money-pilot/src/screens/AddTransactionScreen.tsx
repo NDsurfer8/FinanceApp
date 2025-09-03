@@ -190,10 +190,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           );
 
           if (associatedRecurringTransaction) {
-            console.log(
-              "Found associated recurring transaction:",
-              associatedRecurringTransaction
-            );
+            // Found associated recurring transaction
             setFormData((prev) => ({
               ...prev,
               frequency: associatedRecurringTransaction.frequency,

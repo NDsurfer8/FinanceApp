@@ -685,9 +685,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             subscriptionStatus !== undefined &&
             !subscriptionStatus.isPremium
           ) {
-            console.log(
-              "DataContext: User not premium, clearing bank connection"
-            );
+            // User not premium, clearing bank connection
             if (connected) {
               await plaidService.disconnectBank();
             }
@@ -705,7 +703,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           const cacheLoaded = await loadCachedBankData();
 
           if (cacheLoaded) {
-            console.log("DataContext: Loaded bank data from cache");
+            // Loaded bank data from cache
             return;
           }
 
@@ -773,30 +771,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Real-time webhook monitoring for automatic data updates
   useEffect(() => {
-    console.log("DataContext: Webhook monitoring useEffect triggered", {
-      hasUser: !!user?.uid,
-      isBankConnected,
-      userId: user?.uid,
-      timestamp: new Date().toISOString(),
-    });
+    // Webhook monitoring useEffect triggered
 
     if (!user?.uid || !isBankConnected) {
-      console.log(
-        "DataContext: Stopping webhook monitoring - no user or bank connection"
-      );
+      // Stopping webhook monitoring - no user or bank connection
       setIsWebhookMonitoringActive(false);
       return;
     }
 
-    console.log(
-      "DataContext: Setting up real-time webhook monitoring for user:",
-      user.uid
-    );
+    // Setting up real-time webhook monitoring for user
     setIsWebhookMonitoringActive(true);
 
-    console.log(
-      "DataContext: Webhook monitoring ACTIVE - listening for updates"
-    );
+    // Webhook monitoring ACTIVE - listening for updates
 
     // 🔒 SECURITY: Never log sensitive financial data
     // - No access tokens, account numbers, or transaction details
@@ -818,20 +804,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       // Debounce webhook processing to prevent rapid successive calls
       const now = Date.now();
       if (now - lastWebhookProcessed < WEBHOOK_DEBOUNCE_MS) {
-        console.log("DataContext: Webhook debounced, skipping rapid update");
+        // Webhook debounced, skipping rapid update
         return;
       }
 
-      console.log("DataContext: Webhook status update received:", {
-        webhookType: plaidData.lastWebhook?.type,
-        webhookCode: plaidData.lastWebhook?.code,
-        transactionsSyncAvailable: plaidData.transactionsSyncAvailable,
-        hasNewAccounts: plaidData.hasNewAccounts,
-        lastUpdated: plaidData.lastUpdated,
-        // ✅ SECURE: Only log non-sensitive metadata
-        hasWebhookData: !!plaidData.lastWebhook,
-        dataTimestamp: plaidData.lastWebhook?.timestamp || "none",
-      });
+      // Webhook status update received
 
       // Smart webhook handling: consolidate multiple webhook events into single refresh
       let shouldRefresh = false;
@@ -867,9 +844,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         // Set debounce timer to process webhook
         webhookDebounceTimer = setTimeout(async () => {
-          console.log(
-            `DataContext: Processing webhook refresh (${refreshReason}) after debounce`
-          );
+          // Processing webhook refresh after debounce
 
           try {
             await refreshBankData(true);
@@ -904,12 +879,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
                     );
                   }
                 } else {
-                  console.log(
-                    `Webhook ${notificationData.type} notifications disabled by user`
-                  );
+                  // Webhook notifications disabled by user
                 }
               } catch (notifError) {
-                console.log("Failed to send webhook notification:", notifError);
+                // Failed to send webhook notification
               }
             }
 
@@ -943,10 +916,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
                   "Your bank credentials have expired. Please reconnect your account."
                 );
               } catch (notifError) {
-                console.log(
-                  "Failed to send connection issue notification:",
-                  notifError
-                );
+                // Failed to send connection issue notification
               }
               break;
             case "ITEM_PENDING_EXPIRATION":
@@ -956,10 +926,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
                   "Your bank connection will expire soon. Please reconnect to maintain access."
                 );
               } catch (notifError) {
-                console.log(
-                  "Failed to send connection issue notification:",
-                  notifError
-                );
+                // Failed to send connection issue notification
               }
               break;
             case "ITEM_PENDING_DISCONNECT":
@@ -969,25 +936,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
                   "Your bank connection is being disconnected. Please reconnect if you want to continue using this feature."
                 );
               } catch (notifError) {
-                console.log(
-                  "Failed to send connection issue notification:",
-                  notifError
-                );
+                // Failed to send connection issue notification
               }
               break;
           }
         } else {
-          console.log("Connection issue notifications disabled by user");
+          // Connection issue notifications disabled by user
         }
       }
     });
 
     return () => {
-      console.log("DataContext: Cleaning up webhook monitoring", {
-        reason: "useEffect cleanup",
-        userId: user?.uid,
-        isBankConnected,
-      });
+      // Cleaning up webhook monitoring
       setIsWebhookMonitoringActive(false);
 
       // Clear any pending debounce timer
