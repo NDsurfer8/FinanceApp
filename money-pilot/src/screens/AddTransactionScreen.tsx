@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -34,6 +34,8 @@ import { timestampToDateString } from "../utils/dateUtils";
 import { useTransactionActions } from "../hooks/useTransactionActions";
 import { TransactionBusinessService } from "../services/TransactionBusinessService";
 import { TransactionActionsService } from "../services/TransactionActionsService";
+import { syncUserDataToGroup } from "../services/sharedFinanceDataSync";
+import { getUserSharedGroups } from "../services/userData";
 
 interface AddTransactionScreenProps {
   navigation: any;
@@ -538,6 +540,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           // Update in database
           await updateTransaction(updatedTransaction);
 
+          // Sync to shared groups
+          await syncToSharedGroups();
+
           Alert.alert("Success", "Transaction updated successfully!", [
             { text: "OK", onPress: () => navigation.goBack() },
           ]);
@@ -572,6 +577,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             refreshTransactions(),
             refreshRecurringTransactions(),
           ]);
+
+          // Sync to shared groups
+          await syncToSharedGroups();
 
           Alert.alert("Success", result.message, [
             { text: "OK", onPress: () => navigation.goBack() },
@@ -611,6 +619,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         if (user) {
           await billReminderService.scheduleAllBillReminders(user.uid);
         }
+
+        // Sync to shared groups
+        await syncToSharedGroups();
 
         Alert.alert("Success", "Transaction saved successfully!", [
           { text: "OK", onPress: () => navigation.goBack() },
@@ -831,6 +842,40 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     } catch (error) {
       console.error("Error in delete confirmation:", error);
       setDeleteLoading(false);
+    }
+  };
+
+  // Function to sync user data to all shared groups
+  const syncToSharedGroups = async () => {
+    if (!user?.uid) return;
+
+    try {
+      console.log("🔄 Syncing user data to shared groups...");
+      const userGroups = await getUserSharedGroups(user.uid);
+
+      for (const group of userGroups) {
+        try {
+          // For now, use default sharing settings - all data shared
+          const defaultSettings = {
+            shareNetWorth: true,
+            shareMonthlyIncome: true,
+            shareMonthlyExpenses: true,
+            shareTransactions: true,
+            shareRecurringTransactions: true,
+            shareAssets: true,
+            shareDebts: true,
+            shareGoals: false,
+          };
+
+          await syncUserDataToGroup(user.uid, group.id!, defaultSettings);
+          console.log(`✅ Synced data to group: ${group.name}`);
+        } catch (error) {
+          console.error(`❌ Failed to sync to group ${group.name}:`, error);
+        }
+      }
+      console.log("✅ Finished syncing to all shared groups");
+    } catch (error) {
+      console.error("❌ Error syncing to shared groups:", error);
     }
   };
 

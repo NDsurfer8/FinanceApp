@@ -40,9 +40,7 @@ import {
   AddGoalScreen,
   FinancialRiskScreen,
   SharedFinanceScreen,
-  SharedGroupDetail,
   SharedGroupDetailFixed,
-  DataSharingSettingsScreen,
   GroupDataSharingScreen,
   EditProfileScreen,
   NotificationSettingsScreen,
@@ -487,18 +485,12 @@ export const MainApp: React.FC = () => {
                           name="SharedFinance"
                           component={SharedFinanceScreen}
                         />
-                        <Stack.Screen
-                          name="SharedGroupDetail"
-                          component={SharedGroupDetail}
-                        />
+
                         <Stack.Screen
                           name="SharedGroupDetailFixed"
                           component={SharedGroupDetailFixed}
                         />
-                        <Stack.Screen
-                          name="DataSharingSettings"
-                          component={DataSharingSettingsScreen}
-                        />
+
                         <Stack.Screen
                           name="GroupDataSharing"
                           component={GroupDataSharingScreen}

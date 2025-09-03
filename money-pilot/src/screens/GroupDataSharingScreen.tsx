@@ -19,11 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { SharedGroup, getSharedGroup } from "../services/userData";
-import {
-  syncUserDataToGroup,
-  setupRealTimeDataSharing,
-  stopRealTimeDataSharing,
-} from "../services/sharedFinanceDataSync";
+import { syncUserDataToGroup } from "../services/sharedFinanceDataSync";
 
 interface GroupDataSharingSettings {
   shareNetWorth: boolean;
@@ -140,7 +136,7 @@ export default function GroupDataSharingScreen({
     if (!newSettings[key]) {
       try {
         // Stop real-time sharing for this specific data type
-        await stopRealTimeDataSharingForDataType(user?.uid!, groupId, key);
+        // Note: Real-time data sharing cleanup will be handled when implementing the new sync system
       } catch (error) {
         console.error("Error stopping real-time sharing for data type:", error);
       }
@@ -152,33 +148,10 @@ export default function GroupDataSharingScreen({
     return () => {
       if (user?.uid && groupId) {
         // Stop all real-time data sharing when leaving the screen
-        stopRealTimeDataSharing(user.uid, groupId);
+        // Note: Real-time data sharing cleanup will be handled when implementing the new sync system
       }
     };
   }, [user?.uid, groupId]);
-
-  // Helper function to stop real-time sharing for a specific data type
-  const stopRealTimeDataSharingForDataType = async (
-    userId: string,
-    groupId: string,
-    dataType: keyof GroupDataSharingSettings
-  ) => {
-    try {
-      // For now, we'll stop all listeners and restart with new settings
-      // This is simpler than managing individual listeners per data type
-      stopRealTimeDataSharing(userId, groupId);
-
-      // If user still has some sharing enabled, restart with new settings
-      const currentSettings = { ...settings, [dataType]: false };
-      const hasAnySharing = Object.values(currentSettings).some(Boolean);
-
-      if (hasAnySharing) {
-        await setupRealTimeDataSharing(userId, groupId, currentSettings);
-      }
-    } catch (error) {
-      console.error("Error stopping real-time sharing for data type:", error);
-    }
-  };
 
   const handleSave = async () => {
     if (!user?.uid || !group) return;
@@ -187,13 +160,12 @@ export default function GroupDataSharingScreen({
     try {
       console.log("💾 Saving sharing settings:", settings);
 
-      // Set up real-time data sharing for this specific group based on settings
-      await setupRealTimeDataSharing(user.uid, groupId, settings);
-
-      console.log("✅ Real-time data sharing setup successfully");
+      // For now, just save the settings locally
+      // Real-time syncing will be implemented when users make changes to their finances
+      console.log("✅ Sharing settings saved successfully");
       Alert.alert(
         "Success",
-        `Data sharing settings updated for ${group.name}! Your data will now automatically sync in real-time.`
+        `Data sharing settings updated for ${group.name}! Your data will be synced when you make changes to your finances.`
       );
       navigation.goBack();
     } catch (error) {

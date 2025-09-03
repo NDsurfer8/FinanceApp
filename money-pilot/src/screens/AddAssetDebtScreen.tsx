@@ -23,6 +23,8 @@ import {
   removeAsset,
   removeDebt,
 } from "../services/userData";
+import { syncUserDataToGroup } from "../services/sharedFinanceDataSync";
+import { getUserSharedGroups } from "../services/userData";
 import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
 
 interface AddAssetDebtScreenProps {
@@ -174,6 +176,9 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
         }
       }
 
+      // Sync to shared groups
+      await syncToSharedGroups();
+
       Alert.alert(
         "Success",
         `${type === "asset" ? "Asset" : "Debt"} ${
@@ -245,6 +250,9 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   refreshInBackground();
                 }
 
+                // Sync to shared groups
+                await syncToSharedGroups();
+
                 Alert.alert(
                   "Success",
                   `${
@@ -271,6 +279,40 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
     } catch (error) {
       console.error("Error in delete confirmation:", error);
       setDeleteLoading(false);
+    }
+  };
+
+  // Function to sync user data to all shared groups
+  const syncToSharedGroups = async () => {
+    if (!user?.uid) return;
+
+    try {
+      console.log("🔄 Syncing user data to shared groups...");
+      const userGroups = await getUserSharedGroups(user.uid);
+
+      for (const group of userGroups) {
+        try {
+          // For now, use default sharing settings - all data shared
+          const defaultSettings = {
+            shareNetWorth: true,
+            shareMonthlyIncome: true,
+            shareMonthlyExpenses: true,
+            shareTransactions: true,
+            shareRecurringTransactions: true,
+            shareAssets: true,
+            shareDebts: true,
+            shareGoals: false,
+          };
+
+          await syncUserDataToGroup(user.uid, group.id!, defaultSettings);
+          console.log(`✅ Synced data to group: ${group.name}`);
+        } catch (error) {
+          console.error(`❌ Failed to sync to group ${group.name}:`, error);
+        }
+      }
+      console.log("✅ Finished syncing to all shared groups");
+    } catch (error) {
+      console.error("❌ Error syncing to shared groups:", error);
     }
   };
 

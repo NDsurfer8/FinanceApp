@@ -13,7 +13,6 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../hooks/useAuth";
 import { SharedGroup, removeGroupMember } from "../services/userData";
-import { stopRealTimeDataSharing } from "../services/sharedFinanceDataSync";
 
 interface GroupMembersScreenProps {
   navigation: any;
@@ -43,7 +42,10 @@ export default function GroupMembersScreen({
 
     // Don't allow removing yourself
     if (member.userId === user.uid) {
-      Alert.alert("Cannot Remove Self", "You cannot remove yourself from the group. Use 'Leave Group' instead.");
+      Alert.alert(
+        "Cannot Remove Self",
+        "You cannot remove yourself from the group. Use 'Leave Group' instead."
+      );
       return;
     }
 
@@ -58,18 +60,23 @@ export default function GroupMembersScreen({
           onPress: async () => {
             try {
               setRemovingMember(member.userId);
-              
-              // Stop real-time data sharing for the removed member
-              stopRealTimeDataSharing(member.userId, groupId);
-              
+
+              // Note: Real-time data sharing cleanup will be handled when implementing the new sync system
+
               // Remove the member
               await removeGroupMember(groupId, member.userId);
-              
-              Alert.alert("Success", `${member.displayName} has been removed from the group.`);
+
+              Alert.alert(
+                "Success",
+                `${member.displayName} has been removed from the group.`
+              );
               navigation.goBack();
             } catch (error) {
               console.error("Error removing member:", error);
-              Alert.alert("Error", "Failed to remove member. Please try again.");
+              Alert.alert(
+                "Error",
+                "Failed to remove member. Please try again."
+              );
             } finally {
               setRemovingMember(null);
             }
@@ -80,9 +87,14 @@ export default function GroupMembersScreen({
   };
 
   const renderMember = (member: any) => (
-    <View key={member.userId} style={[styles.memberCard, { backgroundColor: colors.surface }]}>
+    <View
+      key={member.userId}
+      style={[styles.memberCard, { backgroundColor: colors.surface }]}
+    >
       <View style={styles.memberInfo}>
-        <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
+        <View
+          style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}
+        >
           <Text style={[styles.avatarText, { color: colors.primary }]}>
             {member.displayName.charAt(0).toUpperCase()}
           </Text>
@@ -99,13 +111,13 @@ export default function GroupMembersScreen({
           </Text>
         </View>
       </View>
-      
+
       {isOwner && member.role !== "owner" && (
         <TouchableOpacity
           style={[
             styles.removeButton,
             { backgroundColor: colors.error + "20" },
-            removingMember === member.userId && { opacity: 0.5 }
+            removingMember === member.userId && { opacity: 0.5 },
           ]}
           onPress={() => handleRemoveMember(member)}
           disabled={removingMember === member.userId}
@@ -120,21 +132,32 @@ export default function GroupMembersScreen({
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.surface, borderBottomColor: colors.border },
+        ]}
+      >
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Ionicons name="arrow-back" size={24} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Group Members</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Group Members
+        </Text>
         <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.groupInfo}>
-          <Text style={[styles.groupName, { color: colors.text }]}>{group.name}</Text>
+          <Text style={[styles.groupName, { color: colors.text }]}>
+            {group.name}
+          </Text>
           <Text style={[styles.memberCount, { color: colors.textSecondary }]}>
             {group.members?.length || 0} members
           </Text>

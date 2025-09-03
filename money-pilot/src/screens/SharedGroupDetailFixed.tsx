@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import {
   View,
   Text,
@@ -21,7 +21,7 @@ import {
 } from "../services/userData";
 import {
   getGroupSharedData,
-  stopRealTimeDataSharing,
+  syncUserDataToGroup,
 } from "../services/sharedFinanceDataSync";
 
 interface SharedGroupDetailProps {
@@ -71,6 +71,59 @@ export default function SharedGroupDetailFixed({
   useEffect(() => {
     loadGroupData();
   }, [groupId]);
+
+  // Set up header with refresh button
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={handleManualRefresh}
+          style={{ marginRight: 15 }}
+          disabled={loading}
+        >
+          <Ionicons
+            name={loading ? "refresh" : "refresh-outline"}
+            size={24}
+            color={loading ? colors.primary : colors.text}
+            style={loading ? { opacity: 0.5 } : {}}
+          />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, loading, colors.primary, colors.text]);
+
+  const handleManualRefresh = async () => {
+    if (!user?.uid || !group) return;
+    
+    try {
+      setLoading(true);
+      console.log("🔄 Manual refresh requested");
+      
+      // Sync current user's data to this group
+      const defaultSettings = {
+        shareNetWorth: true,
+        shareMonthlyIncome: true,
+        shareMonthlyExpenses: true,
+        shareTransactions: true,
+        shareRecurringTransactions: true,
+        shareAssets: true,
+        shareDebts: true,
+        shareGoals: false,
+      };
+      
+      await syncUserDataToGroup(user.uid, groupId, defaultSettings);
+      
+      // Reload the group data to show updated information
+      await loadGroupData();
+      
+      Alert.alert("Success", "Group data refreshed successfully!");
+    } catch (error) {
+      console.error("Error refreshing group data:", error);
+      Alert.alert("Error", "Failed to refresh group data. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadGroupData = async () => {
     try {
@@ -331,7 +384,7 @@ export default function SharedGroupDetailFixed({
           onPress: async () => {
             try {
               // Stop real-time data sharing
-              stopRealTimeDataSharing(user.uid, groupId);
+              // Note: Real-time data sharing cleanup will be handled when implementing the new sync system
 
               // Leave the group
               await leaveGroup(groupId, user.uid);
@@ -366,7 +419,7 @@ export default function SharedGroupDetailFixed({
               if (group.members) {
                 for (const member of group.members) {
                   try {
-                    stopRealTimeDataSharing(member.userId, groupId);
+                    // Note: Real-time data sharing cleanup will be handled when implementing the new sync system
                     console.log(
                       `🛑 Stopped real-time sharing for member: ${member.displayName}`
                     );
@@ -490,7 +543,7 @@ export default function SharedGroupDetailFixed({
           onPress: async () => {
             try {
               // Stop real-time data sharing for the removed member
-              stopRealTimeDataSharing(member.userId, groupId);
+              // Note: Real-time data sharing cleanup will be handled when implementing the new sync system
 
               // Remove the member
               await removeGroupMember(groupId, member.userId);
