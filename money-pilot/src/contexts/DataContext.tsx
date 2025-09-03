@@ -766,7 +766,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Real-time webhook monitoring for automatic data updates
   useEffect(() => {
+    console.log("DataContext: Webhook monitoring useEffect triggered", {
+      hasUser: !!user?.uid,
+      isBankConnected,
+      userId: user?.uid,
+      timestamp: new Date().toISOString(),
+    });
+
     if (!user?.uid || !isBankConnected) {
+      console.log(
+        "DataContext: Stopping webhook monitoring - no user or bank connection"
+      );
       setIsWebhookMonitoringActive(false);
       return;
     }
@@ -776,6 +786,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       user.uid
     );
     setIsWebhookMonitoringActive(true);
+
+    console.log(
+      "DataContext: Webhook monitoring ACTIVE - listening for updates"
+    );
 
     // Webhook debouncing to prevent rapid successive calls
     let webhookDebounceTimer: NodeJS.Timeout | null = null;
@@ -802,6 +816,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         transactionsSyncAvailable: plaidData.transactionsSyncAvailable,
         hasNewAccounts: plaidData.hasNewAccounts,
         lastUpdated: plaidData.lastUpdated,
+        fullPlaidData: plaidData, // Log full data for debugging
       });
 
       // Smart webhook handling: consolidate multiple webhook events into single refresh
@@ -951,7 +966,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
 
     return () => {
-      console.log("DataContext: Cleaning up webhook monitoring");
+      console.log("DataContext: Cleaning up webhook monitoring", {
+        reason: "useEffect cleanup",
+        userId: user?.uid,
+        isBankConnected,
+      });
       setIsWebhookMonitoringActive(false);
 
       // Clear any pending debounce timer
