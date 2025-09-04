@@ -30,6 +30,7 @@ import {
 import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
 import { formatDateToLocalString, createLocalDate } from "../utils/dateUtils";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
+import { useScrollDetection } from "../hooks/useScrollDetection";
 
 interface GoalTrackingScreenProps {
   navigation: any;
@@ -46,6 +47,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   const { goals, updateDataOptimistically, refreshInBackground } =
     useZeroLoading();
   const { canAddGoal, getGoalLimitInfo } = useTransactionLimits();
+  const { isScrolling, handleScrollBegin, handleScrollEnd } =
+    useScrollDetection();
   const { presentPaywall } = usePaywall();
   const route = useRoute();
   const [loading, setLoading] = useState(false);
@@ -499,6 +502,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={handleScrollBegin}
+        onScrollEndDrag={handleScrollEnd}
+        onMomentumScrollBegin={handleScrollBegin}
+        onMomentumScrollEnd={handleScrollEnd}
       >
         {/* Header */}
         <StandardHeader
@@ -1590,7 +1597,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
       </ScrollView>
 
       {/* Floating AI Chatbot - only show on main tab screens */}
-      <FloatingAIChatbot />
+      <FloatingAIChatbot hideOnScroll={true} isScrolling={isScrolling} />
     </SafeAreaView>
   );
 };

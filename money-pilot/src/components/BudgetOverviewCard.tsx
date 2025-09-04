@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
+import { TourGuide } from "./TourGuide";
 
 interface BudgetOverviewCardProps {
   netIncome: number;
@@ -384,51 +385,56 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={onPressSettings}
-          style={{
-            backgroundColor: colors.primary,
-            padding: 12,
-            borderRadius: 12,
-            alignItems: "center",
-            justifyContent: "center",
-            minWidth: 48,
-            position: "relative",
-          }}
-        >
-          <Ionicons
-            name="settings-outline"
-            size={20}
-            color={colors.buttonText}
-          />
-          {props.hasOverBudgetItems && (
-            <View
-              style={{
-                position: "absolute",
-                top: -4,
-                right: -4,
-                backgroundColor: colors.error,
-                borderRadius: 8,
-                width: 16,
-                height: 16,
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: 2,
-                borderColor: colors.surface,
-              }}
-            >
-              <Text
+        <TourGuide zone={2} screen="Budget" placement="bottom">
+          <TouchableOpacity
+            onPress={onPressSettings}
+            style={{
+              backgroundColor: colors.surfaceSecondary,
+              padding: 12,
+              borderRadius: 12,
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: 60,
+              position: "relative",
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderStyle: "dashed",
+            }}
+          >
+            <Ionicons
+              name="settings-outline"
+              size={20}
+              color={colors.buttonPrimary}
+            />
+            {props.hasOverBudgetItems && (
+              <View
                 style={{
-                  color: colors.buttonText,
-                  fontSize: 10,
-                  fontWeight: "700",
+                  position: "absolute",
+                  top: -4,
+                  right: -4,
+                  backgroundColor: colors.error,
+                  borderRadius: 8,
+                  width: 16,
+                  height: 16,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 2,
+                  borderColor: colors.surface,
                 }}
               >
-                !
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
+                <Text
+                  style={{
+                    color: colors.buttonText,
+                    fontSize: 10,
+                    fontWeight: "700",
+                  }}
+                >
+                  !
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </TourGuide>
       </View>
     </View>
   );

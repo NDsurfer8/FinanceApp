@@ -28,6 +28,7 @@ import {
   SharedInvitation,
   cleanupOrphanedSharedData,
 } from "../services/userData";
+import { TourGuide } from "../components/TourGuide";
 
 interface SharedFinanceScreenProps {
   navigation: any;
@@ -505,36 +506,43 @@ export default function SharedFinanceScreen({
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.surface }]}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <View style={styles.headerInfo}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>
-              Shared Finances
-            </Text>
-            {loading && (
-              <Text
-                style={[styles.loadingText, { color: colors.textSecondary }]}
-              >
-                Loading...
-              </Text>
-            )}
-          </View>
-          <View style={styles.headerActions}>
+      <TourGuide zone={1} screen="SharedFinance" placement="bottom">
+        <View style={[styles.header, { backgroundColor: colors.surface }]}>
+          <View style={styles.headerContent}>
             <TouchableOpacity
-              style={[styles.createButton, { backgroundColor: colors.primary }]}
-              onPress={() => setShowCreateModal(true)}
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
             >
-              <Ionicons name="add" size={24} color={colors.buttonText} />
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
+            <View style={styles.headerInfo}>
+              <Text style={[styles.headerTitle, { color: colors.text }]}>
+                Shared Finances
+              </Text>
+              {loading && (
+                <Text
+                  style={[styles.loadingText, { color: colors.textSecondary }]}
+                >
+                  Loading...
+                </Text>
+              )}
+            </View>
+            <View style={styles.headerActions}>
+              <TourGuide zone={2} screen="SharedFinance" placement="bottom">
+                <TouchableOpacity
+                  style={[
+                    styles.createButton,
+                    { backgroundColor: colors.primary },
+                  ]}
+                  onPress={() => setShowCreateModal(true)}
+                >
+                  <Ionicons name="add" size={24} color={colors.buttonText} />
+                </TouchableOpacity>
+              </TourGuide>
+            </View>
           </View>
         </View>
-      </View>
+      </TourGuide>
 
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -622,16 +630,18 @@ export default function SharedFinanceScreen({
         )}
 
         {/* Groups Section */}
-        {groups.length === 0 ? (
-          renderEmptyState()
-        ) : (
-          <View style={styles.groupsContainer}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Your Groups ({groups.length})
-            </Text>
-            {groups.map(renderGroupCard)}
-          </View>
-        )}
+        <TourGuide zone={3} screen="SharedFinance" placement="bottom">
+          {groups.length === 0 ? (
+            renderEmptyState()
+          ) : (
+            <View style={styles.groupsContainer}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Your Groups ({groups.length})
+              </Text>
+              {groups.map(renderGroupCard)}
+            </View>
+          )}
+        </TourGuide>
       </ScrollView>
 
       {/* Create Group Modal */}

@@ -18,6 +18,7 @@ import { SubscriptionProvider } from "../contexts/SubscriptionContext";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { ChatbotProvider } from "../contexts/ChatbotContext";
 import { FriendlyModeProvider } from "../contexts/FriendlyModeContext";
+import { TourProvider } from "../contexts/TourContext";
 import { DataPreloader } from "./DataPreloader";
 import { SplashScreen } from "./SplashScreen";
 import revenueCatService from "../services/revenueCat";
@@ -465,168 +466,170 @@ export const MainApp: React.FC = () => {
             <DataProvider>
               <ChatbotProvider>
                 <FriendlyModeProvider>
-                  <DataPreloader>
-                    <NavigationContainer>
-                      <Stack.Navigator
-                        screenOptions={{
-                          headerShown: false,
-                        }}
-                      >
-                        <Stack.Screen
-                          name="MainTabs"
-                          component={MainTabNavigator}
-                        />
-                        <Stack.Screen
-                          name="AddTransaction"
-                          component={AddTransactionScreen}
-                        />
-                        <Stack.Screen
-                          name="AddAssetDebt"
-                          component={AddAssetDebtScreen}
-                        />
-                        <Stack.Screen
-                          name="AddGoal"
-                          component={AddGoalScreen}
-                        />
+                  <TourProvider>
+                    <DataPreloader>
+                      <NavigationContainer>
+                        <Stack.Navigator
+                          screenOptions={{
+                            headerShown: false,
+                          }}
+                        >
+                          <Stack.Screen
+                            name="MainTabs"
+                            component={MainTabNavigator}
+                          />
+                          <Stack.Screen
+                            name="AddTransaction"
+                            component={AddTransactionScreen}
+                          />
+                          <Stack.Screen
+                            name="AddAssetDebt"
+                            component={AddAssetDebtScreen}
+                          />
+                          <Stack.Screen
+                            name="AddGoal"
+                            component={AddGoalScreen}
+                          />
 
-                        <Stack.Screen
-                          name="FinancialRisk"
-                          component={FinancialRiskScreen}
-                        />
-                        <Stack.Screen
-                          name="SharedFinance"
-                          component={SharedFinanceScreen}
-                        />
+                          <Stack.Screen
+                            name="FinancialRisk"
+                            component={FinancialRiskScreen}
+                          />
+                          <Stack.Screen
+                            name="SharedFinance"
+                            component={SharedFinanceScreen}
+                          />
 
-                        <Stack.Screen
-                          name="SharedGroupDetailFixed"
-                          component={SharedGroupDetailFixed}
-                        />
+                          <Stack.Screen
+                            name="SharedGroupDetailFixed"
+                            component={SharedGroupDetailFixed}
+                          />
 
-                        <Stack.Screen
-                          name="GroupDataSharing"
-                          component={GroupDataSharingScreen}
-                          options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                          name="GroupMembers"
-                          component={GroupMembersScreen}
-                          options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                          name="EditProfile"
-                          component={EditProfileScreen}
-                        />
-                        <Stack.Screen
-                          name="NotificationSettings"
-                          component={NotificationSettingsScreen}
-                        />
-                        <Stack.Screen
-                          name="PrivacySecurity"
-                          component={PrivacySecurityScreen}
-                        />
-                        <Stack.Screen name="About" component={AboutScreen} />
-                        <Stack.Screen
-                          name="AIUsageAdmin"
-                          component={AIUsageAdminScreen}
-                        />
-                        <Stack.Screen
-                          name="HelpSupport"
-                          component={HelpSupportScreen}
-                        />
-                        <Stack.Screen
-                          name="Subscription"
-                          component={SubscriptionScreen}
-                        />
-                        <Stack.Screen
-                          name="BankTransactions"
-                          component={BankTransactionsScreen}
-                        />
-                        <Stack.Screen
-                          name="AIFinancialAdvisor"
-                          component={AIFinancialAdvisorScreen}
-                        />
-                        <Stack.Screen
-                          name="FinancialPlans"
-                          component={FinancialPlansScreen}
-                        />
-                        <Stack.Screen
-                          name="PrivacyPolicy"
-                          component={PrivacyPolicyScreen}
-                        />
-                        <Stack.Screen
-                          name="TermsOfService"
-                          component={TermsOfServiceScreen}
-                        />
-                      </Stack.Navigator>
-                    </NavigationContainer>
-                  </DataPreloader>
+                          <Stack.Screen
+                            name="GroupDataSharing"
+                            component={GroupDataSharingScreen}
+                            options={{ headerShown: false }}
+                          />
+                          <Stack.Screen
+                            name="GroupMembers"
+                            component={GroupMembersScreen}
+                            options={{ headerShown: false }}
+                          />
+                          <Stack.Screen
+                            name="EditProfile"
+                            component={EditProfileScreen}
+                          />
+                          <Stack.Screen
+                            name="NotificationSettings"
+                            component={NotificationSettingsScreen}
+                          />
+                          <Stack.Screen
+                            name="PrivacySecurity"
+                            component={PrivacySecurityScreen}
+                          />
+                          <Stack.Screen name="About" component={AboutScreen} />
+                          <Stack.Screen
+                            name="AIUsageAdmin"
+                            component={AIUsageAdminScreen}
+                          />
+                          <Stack.Screen
+                            name="HelpSupport"
+                            component={HelpSupportScreen}
+                          />
+                          <Stack.Screen
+                            name="Subscription"
+                            component={SubscriptionScreen}
+                          />
+                          <Stack.Screen
+                            name="BankTransactions"
+                            component={BankTransactionsScreen}
+                          />
+                          <Stack.Screen
+                            name="AIFinancialAdvisor"
+                            component={AIFinancialAdvisorScreen}
+                          />
+                          <Stack.Screen
+                            name="FinancialPlans"
+                            component={FinancialPlansScreen}
+                          />
+                          <Stack.Screen
+                            name="PrivacyPolicy"
+                            component={PrivacyPolicyScreen}
+                          />
+                          <Stack.Screen
+                            name="TermsOfService"
+                            component={TermsOfServiceScreen}
+                          />
+                        </Stack.Navigator>
+                      </NavigationContainer>
+                    </DataPreloader>
 
-                  {/* Biometric Authentication Overlay */}
-                  <BiometricAuthOverlay
-                    visible={showBiometricOverlay}
-                    onSuccess={() => {
-                      setShowBiometricOverlay(false);
-                      setBiometricAuthenticated(true);
-                      setAppState("main");
-                    }}
-                    onCancel={async () => {
-                      try {
-                        // Handle Plaid logout cleanup
-                        await plaidService.handleLogout();
-
-                        const { signOutUser } = await import(
-                          "../services/auth"
-                        );
-                        await signOutUser();
-
+                    {/* Biometric Authentication Overlay */}
+                    <BiometricAuthOverlay
+                      visible={showBiometricOverlay}
+                      onSuccess={() => {
                         setShowBiometricOverlay(false);
-                        setBiometricAuthenticated(false);
-                        setAppState("login");
-                      } catch (error) {
-                        console.error("Error signing out on cancel:", error);
-                        // Fallback to login screen even if signout fails
-                        setShowBiometricOverlay(false);
-                        setBiometricAuthenticated(false);
-                        setAppState("login");
-                      }
-                    }}
-                    onUsePasscode={() => {
-                      // Allow access with device passcode fallback
-                      setShowBiometricOverlay(false);
-                      setBiometricAuthenticated(true);
-                      setAppState("main");
-                    }}
-                    onSignOut={async () => {
-                      try {
-                        // Handle Plaid logout cleanup
-                        await plaidService.handleLogout();
+                        setBiometricAuthenticated(true);
+                        setAppState("main");
+                      }}
+                      onCancel={async () => {
+                        try {
+                          // Handle Plaid logout cleanup
+                          await plaidService.handleLogout();
 
-                        const { signOutUser } = await import(
-                          "../services/auth"
-                        );
-                        await signOutUser();
+                          const { signOutUser } = await import(
+                            "../services/auth"
+                          );
+                          await signOutUser();
 
+                          setShowBiometricOverlay(false);
+                          setBiometricAuthenticated(false);
+                          setAppState("login");
+                        } catch (error) {
+                          console.error("Error signing out on cancel:", error);
+                          // Fallback to login screen even if signout fails
+                          setShowBiometricOverlay(false);
+                          setBiometricAuthenticated(false);
+                          setAppState("login");
+                        }
+                      }}
+                      onUsePasscode={() => {
+                        // Allow access with device passcode fallback
                         setShowBiometricOverlay(false);
-                        setBiometricAuthenticated(false);
-                        setAppState("login");
-                      } catch (error) {
-                        console.error("Error signing out:", error);
-                        // Fallback to login screen even if signout fails
-                        setShowBiometricOverlay(false);
-                        setBiometricAuthenticated(false);
-                        setAppState("login");
-                      }
-                    }}
-                  />
+                        setBiometricAuthenticated(true);
+                        setAppState("main");
+                      }}
+                      onSignOut={async () => {
+                        try {
+                          // Handle Plaid logout cleanup
+                          await plaidService.handleLogout();
 
-                  {/* Plaid Update Mode Modal */}
-                  <PlaidUpdateMode
-                    visible={showPlaidUpdateMode}
-                    onClose={() => setShowPlaidUpdateMode(false)}
-                    updateType={plaidUpdateType}
-                    newAccounts={plaidNewAccounts}
-                  />
+                          const { signOutUser } = await import(
+                            "../services/auth"
+                          );
+                          await signOutUser();
+
+                          setShowBiometricOverlay(false);
+                          setBiometricAuthenticated(false);
+                          setAppState("login");
+                        } catch (error) {
+                          console.error("Error signing out:", error);
+                          // Fallback to login screen even if signout fails
+                          setShowBiometricOverlay(false);
+                          setBiometricAuthenticated(false);
+                          setAppState("login");
+                        }
+                      }}
+                    />
+
+                    {/* Plaid Update Mode Modal */}
+                    <PlaidUpdateMode
+                      visible={showPlaidUpdateMode}
+                      onClose={() => setShowPlaidUpdateMode(false)}
+                      updateType={plaidUpdateType}
+                      newAccounts={plaidNewAccounts}
+                    />
+                  </TourProvider>
                 </FriendlyModeProvider>
               </ChatbotProvider>
             </DataProvider>

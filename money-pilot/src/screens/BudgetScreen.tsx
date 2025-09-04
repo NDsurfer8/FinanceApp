@@ -23,6 +23,7 @@ import { AutoBudgetImporter } from "../components/AutoBudgetImporter";
 import { BudgetOverviewCard } from "../components/BudgetOverviewCard";
 import { TransactionListCard } from "../components/TransactionListCard";
 import { BudgetSettingsModal } from "../components/BudgetSettingsModal";
+import { TourGuide } from "../components/TourGuide";
 import {
   saveBudgetSettings,
   updateBudgetSettings,
@@ -31,6 +32,7 @@ import {
 import { getProjectedTransactionsForMonth } from "../services/transactionService";
 import { timestampToDateString } from "../utils/dateUtils";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
+import { useScrollDetection } from "../hooks/useScrollDetection";
 
 interface BudgetScreenProps {
   navigation: any;
@@ -46,6 +48,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     updateDataOptimistically,
     refreshData,
   } = useZeroLoading();
+  const { isScrolling, handleScrollBegin, handleScrollEnd } =
+    useScrollDetection();
 
   // Bank data from global context
   const {
@@ -474,6 +478,72 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     });
   };
 
+  const formatMonthShort = (date: Date) => {
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatMonthSmart = (date: Date, maxLength: number = 15) => {
+    const longFormat = formatMonth(date);
+    if (longFormat.length <= maxLength) {
+      return longFormat;
+    }
+
+    // Try short format
+    const shortFormat = formatMonthShort(date);
+    if (shortFormat.length <= maxLength) {
+      return shortFormat;
+    }
+
+    // If still too long, use just month and year without spaces
+    const month = date.toLocaleDateString(undefined, { month: "short" });
+    const year = date.getFullYear().toString();
+    const compactFormat = `${month} ${year}`;
+
+    if (compactFormat.length <= maxLength) {
+      return compactFormat;
+    }
+
+    // Last resort: use just month abbreviation
+    return month;
+  };
+
+  const getMonthStatus = (date: Date) => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    const targetYear = date.getFullYear();
+    const targetMonth = date.getMonth();
+
+    if (
+      targetYear < currentYear ||
+      (targetYear === currentYear && targetMonth < currentMonth)
+    ) {
+      return "past";
+    } else if (targetYear === currentYear && targetMonth === currentMonth) {
+      return "current";
+    } else {
+      return "future";
+    }
+  };
+
+  const getMonthColor = (date: Date) => {
+    const status = getMonthStatus(date);
+    switch (status) {
+      case "past":
+        return "#9CA3AF"; // Gray for past months
+      case "current":
+        return "#f97316"; // Orange for current month
+      case "future":
+        return "#3B82F6"; // Blue for future months
+      default:
+        return "#f97316";
+    }
+  };
+
   const isRecurringTransaction = (transaction: any) => {
     return (
       transaction.recurringTransactionId ||
@@ -597,6 +667,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={handleScrollBegin}
+        onScrollEndDrag={handleScrollEnd}
+        onMomentumScrollBegin={handleScrollBegin}
+        onMomentumScrollEnd={handleScrollEnd}
       >
         {/* Header */}
         <StandardHeader
@@ -605,12 +679,21 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           showBackButton={false}
           rightComponent={
             <PanGestureHandler onGestureEvent={onGestureEvent}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  minWidth: 210,
+                  maxWidth: 240,
+                  justifyContent: "space-between",
+                }}
+              >
                 <TouchableOpacity
                   onPress={() => navigateMonth("prev")}
                   style={{
-                    padding: 8,
-                    borderRadius: 8,
+                    padding: 6,
+                    borderRadius: 6,
+                    flexShrink: 0,
                   }}
                 >
                   <Ionicons
@@ -624,28 +707,35 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   onPress={() => setShowMonthPicker(true)}
                   onLongPress={handleLongPress}
                   style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    minWidth: 120,
+                    paddingHorizontal: 6,
+                    paddingVertical: 6,
+                    flex: 1,
                     alignItems: "center",
+                    justifyContent: "center",
+                    marginHorizontal: 2,
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: 18,
-                      fontWeight: "600",
-                      color: "#f97316",
+                      fontSize: 22,
+                      fontWeight: "500",
+                      color: getMonthColor(selectedMonth),
+                      textAlign: "center",
                     }}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.7}
                   >
-                    {formatMonth(selectedMonth)}
+                    {formatMonthSmart(selectedMonth, 10)}
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={() => navigateMonth("next")}
                   style={{
-                    padding: 8,
-                    borderRadius: 8,
+                    padding: 6,
+                    borderRadius: 6,
+                    flexShrink: 0,
                   }}
                 >
                   <Ionicons
@@ -821,177 +911,182 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         )}
 
         {/* Budget Overview Card */}
-        <BudgetOverviewCard
-          netIncome={netIncome}
-          totalIncome={totalIncome}
-          totalExpenses={totalExpenses}
-          savingsAmount={savingsAmount}
-          savingsPercentage={parseFloat(savingsPercentage)}
-          discretionaryIncome={discretionaryIncome}
-          remainingBalance={remainingBalance}
-          onPressDetails={() => setShowBudgetSettingsModal(true)}
-          onPressSettings={() => {
-            // Mark all current over-budget categories as seen for the selected month
-            const targetMonth = selectedMonth.getMonth();
-            const targetYear = selectedMonth.getFullYear();
-            const monthKey = `${targetMonth}-${targetYear}`;
+        <TourGuide zone={1} screen="Budget" placement="bottom">
+          <BudgetOverviewCard
+            netIncome={netIncome}
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+            savingsAmount={savingsAmount}
+            savingsPercentage={parseFloat(savingsPercentage)}
+            discretionaryIncome={discretionaryIncome}
+            remainingBalance={remainingBalance}
+            onPressDetails={() => setShowBudgetSettingsModal(true)}
+            onPressSettings={() => {
+              // Mark all current over-budget categories as seen for the selected month
+              const targetMonth = selectedMonth.getMonth();
+              const targetYear = selectedMonth.getFullYear();
+              const monthKey = `${targetMonth}-${targetYear}`;
 
-            const newSeenCategories = new Map(seenOverBudgetCategories);
-            const monthSeenCategories = new Set(
-              newSeenCategories.get(monthKey) || []
-            );
+              const newSeenCategories = new Map(seenOverBudgetCategories);
+              const monthSeenCategories = new Set(
+                newSeenCategories.get(monthKey) || []
+              );
 
-            budgetCategories.forEach((category) => {
-              const categoryTransactions = transactions.filter((t) => {
-                const transactionDate = new Date(t.date);
-                return (
-                  transactionDate.getMonth() === targetMonth &&
-                  transactionDate.getFullYear() === targetYear &&
-                  t.type === "expense" &&
-                  t.category === category.name
-                );
+              budgetCategories.forEach((category) => {
+                const categoryTransactions = transactions.filter((t) => {
+                  const transactionDate = new Date(t.date);
+                  return (
+                    transactionDate.getMonth() === targetMonth &&
+                    transactionDate.getFullYear() === targetYear &&
+                    t.type === "expense" &&
+                    t.category === category.name
+                  );
+                });
+
+                const categoryRecurring = recurringTransactions.filter((rt) => {
+                  return (
+                    rt.type === "expense" &&
+                    rt.isActive &&
+                    rt.category === category.name
+                  );
+                });
+
+                const actualSpending =
+                  categoryTransactions.reduce((sum, t) => sum + t.amount, 0) +
+                  categoryRecurring.reduce((sum, rt) => {
+                    let monthlyAmount = rt.amount;
+                    if (rt.frequency === "weekly")
+                      monthlyAmount = rt.amount * 4;
+                    else if (rt.frequency === "biweekly")
+                      monthlyAmount = rt.amount * 2;
+                    return sum + monthlyAmount;
+                  }, 0);
+
+                if (actualSpending > category.monthlyLimit) {
+                  monthSeenCategories.add(category.name);
+                }
               });
 
-              const categoryRecurring = recurringTransactions.filter((rt) => {
-                return (
-                  rt.type === "expense" &&
-                  rt.isActive &&
-                  rt.category === category.name
-                );
-              });
-
-              const actualSpending =
-                categoryTransactions.reduce((sum, t) => sum + t.amount, 0) +
-                categoryRecurring.reduce((sum, rt) => {
-                  let monthlyAmount = rt.amount;
-                  if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
-                  else if (rt.frequency === "biweekly")
-                    monthlyAmount = rt.amount * 2;
-                  return sum + monthlyAmount;
-                }, 0);
-
-              if (actualSpending > category.monthlyLimit) {
-                monthSeenCategories.add(category.name);
-              }
-            });
-
-            newSeenCategories.set(monthKey, monthSeenCategories);
-            setSeenOverBudgetCategories(newSeenCategories);
-            navigation.navigate("BudgetCategories", { selectedMonth });
-          }}
-          onPressIncome={handleAddIncome}
-          onPressExpense={handleAddExpense}
-          onPressImport={() => setShowAutoImporter(true)}
-          isBankConnected={isBankConnected}
-          availableTransactionsCount={getAvailableTransactionsCount()}
-          hasOverBudgetItems={hasOverBudgetItems()}
-        />
+              newSeenCategories.set(monthKey, monthSeenCategories);
+              setSeenOverBudgetCategories(newSeenCategories);
+              navigation.navigate("BudgetCategories", { selectedMonth });
+            }}
+            onPressIncome={handleAddIncome}
+            onPressExpense={handleAddExpense}
+            onPressImport={() => setShowAutoImporter(true)}
+            isBankConnected={isBankConnected}
+            availableTransactionsCount={getAvailableTransactionsCount()}
+            hasOverBudgetItems={hasOverBudgetItems()}
+          />
+        </TourGuide>
 
         {/* Smart Insights - Only show if there are insights */}
         {insights.length > 0 && (
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 24,
-              marginBottom: 20,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
-            }}
-          >
+          <TourGuide zone={3} screen="Budget" placement="bottom">
             <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 16,
+                backgroundColor: colors.surface,
+                borderRadius: 20,
+                padding: 24,
+                marginBottom: 20,
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 4,
               }}
             >
               <View
                 style={{
-                  backgroundColor: colors.warningLight,
-                  padding: 8,
-                  borderRadius: 10,
-                  marginRight: 12,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 16,
                 }}
-              >
-                <Ionicons name="bulb" size={20} color={colors.warning} />
-              </View>
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "700",
-                  color: colors.text,
-                }}
-              >
-                {translate("smartInsights", isFriendlyMode)}
-              </Text>
-            </View>
-
-            {insights.map((insight, index) => (
-              <View
-                key={`insight-${insight.id}-${index}`}
-                style={{ marginBottom: 12 }}
               >
                 <View
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 4,
+                    backgroundColor: colors.warningLight,
+                    padding: 8,
+                    borderRadius: 10,
+                    marginRight: 12,
                   }}
                 >
-                  <Ionicons
-                    name={insight.icon as any}
-                    size={16}
-                    color={
-                      insight.type === "success"
-                        ? colors.success
-                        : insight.type === "warning"
-                        ? colors.error
-                        : colors.primary
-                    }
-                    style={{ marginRight: 8 }}
-                  />
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: colors.text,
-                      flex: 1,
-                    }}
-                  >
-                    {insight.title}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => handleDismissInsight(insight.id)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    style={{
-                      padding: 4,
-                      borderRadius: 12,
-                      backgroundColor: colors.surfaceSecondary,
-                    }}
-                  >
-                    <Ionicons
-                      name="close"
-                      size={14}
-                      color={colors.textSecondary}
-                    />
-                  </TouchableOpacity>
+                  <Ionicons name="bulb" size={20} color={colors.warning} />
                 </View>
                 <Text
                   style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    marginLeft: 24,
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: colors.text,
                   }}
                 >
-                  {insight.message}
+                  {translate("smartInsights", isFriendlyMode)}
                 </Text>
               </View>
-            ))}
-          </View>
+
+              {insights.map((insight, index) => (
+                <View
+                  key={`insight-${insight.id}-${index}`}
+                  style={{ marginBottom: 12 }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <Ionicons
+                      name={insight.icon as any}
+                      size={16}
+                      color={
+                        insight.type === "success"
+                          ? colors.success
+                          : insight.type === "warning"
+                          ? colors.error
+                          : colors.primary
+                      }
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "600",
+                        color: colors.text,
+                        flex: 1,
+                      }}
+                    >
+                      {insight.title}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => handleDismissInsight(insight.id)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={{
+                        padding: 4,
+                        borderRadius: 12,
+                        backgroundColor: colors.surfaceSecondary,
+                      }}
+                    >
+                      <Ionicons
+                        name="close"
+                        size={14}
+                        color={colors.textSecondary}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginLeft: 24,
+                    }}
+                  >
+                    {insight.message}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </TourGuide>
         )}
 
         {/* Income Section */}
@@ -1258,10 +1353,17 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                         style={{
                           fontSize: 16,
                           fontWeight: isSelected ? "700" : "500",
-                          color: isSelected ? colors.buttonText : colors.text,
+                          color: isSelected
+                            ? colors.buttonText
+                            : getMonthColor(month),
+                          flex: 1,
+                          flexWrap: "wrap",
                         }}
+                        numberOfLines={2}
+                        adjustsFontSizeToFit={true}
+                        minimumFontScale={0.8}
                       >
-                        {formatMonth(month)}
+                        {formatMonthSmart(month, 18)}
                       </Text>
                       {isCurrentMonth && (
                         <View
@@ -1318,7 +1420,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       />
 
       {/* Floating AI Chatbot - only show on main tab screens */}
-      <FloatingAIChatbot />
+      <FloatingAIChatbot hideOnScroll={true} isScrolling={isScrolling} />
     </SafeAreaView>
   );
 };

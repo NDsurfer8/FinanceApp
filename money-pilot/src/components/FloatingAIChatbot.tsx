@@ -12,10 +12,14 @@ import { useChatbot } from "../contexts/ChatbotContext";
 
 interface FloatingAIChatbotProps {
   hideOnAIScreen?: boolean;
+  hideOnScroll?: boolean;
+  isScrolling?: boolean;
 }
 
 export const FloatingAIChatbot: React.FC<FloatingAIChatbotProps> = ({
   hideOnAIScreen = false,
+  hideOnScroll = false,
+  isScrolling = false,
 }) => {
   const { isVisible } = useChatbot();
   const navigation = useNavigation<any>();
@@ -47,6 +51,17 @@ export const FloatingAIChatbot: React.FC<FloatingAIChatbotProps> = ({
       setPosition(optimalPosition);
     }
   }, [screenDimensions]);
+
+  // Handle scroll hiding animation
+  useEffect(() => {
+    if (hideOnScroll) {
+      Animated.timing(opacity, {
+        toValue: isScrolling ? 0 : 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isScrolling, hideOnScroll, opacity]);
 
   const calculateOptimalPosition = () => {
     const { width, height } = screenDimensions;
@@ -159,6 +174,9 @@ export const FloatingAIChatbot: React.FC<FloatingAIChatbotProps> = ({
   };
 
   if (!isVisible || hideOnAIScreen || position.x === 0) return null;
+
+  // Don't render if hiding on scroll and currently scrolling
+  if (hideOnScroll && isScrolling) return null;
 
   return (
     <Animated.View

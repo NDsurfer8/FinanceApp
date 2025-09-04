@@ -26,6 +26,8 @@ import { useChatbot } from "../contexts/ChatbotContext";
 import { useData } from "../contexts/DataContext";
 import { AIUsageAdminScreen } from "./AIUsageAdminScreen";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
+import { useScrollDetection } from "../hooks/useScrollDetection";
+import { useTour } from "../contexts/TourContext";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -38,8 +40,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { currentUser, forceRefresh } = useUser();
+  const { isScrolling, handleScrollBegin, handleScrollEnd } =
+    useScrollDetection();
   const [photoKey, setPhotoKey] = useState(Date.now());
   const { presentPaywall } = usePaywall();
+  const {
+    startTour,
+    hasCompletedTour,
+    setHasCompletedTour,
+    showTooltips,
+    setShowTooltips,
+  } = useTour();
 
   const handlePaywallPress = async () => {
     setLoading(true);
@@ -269,7 +280,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 16 }}
+        onScrollBeginDrag={handleScrollBegin}
+        onScrollEndDrag={handleScrollEnd}
+        onMomentumScrollBegin={handleScrollBegin}
+        onMomentumScrollEnd={handleScrollEnd}
+      >
         {/* Enhanced User Profile */}
         <View
           style={{
@@ -859,6 +876,84 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </View>
           </TouchableOpacity>
 
+          {/* Tour Controls */}
+          <TouchableOpacity
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
+            onPress={() => startTour(navigation)}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="map"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                Take App Tour
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
+            onPress={() => setShowTooltips(!showTooltips)}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="help-circle"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                Show Helpful Tooltips
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  marginRight: 8,
+                  fontSize: 14,
+                }}
+              >
+                {showTooltips ? "On" : "Off"}
+              </Text>
+              <View
+                style={{
+                  width: 44,
+                  height: 24,
+                  borderRadius: 12,
+                  backgroundColor: showTooltips
+                    ? colors.primary
+                    : colors.border,
+                  padding: 2,
+                }}
+              >
+                <View
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    backgroundColor: "#fff",
+                    transform: [{ translateX: showTooltips ? 20 : 0 }],
+                  }}
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[
               styles.settingItem,
@@ -1085,7 +1180,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       </ScrollView>
 
       {/* Floating AI Chatbot - only show on main tab screens */}
-      <FloatingAIChatbot />
+      <FloatingAIChatbot hideOnScroll={true} isScrolling={isScrolling} />
     </SafeAreaView>
   );
 };
