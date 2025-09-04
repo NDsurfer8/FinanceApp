@@ -1,5 +1,6 @@
 import { ref, set, get, push, update, remove } from "firebase/database";
 import { db, auth } from "./firebase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   removeUserFromGroup,
   removeGroupSharedData,
@@ -2678,5 +2679,84 @@ export const leaveGroup = async (
   } catch (error) {
     console.error("Error leaving group:", error);
     throw error;
+  }
+};
+
+// ===== BUDGET CATEGORIES FUNCTIONS =====
+
+export interface BudgetCategory {
+  id: string;
+  name: string;
+  monthlyLimit: number;
+  color: string;
+}
+
+// Save budget categories to AsyncStorage
+export const saveBudgetCategories = async (
+  categories: BudgetCategory[],
+  userId: string
+): Promise<void> => {
+  try {
+    const key = `budgetCategories_${userId}`;
+    await AsyncStorage.setItem(key, JSON.stringify(categories));
+    console.log("Budget categories saved to AsyncStorage successfully");
+  } catch (error) {
+    console.error("Error saving budget categories:", error);
+    throw error;
+  }
+};
+
+// Get user budget categories from AsyncStorage
+export const getUserBudgetCategories = async (
+  userId: string
+): Promise<BudgetCategory[]> => {
+  try {
+    const key = `budgetCategories_${userId}`;
+    const stored = await AsyncStorage.getItem(key);
+    
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    
+    // Return default categories if none exist
+    return [
+      { id: "1", name: "Rent", monthlyLimit: 1200, color: "#FF6B6B" },
+      { id: "2", name: "Car Payment", monthlyLimit: 400, color: "#4ECDC4" },
+      { id: "3", name: "Insurance", monthlyLimit: 200, color: "#45B7D1" },
+      { id: "4", name: "Utilities", monthlyLimit: 150, color: "#96CEB4" },
+      { id: "5", name: "Internet", monthlyLimit: 80, color: "#FFEAA7" },
+      { id: "6", name: "Phone", monthlyLimit: 100, color: "#DDA0DD" },
+      { id: "7", name: "Subscriptions", monthlyLimit: 50, color: "#FFB6C1" },
+      { id: "8", name: "Credit Card", monthlyLimit: 300, color: "#98FB98" },
+      { id: "9", name: "Loan Payment", monthlyLimit: 200, color: "#F0E68C" },
+      { id: "10", name: "Food", monthlyLimit: 400, color: "#FFA07A" },
+      { id: "11", name: "Transport", monthlyLimit: 150, color: "#87CEEB" },
+      { id: "12", name: "Health", monthlyLimit: 100, color: "#D8BFD8" },
+      { id: "13", name: "Entertainment", monthlyLimit: 100, color: "#FFD700" },
+      { id: "14", name: "Shopping", monthlyLimit: 200, color: "#FF69B4" },
+      { id: "15", name: "Business", monthlyLimit: 100, color: "#20B2AA" },
+      { id: "16", name: "Other", monthlyLimit: 100, color: "#C0C0C0" },
+    ];
+  } catch (error) {
+    console.error("Error getting budget categories:", error);
+    // Return default categories on error
+    return [
+      { id: "1", name: "Rent", monthlyLimit: 1200, color: "#FF6B6B" },
+      { id: "2", name: "Car Payment", monthlyLimit: 400, color: "#4ECDC4" },
+      { id: "3", name: "Insurance", monthlyLimit: 200, color: "#45B7D1" },
+      { id: "4", name: "Utilities", monthlyLimit: 150, color: "#96CEB4" },
+      { id: "5", name: "Internet", monthlyLimit: 80, color: "#FFEAA7" },
+      { id: "6", name: "Phone", monthlyLimit: 100, color: "#DDA0DD" },
+      { id: "7", name: "Subscriptions", monthlyLimit: 50, color: "#FFB6C1" },
+      { id: "8", name: "Credit Card", monthlyLimit: 300, color: "#98FB98" },
+      { id: "9", name: "Loan Payment", monthlyLimit: 200, color: "#F0E68C" },
+      { id: "10", name: "Food", monthlyLimit: 400, color: "#FFA07A" },
+      { id: "11", name: "Transport", monthlyLimit: 150, color: "#87CEEB" },
+      { id: "12", name: "Health", monthlyLimit: 100, color: "#D8BFD8" },
+      { id: "13", name: "Entertainment", monthlyLimit: 100, color: "#FFD700" },
+      { id: "14", name: "Shopping", monthlyLimit: 200, color: "#FF69B4" },
+      { id: "15", name: "Business", monthlyLimit: 100, color: "#20B2AA" },
+      { id: "16", name: "Other", monthlyLimit: 100, color: "#C0C0C0" },
+    ];
   }
 };

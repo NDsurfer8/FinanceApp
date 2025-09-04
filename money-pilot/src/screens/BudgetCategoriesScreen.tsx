@@ -10,18 +10,18 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
 import { useData } from "../contexts/DataContext";
-
-interface BudgetCategory {
-  id: string;
-  name: string;
-  monthlyLimit: number;
-  color: string;
-}
+import { useAuth } from "../hooks/useAuth";
+import {
+  saveBudgetCategories,
+  getUserBudgetCategories,
+  BudgetCategory,
+} from "../services/userData";
 
 interface BudgetCategoriesScreenProps {
   navigation: any;
@@ -32,27 +32,16 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
 }) => {
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
-  const { transactions, recurringTransactions, goals, budgetSettings } =
-    useData();
+  const { user } = useAuth();
+  const {
+    transactions,
+    recurringTransactions,
+    goals,
+    budgetSettings,
+    refreshBudgetSettings,
+  } = useData();
 
-  const [categories, setCategories] = useState<BudgetCategory[]>([
-    { id: "1", name: "Rent", monthlyLimit: 1200, color: "#FF6B6B" },
-    { id: "2", name: "Car Payment", monthlyLimit: 400, color: "#4ECDC4" },
-    { id: "3", name: "Insurance", monthlyLimit: 200, color: "#45B7D1" },
-    { id: "4", name: "Utilities", monthlyLimit: 150, color: "#96CEB4" },
-    { id: "5", name: "Internet", monthlyLimit: 80, color: "#FFEAA7" },
-    { id: "6", name: "Phone", monthlyLimit: 100, color: "#DDA0DD" },
-    { id: "7", name: "Subscriptions", monthlyLimit: 50, color: "#FFB6C1" },
-    { id: "8", name: "Credit Card", monthlyLimit: 300, color: "#98FB98" },
-    { id: "9", name: "Loan Payment", monthlyLimit: 200, color: "#F0E68C" },
-    { id: "10", name: "Food", monthlyLimit: 400, color: "#FFA07A" },
-    { id: "11", name: "Transport", monthlyLimit: 150, color: "#87CEEB" },
-    { id: "12", name: "Health", monthlyLimit: 100, color: "#D8BFD8" },
-    { id: "13", name: "Entertainment", monthlyLimit: 100, color: "#FFD700" },
-    { id: "14", name: "Shopping", monthlyLimit: 200, color: "#FF69B4" },
-    { id: "15", name: "Business", monthlyLimit: 100, color: "#20B2AA" },
-    { id: "16", name: "Other", monthlyLimit: 100, color: "#C0C0C0" },
-  ]);
+  const [categories, setCategories] = useState<BudgetCategory[]>([]);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<BudgetCategory | null>(
@@ -60,6 +49,31 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
   );
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryLimit, setNewCategoryLimit] = useState("");
+
+  // Load categories from AsyncStorage on component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      if (user?.uid) {
+        try {
+          const savedCategories = await getUserBudgetCategories(user.uid);
+          setCategories(savedCategories);
+        } catch (error) {
+          console.error("Error loading budget categories:", error);
+        }
+      }
+    };
+
+    loadCategories();
+  }, [user?.uid]);
+
+  // Refresh budget settings when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user?.uid) {
+        refreshBudgetSettings();
+      }
+    }, [user?.uid, refreshBudgetSettings])
+  );
 
   // Calculate current month data
   const currentMonth = new Date().getMonth();
@@ -129,22 +143,56 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     totalIncome - savingsAmount - debtPayoffAmount - monthlyGoalsContribution;
 
   const getCategorySpending = (categoryName: string) => {
+    // Get actual spending from transactions in this category
     const actualSpending = monthlyTransactions
       .filter((t) => t.category.toLowerCase() === categoryName.toLowerCase())
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const expectedSpending = monthlyRecurringExpenses * 0.2; // Simplified calculation
+    // Get actual spending from recurring transactions in this category
+    const actualRecurringSpending = recurringTransactions
+      .filter(
+        (t) =>
+          t.type === "expense" &&
+          t.isActive &&
+          t.category.toLowerCase() === categoryName.toLowerCase()
+      )
+      .reduce((sum: number, rt: any) => {
+        let monthlyAmount = rt.amount;
+        if (rt.frequency === "weekly") {
+          monthlyAmount = rt.amount * 4;
+        } else if (rt.frequency === "biweekly") {
+          monthlyAmount = rt.amount * 2;
+        }
+        return sum + monthlyAmount;
+      }, 0);
+
+    // Total actual spending = one-time transactions + recurring transactions
+    const totalActualSpending = actualSpending + actualRecurringSpending;
+
+    // Get the budget limit for this category
+    const category = categories.find(
+      (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
+    );
+    const budgetLimit = category?.monthlyLimit || 0;
+
+    // Calculate remaining budget
+    const remaining = budgetLimit - totalActualSpending;
 
     return {
-      actual: actualSpending,
-      expected: expectedSpending,
-      remaining: 0, // Will be calculated per category
+      actual: totalActualSpending,
+      budget: budgetLimit,
+      remaining: remaining,
     };
   };
 
-  const addCategory = () => {
+  const addCategory = async () => {
     if (!newCategoryName.trim() || !newCategoryLimit.trim()) {
       Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    if (!user?.uid) {
+      Alert.alert("Error", "User not authenticated");
       return;
     }
 
@@ -161,19 +209,29 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       color: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
     };
 
-    setCategories([...categories, newCategory]);
+    const updatedCategories = [...categories, newCategory];
+    setCategories(updatedCategories);
+
+    try {
+      await saveBudgetCategories(updatedCategories, user.uid);
+    } catch (error) {
+      console.error("Error saving budget categories:", error);
+      Alert.alert("Error", "Failed to save budget categories");
+    }
+
     setNewCategoryName("");
     setNewCategoryLimit("");
     setShowAddModal(false);
   };
 
-  const editCategory = () => {
-    if (
-      !editingCategory ||
-      !newCategoryName.trim() ||
-      !newCategoryLimit.trim()
-    ) {
+  const editCategory = async () => {
+    if (!editingCategory || !newCategoryLimit.trim()) {
       Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    if (!user?.uid) {
+      Alert.alert("Error", "User not authenticated");
       return;
     }
 
@@ -183,13 +241,28 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       return;
     }
 
+    // For default categories, keep the original name
     const updatedCategories = categories.map((cat) =>
       cat.id === editingCategory.id
-        ? { ...cat, name: newCategoryName.trim(), monthlyLimit: limit }
+        ? {
+            ...cat,
+            name: isDefaultCategory(editingCategory.name)
+              ? editingCategory.name
+              : newCategoryName.trim(),
+            monthlyLimit: limit,
+          }
         : cat
     );
 
     setCategories(updatedCategories);
+
+    try {
+      await saveBudgetCategories(updatedCategories, user.uid);
+    } catch (error) {
+      console.error("Error saving budget categories:", error);
+      Alert.alert("Error", "Failed to save budget categories");
+    }
+
     setEditingCategory(null);
     setNewCategoryName("");
     setNewCategoryLimit("");
@@ -204,8 +277,23 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            setCategories(categories.filter((cat) => cat.id !== categoryId));
+          onPress: async () => {
+            if (!user?.uid) {
+              Alert.alert("Error", "User not authenticated");
+              return;
+            }
+
+            const updatedCategories = categories.filter(
+              (cat) => cat.id !== categoryId
+            );
+            setCategories(updatedCategories);
+
+            try {
+              await saveBudgetCategories(updatedCategories, user.uid);
+            } catch (error) {
+              console.error("Error saving budget categories:", error);
+              Alert.alert("Error", "Failed to save budget categories");
+            }
           },
         },
       ]
@@ -216,6 +304,29 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     setEditingCategory(category);
     setNewCategoryName(category.name);
     setNewCategoryLimit(category.monthlyLimit.toString());
+  };
+
+  // Check if a category is a default category (name cannot be changed)
+  const isDefaultCategory = (categoryName: string): boolean => {
+    const defaultCategories = [
+      "Rent",
+      "Car Payment",
+      "Insurance",
+      "Utilities",
+      "Internet",
+      "Phone",
+      "Subscriptions",
+      "Credit Card",
+      "Loan Payment",
+      "Food",
+      "Transport",
+      "Health",
+      "Entertainment",
+      "Shopping",
+      "Business",
+      "Other",
+    ];
+    return defaultCategories.includes(categoryName);
   };
 
   const closeModal = () => {
@@ -304,7 +415,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
               style={{ flexDirection: "row", justifyContent: "space-between" }}
             >
               <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                Expected Expenses
+                Recurring Expenses
               </Text>
               <Text
                 style={{ fontSize: 16, fontWeight: "600", color: colors.text }}
@@ -323,9 +434,10 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                 style={{ fontSize: 16, fontWeight: "600", color: colors.text }}
               >
                 $
-                {monthlyTransactions
-                  .reduce((sum, t) => sum + t.amount, 0)
-                  .toLocaleString()}
+                {(
+                  monthlyTransactions.reduce((sum, t) => sum + t.amount, 0) +
+                  monthlyRecurringExpenses
+                ).toLocaleString()}
               </Text>
             </View>
           </View>
@@ -433,20 +545,6 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     }}
                   >
                     ${category.monthlyLimit.toLocaleString()}
-                  </Text>
-                </View>
-
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                    Expected
-                  </Text>
-                  <Text style={{ fontSize: 14, color: colors.warning }}>
-                    ${spending.expected.toFixed(0)}
                   </Text>
                 </View>
 
@@ -569,17 +667,33 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   }}
                 >
                   Category Name
+                  {editingCategory &&
+                    isDefaultCategory(editingCategory.name) && (
+                      <Text style={{ color: colors.warning, fontSize: 12 }}>
+                        {" "}
+                        (Default - Cannot Change)
+                      </Text>
+                    )}
                 </Text>
                 <TextInput
                   value={newCategoryName}
                   onChangeText={setNewCategoryName}
                   placeholder="e.g., Food & Dining"
+                  editable={
+                    !editingCategory || !isDefaultCategory(editingCategory.name)
+                  }
                   style={{
-                    backgroundColor: colors.surfaceSecondary,
+                    backgroundColor:
+                      editingCategory && isDefaultCategory(editingCategory.name)
+                        ? colors.border
+                        : colors.surfaceSecondary,
                     borderRadius: 12,
                     padding: 16,
                     fontSize: 16,
-                    color: colors.text,
+                    color:
+                      editingCategory && isDefaultCategory(editingCategory.name)
+                        ? colors.textSecondary
+                        : colors.text,
                     borderWidth: 1,
                     borderColor: colors.border,
                   }}
