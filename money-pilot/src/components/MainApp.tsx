@@ -52,6 +52,7 @@ import {
   BankTransactionsScreen,
   AIFinancialAdvisorScreen,
   FinancialPlansScreen,
+  BudgetCategoriesScreen,
 } from "../screens";
 import { AIUsageAdminScreen } from "../screens/AIUsageAdminScreen";
 import { PrivacyPolicyScreen } from "../screens/PrivacyPolicyScreen";
@@ -60,6 +61,18 @@ import GroupMembersScreen from "../screens/GroupMembersScreen";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const Stack = createStackNavigator<RootStackParamList>();
+
+// Budget Stack Navigator
+const BudgetStack = createStackNavigator();
+const BudgetStackNavigator = () => (
+  <BudgetStack.Navigator screenOptions={{ headerShown: false }}>
+    <BudgetStack.Screen name="BudgetMain" component={BudgetScreen} />
+    <BudgetStack.Screen
+      name="BudgetCategories"
+      component={BudgetCategoriesScreen}
+    />
+  </BudgetStack.Navigator>
+);
 
 type AppScreenState =
   | "splash"
@@ -684,7 +697,7 @@ const MainTabNavigator = () => {
         detachInactiveScreens={false} // Keep screens attached to prevent layout shifts
       >
         <Tab.Screen name="Dashboard" component={DashboardScreen} />
-        <Tab.Screen name="Budget" component={BudgetScreen} />
+        <Tab.Screen name="Budget" component={BudgetStackNavigator} />
         <Tab.Screen name="Goals" component={GoalTrackingScreen} />
         <Tab.Screen name="Assets/Debts" component={AssetsDebtsScreen} />
         <Tab.Screen name="Settings">

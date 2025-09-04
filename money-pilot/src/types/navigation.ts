@@ -56,4 +56,5 @@ export type RootStackParamList = {
   FinancialPlans: undefined;
   PrivacyPolicy: undefined;
   TermsOfService: undefined;
+  BudgetCategories: undefined;
 };

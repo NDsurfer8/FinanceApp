@@ -740,7 +740,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           discretionaryIncome={discretionaryIncome}
           remainingBalance={remainingBalance}
           onPressDetails={() => setShowBudgetSettingsModal(true)}
-          onPressSettings={() => setShowBudgetSettingsModal(true)}
+          onPressSettings={() => navigation.navigate("BudgetCategories")}
           onPressIncome={handleAddIncome}
           onPressExpense={handleAddExpense}
           onPressImport={() => setShowAutoImporter(true)}

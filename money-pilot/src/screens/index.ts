@@ -23,6 +23,7 @@ export { default as SubscriptionScreen } from "./SubscriptionScreen";
 export { BankTransactionsScreen } from "./BankTransactionsScreen";
 export { AIFinancialAdvisorScreen } from "./AIFinancialAdvisorScreen";
 export { FinancialPlansScreen } from "./FinancialPlansScreen";
+export { BudgetCategoriesScreen } from "./BudgetCategoriesScreen";
 export { PrivacyPolicyScreen } from "./PrivacyPolicyScreen";
 export { TermsOfServiceScreen } from "./TermsOfServiceScreen";
 export { default as GroupMembersScreen } from "./GroupMembersScreen";

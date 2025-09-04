@@ -382,6 +382,24 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
             View Details
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={onPressSettings}
+          style={{
+            backgroundColor: colors.primary,
+            padding: 12,
+            borderRadius: 12,
+            alignItems: "center",
+            justifyContent: "center",
+            minWidth: 48,
+          }}
+        >
+          <Ionicons
+            name="settings-outline"
+            size={20}
+            color={colors.buttonText}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );
