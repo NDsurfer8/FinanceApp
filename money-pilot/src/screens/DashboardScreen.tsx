@@ -12,6 +12,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useScrollDetection } from "../hooks/useScrollDetection";
+import { useTour } from "../contexts/TourContext";
 
 import { useData } from "../contexts/DataContext";
 import {
@@ -46,12 +47,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const { goals, budgetSettings, refreshAssetsDebts } = useData();
   const { isScrolling, handleScrollBegin, handleScrollEnd } =
     useScrollDetection();
+  const { startTour, hasCompletedTour, isTourStatusLoaded } = useTour();
 
   const [loading, setLoading] = useState(false);
   const [trendData, setTrendData] = useState<any[]>([]);
   const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(
     new Set()
   );
+  const [hasCheckedForTour, setHasCheckedForTour] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<number>(0);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
@@ -82,6 +85,27 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       fetchPendingInvitations();
     }
   }, [user]);
+
+  // Auto-start tour for new users
+  React.useEffect(() => {
+    if (user && !hasCheckedForTour && isTourStatusLoaded && !hasCompletedTour) {
+      setHasCheckedForTour(true);
+
+      // Small delay to ensure the screen is fully loaded
+      const timer = setTimeout(() => {
+        startTour(navigation);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [
+    user,
+    hasCheckedForTour,
+    isTourStatusLoaded,
+    hasCompletedTour,
+    startTour,
+    navigation,
+  ]);
 
   // Background refresh when screen comes into focus
   useFocusEffect(
@@ -625,7 +649,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         />
 
         {/* Monthly Overview - Large Card */}
-        <TourGuide zone={1} screen="Dashboard" placement="bottom">
+        <TourGuide zone={1} screen="Dashboard">
           <View
             style={{
               backgroundColor: colors.surface,
@@ -937,7 +961,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </TourGuide>
 
         {/* Balance Sheet Card */}
-        <TourGuide zone={2} screen="Dashboard" placement="bottom">
+        <TourGuide zone={2} screen="Dashboard">
           <View
             style={{
               backgroundColor: colors.surface,
@@ -1186,7 +1210,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </View>
       </ScrollView>
       <FloatingAIChatbot hideOnScroll={true} isScrolling={isScrolling} />
-      <TourGuide zone={3} screen="Dashboard" placement="top">
+      <TourGuide zone={3} screen="Dashboard">
         <View
           style={{
             position: "absolute",

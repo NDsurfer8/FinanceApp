@@ -26,6 +26,7 @@ export interface TourContextType {
   nextStep: (navigation?: any) => void;
   skipTour: () => void;
   hasCompletedTour: boolean;
+  isTourStatusLoaded: boolean;
 }
 
 const TourContext = createContext<TourContextType | undefined>(undefined);
@@ -47,6 +48,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
   const [isTourActive, setIsTourActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [hasCompletedTour, setHasCompletedTourState] = useState(false);
+  const [isTourStatusLoaded, setIsTourStatusLoaded] = useState(false);
 
   // Professional tour steps for each tab
   const tourSteps: TourStep[] = [
@@ -76,10 +78,10 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     },
     {
       id: "shared-finance",
-      title: "Team Up for Success",
+      title: "Ready to Start Your Journey?",
       description:
-        "Money is better together! 👥 Share your financial journey with family, partners, or roommates. Collaborate on budgets, split expenses, and achieve your goals as a team. Because financial success is a team sport!",
-      screen: "SharedFinance",
+        "You're all set! 🚀 Now let's get you started with your first budget. Tap 'Next' to go to the Budget screen where you can add your income and expenses. This is where the magic happens!",
+      screen: "Budget",
       zone: 1,
     },
   ];
@@ -97,8 +99,10 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
         `tour_completed_${user.uid}`
       );
       setHasCompletedTourState(completed === "true");
+      setIsTourStatusLoaded(true);
     } catch (error) {
       console.error("Error loading tour status:", error);
+      setIsTourStatusLoaded(true); // Set to true even on error to prevent infinite waiting
     }
   };
 
@@ -158,9 +162,19 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
       setCurrentStep(nextStepIndex);
 
       if (navigation && nextStepData) {
-        navigateToScreen(navigation, nextStepData.screen);
+        // Special case: After Assets/Debts (step 2), go to Budget screen instead of Shared Finance
+        if (nextStepIndex === 3) {
+          navigateToScreen(navigation, "Budget");
+        } else {
+          navigateToScreen(navigation, nextStepData.screen);
+        }
       }
     } else {
+      // Final step - navigate to Budget screen before completing tour
+      if (navigation) {
+        navigateToScreen(navigation, "Budget");
+      }
+
       // Tour completed
       stopTour();
       saveTourStatus(true);
@@ -181,6 +195,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     nextStep,
     skipTour,
     hasCompletedTour,
+    isTourStatusLoaded,
   };
 
   return <TourContext.Provider value={value}>{children}</TourContext.Provider>;

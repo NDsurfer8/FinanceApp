@@ -10,6 +10,7 @@ import {
   SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { useTour } from "../contexts/TourContext";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -29,6 +30,7 @@ export const TourGuide: React.FC<TourGuideProps> = ({
   const { isTourActive, currentStep, tourSteps, nextStep, skipTour } =
     useTour();
   const { colors } = useTheme();
+  const navigation = useNavigation();
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -253,7 +255,7 @@ export const TourGuide: React.FC<TourGuideProps> = ({
                   styles.primaryButton,
                   { backgroundColor: colors.primary },
                 ]}
-                onPress={() => handleButtonPress(nextStep)}
+                onPress={() => handleButtonPress(() => nextStep(navigation))}
               >
                 <Text
                   style={[
