@@ -151,6 +151,45 @@ export default function SharedGroupDetailFixed({
 
       if (realGroup) {
         setGroup(realGroup);
+
+        // Automatically sync user's data when opening the group
+        if (user?.uid) {
+          try {
+            console.log("🔄 Auto-syncing user data when opening group");
+
+            // Get user's current sharing settings for this group
+            const userSharingSettings = await getUserGroupSharingSettings(
+              user.uid,
+              groupId
+            );
+
+            if (userSharingSettings) {
+              // Get user's current financial data from context
+              const userData = {
+                transactions,
+                assets,
+                debts,
+                goals,
+                recurringTransactions,
+              };
+
+              await syncUserDataToGroup(
+                user.uid,
+                groupId,
+                userSharingSettings,
+                userData
+              );
+
+              console.log("✅ Auto-sync completed successfully");
+            } else {
+              console.log("⚠️ No sharing settings found for auto-sync");
+            }
+          } catch (syncError) {
+            console.error("❌ Error during auto-sync:", syncError);
+            // Don't show error to user for auto-sync, just log it
+          }
+        }
+
         await loadGroupFinancialData(realGroup);
       } else {
         Alert.alert("Error", "Group not found");
