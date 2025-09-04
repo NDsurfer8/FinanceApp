@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -20,7 +20,7 @@ import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
 import { useZeroLoading } from "../hooks/useZeroLoading";
-
+import { useData } from "../contexts/DataContext";
 import {
   saveTransaction,
   updateTransaction,
@@ -61,7 +61,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const { transactions, updateDataOptimistically } = useZeroLoading();
-
+  const { refreshRecurringTransactions, refreshTransactions } = useData();
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [stopFutureLoading, setStopFutureLoading] = useState(false);
@@ -393,6 +393,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             );
             updateDataOptimistically({ transactions: updatedTransactions });
 
+            // Refresh DataContext to update other screens and ensure consistency
+            await Promise.all([
+              refreshTransactions(),
+              refreshRecurringTransactions(),
+            ]);
+
             Alert.alert("Success", result.message, [
               { text: "OK", onPress: () => navigation.goBack() },
             ]);
@@ -439,6 +445,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               },
             ];
             updateDataOptimistically({ transactions: finalTransactions });
+
+            // Only refresh recurring transactions to update limits, preserve optimistic transaction updates
+            await refreshRecurringTransactions();
 
             Alert.alert("Success", result.message, [
               { text: "OK", onPress: () => navigation.goBack() },
@@ -496,6 +505,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             });
             updateDataOptimistically({ transactions: updatedTransactions });
 
+            // Refresh DataContext to update both transactions and recurring transactions
+            await Promise.all([
+              refreshTransactions(),
+              refreshRecurringTransactions(),
+            ]);
+
             Alert.alert("Success", result.message, [
               { text: "OK", onPress: () => navigation.goBack() },
             ]);
@@ -552,6 +567,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           );
 
         if (result.success) {
+          // Refresh both to ensure the newly created transaction appears
+          await Promise.all([
+            refreshTransactions(),
+            refreshRecurringTransactions(),
+          ]);
+
           Alert.alert("Success", result.message, [
             { text: "OK", onPress: () => navigation.goBack() },
           ]);
@@ -644,6 +665,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 );
 
               if (result.success) {
+                // Refresh data
+                await Promise.all([
+                  refreshTransactions(),
+                  refreshRecurringTransactions(),
+                ]);
+
                 Alert.alert("Success", result.message, [
                   { text: "OK", onPress: () => navigation.goBack() },
                 ]);
@@ -724,6 +751,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     );
 
                   if (result.success) {
+                    // Refresh DataContext to update transaction limits and ensure consistency
+                    await Promise.all([
+                      refreshTransactions(),
+                      refreshRecurringTransactions(),
+                    ]);
+
                     Alert.alert("Success", result.message, [
                       { text: "OK", onPress: () => navigation.goBack() },
                     ]);
@@ -771,6 +804,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
                   // Delete from database
                   await removeTransaction(user.uid, transaction.id);
+
+                  // Refresh DataContext to update transaction limits and ensure consistency
+                  await Promise.all([
+                    refreshTransactions(),
+                    refreshRecurringTransactions(),
+                  ]);
 
                   Alert.alert("Success", "Transaction deleted successfully!", [
                     { text: "OK", onPress: () => navigation.goBack() },
