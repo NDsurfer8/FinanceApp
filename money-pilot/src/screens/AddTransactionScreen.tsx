@@ -277,12 +277,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         "Credit Card",
         "Loan Payment",
         "Food",
-        "Transport",
+        "Transportation",
         "Health",
         "Entertainment",
         "Shopping",
         "Business",
-        "Other",
+        "Other Expenses",
       ];
     }
   };

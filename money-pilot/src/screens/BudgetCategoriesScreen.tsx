@@ -138,7 +138,119 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       if (user?.uid) {
         try {
           const savedCategories = await getUserBudgetCategories(user.uid);
-          setCategories(savedCategories);
+
+          // Migrate to updated category names
+          const migratedCategories = savedCategories.map((category) => {
+            // Map old category names to new ones
+            const categoryMappings: { [key: string]: string } = {
+              Transport: "Transportation",
+              Other: "Other Expenses",
+            };
+
+            const newCategoryName =
+              categoryMappings[category.name] || category.name;
+            return {
+              ...category,
+              name: newCategoryName,
+            };
+          });
+
+          // Remove duplicates by category name
+          const uniqueCategories = migratedCategories.filter(
+            (category, index, self) =>
+              index === self.findIndex((c) => c.name === category.name)
+          );
+
+          // If categories were migrated or duplicates were found, save the updated list
+          if (
+            JSON.stringify(savedCategories) !== JSON.stringify(uniqueCategories)
+          ) {
+            await saveBudgetCategories(uniqueCategories, user.uid);
+            console.log(
+              "Categories migrated to updated names and deduplicated"
+            );
+          }
+
+          // Always ensure all default categories are present
+          const defaultCategories = [
+            { id: "1", name: "Rent", monthlyLimit: 0, color: "#FF6B6B" },
+            {
+              id: "2",
+              name: "Car Payment",
+              monthlyLimit: 0,
+              color: "#4ECDC4",
+            },
+            { id: "3", name: "Insurance", monthlyLimit: 0, color: "#45B7D1" },
+            { id: "4", name: "Utilities", monthlyLimit: 0, color: "#96CEB4" },
+            { id: "5", name: "Internet", monthlyLimit: 0, color: "#FFEAA7" },
+            { id: "6", name: "Phone", monthlyLimit: 0, color: "#DDA0DD" },
+            {
+              id: "7",
+              name: "Subscriptions",
+              monthlyLimit: 0,
+              color: "#98D8C8",
+            },
+            {
+              id: "8",
+              name: "Credit Card",
+              monthlyLimit: 0,
+              color: "#F7DC6F",
+            },
+            {
+              id: "9",
+              name: "Loan Payment",
+              monthlyLimit: 0,
+              color: "#BB8FCE",
+            },
+            { id: "10", name: "Food", monthlyLimit: 0, color: "#85C1E9" },
+            {
+              id: "11",
+              name: "Transportation",
+              monthlyLimit: 0,
+              color: "#F8C471",
+            },
+            { id: "12", name: "Health", monthlyLimit: 0, color: "#82E0AA" },
+            {
+              id: "13",
+              name: "Entertainment",
+              monthlyLimit: 0,
+              color: "#F1948A",
+            },
+            { id: "14", name: "Shopping", monthlyLimit: 0, color: "#85C1E9" },
+            { id: "15", name: "Business", monthlyLimit: 0, color: "#D7BDE2" },
+            {
+              id: "16",
+              name: "Other Expenses",
+              monthlyLimit: 0,
+              color: "#A9CCE3",
+            },
+          ];
+
+          // Merge saved categories with default categories
+          const mergedCategories = defaultCategories.map((defaultCat) => {
+            const savedCat = uniqueCategories.find(
+              (cat) => cat.name === defaultCat.name
+            );
+            if (savedCat) {
+              return {
+                ...defaultCat,
+                monthlyLimit: savedCat.monthlyLimit,
+                color: savedCat.color || defaultCat.color,
+              };
+            }
+            return defaultCat;
+          });
+
+          // Save merged categories if they're different from saved ones
+          if (
+            JSON.stringify(uniqueCategories) !==
+            JSON.stringify(mergedCategories)
+          ) {
+            await saveBudgetCategories(mergedCategories, user.uid);
+            console.log("Updated categories with defaults");
+          }
+
+          setCategories(mergedCategories);
         } catch (error) {
           console.error("Error loading budget categories:", error);
         }
@@ -516,12 +628,12 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       "Credit Card",
       "Loan Payment",
       "Food",
-      "Transport",
+      "Transportation",
       "Health",
       "Entertainment",
       "Shopping",
       "Business",
-      "Other",
+      "Other Expenses",
     ];
     return defaultCategories.includes(categoryName);
   };
