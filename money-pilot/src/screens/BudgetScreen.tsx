@@ -16,6 +16,7 @@ import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { useFocusEffect } from "@react-navigation/native";
 import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
 import { AutoBudgetImporter } from "../components/AutoBudgetImporter";
@@ -81,7 +82,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     message: string;
   } | null>(null);
   const [budgetCategories, setBudgetCategories] = useState<any[]>([]);
+  const [seenOverBudgetCategories, setSeenOverBudgetCategories] = useState<
+    Map<string, Set<string>>
+  >(new Map());
   const monthPickerScrollRef = useRef<ScrollView>(null);
+  const lastMonthRef = useRef<string>("");
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
@@ -101,16 +106,17 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const hasOverBudgetItems = () => {
     if (budgetCategories.length === 0) return false;
 
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
+    const targetMonth = selectedMonth.getMonth();
+    const targetYear = selectedMonth.getFullYear();
+    const monthKey = `${targetMonth}-${targetYear}`;
 
     return budgetCategories.some((category) => {
       // Get actual spending for this category (transactions + recurring)
       const categoryTransactions = transactions.filter((t) => {
         const transactionDate = new Date(t.date);
         return (
-          transactionDate.getMonth() === currentMonth &&
-          transactionDate.getFullYear() === currentYear &&
+          transactionDate.getMonth() === targetMonth &&
+          transactionDate.getFullYear() === targetYear &&
           t.type === "expense" &&
           t.category === category.name
         );
@@ -131,7 +137,13 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           return sum + monthlyAmount;
         }, 0);
 
-      return actualSpending > category.monthlyLimit;
+      // Only show badge if category is over budget AND user hasn't seen it yet for this month
+      const monthSeenCategories =
+        seenOverBudgetCategories.get(monthKey) || new Set();
+      return (
+        actualSpending > category.monthlyLimit &&
+        !monthSeenCategories.has(category.name)
+      );
     });
   };
 
@@ -397,6 +409,22 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       loadBudgetCategories();
     }
   }, [user?.uid]);
+
+  // Reset seen over-budget categories monthly
+  useFocusEffect(
+    React.useCallback(() => {
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const currentMonthKey = `${currentMonth}-${currentYear}`;
+
+      // Check if we need to reset for a new month
+      if (lastMonthRef.current !== currentMonthKey) {
+        // Clear the old month's seen categories but keep the Map structure
+        setSeenOverBudgetCategories(new Map());
+        lastMonthRef.current = currentMonthKey;
+      }
+    }, [])
+  );
 
   // Save budget settings
   const handleSaveBudgetSettings = async () => {
@@ -803,8 +831,52 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           remainingBalance={remainingBalance}
           onPressDetails={() => setShowBudgetSettingsModal(true)}
           onPressSettings={() => {
-            // Clear the badge by refreshing budget categories
-            loadBudgetCategories();
+            // Mark all current over-budget categories as seen for the selected month
+            const targetMonth = selectedMonth.getMonth();
+            const targetYear = selectedMonth.getFullYear();
+            const monthKey = `${targetMonth}-${targetYear}`;
+
+            const newSeenCategories = new Map(seenOverBudgetCategories);
+            const monthSeenCategories = new Set(
+              newSeenCategories.get(monthKey) || []
+            );
+
+            budgetCategories.forEach((category) => {
+              const categoryTransactions = transactions.filter((t) => {
+                const transactionDate = new Date(t.date);
+                return (
+                  transactionDate.getMonth() === targetMonth &&
+                  transactionDate.getFullYear() === targetYear &&
+                  t.type === "expense" &&
+                  t.category === category.name
+                );
+              });
+
+              const categoryRecurring = recurringTransactions.filter((rt) => {
+                return (
+                  rt.type === "expense" &&
+                  rt.isActive &&
+                  rt.category === category.name
+                );
+              });
+
+              const actualSpending =
+                categoryTransactions.reduce((sum, t) => sum + t.amount, 0) +
+                categoryRecurring.reduce((sum, rt) => {
+                  let monthlyAmount = rt.amount;
+                  if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+                  else if (rt.frequency === "biweekly")
+                    monthlyAmount = rt.amount * 2;
+                  return sum + monthlyAmount;
+                }, 0);
+
+              if (actualSpending > category.monthlyLimit) {
+                monthSeenCategories.add(category.name);
+              }
+            });
+
+            newSeenCategories.set(monthKey, monthSeenCategories);
+            setSeenOverBudgetCategories(newSeenCategories);
             navigation.navigate("BudgetCategories", { selectedMonth });
           }}
           onPressIncome={handleAddIncome}
