@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -16,6 +16,7 @@ import { useData } from "../contexts/DataContext";
 import {
   getUserNetWorthEntries,
   updateNetWorthFromAssetsAndDebts,
+  getUserInvitations,
 } from "../services/userData";
 
 import { useTheme } from "../contexts/ThemeContext";
@@ -47,6 +48,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(
     new Set()
   );
+  const [pendingInvitations, setPendingInvitations] = useState<number>(0);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
@@ -54,6 +56,28 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const shouldWrapName = (name: string) => {
     return name.length > 15;
   };
+
+  // Function to fetch pending invitations
+  const fetchPendingInvitations = React.useCallback(async () => {
+    if (user?.email) {
+      try {
+        const invitations = await getUserInvitations(user.email);
+        const pendingCount = invitations.filter(
+          (inv) => inv.status === "pending"
+        ).length;
+        setPendingInvitations(pendingCount);
+      } catch (error) {
+        console.error("Error fetching pending invitations:", error);
+      }
+    }
+  }, [user?.email]);
+
+  // Fetch invitations when component mounts
+  React.useEffect(() => {
+    if (user) {
+      fetchPendingInvitations();
+    }
+  }, [user]);
 
   // Background refresh when screen comes into focus
   useFocusEffect(
@@ -67,8 +91,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           setTrendData(data);
         };
         refreshTrendData();
+        // Fetch pending invitations
+        fetchPendingInvitations();
       }
-    }, [user, refreshInBackground])
+    }, [user, refreshInBackground, fetchPendingInvitations])
   );
 
   // Calculate current month data
@@ -444,7 +470,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   };
 
   // Load trend data
-  useEffect(() => {
+  React.useEffect(() => {
     const loadTrendData = async () => {
       if (user) {
         // Initialize net worth if no entries exist
@@ -461,7 +487,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   }, [user, transactions, recurringTransactions, netWorth, assets, debts]); // Added assets and debts dependencies
 
   // Force refresh when assets or debts change (immediate update)
-  useEffect(() => {
+  React.useEffect(() => {
     if (user && (assets.length > 0 || debts.length > 0)) {
       const forceRefresh = async () => {
         // Force refreshing chart data due to assets/debts change
@@ -555,7 +581,36 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   elevation: 3,
                 }}
               >
-                <Ionicons name="people" size={22} color={colors.buttonText} />
+                <View style={{ position: "relative" }}>
+                  <Ionicons name="people" size={22} color={colors.buttonText} />
+                  {pendingInvitations > 0 && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: -20,
+                        right: -18,
+                        backgroundColor: colors.error,
+                        borderRadius: 10,
+                        minWidth: 20,
+                        height: 20,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        borderWidth: 1,
+                        borderColor: colors.background,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: colors.buttonText,
+                          fontSize: 12,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {pendingInvitations > 99 ? "99+" : pendingInvitations}
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </TouchableOpacity>
             </View>
           }
