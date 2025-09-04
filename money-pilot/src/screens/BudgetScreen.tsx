@@ -9,7 +9,6 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { useAuth } from "../hooks/useAuth";
@@ -19,15 +18,12 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
-
 import { AutoBudgetImporter } from "../components/AutoBudgetImporter";
 import { BudgetOverviewCard } from "../components/BudgetOverviewCard";
 import { TransactionListCard } from "../components/TransactionListCard";
-import { QuickActionsCard } from "../components/QuickActionsCard";
 import { BudgetSettingsModal } from "../components/BudgetSettingsModal";
 import { saveBudgetSettings, updateBudgetSettings } from "../services/userData";
 import { getProjectedTransactionsForMonth } from "../services/transactionService";
-import { billReminderService } from "../services/billReminders";
 import { timestampToDateString } from "../utils/dateUtils";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 
@@ -42,25 +38,17 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     budgetSettings,
     goals,
     recurringTransactions,
-    hasData,
-    getDataInstantly,
     updateDataOptimistically,
-    refreshInBackground,
     refreshData,
   } = useZeroLoading();
 
   // Bank data from global context
   const {
     bankTransactions,
-    bankAccounts,
     isBankConnected,
-    bankDataLastUpdated,
-    isBankDataLoading,
     bankConnectionError,
     setBankConnectionError,
     refreshBankData,
-    isBankDataStale,
-    refreshBudgetSettings,
   } = useData();
 
   const [selectedMonth, setSelectedMonth] = useState(new Date());

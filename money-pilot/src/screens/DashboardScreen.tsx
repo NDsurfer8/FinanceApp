@@ -50,7 +50,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
-  // Function to determine if name should be on a new line
+  // TODO: use this function
   const shouldWrapName = (name: string) => {
     return name.length > 15;
   };

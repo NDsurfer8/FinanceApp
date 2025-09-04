@@ -83,7 +83,6 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
   // Calculate totals
   const totalAssets = assets.reduce((sum, asset) => sum + asset.balance, 0);
   const totalLiabilities = debts.reduce((sum, debt) => sum + debt.balance, 0);
-  const netWorth = totalAssets - totalLiabilities;
   const totalMonthlyDebtPayments = debts.reduce(
     (sum, debt) => sum + debt.payment,
     0
@@ -170,6 +169,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
     return `$${amount.toLocaleString()}`;
   };
 
+  // TODO: use this function
   const formatRatio = (ratio: number) => {
     return ratio.toFixed(2);
   };

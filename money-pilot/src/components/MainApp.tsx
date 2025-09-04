@@ -48,7 +48,6 @@ import {
   AboutScreen,
   HelpSupportScreen,
   ForgotPasswordScreen,
-  RecurringTransactionsScreen,
   SubscriptionScreen,
   BankTransactionsScreen,
   AIFinancialAdvisorScreen,
@@ -521,10 +520,6 @@ export const MainApp: React.FC = () => {
                         <Stack.Screen
                           name="HelpSupport"
                           component={HelpSupportScreen}
-                        />
-                        <Stack.Screen
-                          name="RecurringTransactions"
-                          component={RecurringTransactionsScreen}
                         />
                         <Stack.Screen
                           name="Subscription"

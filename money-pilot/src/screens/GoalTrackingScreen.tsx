@@ -223,30 +223,6 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
       return;
     }
 
-    // Check goal limits (only for new goals, not edits)
-    // TEMPORARILY DISABLED - Commented out subscription checks for goals
-    /*
-    if (!isEditMode) {
-      if (!canAddGoal()) {
-        const limitInfo = getGoalLimitInfo();
-        // Only show upgrade alert if not unlimited (i.e., not subscribed)
-        if (!limitInfo.isUnlimited) {
-          Alert.alert(
-            "Goal Limit Reached",
-            `You've reached your limit of ${limitInfo.limit} goal${
-              limitInfo.limit !== 1 ? "s" : ""
-            } on the free plan.\n\nUpgrade to Premium for unlimited goals!`,
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Upgrade to Premium", onPress: presentPaywall },
-            ]
-          );
-        }
-        return;
-      }
-    }
-    */
-
     try {
       if (isEditMode && editingGoal) {
         // Update existing goal
@@ -542,49 +518,6 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
             </TouchableOpacity>
           }
         />
-
-        {/* Limit Indicator - Only show if not unlimited */}
-        {/* TEMPORARILY DISABLED - Commented out goal limit display
-        {!getGoalLimitInfo().isUnlimited && (
-          <View
-            style={{
-              backgroundColor: colors.warningLight,
-              borderRadius: 12,
-              padding: 12,
-              marginBottom: 16,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons
-                name="information-circle"
-                size={16}
-                color={colors.warning}
-              />
-              <Text
-                style={{ marginLeft: 8, color: colors.warning, fontSize: 14 }}
-              >
-                {`${getGoalLimitInfo().current}/${
-                  getGoalLimitInfo().limit
-                } ${translate("goals", isFriendlyMode).toLowerCase()} used`}
-              </Text>
-            </View>
-            <TouchableOpacity onPress={presentPaywall}>
-              <Text
-                style={{
-                  color: colors.warning,
-                  fontSize: 12,
-                  fontWeight: "600",
-                }}
-              >
-                Upgrade
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        */}
 
         {/* Goals Summary */}
         {goals.length > 0 && (
@@ -1655,7 +1588,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           </View>
         </Modal>
       </ScrollView>
-      
+
       {/* Floating AI Chatbot - only show on main tab screens */}
       <FloatingAIChatbot />
     </SafeAreaView>

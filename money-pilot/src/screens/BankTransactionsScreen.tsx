@@ -15,8 +15,6 @@ import { useData } from "../contexts/DataContext";
 import { useSubscription } from "../contexts/SubscriptionContext";
 import { usePaywall } from "../hooks/usePaywall";
 import { plaidService } from "../services/plaid";
-import { AccountSelector } from "../components/AccountSelector";
-import { PlaidAccount, PlaidTransaction } from "../services/plaid";
 import { plaidAssetDebtImporter } from "../services/plaidAssetDebtImporter";
 
 interface BankTransactionsScreenProps {
@@ -31,13 +29,11 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
   const dataContext = useData();
   const {
     bankAccounts,
-    setSelectedBankAccount,
-    selectedBankAccount,
+
     refreshBankData,
     isBankConnected,
   } = dataContext;
-  const { isFeatureAvailable, PREMIUM_FEATURES, hasPremiumAccess } =
-    useSubscription();
+  const { hasPremiumAccess } = useSubscription();
   const { presentPaywall } = usePaywall();
 
   // Filter accounts to only show checking/savings accounts (not loans)

@@ -9,15 +9,12 @@ import {
   Alert,
   SafeAreaView,
 } from "react-native";
-import {
-  useNavigation,
-  useRoute,
-  useFocusEffect,
-} from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
+import { useData } from "../contexts/DataContext";
 import { SharedGroup, getSharedGroup } from "../services/userData";
 import { syncUserDataToGroup } from "../services/sharedFinanceDataSync";
 
@@ -48,14 +45,16 @@ export default function GroupDataSharingScreen({
   const { groupId } = route.params;
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { transactions, assets, debts, goals, recurringTransactions } =
+    useData();
   const [group, setGroup] = useState<SharedGroup | null>(null);
   const [settings, setSettings] = useState<GroupDataSharingSettings>({
     shareNetWorth: true,
     shareMonthlyIncome: true,
     shareMonthlyExpenses: true,
-    shareTransactions: true,
-    shareRecurringTransactions: true,
-    shareAssets: false,
+    shareTransactions: false,
+    shareRecurringTransactions: false,
+    shareAssets: true,
     shareDebts: false,
     shareGoals: false,
   });
@@ -91,6 +90,28 @@ export default function GroupDataSharingScreen({
   };
 
   const getStorageKey = () => `groupSharing_${user?.uid}_${groupId}`;
+
+  const getUserFinancialData = async (userId: string) => {
+    try {
+      // Return the data from the context
+      return {
+        transactions,
+        assets,
+        debts,
+        goals,
+        recurringTransactions,
+      };
+    } catch (error) {
+      console.error("Error getting user financial data:", error);
+      return {
+        transactions: [],
+        assets: [],
+        debts: [],
+        goals: [],
+        recurringTransactions: [],
+      };
+    }
+  };
 
   const loadSharingSettings = async () => {
     try {
@@ -160,17 +181,21 @@ export default function GroupDataSharingScreen({
     try {
       console.log("💾 Saving sharing settings:", settings);
 
-      // For now, just save the settings locally
-      // Real-time syncing will be implemented when users make changes to their finances
-      console.log("✅ Sharing settings saved successfully");
+      // Get user's current financial data
+      const userData = await getUserFinancialData(user.uid);
+
+      // Sync user's data to the group with the selected settings
+      await syncUserDataToGroup(user.uid, group.id!, settings, userData);
+
+      console.log("✅ Data sync complete");
       Alert.alert(
         "Success",
-        `Data sharing settings updated for ${group.name}! Your data will be synced when you make changes to your finances.`
+        `Your data has been synced to ${group.name}! You can manually sync again anytime you want to update the shared data.`
       );
       navigation.goBack();
     } catch (error) {
-      console.error("❌ Error saving group sharing settings:", error);
-      Alert.alert("Error", "Failed to save settings. Please try again.");
+      console.error("❌ Error syncing data:", error);
+      Alert.alert("Error", "Failed to sync data. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -284,8 +309,8 @@ export default function GroupDataSharingScreen({
           <Text
             style={[styles.sectionDescription, { color: colors.textSecondary }]}
           >
-            Choose which financial information you want to automatically share
-            with {group.name} members. Your data will update in real-time.
+            Choose which financial information you want to share with{" "}
+            {group.name} members. Your data will be synced when you save.
           </Text>
         </View>
 
@@ -359,8 +384,8 @@ export default function GroupDataSharingScreen({
             <Ionicons name="information-circle" size={20} color={colors.info} />
           </View>
           <Text style={[styles.infoText, { color: colors.info }]}>
-            Your data will automatically sync in real-time with members of{" "}
-            {group.name}. You can change these settings at any time.
+            Your data will be synced to {group.name} when you save. You can sync
+            again anytime to update the shared data.
           </Text>
         </View>
       </ScrollView>
@@ -381,7 +406,7 @@ export default function GroupDataSharingScreen({
           disabled={isLoading}
         >
           <Text style={[styles.saveButtonText, { color: colors.buttonText }]}>
-            {isLoading ? "Setting Up..." : "Save & Enable Real-Time Sharing"}
+            {isLoading ? "Syncing..." : "Save & Sync Data"}
           </Text>
         </TouchableOpacity>
       </View>
