@@ -931,7 +931,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           )}
         </View>
 
-        {/* Enhanced Action Buttons */}
+        {/* Action Buttons */}
         <View
           style={{
             flexDirection: "row",
@@ -944,11 +944,13 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             onPress={() => handleQuickAction("asset")}
             style={{
               backgroundColor: colors.success,
-              paddingHorizontal: 24,
-              paddingVertical: 16,
-              borderRadius: 16,
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+              borderRadius: 12,
               flex: 1,
+              flexDirection: "row",
               alignItems: "center",
+              justifyContent: "center",
               shadowColor: colors.shadow,
               shadowOpacity: 0.1,
               shadowRadius: 8,
@@ -957,39 +959,21 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             }}
             activeOpacity={0.8}
           >
-            <View
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: "rgba(0, 0, 0, 0.2)",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 12,
-              }}
-            >
-              <Ionicons name="add" size={24} color={colors.buttonText} />
-            </View>
+            <Ionicons
+              name="add"
+              size={20}
+              color={colors.buttonText}
+              style={{ marginRight: 8 }}
+            />
             <Text
               style={{
                 fontFamily: fontFamily.semiBold,
                 color: colors.buttonText,
                 fontWeight: "600",
                 fontSize: 16,
-                marginBottom: 4,
               }}
             >
               Add Asset
-            </Text>
-            <Text
-              style={{
-                fontFamily: fontFamily.regular,
-                color: "rgba(255, 255, 255, 0.8)",
-                fontSize: 12,
-                textAlign: "center",
-              }}
-            >
-              Cash, investments, property
             </Text>
           </TouchableOpacity>
 
@@ -997,11 +981,13 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             onPress={() => handleQuickAction("debt")}
             style={{
               backgroundColor: colors.error,
-              paddingHorizontal: 24,
-              paddingVertical: 16,
-              borderRadius: 16,
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+              borderRadius: 12,
               flex: 1,
+              flexDirection: "row",
               alignItems: "center",
+              justifyContent: "center",
               shadowColor: colors.shadow,
               shadowOpacity: 0.1,
               shadowRadius: 8,
@@ -1010,39 +996,21 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             }}
             activeOpacity={0.8}
           >
-            <View
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: "rgba(0, 0, 0, 0.2)",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 12,
-              }}
-            >
-              <Ionicons name="add" size={24} color={colors.buttonText} />
-            </View>
+            <Ionicons
+              name="add"
+              size={20}
+              color={colors.buttonText}
+              style={{ marginRight: 8 }}
+            />
             <Text
               style={{
                 fontFamily: fontFamily.semiBold,
                 color: colors.buttonText,
                 fontWeight: "600",
                 fontSize: 16,
-                marginBottom: 4,
               }}
             >
               Add Debt
-            </Text>
-            <Text
-              style={{
-                fontFamily: fontFamily.regular,
-                color: "rgba(255, 255, 255, 0.8)",
-                fontSize: 12,
-                textAlign: "center",
-              }}
-            >
-              Loans, credit cards, mortgages
             </Text>
           </TouchableOpacity>
         </View>
