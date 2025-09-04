@@ -54,6 +54,40 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
   const [tempCategoryLimit, setTempCategoryLimit] = useState("");
   const scrollViewRef = useRef<ScrollView>(null);
 
+  // Check if a category is over budget
+  const isCategoryOverBudget = (category: BudgetCategory) => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    // Get actual spending for this category (transactions + recurring)
+    const categoryTransactions = transactions.filter((t) => {
+      const transactionDate = new Date(t.date);
+      return (
+        transactionDate.getMonth() === currentMonth &&
+        transactionDate.getFullYear() === currentYear &&
+        t.type === "expense" &&
+        t.category === category.name
+      );
+    });
+
+    const categoryRecurring = recurringTransactions.filter((rt) => {
+      return (
+        rt.type === "expense" && rt.isActive && rt.category === category.name
+      );
+    });
+
+    const actualSpending =
+      categoryTransactions.reduce((sum, t) => sum + t.amount, 0) +
+      categoryRecurring.reduce((sum, rt) => {
+        let monthlyAmount = rt.amount;
+        if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+        else if (rt.frequency === "biweekly") monthlyAmount = rt.amount * 2;
+        return sum + monthlyAmount;
+      }, 0);
+
+    return actualSpending > category.monthlyLimit;
+  };
+
   // Handle input focus and scroll to input
   const handleInputFocus = () => {
     setTimeout(() => {
@@ -599,6 +633,27 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   >
                     {category.name}
                   </Text>
+                  {isCategoryOverBudget(category) && (
+                    <View
+                      style={{
+                        marginLeft: 8,
+                        backgroundColor: colors.error,
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        borderRadius: 10,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: "700",
+                          color: colors.buttonText,
+                        }}
+                      >
+                        OVER
+                      </Text>
+                    </View>
+                  )}
                 </View>
 
                 <View style={{ flexDirection: "row", gap: 6 }}>
@@ -728,6 +783,30 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                 >
                   {progressPercentage.toFixed(1)}% of budget used
                 </Text>
+                {isCategoryOverBudget(category) && (
+                  <View
+                    style={{
+                      marginTop: 8,
+                      padding: 8,
+                      backgroundColor: colors.error + "15",
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: colors.error + "30",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: colors.error,
+                        textAlign: "center",
+                        fontWeight: "600",
+                      }}
+                    >
+                      ⚠️ Over budget by $
+                      {(spending.actual - category.monthlyLimit).toFixed(0)}
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
           );

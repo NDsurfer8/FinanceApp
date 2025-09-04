@@ -22,7 +22,11 @@ import { AutoBudgetImporter } from "../components/AutoBudgetImporter";
 import { BudgetOverviewCard } from "../components/BudgetOverviewCard";
 import { TransactionListCard } from "../components/TransactionListCard";
 import { BudgetSettingsModal } from "../components/BudgetSettingsModal";
-import { saveBudgetSettings, updateBudgetSettings } from "../services/userData";
+import {
+  saveBudgetSettings,
+  updateBudgetSettings,
+  getUserBudgetCategories,
+} from "../services/userData";
 import { getProjectedTransactionsForMonth } from "../services/transactionService";
 import { timestampToDateString } from "../utils/dateUtils";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
@@ -76,9 +80,60 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     count: number;
     message: string;
   } | null>(null);
+  const [budgetCategories, setBudgetCategories] = useState<any[]>([]);
   const monthPickerScrollRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
+
+  // Load budget categories and check for over-budget items
+  const loadBudgetCategories = async () => {
+    if (user?.uid) {
+      try {
+        const categories = await getUserBudgetCategories(user.uid);
+        setBudgetCategories(categories);
+      } catch (error) {
+        console.error("Error loading budget categories:", error);
+      }
+    }
+  };
+
+  // Check if any categories are over their monthly limits
+  const hasOverBudgetItems = () => {
+    if (budgetCategories.length === 0) return false;
+
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    return budgetCategories.some((category) => {
+      // Get actual spending for this category (transactions + recurring)
+      const categoryTransactions = transactions.filter((t) => {
+        const transactionDate = new Date(t.date);
+        return (
+          transactionDate.getMonth() === currentMonth &&
+          transactionDate.getFullYear() === currentYear &&
+          t.type === "expense" &&
+          t.category === category.name
+        );
+      });
+
+      const categoryRecurring = recurringTransactions.filter((rt) => {
+        return (
+          rt.type === "expense" && rt.isActive && rt.category === category.name
+        );
+      });
+
+      const actualSpending =
+        categoryTransactions.reduce((sum, t) => sum + t.amount, 0) +
+        categoryRecurring.reduce((sum, rt) => {
+          let monthlyAmount = rt.amount;
+          if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+          else if (rt.frequency === "biweekly") monthlyAmount = rt.amount * 2;
+          return sum + monthlyAmount;
+        }, 0);
+
+      return actualSpending > category.monthlyLimit;
+    });
+  };
 
   // Helper function to check if a bank transaction already exists in budget (same as AutoBudgetImporter)
   const isTransactionAlreadyImported = (bankTransaction: any): boolean => {
@@ -335,6 +390,13 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       setHasUnsavedChanges(hasChanges);
     }
   }, [savingsPercentage, debtPayoffPercentage, budgetSettings]);
+
+  // Load budget categories when component mounts
+  useEffect(() => {
+    if (user?.uid) {
+      loadBudgetCategories();
+    }
+  }, [user?.uid]);
 
   // Save budget settings
   const handleSaveBudgetSettings = async () => {
@@ -740,12 +802,17 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           discretionaryIncome={discretionaryIncome}
           remainingBalance={remainingBalance}
           onPressDetails={() => setShowBudgetSettingsModal(true)}
-          onPressSettings={() => navigation.navigate("BudgetCategories")}
+          onPressSettings={() => {
+            // Clear the badge by refreshing budget categories
+            loadBudgetCategories();
+            navigation.navigate("BudgetCategories");
+          }}
           onPressIncome={handleAddIncome}
           onPressExpense={handleAddExpense}
           onPressImport={() => setShowAutoImporter(true)}
           isBankConnected={isBankConnected}
           availableTransactionsCount={getAvailableTransactionsCount()}
+          hasOverBudgetItems={hasOverBudgetItems()}
         />
 
         {/* Smart Insights - Only show if there are insights */}

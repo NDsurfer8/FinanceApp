@@ -20,6 +20,7 @@ interface BudgetOverviewCardProps {
   onPressImport?: () => void;
   isBankConnected?: boolean;
   availableTransactionsCount?: number;
+  hasOverBudgetItems?: boolean;
 }
 
 export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
@@ -392,6 +393,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
             alignItems: "center",
             justifyContent: "center",
             minWidth: 48,
+            position: "relative",
           }}
         >
           <Ionicons
@@ -399,6 +401,33 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
             size={20}
             color={colors.buttonText}
           />
+          {props.hasOverBudgetItems && (
+            <View
+              style={{
+                position: "absolute",
+                top: -4,
+                right: -4,
+                backgroundColor: colors.error,
+                borderRadius: 8,
+                width: 16,
+                height: 16,
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: 2,
+                borderColor: colors.surface,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.buttonText,
+                  fontSize: 10,
+                  fontWeight: "700",
+                }}
+              >
+                !
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
     </View>
