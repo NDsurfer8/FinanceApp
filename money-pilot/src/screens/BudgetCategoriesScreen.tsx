@@ -359,79 +359,99 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       />
 
       <ScrollView
-        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 30 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Summary Card */}
         <View
           style={{
             backgroundColor: colors.surface,
-            borderRadius: 20,
-            padding: 24,
-            marginBottom: 20,
+            borderRadius: 16,
+            padding: 20,
+            marginBottom: 16,
             shadowColor: colors.shadow,
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 2 },
+            elevation: 3,
           }}
         >
           <Text
             style={{
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: "700",
               color: colors.text,
-              marginBottom: 16,
+              marginBottom: 12,
             }}
           >
             Monthly Overview
           </Text>
           <Text
             style={{
-              fontSize: 12,
+              fontSize: 11,
               color: colors.textSecondary,
               marginBottom: 16,
+              lineHeight: 16,
             }}
           >
             Total Budget = Total Income - Savings ({savingsPercentage}%) - Debt
             Payoff ({debtPayoffPercentage}%) - Goal Contribution
           </Text>
 
-          <View style={{ gap: 16 }}>
+          <View style={{ gap: 12 }}>
             <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingVertical: 4,
+              }}
             >
-              <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+              <Text style={{ fontSize: 13, color: colors.textSecondary }}>
                 Total Budget
               </Text>
               <Text
-                style={{ fontSize: 16, fontWeight: "600", color: colors.text }}
+                style={{
+                  fontSize: 15,
+                  fontWeight: "600",
+                  color: colors.primary,
+                }}
               >
                 ${totalBudget.toLocaleString()}
               </Text>
             </View>
 
             <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingVertical: 4,
+              }}
             >
-              <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+              <Text style={{ fontSize: 13, color: colors.textSecondary }}>
                 Recurring Expenses
               </Text>
               <Text
-                style={{ fontSize: 16, fontWeight: "600", color: colors.text }}
+                style={{ fontSize: 13, fontWeight: "500", color: colors.text }}
               >
                 ${monthlyRecurringExpenses.toLocaleString()}
               </Text>
             </View>
 
             <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingVertical: 4,
+              }}
             >
-              <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+              <Text style={{ fontSize: 13, color: colors.textSecondary }}>
                 Actual Spending
               </Text>
               <Text
-                style={{ fontSize: 16, fontWeight: "600", color: colors.text }}
+                style={{ fontSize: 13, fontWeight: "500", color: colors.text }}
               >
                 $
                 {(
@@ -457,14 +477,14 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
               key={category.id}
               style={{
                 backgroundColor: colors.surface,
-                borderRadius: 20,
-                padding: 24,
-                marginBottom: 16,
+                borderRadius: 16,
+                padding: 18,
+                marginBottom: 12,
                 shadowColor: colors.shadow,
-                shadowOpacity: 0.08,
-                shadowRadius: 12,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 4,
+                shadowOpacity: 0.06,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 2 },
+                elevation: 3,
               }}
             >
               {/* Category Header */}
@@ -473,22 +493,22 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   flexDirection: "row",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: 16,
+                  marginBottom: 14,
                 }}
               >
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <View
                     style={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: 6,
+                      width: 10,
+                      height: 10,
+                      borderRadius: 5,
                       backgroundColor: category.color,
-                      marginRight: 12,
+                      marginRight: 10,
                     }}
                   />
                   <Text
                     style={{
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: "700",
                       color: colors.text,
                     }}
@@ -497,29 +517,29 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   </Text>
                 </View>
 
-                <View style={{ flexDirection: "row", gap: 8 }}>
+                <View style={{ flexDirection: "row", gap: 6 }}>
                   <TouchableOpacity
                     onPress={() => openEditModal(category)}
                     style={{
-                      padding: 8,
-                      borderRadius: 8,
+                      padding: 6,
+                      borderRadius: 6,
                       backgroundColor: colors.surfaceSecondary,
                     }}
                   >
-                    <Ionicons name="pencil" size={16} color={colors.primary} />
+                    <Ionicons name="pencil" size={14} color={colors.primary} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={() => deleteCategory(category.id)}
                     style={{
-                      padding: 8,
-                      borderRadius: 8,
+                      padding: 6,
+                      borderRadius: 6,
                       backgroundColor: colors.error,
                     }}
                   >
                     <Ionicons
                       name="trash"
-                      size={16}
+                      size={14}
                       color={colors.buttonText}
                     />
                   </TouchableOpacity>
@@ -527,19 +547,21 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
               </View>
 
               {/* Budget vs Actual */}
-              <View style={{ gap: 12 }}>
+              <View style={{ gap: 10 }}>
                 <View
                   style={{
                     flexDirection: "row",
                     justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingVertical: 3,
                   }}
                 >
-                  <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>
                     Monthly Limit
                   </Text>
                   <Text
                     style={{
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: "600",
                       color: colors.text,
                     }}
@@ -552,12 +574,14 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   style={{
                     flexDirection: "row",
                     justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingVertical: 3,
                   }}
                 >
-                  <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>
                     Actual
                   </Text>
-                  <Text style={{ fontSize: 14, color: colors.primary }}>
+                  <Text style={{ fontSize: 13, color: colors.primary }}>
                     ${spending.actual.toFixed(0)}
                   </Text>
                 </View>
@@ -566,14 +590,16 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   style={{
                     flexDirection: "row",
                     justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingVertical: 3,
                   }}
                 >
-                  <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>
                     Remaining
                   </Text>
                   <Text
                     style={{
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: "600",
                       color: remaining >= 0 ? colors.success : colors.error,
                     }}
@@ -584,32 +610,32 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
               </View>
 
               {/* Progress Bar */}
-              <View style={{ marginTop: 16 }}>
+              <View style={{ marginTop: 14 }}>
                 <View
                   style={{
-                    height: 8,
+                    height: 6,
                     backgroundColor: colors.border,
-                    borderRadius: 4,
+                    borderRadius: 3,
                     overflow: "hidden",
                   }}
                 >
                   <View
                     style={{
                       width: `${progressPercentage}%`,
-                      height: 8,
+                      height: 6,
                       backgroundColor:
                         progressPercentage > 100
                           ? colors.error
                           : colors.primary,
-                      borderRadius: 4,
+                      borderRadius: 3,
                     }}
                   />
                 </View>
                 <Text
                   style={{
-                    fontSize: 12,
+                    fontSize: 11,
                     color: colors.textSecondary,
-                    marginTop: 4,
+                    marginTop: 3,
                     textAlign: "center",
                   }}
                 >
