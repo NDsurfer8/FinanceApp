@@ -47,8 +47,6 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   const { hasPremiumAccess } = useSubscription();
   const { presentPaywall } = usePaywall();
 
-
-
   // Background refresh when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
@@ -121,74 +119,78 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
     type: "asset" | "debt",
     icon: string,
     message: string
-  ) => (
-    <View
-      style={{
-        alignItems: "center",
-        padding: 32,
-        backgroundColor: colors.surfaceSecondary,
-        borderRadius: 16,
-        marginVertical: 8,
-      }}
-    >
+  ) => {
+    const iconColor = type === "asset" ? colors.success : colors.error;
+    const backgroundColor =
+      type === "asset" ? colors.success + "20" : colors.error + "20";
+
+    return (
       <View
         style={{
-          width: 64,
-          height: 64,
-          borderRadius: 32,
-          backgroundColor: colors.primaryLight,
           alignItems: "center",
-          justifyContent: "center",
-          marginBottom: 16,
+          padding: 32,
+          backgroundColor: colors.surfaceSecondary,
+          borderRadius: 16,
+          marginVertical: 8,
         }}
       >
-        <Ionicons name={icon as any} size={28} color={colors.primary} />
-      </View>
-      <Text
-        style={{
-          fontFamily: fontFamily.medium,
-          color: colors.textSecondary,
-          fontSize: 16,
-          textAlign: "center",
-          marginBottom: 8,
-        }}
-      >
-        {message}
-      </Text>
-      <TouchableOpacity
-        onPress={() => handleQuickAction(type)}
-        style={{
-          backgroundColor: colors.primary,
-          paddingHorizontal: 20,
-          paddingVertical: 10,
-          borderRadius: 20,
-          flexDirection: "row",
-          alignItems: "center",
-        }}
-      >
-        <Ionicons
-          name="add"
-          size={16}
-          color={colors.buttonText}
-          style={{ marginRight: 6 }}
-        />
-        <Text
+        <View
           style={{
-            fontFamily: fontFamily.semiBold,
-            color: colors.buttonText,
-            fontSize: 14,
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            backgroundColor: backgroundColor,
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 16,
           }}
         >
-          Add Your First {type === "asset" ? "Asset" : "Debt"}
+          <Ionicons name={icon as any} size={28} color={iconColor} />
+        </View>
+        <Text
+          style={{
+            fontFamily: fontFamily.medium,
+            color: colors.textSecondary,
+            fontSize: 16,
+            textAlign: "center",
+            marginBottom: 8,
+          }}
+        >
+          {message}
         </Text>
-      </TouchableOpacity>
-    </View>
-  );
+        <TouchableOpacity
+          onPress={() => handleQuickAction(type)}
+          style={{
+            backgroundColor: colors.primary,
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            borderRadius: 20,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <Ionicons
+            name="add"
+            size={16}
+            color={colors.buttonText}
+            style={{ marginRight: 6 }}
+          />
+          <Text
+            style={{
+              fontFamily: fontFamily.semiBold,
+              color: colors.buttonText,
+              fontSize: 14,
+            }}
+          >
+            Add Your First {type === "asset" ? "Asset" : "Debt"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const renderAssetItem = (asset: any, index: number) => (
-    <View
-      key={asset.id}
-    >
+    <View key={asset.id}>
       <TouchableOpacity
         style={{
           backgroundColor: colors.surface,
@@ -291,9 +293,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   );
 
   const renderDebtItem = (debt: any, index: number) => (
-    <View
-      key={debt.id}
-    >
+    <View key={debt.id}>
       <TouchableOpacity
         style={{
           backgroundColor: colors.surface,
@@ -701,7 +701,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 width: 40,
                 height: 40,
                 borderRadius: 20,
-                backgroundColor: colors.successLight,
+                backgroundColor: colors.success + "20",
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 16,
@@ -748,18 +748,18 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             </TouchableOpacity>
           </View>
 
-          {!hasAssets ? (
-            renderEmptyState(
-              "asset",
-              "wallet-outline",
-              `No ${translate(
-                "assets",
-                isFriendlyMode
-              ).toLowerCase()} yet. Start building your wealth by adding your first asset.`
-            )
-          ) : (
+          {!isAssetsCollapsed && (
             <>
-              {!isAssetsCollapsed && (
+              {!hasAssets ? (
+                renderEmptyState(
+                  "asset",
+                  "wallet-outline",
+                  `No ${translate(
+                    "assets",
+                    isFriendlyMode
+                  ).toLowerCase()} yet. Start building your wealth by adding your first asset.`
+                )
+              ) : (
                 <>
                   {assets.map((asset, i) => renderAssetItem(asset, i))}
                   <View
@@ -829,7 +829,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 width: 40,
                 height: 40,
                 borderRadius: 20,
-                backgroundColor: colors.errorLight,
+                backgroundColor: colors.error + "20",
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 16,
@@ -876,18 +876,18 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             </TouchableOpacity>
           </View>
 
-          {!hasDebts ? (
-            renderEmptyState(
-              "debt",
-              "card-outline",
-              `No ${translate(
-                "debt",
-                isFriendlyMode
-              ).toLowerCase()} yet. Track your debts to better manage your finances.`
-            )
-          ) : (
+          {!isDebtsCollapsed && (
             <>
-              {!isDebtsCollapsed && (
+              {!hasDebts ? (
+                renderEmptyState(
+                  "debt",
+                  "card-outline",
+                  `No ${translate(
+                    "debt",
+                    isFriendlyMode
+                  ).toLowerCase()} yet. Track your debts to better manage your finances.`
+                )
+              ) : (
                 <>
                   {debts.map((debt, i) => renderDebtItem(debt, i))}
                   <View
