@@ -51,6 +51,9 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   const { hasPremiumAccess } = useSubscription();
   const { presentPaywall } = usePaywall();
 
+  // Animation for glow effect when no assets
+  const assetsGlowAnim = React.useRef(new Animated.Value(0)).current;
+
   // Background refresh when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
@@ -59,6 +62,31 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
       }
     }, [user, refreshInBackground])
   );
+
+  // Animate glow effect when no assets
+  useEffect(() => {
+    if (assets.length === 0) {
+      // Start pulsing glow animation
+      const pulseAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(assetsGlowAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+          Animated.timing(assetsGlowAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+        ])
+      );
+      pulseAnimation.start();
+    } else {
+      // Stop animation and reset
+      assetsGlowAnim.setValue(0);
+    }
+  }, [assets.length]);
 
   const assetTotal = assets.reduce((sum, asset) => sum + asset.balance, 0);
   const totalDebt = debts.reduce((sum, debt) => sum + debt.balance, 0);
@@ -128,6 +156,92 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
     const backgroundColor =
       type === "asset" ? colors.success + "20" : colors.error + "20";
 
+    if (type === "asset") {
+      return (
+        <Animated.View
+          style={{
+            alignItems: "center",
+            padding: 32,
+            backgroundColor: colors.surfaceSecondary,
+            borderRadius: 16,
+            marginVertical: 8,
+            shadowColor: colors.primary,
+            shadowOpacity: assetsGlowAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.08, 0.3],
+            }),
+            shadowRadius: assetsGlowAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [12, 20],
+            }),
+            shadowOffset: { width: 0, height: 4 },
+            elevation: assetsGlowAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [4, 8],
+            }),
+            borderWidth: 2,
+            borderColor: assetsGlowAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [colors.primary + "40", colors.primary + "80"],
+            }),
+          }}
+        >
+          <View
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              backgroundColor: backgroundColor,
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 16,
+            }}
+          >
+            <Ionicons name={icon as any} size={28} color={iconColor} />
+          </View>
+          <Text
+            style={{
+              fontFamily: fontFamily.medium,
+              color: colors.textSecondary,
+              fontSize: 16,
+              textAlign: "center",
+              marginBottom: 8,
+            }}
+          >
+            {message}
+          </Text>
+          <TouchableOpacity
+            onPress={() => handleQuickAction(type)}
+            style={{
+              backgroundColor: colors.primary,
+              paddingHorizontal: 20,
+              paddingVertical: 10,
+              borderRadius: 20,
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <Ionicons
+              name="add"
+              size={16}
+              color={colors.buttonText}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={{
+                fontFamily: fontFamily.semiBold,
+                color: colors.buttonText,
+                fontSize: 14,
+              }}
+            >
+              Add Your First {type === "asset" ? "Asset" : "Debt"}
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      );
+    }
+
+    // For debts, use regular View without glow
     return (
       <View
         style={{
@@ -186,7 +300,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               fontSize: 14,
             }}
           >
-            Add Your First {type === "asset" ? "Asset" : "Debt"}
+            Add Your First Debt
           </Text>
         </TouchableOpacity>
       </View>
@@ -460,7 +574,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
       </View>
 
       {/* Net Worth Summary */}
-      <TourGuide zone={1} screen="AssetsDebts" placement="bottom">
+      <TourGuide zone={1} screen="AssetsDebts">
         <View
           style={{
             backgroundColor: colors.surfaceSecondary,
@@ -686,7 +800,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         {renderFinancialInsights()}
 
         {/* Assets Section */}
-        <TourGuide zone={2} screen="AssetsDebts" placement="bottom">
+        <TourGuide zone={2} screen="AssetsDebts">
           <View
             style={{
               backgroundColor: colors.surface,
@@ -816,7 +930,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         </TourGuide>
 
         {/* Debts Section */}
-        <TourGuide zone={3} screen="AssetsDebts" placement="bottom">
+        <TourGuide zone={3} screen="AssetsDebts">
           <View
             style={{
               backgroundColor: colors.surface,
@@ -946,7 +1060,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         </TourGuide>
 
         {/* Action Buttons */}
-        <TourGuide zone={4} screen="AssetsDebts" placement="top">
+        <TourGuide zone={4} screen="AssetsDebts">
           <View
             style={{
               flexDirection: "row",
