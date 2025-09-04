@@ -14,6 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSubscription } from "../contexts/SubscriptionContext";
+import { usePaywall } from "../hooks/usePaywall";
 import {
   createSharedGroup,
   createInvitation,
@@ -39,6 +41,8 @@ export default function SharedFinanceScreen({
 }: SharedFinanceScreenProps) {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { hasPremiumAccess } = useSubscription();
+  const { presentPaywall } = usePaywall();
   const [groups, setGroups] = useState<SharedGroup[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -108,6 +112,25 @@ export default function SharedFinanceScreen({
 
   const handleCreateGroup = async () => {
     if (!groupName.trim() || !user?.uid) return;
+
+    // Check if user has premium access for creating groups
+    if (!hasPremiumAccess()) {
+      Alert.alert(
+        "Premium Feature",
+        "Creating shared finance groups requires a premium subscription. Upgrade to start collaborating on your finances with family, partners, or business associates.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Upgrade",
+            onPress: () => presentPaywall(),
+          },
+        ]
+      );
+      return;
+    }
 
     try {
       // Get the user's profile to get their actual display name
@@ -396,6 +419,14 @@ export default function SharedFinanceScreen({
         <Text style={[styles.createButtonText, { color: colors.buttonText }]}>
           Create Your First Group
         </Text>
+        {!hasPremiumAccess() && (
+          <Ionicons
+            name="star"
+            size={16}
+            color={colors.buttonText}
+            style={{ marginLeft: 8 }}
+          />
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -506,7 +537,7 @@ export default function SharedFinanceScreen({
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       {/* Header */}
-      <TourGuide zone={1} screen="SharedFinance" placement="bottom">
+      <TourGuide zone={1} screen="SharedFinance">
         <View style={[styles.header, { backgroundColor: colors.surface }]}>
           <View style={styles.headerContent}>
             <TouchableOpacity
@@ -528,7 +559,7 @@ export default function SharedFinanceScreen({
               )}
             </View>
             <View style={styles.headerActions}>
-              <TourGuide zone={2} screen="SharedFinance" placement="bottom">
+              <TourGuide zone={2} screen="SharedFinance">
                 <TouchableOpacity
                   style={[
                     styles.createButton,
@@ -537,6 +568,27 @@ export default function SharedFinanceScreen({
                   onPress={() => setShowCreateModal(true)}
                 >
                   <Ionicons name="add" size={24} color={colors.buttonText} />
+                  {!hasPremiumAccess() && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: -2,
+                        right: -2,
+                        backgroundColor: colors.warning,
+                        borderRadius: 8,
+                        width: 16,
+                        height: 16,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Ionicons
+                        name="star"
+                        size={10}
+                        color={colors.buttonText}
+                      />
+                    </View>
+                  )}
                 </TouchableOpacity>
               </TourGuide>
             </View>
@@ -630,7 +682,7 @@ export default function SharedFinanceScreen({
         )}
 
         {/* Groups Section */}
-        <TourGuide zone={3} screen="SharedFinance" placement="bottom">
+        <TourGuide zone={3} screen="SharedFinance">
           {groups.length === 0 ? (
             renderEmptyState()
           ) : (
@@ -773,6 +825,14 @@ export default function SharedFinanceScreen({
               >
                 Create Group
               </Text>
+              {!hasPremiumAccess() && (
+                <Ionicons
+                  name="star"
+                  size={16}
+                  color={colors.buttonText}
+                  style={{ marginLeft: 8 }}
+                />
+              )}
             </TouchableOpacity>
           </View>
         </View>
