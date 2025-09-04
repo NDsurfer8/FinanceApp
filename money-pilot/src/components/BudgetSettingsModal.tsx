@@ -195,7 +195,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
               color: colors.text,
             }}
           >
-            Budget Settings
+            Budget Details
           </Text>
           <TouchableOpacity
             onPress={async () => {
