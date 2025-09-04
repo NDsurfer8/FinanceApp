@@ -15,7 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useZeroLoading } from "../hooks/useZeroLoading";
-
 import {
   saveAsset,
   saveDebt,
@@ -24,7 +23,6 @@ import {
   removeAsset,
   removeDebt,
 } from "../services/userData";
-
 import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
 
 interface AddAssetDebtScreenProps {
@@ -47,7 +45,6 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
   const { colors } = useTheme();
   const { assets, debts, updateDataOptimistically, refreshInBackground } =
     useZeroLoading();
-
   const { type, editMode, asset, debt } = route.params as RouteParams; // "asset" or "debt"
 
   const [formData, setFormData] = useState({
@@ -176,11 +173,6 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           updateDataOptimistically({ debts: finalDebts });
         }
       }
-
-      // Wait a bit more for net worth to be fully updated
-      console.log("⏳ Waiting for net worth update to complete...");
-      await new Promise((resolve) => setTimeout(resolve, 200)); // Wait 200ms total (100ms debounce + 100ms buffer)
-      console.log("✅ Net worth update wait completed");
 
       Alert.alert(
         "Success",
