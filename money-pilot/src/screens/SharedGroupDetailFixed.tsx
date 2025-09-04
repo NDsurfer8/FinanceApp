@@ -11,6 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../hooks/useAuth";
+import { useData } from "../contexts/DataContext";
 import {
   SharedGroup,
   getSharedGroup,
@@ -22,6 +23,7 @@ import {
 import {
   getGroupSharedData,
   syncUserDataToGroup,
+  getUserGroupSharingSettings,
 } from "../services/sharedFinanceDataSync";
 
 interface SharedGroupDetailProps {
@@ -41,6 +43,8 @@ export default function SharedGroupDetailFixed({
 }: SharedGroupDetailProps) {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { transactions, assets, debts, goals, recurringTransactions } =
+    useData();
   const { groupId, onGroupDeleted, onGroupLeft } = route.params;
   const [group, setGroup] = useState<SharedGroup | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,29 +98,44 @@ export default function SharedGroupDetailFixed({
 
   const handleManualRefresh = async () => {
     if (!user?.uid || !group) return;
-    
+
     try {
       setLoading(true);
       console.log("🔄 Manual refresh requested");
-      
-      // Sync current user's data to this group
-      const defaultSettings = {
-        shareNetWorth: true,
-        shareMonthlyIncome: true,
-        shareMonthlyExpenses: true,
-        shareTransactions: true,
-        shareRecurringTransactions: true,
-        shareAssets: true,
-        shareDebts: true,
-        shareGoals: false,
-      };
-      
-      await syncUserDataToGroup(user.uid, groupId, defaultSettings);
-      
-      // Reload the group data to show updated information
-      await loadGroupData();
-      
-      Alert.alert("Success", "Group data refreshed successfully!");
+
+      // Get user's current sharing settings for this group
+      const userSharingSettings = await getUserGroupSharingSettings(
+        user.uid,
+        groupId
+      );
+
+      if (userSharingSettings) {
+        // Get user's current financial data from context
+        const userData = {
+          transactions,
+          assets,
+          debts,
+          goals,
+          recurringTransactions,
+        };
+
+        await syncUserDataToGroup(
+          user.uid,
+          groupId,
+          userSharingSettings,
+          userData
+        );
+
+        // Reload the group data to show updated information
+        await loadGroupData();
+
+        Alert.alert("Success", "Group data refreshed successfully!");
+      } else {
+        Alert.alert(
+          "Info",
+          "No sharing settings found. Please configure your sharing preferences first."
+        );
+      }
     } catch (error) {
       console.error("Error refreshing group data:", error);
       Alert.alert("Error", "Failed to refresh group data. Please try again.");

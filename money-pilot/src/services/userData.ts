@@ -1,5 +1,9 @@
 import { ref, set, get, push, update, remove } from "firebase/database";
 import { db, auth } from "./firebase";
+import {
+  removeUserFromGroup,
+  removeGroupSharedData,
+} from "./sharedFinanceDataSync";
 
 /**
  * Cleans data by removing undefined values before writing to Firebase
@@ -320,86 +324,98 @@ export const updateNetWorthFromAssetsAndDebts = async (
     clearTimeout(updateNetWorthCallbacks[userId]);
   }
 
-  // Set a new timeout to debounce the call
-  updateNetWorthCallbacks[userId] = setTimeout(async () => {
-    console.log("updateNetWorthFromAssetsAndDebts executing for user:", userId);
-    try {
-      // Get current assets and debts
-      const [assets, debts] = await Promise.all([
-        getUserAssets(userId),
-        getUserDebts(userId),
-      ]);
-
-      // Calculate totals
-      const totalAssets = assets.reduce(
-        (sum: number, asset: any) => sum + asset.balance,
-        0
+  // Return a Promise that resolves when the update is complete
+  return new Promise((resolve, reject) => {
+    updateNetWorthCallbacks[userId] = setTimeout(async () => {
+      console.log(
+        "updateNetWorthFromAssetsAndDebts executing for user:",
+        userId
       );
-      const totalDebts = debts.reduce(
-        (sum: number, debt: any) => sum + debt.balance,
-        0
-      );
-      const netWorth = totalAssets - totalDebts;
+      try {
+        // Get current assets and debts
+        const [assets, debts] = await Promise.all([
+          getUserAssets(userId),
+          getUserDebts(userId),
+        ]);
 
-      // Get existing net worth entries
-      const entries = await getUserNetWorthEntries(userId);
-
-      // Check if there's already an entry for current month
-      const currentDate = new Date();
-      const currentMonthEntry = entries.find((entry) => {
-        const entryDate = new Date(entry.date);
-        return (
-          entryDate.getMonth() === currentDate.getMonth() &&
-          entryDate.getFullYear() === currentDate.getFullYear()
+        // Calculate totals
+        const totalAssets = assets.reduce(
+          (sum: number, asset: any) => sum + asset.balance,
+          0
         );
-      });
-
-      if (currentMonthEntry) {
-        // Update existing entry
-        const { encryptNetWorthEntry } = await import("./encryption");
-        const updatedEntry = {
-          ...currentMonthEntry,
-          netWorth,
-          assets: totalAssets,
-          debts: totalDebts,
-          updatedAt: Date.now(),
-        };
-        const encryptedEntry = await encryptNetWorthEntry(updatedEntry);
-
-        const entryRef = ref(
-          db,
-          `users/${userId}/netWorth/${currentMonthEntry.id}`
+        const totalDebts = debts.reduce(
+          (sum: number, debt: any) => sum + debt.balance,
+          0
         );
-        await set(entryRef, encryptedEntry);
-        console.log("Current month net worth updated successfully");
-      } else {
-        // Create new entry for current month
-        const currentMonth = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          1
+        const netWorth = totalAssets - totalDebts;
+
+        console.log(
+          `📊 Net worth calculation: Assets: ${totalAssets}, Debts: ${totalDebts}, Net Worth: ${netWorth}`
         );
-        console.log("Creating new net worth entry for month:", currentMonth);
-        const newEntry: NetWorthEntry = {
-          userId,
-          netWorth,
-          assets: totalAssets,
-          debts: totalDebts,
-          date: currentMonth.getTime(),
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
-        await saveNetWorthEntry(newEntry);
-        console.log("New net worth entry created for current month");
+
+        // Get existing net worth entries
+        const entries = await getUserNetWorthEntries(userId);
+
+        // Check if there's already an entry for current month
+        const currentDate = new Date();
+        const currentMonthEntry = entries.find((entry) => {
+          const entryDate = new Date(entry.date);
+          return (
+            entryDate.getMonth() === currentDate.getMonth() &&
+            entryDate.getFullYear() === currentDate.getFullYear()
+          );
+        });
+
+        if (currentMonthEntry) {
+          // Update existing entry
+          const { encryptNetWorthEntry } = await import("./encryption");
+          const updatedEntry = {
+            ...currentMonthEntry,
+            netWorth,
+            assets: totalAssets,
+            debts: totalDebts,
+            updatedAt: Date.now(),
+          };
+          const encryptedEntry = await encryptNetWorthEntry(updatedEntry);
+
+          const entryRef = ref(
+            db,
+            `users/${userId}/netWorth/${currentMonthEntry.id}`
+          );
+          await set(entryRef, encryptedEntry);
+          console.log("Current month net worth updated successfully");
+        } else {
+          // Create new entry for current month
+          const currentMonth = new Date(
+            currentDate.getFullYear(),
+            currentDate.getMonth(),
+            1
+          );
+          console.log("Creating new net worth entry for month:", currentMonth);
+          const newEntry: NetWorthEntry = {
+            userId,
+            netWorth,
+            assets: totalAssets,
+            debts: totalDebts,
+            date: currentMonth.getTime(),
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+          await saveNetWorthEntry(newEntry);
+          console.log("New net worth entry created for current month");
+        }
+
+        // Maintain only last 6 entries
+        await maintainNetWorthHistory(userId);
+
+        console.log("✅ Net worth update completed successfully");
+        resolve();
+      } catch (error) {
+        console.error("Error updating net worth from assets and debts:", error);
+        reject(error);
       }
-
-      // Maintain only last 6 entries
-      await maintainNetWorthHistory(userId);
-    } catch (error) {
-      console.error("Error updating net worth from assets and debts:", error);
-      throw error;
-    }
-  }, 100); // 100ms debounce delay
+    }, 100); // 100ms debounce delay
+  });
 };
 
 // Maintain only last 6 net worth entries
@@ -1261,10 +1277,6 @@ export const removeGroupMember = async (
       updatedAt: Date.now(),
     });
 
-    // Remove group from the removed member's user profile
-    const userGroupsRef = ref(db, `users/${memberId}/sharedGroups/${groupId}`);
-    await remove(userGroupsRef);
-
     // Remove the member's shared finance data from the group
     const sharedFinanceDataRef = ref(
       db,
@@ -1272,8 +1284,12 @@ export const removeGroupMember = async (
     );
     await remove(sharedFinanceDataRef);
 
+    // User's shared data is already removed above
+    console.log("✅ User's shared finance data cleaned up");
+
     console.log("✅ Member removed from group successfully");
     console.log("✅ Member's shared finance data cleaned up");
+    console.log("✅ Real-time listeners stopped");
   } catch (error) {
     console.error("Error removing member from group:", error);
     throw error;
@@ -1337,24 +1353,24 @@ export const deleteSharedGroup = async (
       );
     }
 
-    // Remove group from all members' user profiles
+    // Remove shared data for all members
     if (group.members) {
       for (const member of group.members) {
         try {
-          const userGroupsRef = ref(
-            db,
-            `users/${member.userId}/sharedGroups/${groupId}`
+          // Remove user's shared data from the group
+          await removeUserFromGroup(member.userId, groupId);
+          console.log(
+            `✅ Removed shared data for user ${member.userId} in group ${groupId}`
           );
-          await remove(userGroupsRef);
-        } catch (error) {
+        } catch (dataError) {
           console.error(
-            `Error removing group from user ${member.userId}:`,
-            error
+            `Error removing shared data for user ${member.userId}:`,
+            dataError
           );
-          // Continue with other members even if one fails
+          // Continue even if data cleanup fails
         }
       }
-      console.log("✅ Removed group references from all member profiles");
+      console.log("✅ Removed shared data for all members");
     }
 
     // Delete the group itself
@@ -2646,10 +2662,6 @@ export const leaveGroup = async (
       updatedAt: Date.now(),
     });
 
-    // Remove group from user's groups list
-    const userGroupsRef = ref(db, `users/${userId}/sharedGroups/${groupId}`);
-    await remove(userGroupsRef);
-
     // Remove user's shared finance data from the group
     const sharedFinanceDataRef = ref(
       db,
@@ -2657,8 +2669,12 @@ export const leaveGroup = async (
     );
     await remove(sharedFinanceDataRef);
 
+    // User's shared data is already removed above
+    console.log("✅ User's shared finance data cleaned up");
+
     console.log("✅ User left group successfully");
     console.log("✅ User's shared finance data cleaned up");
+    console.log("✅ Real-time listeners stopped");
   } catch (error) {
     console.error("Error leaving group:", error);
     throw error;

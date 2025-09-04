@@ -62,7 +62,6 @@ class AIFinancialAdvisorService {
   async generateAIResponse(
     userQuestion: string,
     snapshot: FinancialSnapshot,
-    isPlanRequest: boolean = false,
     userPreferences?: any,
     conversationHistory?: Array<{ role: string; content: string }>
   ): Promise<string> {

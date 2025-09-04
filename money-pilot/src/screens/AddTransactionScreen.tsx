@@ -20,7 +20,7 @@ import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
 import { useZeroLoading } from "../hooks/useZeroLoading";
-import { useData } from "../contexts/DataContext";
+
 import {
   saveTransaction,
   updateTransaction,
@@ -34,8 +34,6 @@ import { timestampToDateString } from "../utils/dateUtils";
 import { useTransactionActions } from "../hooks/useTransactionActions";
 import { TransactionBusinessService } from "../services/TransactionBusinessService";
 import { TransactionActionsService } from "../services/TransactionActionsService";
-import { syncUserDataToGroup } from "../services/sharedFinanceDataSync";
-import { getUserSharedGroups } from "../services/userData";
 
 interface AddTransactionScreenProps {
   navigation: any;
@@ -63,7 +61,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const { transactions, updateDataOptimistically } = useZeroLoading();
-  const { refreshRecurringTransactions, refreshTransactions } = useData();
+
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [stopFutureLoading, setStopFutureLoading] = useState(false);
@@ -395,12 +393,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             );
             updateDataOptimistically({ transactions: updatedTransactions });
 
-            // Refresh DataContext to update other screens and ensure consistency
-            await Promise.all([
-              refreshTransactions(),
-              refreshRecurringTransactions(),
-            ]);
-
             Alert.alert("Success", result.message, [
               { text: "OK", onPress: () => navigation.goBack() },
             ]);
@@ -447,9 +439,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               },
             ];
             updateDataOptimistically({ transactions: finalTransactions });
-
-            // Only refresh recurring transactions to update limits, preserve optimistic transaction updates
-            await refreshRecurringTransactions();
 
             Alert.alert("Success", result.message, [
               { text: "OK", onPress: () => navigation.goBack() },
@@ -507,12 +496,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             });
             updateDataOptimistically({ transactions: updatedTransactions });
 
-            // Refresh DataContext to update both transactions and recurring transactions
-            await Promise.all([
-              refreshTransactions(),
-              refreshRecurringTransactions(),
-            ]);
-
             Alert.alert("Success", result.message, [
               { text: "OK", onPress: () => navigation.goBack() },
             ]);
@@ -539,9 +522,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
           // Update in database
           await updateTransaction(updatedTransaction);
-
-          // Sync to shared groups
-          await syncToSharedGroups();
 
           Alert.alert("Success", "Transaction updated successfully!", [
             { text: "OK", onPress: () => navigation.goBack() },
@@ -572,15 +552,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           );
 
         if (result.success) {
-          // Refresh both to ensure the newly created transaction appears
-          await Promise.all([
-            refreshTransactions(),
-            refreshRecurringTransactions(),
-          ]);
-
-          // Sync to shared groups
-          await syncToSharedGroups();
-
           Alert.alert("Success", result.message, [
             { text: "OK", onPress: () => navigation.goBack() },
           ]);
@@ -619,9 +590,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         if (user) {
           await billReminderService.scheduleAllBillReminders(user.uid);
         }
-
-        // Sync to shared groups
-        await syncToSharedGroups();
 
         Alert.alert("Success", "Transaction saved successfully!", [
           { text: "OK", onPress: () => navigation.goBack() },
@@ -676,12 +644,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 );
 
               if (result.success) {
-                // Refresh data
-                await Promise.all([
-                  refreshTransactions(),
-                  refreshRecurringTransactions(),
-                ]);
-
                 Alert.alert("Success", result.message, [
                   { text: "OK", onPress: () => navigation.goBack() },
                 ]);
@@ -762,12 +724,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     );
 
                   if (result.success) {
-                    // Refresh DataContext to update transaction limits and ensure consistency
-                    await Promise.all([
-                      refreshTransactions(),
-                      refreshRecurringTransactions(),
-                    ]);
-
                     Alert.alert("Success", result.message, [
                       { text: "OK", onPress: () => navigation.goBack() },
                     ]);
@@ -816,12 +772,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   // Delete from database
                   await removeTransaction(user.uid, transaction.id);
 
-                  // Refresh DataContext to update transaction limits and ensure consistency
-                  await Promise.all([
-                    refreshTransactions(),
-                    refreshRecurringTransactions(),
-                  ]);
-
                   Alert.alert("Success", "Transaction deleted successfully!", [
                     { text: "OK", onPress: () => navigation.goBack() },
                   ]);
@@ -842,40 +792,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     } catch (error) {
       console.error("Error in delete confirmation:", error);
       setDeleteLoading(false);
-    }
-  };
-
-  // Function to sync user data to all shared groups
-  const syncToSharedGroups = async () => {
-    if (!user?.uid) return;
-
-    try {
-      console.log("🔄 Syncing user data to shared groups...");
-      const userGroups = await getUserSharedGroups(user.uid);
-
-      for (const group of userGroups) {
-        try {
-          // For now, use default sharing settings - all data shared
-          const defaultSettings = {
-            shareNetWorth: true,
-            shareMonthlyIncome: true,
-            shareMonthlyExpenses: true,
-            shareTransactions: true,
-            shareRecurringTransactions: true,
-            shareAssets: true,
-            shareDebts: true,
-            shareGoals: false,
-          };
-
-          await syncUserDataToGroup(user.uid, group.id!, defaultSettings);
-          console.log(`✅ Synced data to group: ${group.name}`);
-        } catch (error) {
-          console.error(`❌ Failed to sync to group ${group.name}:`, error);
-        }
-      }
-      console.log("✅ Finished syncing to all shared groups");
-    } catch (error) {
-      console.error("❌ Error syncing to shared groups:", error);
     }
   };
 

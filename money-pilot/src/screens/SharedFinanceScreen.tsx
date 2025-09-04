@@ -28,10 +28,6 @@ import {
   SharedInvitation,
   cleanupOrphanedSharedData,
 } from "../services/userData";
-import {
-  setupRealTimeDataSharing,
-  getUserGroupSharingSettings,
-} from "../services/sharedFinanceDataSync";
 
 interface SharedFinanceScreenProps {
   navigation: any;
@@ -78,75 +74,7 @@ export default function SharedFinanceScreen({
     }, [user?.uid])
   );
 
-  // Set up real-time listeners for all existing groups when the app loads
-  useEffect(() => {
-    if (user?.uid && groups.length > 0) {
-      setupRealTimeListenersForExistingGroups();
-    }
-  }, [user?.uid, groups]);
-
-  const setupRealTimeListenersForExistingGroups = async () => {
-    try {
-      console.log("🔄 Setting up real-time listeners for existing groups...");
-
-      for (const group of groups) {
-        // Check if user is a member of this group
-        const isMember = group.members?.some(
-          (member) => member.userId === user?.uid
-        );
-        if (!isMember) continue;
-
-        // Check if real-time sharing is already set up
-        const existingSettings = await getUserGroupSharingSettings(
-          user!.uid,
-          group.id!
-        );
-        if (existingSettings) {
-          console.log(
-            `✅ Real-time sharing already set up for group: ${group.name}`
-          );
-          continue;
-        }
-
-        // Set up default real-time data sharing
-        const defaultSharingSettings = {
-          shareNetWorth: true,
-          shareMonthlyIncome: true,
-          shareMonthlyExpenses: true,
-          shareTransactions: true,
-          shareRecurringTransactions: true,
-          shareAssets: false,
-          shareDebts: false,
-          shareGoals: false,
-        };
-
-        try {
-          await setupRealTimeDataSharing(
-            user!.uid,
-            group.id!,
-            defaultSharingSettings
-          );
-          console.log(
-            `✅ Real-time data sharing set up for existing group: ${group.name}`
-          );
-        } catch (error) {
-          console.error(
-            `❌ Error setting up real-time sharing for group ${group.name}:`,
-            error
-          );
-        }
-      }
-
-      console.log(
-        "✅ Finished setting up real-time listeners for existing groups"
-      );
-    } catch (error) {
-      console.error(
-        "❌ Error setting up real-time listeners for existing groups:",
-        error
-      );
-    }
-  };
+  // No more real-time listeners - users will manually sync when needed
 
   const loadSharedGroups = async () => {
     if (!user?.uid) return;
@@ -263,17 +191,13 @@ export default function SharedFinanceScreen({
           shareGoals: false,
         };
 
-        await setupRealTimeDataSharing(
-          user.uid,
-          groupId,
-          defaultSharingSettings
-        );
+        // No more automatic real-time sharing - users will manually sync when needed
         console.log(
-          "✅ Default real-time data sharing set up for group creator"
+          "✅ Group created - user can configure sharing settings when ready"
         );
       } catch (error) {
-        console.error("❌ Error setting up default real-time sharing:", error);
-        // Don't fail group creation if real-time setup fails
+        console.error("❌ Error during group creation:", error);
+        // Continue with group creation
       }
 
       // Reload groups to get the updated list with proper IDs
@@ -386,33 +310,26 @@ export default function SharedFinanceScreen({
             shareGoals: false,
           };
 
-          await setupRealTimeDataSharing(
-            user.uid,
-            invitation.groupId,
-            defaultSharingSettings
-          );
+          // No more automatic real-time sharing - users will manually sync when needed
           console.log(
-            "✅ Default real-time data sharing set up for new member"
+            "✅ Member joined - they can configure sharing settings when ready"
           );
         } catch (error) {
-          console.error(
-            "❌ Error setting up default real-time sharing:",
-            error
-          );
-          // Don't fail the invitation acceptance if real-time setup fails
+          console.error("❌ Error during invitation acceptance:", error);
+          // Continue with invitation acceptance
         }
 
         // Show data sharing prompt
         Alert.alert(
           "Welcome to the group!",
-          "Your financial data is now being shared with the group in real-time. You can customize what to share in the data sharing settings.",
+          "You can now configure what financial data to share with the group. Set up your sharing preferences to get started.",
           [
             {
               text: "Not Now",
               style: "cancel",
             },
             {
-              text: "Customize Sharing",
+              text: "Configure Sharing",
               onPress: () =>
                 navigation.navigate("GroupDataSharing", {
                   groupId: invitation.groupId,
