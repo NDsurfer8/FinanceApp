@@ -1,55 +1,41 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
+  Animated,
   Dimensions,
   Modal,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTour } from "../contexts/TourContext";
 import { useTheme } from "../contexts/ThemeContext";
-import { fontFamily } from "../config/fonts";
-import { useNavigation } from "@react-navigation/native";
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 interface TourGuideProps {
   children: React.ReactNode;
   zone: number;
-  title?: string;
-  description?: string;
-  placement?: "top" | "bottom" | "left" | "right" | "center";
-  maskOffset?: number;
-  borderRadius?: number;
   screen: string;
 }
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export const TourGuide: React.FC<TourGuideProps> = ({
   children,
   zone,
-  title,
-  description,
-  placement = "bottom",
-  maskOffset = 0,
-  borderRadius = 8,
   screen,
 }) => {
-  const {
-    isTourActive,
-    currentStep,
-    tourSteps,
-    nextStep,
-    previousStep,
-    skipTour,
-    showTooltips,
-  } = useTour();
+  const { isTourActive, currentStep, tourSteps, nextStep, skipTour } =
+    useTour();
   const { colors } = useTheme();
-  const navigation = useNavigation();
 
-  const [isVisible, setIsVisible] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const iconBounceAnim = useRef(new Animated.Value(0)).current;
+  const confettiAnim = useRef(new Animated.Value(0)).current;
 
   const currentTourStep = tourSteps[currentStep];
   const isCurrentStep =
@@ -58,280 +44,372 @@ export const TourGuide: React.FC<TourGuideProps> = ({
     currentTourStep?.screen === screen;
 
   useEffect(() => {
-    console.log("🔍 TourGuide check:", {
-      isTourActive,
-      currentStep,
-      currentTourStep: currentTourStep?.id,
-      zone,
-      screen,
-      isCurrentStep,
-    });
-
-    setIsVisible(isCurrentStep);
-
     if (isCurrentStep) {
-      // Calculate tooltip position based on placement
-      calculateTooltipPosition();
+      // Entrance animation with fun bounces
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            tension: 100,
+            friction: 8,
+            useNativeDriver: true,
+          }),
+        ]),
+        // Icon bounce animation
+        Animated.spring(iconBounceAnim, {
+          toValue: 1,
+          tension: 200,
+          friction: 4,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Progress animation
+      Animated.timing(progressAnim, {
+        toValue: (currentStep + 1) / tourSteps.length,
+        duration: 800,
+        useNativeDriver: false,
+      }).start();
+
+      // Confetti for completion
+      if (currentStep === tourSteps.length - 1) {
+        setTimeout(() => {
+          Animated.timing(confettiAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }).start();
+        }, 500);
+      }
+    } else {
+      // Reset animations
+      fadeAnim.setValue(0);
+      slideAnim.setValue(50);
+      iconBounceAnim.setValue(0);
+      confettiAnim.setValue(0);
     }
-  }, [isCurrentStep, currentStep, isTourActive]);
+  }, [isCurrentStep, currentStep]);
 
-  const calculateTooltipPosition = () => {
-    // Calculate positioning right next to highlighted items
-    const tooltipWidth = 200;
-    const tooltipHeight = 80;
-    const padding = 10;
-    const offset = 20; // Distance from highlighted element
-
-    let x = screenWidth / 2 - tooltipWidth / 2;
-    let y = screenHeight / 2 - tooltipHeight / 2;
-
-    // Position right next to the highlighted element based on placement
-    switch (placement) {
-      case "top":
-        // Position below the highlighted element
-        x = screenWidth * 0.1;
-        y = screenHeight * 0.3;
-        break;
-      case "bottom":
-        // Position above the highlighted element
-        x = screenWidth * 0.1;
-        y = screenHeight * 0.6;
-        break;
-      case "left":
-        // Position to the right of the highlighted element
-        x = screenWidth * 0.3;
-        y = screenHeight * 0.4;
-        break;
-      case "right":
-        // Position to the left of the highlighted element
-        x = screenWidth * 0.05;
-        y = screenHeight * 0.4;
-        break;
-    }
-
-    // Ensure tooltip stays within screen bounds
-    x = Math.max(padding, Math.min(x, screenWidth - tooltipWidth - padding));
-    y = Math.max(padding, Math.min(y, screenHeight - tooltipHeight - padding));
-
-    setTooltipPosition({ x, y });
+  const handleButtonPress = (callback: () => void) => {
+    // Simple button press with slight delay for feedback
+    setTimeout(callback, 100);
   };
 
-  if (!isVisible) {
+  const getStepIcon = () => {
+    const icons = ["🏠", "💰", "📊", "👥"];
+    return icons[currentStep] || "🎯";
+  };
+
+  const getStepEmoji = () => {
+    const emojis = ["✨", "🚀", "💡", "🎉"];
+    return emojis[currentStep] || "✨";
+  };
+
+  if (!isCurrentStep) {
     return <>{children}</>;
   }
 
   return (
     <>
-      {/* Highlight the element with fun animation */}
-      <View
-        style={[
-          isVisible && {
-            shadowColor: colors.primary,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.6,
-            shadowRadius: 16,
-            elevation: 12,
-            borderRadius: 12,
-            transform: [{ scale: 1.02 }],
-          },
-        ]}
-      >
-        {children}
-      </View>
+      {children}
 
-      {/* Fun and Engaging Tour Guide */}
-      {isVisible && (
-        <View style={styles.floatingGuide}>
-          {/* Fun tour guide bubble positioned next to highlighted element */}
-          <View
+      {/* Professional Modal-Based Tour */}
+      <Modal
+        visible={isCurrentStep}
+        transparent={true}
+        animationType="fade"
+        statusBarTranslucent={false}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          {/* Backdrop with spotlight effect */}
+          <View style={styles.backdrop}>
+            {/* Spotlight overlay */}
+            <View style={styles.spotlightOverlay} />
+          </View>
+
+          {/* Tour Content */}
+          <Animated.View
             style={[
-              styles.funTourGuide,
+              styles.tourModal,
               {
-                backgroundColor: colors.primary,
-                left: tooltipPosition.x,
-                top: tooltipPosition.y,
+                backgroundColor: colors.background,
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
               },
             ]}
           >
-            {/* Fun header with emoji */}
-            <View style={styles.guideHeader}>
-              <Text style={styles.funEmoji}>✨</Text>
-              <Text style={[styles.guideTitle, { color: colors.buttonText }]}>
-                Tour Guide
+            {/* Confetti overlay for completion */}
+            {currentStep === tourSteps.length - 1 && (
+              <Animated.View
+                style={[
+                  styles.confettiOverlay,
+                  {
+                    opacity: confettiAnim,
+                    transform: [
+                      {
+                        scale: confettiAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.8, 1.2],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
+                <Text style={styles.confettiText}>🎉</Text>
+                <Text style={styles.confettiText}>✨</Text>
+                <Text style={styles.confettiText}>🎊</Text>
+                <Text style={styles.confettiText}>🌟</Text>
+              </Animated.View>
+            )}
+
+            {/* Progress indicator */}
+            <View style={styles.progressContainer}>
+              <View
+                style={[
+                  styles.progressTrack,
+                  { backgroundColor: colors.border },
+                ]}
+              >
+                <Animated.View
+                  style={[
+                    styles.progressFill,
+                    {
+                      backgroundColor: colors.primary,
+                      width: progressAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ["0%", "100%"],
+                      }),
+                    },
+                  ]}
+                />
+              </View>
+              <Text
+                style={[styles.progressText, { color: colors.textSecondary }]}
+              >
+                {currentStep + 1} of {tourSteps.length} {getStepEmoji()}
               </Text>
             </View>
 
-            {/* Main content */}
-            <Text style={[styles.funGuideText, { color: colors.buttonText }]}>
-              {description || currentTourStep?.description}
+            {/* Fun Icon with bounce */}
+            <Animated.View
+              style={[
+                styles.iconContainer,
+                {
+                  backgroundColor: colors.primary + "15",
+                  transform: [
+                    {
+                      scale: iconBounceAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.3, 1],
+                      }),
+                    },
+                    {
+                      rotate: iconBounceAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ["-10deg", "0deg"],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <Text style={styles.emojiIcon}>{getStepIcon()}</Text>
+            </Animated.View>
+
+            {/* Title with emoji */}
+            <Text style={[styles.title, { color: colors.text }]}>
+              {getStepEmoji()} {currentTourStep?.title}
             </Text>
 
-            {/* Fun tap hint */}
-            <View style={styles.tapHintContainer}>
-              <Text style={styles.tapEmoji}>👆</Text>
-              <Text style={[styles.funTapHint, { color: colors.buttonText }]}>
-                Tap anywhere to continue
-              </Text>
-            </View>
-          </View>
+            {/* Description */}
+            <Text style={[styles.description, { color: colors.textSecondary }]}>
+              {currentTourStep?.description}
+            </Text>
 
-          {/* Invisible overlay to capture taps */}
-          <TouchableOpacity
-            style={styles.tapOverlay}
-            onPress={() => nextStep(navigation)}
-            activeOpacity={1}
-          />
-        </View>
-      )}
+            {/* Controls */}
+            <View style={styles.controls}>
+              <TouchableOpacity
+                style={[styles.secondaryButton, { borderColor: colors.border }]}
+                onPress={() => handleButtonPress(skipTour)}
+              >
+                <Text
+                  style={[
+                    styles.secondaryButtonText,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  Maybe Later 😊
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.primaryButton,
+                  { backgroundColor: colors.primary },
+                ]}
+                onPress={() => handleButtonPress(nextStep)}
+              >
+                <Text
+                  style={[
+                    styles.primaryButtonText,
+                    { color: colors.buttonText },
+                  ]}
+                >
+                  {currentStep === tourSteps.length - 1
+                    ? "Let's Go! 🚀"
+                    : "Awesome! 👉"}
+                </Text>
+                <Ionicons
+                  name="arrow-forward"
+                  size={20}
+                  color={colors.buttonText}
+                  style={styles.buttonIcon}
+                />
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </SafeAreaView>
+      </Modal>
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  floatingGuide: {
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  backdrop: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    pointerEvents: "box-none", // Allow touches to pass through
-    zIndex: 1000,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
   },
-  funTourGuide: {
+  spotlightOverlay: {
     position: "absolute",
-    width: 200,
-    maxWidth: "80%",
-    borderRadius: 16,
-    padding: 16,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "transparent",
+  },
+  tourModal: {
+    margin: 20,
+    padding: 24,
+    borderRadius: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 10,
-    zIndex: 1001,
-    pointerEvents: "none",
-  },
-  guideHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  funEmoji: {
-    fontSize: 16,
-    marginRight: 6,
-  },
-  guideTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  funGuideText: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 12,
-    textAlign: "left",
-  },
-  tapHintContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tapEmoji: {
-    fontSize: 14,
-    marginRight: 6,
-  },
-  funTapHint: {
-    fontSize: 11,
-    fontWeight: "600",
-    opacity: 0.9,
-  },
-  tapOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 1002,
-  },
-  vectraAvatar: {
-    marginRight: 12,
-    marginTop: 2,
-  },
-  avatarContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  chatMessage: {
-    flex: 1,
-  },
-  vectraName: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 3,
-  },
-  chatText: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  arrow: {
-    position: "absolute",
-    width: 0,
-    height: 0,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderTopWidth: 12,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    bottom: -12,
-    left: 20,
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+    maxWidth: screenWidth - 40,
+    width: screenWidth - 40,
   },
   progressContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    marginBottom: 24,
+    alignItems: "center",
   },
-  progressText: {
-    fontSize: 11,
-    marginBottom: 6,
-    textAlign: "center",
-  },
-  progressBar: {
+  progressTrack: {
     height: 4,
+    width: "100%",
     borderRadius: 2,
-    overflow: "hidden",
+    marginBottom: 8,
   },
   progressFill: {
     height: "100%",
-    borderRadius: 3,
+    borderRadius: 2,
   },
-  actionsContainer: {
+  progressText: {
+    fontSize: 12,
+    fontWeight: "500",
+    letterSpacing: 0.5,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 12,
+    textAlign: "center",
+    letterSpacing: -0.5,
+  },
+  description: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 24,
+    textAlign: "center",
+    opacity: 0.8,
+  },
+  controls: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingBottom: 12,
+    gap: 12,
+    marginTop: 8,
   },
-  actionButton: {
+  secondaryButton: {
+    flex: 1,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 12,
+    alignItems: "center",
     borderWidth: 1,
+    marginRight: 6,
   },
-  actionButtonText: {
+  secondaryButtonText: {
     fontSize: 14,
     fontWeight: "600",
   },
-  navigationButtons: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  navButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  primaryButton: {
+    flex: 1.5,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
     alignItems: "center",
+    flexDirection: "row",
     justifyContent: "center",
+    marginLeft: 6,
+  },
+  primaryButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginRight: 6,
+  },
+  buttonIcon: {
+    marginLeft: 2,
+  },
+  confettiOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    pointerEvents: "none",
+  },
+  confettiText: {
+    position: "absolute",
+    fontSize: 30,
+    opacity: 0.8,
+  },
+  emojiIcon: {
+    fontSize: 40,
+    textAlign: "center",
   },
 });

@@ -911,7 +911,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         )}
 
         {/* Budget Overview Card */}
-        <TourGuide zone={1} screen="Budget" placement="bottom">
+        <TourGuide zone={1} screen="Budget">
           <BudgetOverviewCard
             netIncome={netIncome}
             totalIncome={totalIncome}
@@ -982,7 +982,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
         {/* Smart Insights - Only show if there are insights */}
         {insights.length > 0 && (
-          <TourGuide zone={3} screen="Budget" placement="bottom">
+          <TourGuide zone={3} screen="Budget">
             <View
               style={{
                 backgroundColor: colors.surface,

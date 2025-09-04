@@ -9,6 +9,7 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
@@ -73,6 +74,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   });
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
+
+  // Animation for glow effect when no goals
+  const glowAnim = React.useRef(new Animated.Value(0)).current;
 
   const goalCategories = [
     {
@@ -497,6 +501,31 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     setEditingValue("");
   };
 
+  // Animate glow effect when no goals
+  useEffect(() => {
+    if (goals.length === 0) {
+      // Start pulsing glow animation
+      const pulseAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(glowAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+        ])
+      );
+      pulseAnimation.start();
+    } else {
+      // Stop animation and reset
+      glowAnim.setValue(0);
+    }
+  }, [goals.length]);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
@@ -625,17 +654,31 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
 
         {/* Goals List */}
         {goals.length === 0 ? (
-          <View
+          <Animated.View
             style={{
               backgroundColor: colors.surface,
               borderRadius: 20,
               padding: 40,
               alignItems: "center",
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
+              shadowColor: colors.primary,
+              shadowOpacity: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.08, 0.3],
+              }),
+              shadowRadius: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [12, 20],
+              }),
               shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
+              elevation: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [4, 8],
+              }),
+              borderWidth: 2,
+              borderColor: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [colors.primary + "40", colors.primary + "80"],
+              }),
             }}
           >
             <Ionicons
@@ -677,7 +720,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 {translate("addGoal", isFriendlyMode)}
               </Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         ) : (
           goals.map((goal) => {
             const progress = calculateProgress(goal);

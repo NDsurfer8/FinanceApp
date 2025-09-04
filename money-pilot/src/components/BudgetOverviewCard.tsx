@@ -1,10 +1,11 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { TourGuide } from "./TourGuide";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface BudgetOverviewCardProps {
   netIncome: number;
@@ -47,6 +48,11 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
+  // Animation and state for glow effects
+  const [showSettingsGlow, setShowSettingsGlow] = useState(false);
+  const glowAnim = React.useRef(new Animated.Value(0)).current;
+  const settingsGlowAnim = React.useRef(new Animated.Value(0)).current;
+
   // Ensure all values are safe numbers
   const safeNetIncome = Number(netIncome) || 0;
   const safeTotalIncome = Number(totalIncome) || 0;
@@ -72,18 +78,122 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
 
   const budgetStatus = getBudgetStatus();
 
+  // Check if there are no transactions
+  const hasNoTransactions = safeTotalIncome === 0 && safeTotalExpenses === 0;
+
+  // Load settings glow state from AsyncStorage
+  useEffect(() => {
+    const loadSettingsGlowState = async () => {
+      try {
+        const hasSeenSettings = await AsyncStorage.getItem(
+          "hasSeenBudgetSettings"
+        );
+        if (!hasSeenSettings) {
+          setShowSettingsGlow(true);
+        }
+      } catch (error) {
+        console.error("Error loading settings glow state:", error);
+      }
+    };
+    loadSettingsGlowState();
+  }, []);
+
+  // Animate glow effects
+  useEffect(() => {
+    if (hasNoTransactions) {
+      // Start pulsing glow animation
+      const pulseAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(glowAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+        ])
+      );
+      pulseAnimation.start();
+    } else {
+      // Stop animation and reset
+      glowAnim.setValue(0);
+    }
+  }, [hasNoTransactions]);
+
+  useEffect(() => {
+    if (showSettingsGlow) {
+      // Start pulsing glow animation for settings
+      const pulseAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(settingsGlowAnim, {
+            toValue: 1,
+            duration: 1200,
+            useNativeDriver: false,
+          }),
+          Animated.timing(settingsGlowAnim, {
+            toValue: 0,
+            duration: 1200,
+            useNativeDriver: false,
+          }),
+        ])
+      );
+      pulseAnimation.start();
+    } else {
+      // Stop animation and reset
+      settingsGlowAnim.setValue(0);
+    }
+  }, [showSettingsGlow]);
+
+  // Handle settings press with glow dismissal
+  const handleSettingsPress = async () => {
+    if (showSettingsGlow) {
+      try {
+        await AsyncStorage.setItem("hasSeenBudgetSettings", "true");
+        setShowSettingsGlow(false);
+      } catch (error) {
+        console.error("Error saving settings glow state:", error);
+      }
+    }
+    onPressSettings();
+  };
+
   return (
-    <View
+    <Animated.View
       style={{
         backgroundColor: colors.surface,
         borderRadius: 20,
         padding: 24,
         marginBottom: 20,
-        shadowColor: colors.shadow,
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
+        shadowColor: hasNoTransactions ? colors.primary : colors.shadow,
+        shadowOpacity: hasNoTransactions
+          ? glowAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.08, 0.3],
+            })
+          : 0.08,
+        shadowRadius: hasNoTransactions
+          ? glowAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [12, 20],
+            })
+          : 12,
         shadowOffset: { width: 0, height: 4 },
-        elevation: 4,
+        elevation: hasNoTransactions
+          ? glowAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [4, 8],
+            })
+          : 4,
+        borderWidth: hasNoTransactions ? 2 : 0,
+        borderColor: hasNoTransactions
+          ? glowAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [colors.primary + "40", colors.primary + "80"],
+            })
+          : "transparent",
       }}
     >
       {/* Header */}
@@ -385,57 +495,82 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
           </Text>
         </TouchableOpacity>
 
-        <TourGuide zone={2} screen="Budget" placement="bottom">
-          <TouchableOpacity
-            onPress={onPressSettings}
+        <TourGuide zone={2} screen="Budget">
+          <Animated.View
             style={{
-              backgroundColor: colors.surfaceSecondary,
-              padding: 12,
-              borderRadius: 12,
-              alignItems: "center",
-              justifyContent: "center",
-              minWidth: 60,
-              position: "relative",
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderStyle: "dashed",
+              shadowColor: showSettingsGlow ? colors.primary : "transparent",
+              shadowOpacity: showSettingsGlow
+                ? settingsGlowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 0.4],
+                  })
+                : 0,
+              shadowRadius: showSettingsGlow
+                ? settingsGlowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 15],
+                  })
+                : 0,
+              shadowOffset: { width: 0, height: 0 },
+              elevation: showSettingsGlow
+                ? settingsGlowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 6],
+                  })
+                : 0,
             }}
           >
-            <Ionicons
-              name="settings-outline"
-              size={20}
-              color={colors.buttonPrimary}
-            />
-            {props.hasOverBudgetItems && (
-              <View
-                style={{
-                  position: "absolute",
-                  top: -4,
-                  right: -4,
-                  backgroundColor: colors.error,
-                  borderRadius: 8,
-                  width: 16,
-                  height: 16,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderWidth: 2,
-                  borderColor: colors.surface,
-                }}
-              >
-                <Text
+            <TouchableOpacity
+              onPress={handleSettingsPress}
+              style={{
+                backgroundColor: colors.surfaceSecondary,
+                padding: 12,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                minWidth: 60,
+                position: "relative",
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderStyle: "dashed",
+              }}
+            >
+              <Ionicons
+                name="settings-outline"
+                size={20}
+                color={colors.buttonPrimary}
+              />
+              {props.hasOverBudgetItems && (
+                <View
                   style={{
-                    color: colors.buttonText,
-                    fontSize: 10,
-                    fontWeight: "700",
+                    position: "absolute",
+                    top: -4,
+                    right: -4,
+                    backgroundColor: colors.error,
+                    borderRadius: 8,
+                    width: 16,
+                    height: 16,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 2,
+                    borderColor: colors.surface,
                   }}
                 >
-                  !
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
+                  <Text
+                    style={{
+                      color: colors.buttonText,
+                      fontSize: 10,
+                      fontWeight: "700",
+                    }}
+                  >
+                    !
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
         </TourGuide>
       </View>
-    </View>
+    </Animated.View>
   );
 };
