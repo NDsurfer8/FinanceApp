@@ -926,6 +926,7 @@ class PlaidService {
         name: transaction.name,
         merchant_name: transaction.merchant_name,
         category: transaction.category,
+        personal_finance_category: transaction.personal_finance_category,
         pending: transaction.pending,
       }));
     } catch (error) {

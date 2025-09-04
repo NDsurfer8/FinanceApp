@@ -247,6 +247,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     setShowEndDatePicker(true);
   };
 
+  // Map Plaid's new 16 primary categories to our budget categories (only for imported transactions)
   const getCategories = (type: string) => {
     if (type === "income") {
       return [

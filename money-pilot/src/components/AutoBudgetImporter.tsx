@@ -16,6 +16,7 @@ import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { saveTransaction } from "../services/userData";
 import { formatCurrency } from "../utils/formatNumber";
+import { mapPlaidCategoryToBudgetCategory } from "../utils/plaidCategoryMapping";
 
 interface AutoBudgetImporterProps {
   isVisible: boolean;
@@ -97,6 +98,18 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
     const name = transaction.name?.toLowerCase() || "";
     const amount = transaction.amount;
 
+    // First, try to use Plaid's new personal_finance_category if available
+    if (transaction.personal_finance_category?.primary) {
+      const plaidCategory = transaction.personal_finance_category.primary;
+      const mappedCategory = mapPlaidCategoryToBudgetCategory(plaidCategory);
+
+      // Determine type based on amount (Plaid: negative = income, positive = expense)
+      const type = amount < 0 ? "income" : "expense";
+
+      return { category: mappedCategory, type };
+    }
+
+    // Fallback to existing logic when Plaid categories aren't available
     // Income patterns (Plaid: negative = income, positive = expense)
     if (amount < 0) {
       if (
@@ -125,7 +138,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         name.includes("doordash") ||
         name.includes("grubhub")
       ) {
-        return { category: "Food & Dining", type: "expense" };
+        return { category: "Food", type: "expense" };
       }
 
       // Transportation
@@ -162,7 +175,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         name.includes("spotify") ||
         name.includes("hulu")
       ) {
-        return { category: "Bills & Utilities", type: "expense" };
+        return { category: "Utilities", type: "expense" };
       }
 
       // Healthcare
@@ -173,7 +186,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         name.includes("doctor") ||
         name.includes("medical")
       ) {
-        return { category: "Healthcare", type: "expense" };
+        return { category: "Health", type: "expense" };
       }
 
       // Entertainment
@@ -190,7 +203,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
       return { category: "Other Expenses", type: "expense" };
     }
 
-    return { category: "Other", type: "expense" };
+    return { category: "Other Expenses", type: "expense" };
   };
 
   // Process bank transactions and categorize them
