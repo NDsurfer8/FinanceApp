@@ -9,6 +9,7 @@ import {
   Alert,
   Modal,
 } from "react-native";
+import { useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
@@ -49,6 +50,16 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
   );
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryLimit, setNewCategoryLimit] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [tempCategoryLimit, setTempCategoryLimit] = useState("");
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Handle input focus and scroll to input
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  };
 
   // Load categories from AsyncStorage on component mount
   useEffect(() => {
@@ -225,7 +236,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
   };
 
   const editCategory = async () => {
-    if (!editingCategory || !newCategoryLimit.trim()) {
+    if (!editingCategory || !tempCategoryLimit.trim()) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
@@ -235,7 +246,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       return;
     }
 
-    const limit = parseFloat(newCategoryLimit);
+    const limit = parseFloat(tempCategoryLimit);
     if (isNaN(limit) || limit <= 0) {
       Alert.alert("Error", "Please enter a valid amount");
       return;
@@ -269,6 +280,24 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
   };
 
   const deleteCategory = (categoryId: string) => {
+    // Find the category to check if it's default
+    const categoryToDelete = categories.find((cat) => cat.id === categoryId);
+
+    if (!categoryToDelete) {
+      Alert.alert("Error", "Category not found");
+      return;
+    }
+
+    // Prevent deletion of default categories
+    if (isDefaultCategory(categoryToDelete.name)) {
+      Alert.alert(
+        "Cannot Delete",
+        "Default categories cannot be deleted as they are essential for the app to function properly.",
+        [{ text: "OK", style: "default" }]
+      );
+      return;
+    }
+
     Alert.alert(
       "Delete Category",
       "Are you sure you want to delete this category?",
@@ -304,6 +333,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     setEditingCategory(category);
     setNewCategoryName(category.name);
     setNewCategoryLimit(category.monthlyLimit.toString());
+    setTempCategoryLimit(category.monthlyLimit.toString());
   };
 
   // Check if a category is a default category (name cannot be changed)
@@ -334,13 +364,19 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     setEditingCategory(null);
     setNewCategoryName("");
     setNewCategoryLimit("");
+    setTempCategoryLimit("");
   };
+
+  // Filter categories based on search query
+  const filteredCategories = categories.filter((category) =>
+    category.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StandardHeader
-        title="Budget Categories"
-        subtitle="Manage your monthly spending limits"
+        title="Set Your Budget"
+        subtitle="Manage your monthly spending"
         showBackButton={true}
         onBack={() => navigation.goBack()}
         rightComponent={
@@ -463,8 +499,56 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
           </View>
         </View>
 
+        {/* Search Bar */}
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 16,
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.04,
+            shadowRadius: 6,
+            shadowOffset: { width: 0, height: 1 },
+            elevation: 2,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons
+              name="search"
+              size={18}
+              color={colors.textSecondary}
+              style={{ marginRight: 12 }}
+            />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search categories..."
+              placeholderTextColor={colors.textSecondary}
+              style={{
+                flex: 1,
+                fontSize: 16,
+                color: colors.text,
+                padding: 0,
+              }}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSearchQuery("")}
+                style={{
+                  padding: 4,
+                  borderRadius: 12,
+                  backgroundColor: colors.surfaceSecondary,
+                }}
+              >
+                <Ionicons name="close" size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
         {/* Categories List */}
-        {categories.map((category) => {
+        {filteredCategories.map((category) => {
           const spending = getCategorySpending(category.name);
           const remaining = category.monthlyLimit - spending.actual;
           const progressPercentage = Math.min(
@@ -529,20 +613,23 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     <Ionicons name="pencil" size={14} color={colors.primary} />
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    onPress={() => deleteCategory(category.id)}
-                    style={{
-                      padding: 6,
-                      borderRadius: 6,
-                      backgroundColor: colors.error,
-                    }}
-                  >
-                    <Ionicons
-                      name="trash"
-                      size={14}
-                      color={colors.buttonText}
-                    />
-                  </TouchableOpacity>
+                  {/* Only show delete button for user-added categories */}
+                  {!isDefaultCategory(category.name) && (
+                    <TouchableOpacity
+                      onPress={() => deleteCategory(category.id)}
+                      style={{
+                        padding: 6,
+                        borderRadius: 6,
+                        backgroundColor: colors.error,
+                      }}
+                    >
+                      <Ionicons
+                        name="trash"
+                        size={14}
+                        color={colors.buttonText}
+                      />
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
 
@@ -645,6 +732,49 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
             </View>
           );
         })}
+
+        {/* No Results Message */}
+        {searchQuery.length > 0 && filteredCategories.length === 0 && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 24,
+              alignItems: "center",
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.06,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 2 },
+              elevation: 3,
+            }}
+          >
+            <Ionicons
+              name="search"
+              size={32}
+              color={colors.textSecondary}
+              style={{ marginBottom: 12 }}
+            />
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              No categories found
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                textAlign: "center",
+              }}
+            >
+              Try adjusting your search terms or add a new category
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Add/Edit Category Modal */}
@@ -666,145 +796,304 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
             style={{
               backgroundColor: colors.surface,
               borderRadius: 20,
-              padding: 24,
               width: "90%",
               maxWidth: 400,
+              maxHeight: "80%",
+              justifyContent: "flex-start", // Align to top when keyboard appears
             }}
           >
-            <Text
-              style={{
-                fontSize: 20,
-                fontWeight: "700",
-                color: colors.text,
-                marginBottom: 24,
-                textAlign: "center",
+            <ScrollView
+              ref={scrollViewRef}
+              contentContainerStyle={{
+                padding: 24,
+                paddingBottom: 40, // Extra padding at bottom for keyboard
               }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              automaticallyAdjustKeyboardInsets={true}
             >
-              {editingCategory ? "Edit Category" : "Add New Category"}
-            </Text>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: colors.text,
+                  marginBottom: 24,
+                  textAlign: "center",
+                }}
+              >
+                {editingCategory ? "Edit Category" : "Add New Category"}
+              </Text>
 
-            <View style={{ gap: 16 }}>
-              <View>
-                <Text
+              <View style={{ gap: 16 }}>
+                <View>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginBottom: 8,
+                    }}
+                  >
+                    Category Name
+                    {editingCategory &&
+                      isDefaultCategory(editingCategory.name) && (
+                        <Text style={{ color: colors.warning, fontSize: 12 }}>
+                          {" "}
+                          (Default - Cannot Change)
+                        </Text>
+                      )}
+                  </Text>
+                  <TextInput
+                    value={newCategoryName}
+                    onChangeText={setNewCategoryName}
+                    placeholder="e.g., Food & Dining"
+                    editable={
+                      !editingCategory ||
+                      !isDefaultCategory(editingCategory.name)
+                    }
+                    style={{
+                      backgroundColor:
+                        editingCategory &&
+                        isDefaultCategory(editingCategory.name)
+                          ? colors.border
+                          : colors.surfaceSecondary,
+                      borderRadius: 12,
+                      padding: 16,
+                      fontSize: 16,
+                      color:
+                        editingCategory &&
+                        isDefaultCategory(editingCategory.name)
+                          ? colors.textSecondary
+                          : colors.text,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                    }}
+                    placeholderTextColor={colors.textSecondary}
+                    returnKeyType="next"
+                    blurOnSubmit={false}
+                    onFocus={handleInputFocus}
+                  />
+                </View>
+
+                {/* Budget Summary */}
+                <View
                   style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    marginBottom: 8,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingVertical: 16,
+                    paddingHorizontal: 20,
+                    backgroundColor: colors.primary + "10",
+                    borderRadius: 16,
+                    borderLeftWidth: 4,
+                    borderLeftColor: colors.primary,
                   }}
                 >
-                  Category Name
-                  {editingCategory &&
-                    isDefaultCategory(editingCategory.name) && (
-                      <Text style={{ color: colors.warning, fontSize: 12 }}>
-                        {" "}
-                        (Default - Cannot Change)
-                      </Text>
-                    )}
-                </Text>
-                <TextInput
-                  value={newCategoryName}
-                  onChangeText={setNewCategoryName}
-                  placeholder="e.g., Food & Dining"
-                  editable={
-                    !editingCategory || !isDefaultCategory(editingCategory.name)
-                  }
-                  style={{
-                    backgroundColor:
-                      editingCategory && isDefaultCategory(editingCategory.name)
-                        ? colors.border
-                        : colors.surfaceSecondary,
-                    borderRadius: 12,
-                    padding: 16,
-                    fontSize: 16,
-                    color:
-                      editingCategory && isDefaultCategory(editingCategory.name)
-                        ? colors.textSecondary
-                        : colors.text,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  }}
-                  placeholderTextColor={colors.textSecondary}
-                />
+                  <View style={{ alignItems: "flex-start" }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                        marginBottom: 2,
+                        fontWeight: "500",
+                      }}
+                    >
+                      Budget Status
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: colors.textSecondary,
+                      }}
+                    >
+                      $
+                      {editingCategory
+                        ? categories
+                            .filter((cat) => cat.id !== editingCategory.id)
+                            .reduce((sum, cat) => sum + cat.monthlyLimit, 0) +
+                          (parseFloat(tempCategoryLimit) || 0)
+                        : categories
+                            .reduce((sum, cat) => sum + cat.monthlyLimit, 0)
+                            .toLocaleString()}{" "}
+                      allocated
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Text
+                      style={{
+                        fontSize: 20,
+                        fontWeight: "800",
+                        color: (() => {
+                          const available =
+                            totalBudget -
+                            (editingCategory
+                              ? categories
+                                  .filter(
+                                    (cat) => cat.id !== editingCategory.id
+                                  )
+                                  .reduce(
+                                    (sum, cat) => sum + cat.monthlyLimit,
+                                    0
+                                  ) + (parseFloat(tempCategoryLimit) || 0)
+                              : categories.reduce(
+                                  (sum, cat) => sum + cat.monthlyLimit,
+                                  0
+                                ));
+                          return available < 0 ? colors.error : colors.success;
+                        })(),
+                      }}
+                    >
+                      $
+                      {(
+                        totalBudget -
+                        (editingCategory
+                          ? categories
+                              .filter((cat) => cat.id !== editingCategory.id)
+                              .reduce((sum, cat) => sum + cat.monthlyLimit, 0) +
+                            (parseFloat(tempCategoryLimit) || 0)
+                          : categories.reduce(
+                              (sum, cat) => sum + cat.monthlyLimit,
+                              0
+                            ))
+                      ).toLocaleString()}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: (() => {
+                          const available =
+                            totalBudget -
+                            (editingCategory
+                              ? categories
+                                  .filter(
+                                    (cat) => cat.id !== editingCategory.id
+                                  )
+                                  .reduce(
+                                    (sum, cat) => sum + cat.monthlyLimit,
+                                    0
+                                  ) +
+                                (editingCategory
+                                  ? parseFloat(tempCategoryLimit) || 0
+                                  : 0)
+                              : categories.reduce(
+                                  (sum, cat) => sum + cat.monthlyLimit,
+                                  0
+                                ));
+                          return available < 0 ? colors.error : colors.success;
+                        })(),
+                        fontWeight: "600",
+                      }}
+                    >
+                      {(() => {
+                        const available =
+                          totalBudget -
+                          (editingCategory
+                            ? categories
+                                .filter((cat) => cat.id !== editingCategory.id)
+                                .reduce(
+                                  (sum, cat) => sum + cat.monthlyLimit,
+                                  0
+                                ) +
+                              (editingCategory
+                                ? parseFloat(tempCategoryLimit) || 0
+                                : 0)
+                            : categories.reduce(
+                                (sum, cat) => sum + cat.monthlyLimit,
+                                0
+                              ));
+                        return available < 0 ? "over budget" : "available";
+                      })()}
+                    </Text>
+                  </View>
+                </View>
+
+                <View>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginBottom: 8,
+                    }}
+                  >
+                    Monthly Limit
+                  </Text>
+                  <TextInput
+                    value={
+                      editingCategory ? tempCategoryLimit : newCategoryLimit
+                    }
+                    onChangeText={(text) => {
+                      if (editingCategory) {
+                        setTempCategoryLimit(text);
+                      } else {
+                        setNewCategoryLimit(text);
+                      }
+                    }}
+                    placeholder="0.00"
+                    keyboardType="numeric"
+                    style={{
+                      backgroundColor: colors.surfaceSecondary,
+                      borderRadius: 12,
+                      padding: 16,
+                      fontSize: 16,
+                      color: colors.text,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                    }}
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                </View>
               </View>
 
-              <View>
-                <Text
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: 12,
+                  marginTop: 24,
+                }}
+              >
+                <TouchableOpacity
+                  onPress={closeModal}
                   style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    marginBottom: 8,
-                  }}
-                >
-                  Monthly Limit
-                </Text>
-                <TextInput
-                  value={newCategoryLimit}
-                  onChangeText={setNewCategoryLimit}
-                  placeholder="0.00"
-                  keyboardType="numeric"
-                  style={{
+                    flex: 1,
                     backgroundColor: colors.surfaceSecondary,
-                    borderRadius: 12,
                     padding: 16,
-                    fontSize: 16,
-                    color: colors.text,
-                    borderWidth: 1,
-                    borderColor: colors.border,
+                    borderRadius: 12,
+                    alignItems: "center",
                   }}
-                  placeholderTextColor={colors.textSecondary}
-                />
+                >
+                  <Text
+                    style={{
+                      color: colors.text,
+                      fontSize: 16,
+                      fontWeight: "600",
+                    }}
+                  >
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={editingCategory ? editCategory : addCategory}
+                  style={{
+                    flex: 1,
+                    backgroundColor: colors.primary,
+                    padding: 16,
+                    borderRadius: 12,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: colors.buttonText,
+                      fontSize: 16,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {editingCategory ? "Save" : "Add"}
+                  </Text>
+                </TouchableOpacity>
               </View>
-            </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                gap: 12,
-                marginTop: 24,
-              }}
-            >
-              <TouchableOpacity
-                onPress={closeModal}
-                style={{
-                  flex: 1,
-                  backgroundColor: colors.surfaceSecondary,
-                  padding: 16,
-                  borderRadius: 12,
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    color: colors.text,
-                    fontSize: 16,
-                    fontWeight: "600",
-                  }}
-                >
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={editingCategory ? editCategory : addCategory}
-                style={{
-                  flex: 1,
-                  backgroundColor: colors.primary,
-                  padding: 16,
-                  borderRadius: 12,
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    color: colors.buttonText,
-                    fontSize: 16,
-                    fontWeight: "600",
-                  }}
-                >
-                  {editingCategory ? "Save" : "Add"}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
