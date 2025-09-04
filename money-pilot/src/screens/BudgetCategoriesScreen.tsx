@@ -18,6 +18,7 @@ import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
 import { useData } from "../contexts/DataContext";
 import { useAuth } from "../hooks/useAuth";
+import { useRoute } from "@react-navigation/native";
 import {
   saveBudgetCategories,
   getUserBudgetCategories,
@@ -34,6 +35,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const { user } = useAuth();
+  const route = useRoute();
+  const selectedMonth = (route.params as any)?.selectedMonth || new Date();
   const {
     transactions,
     recurringTransactions,
@@ -56,24 +59,58 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
 
   // Check if a category is over budget
   const isCategoryOverBudget = (category: BudgetCategory) => {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
+    const targetMonth = selectedMonth.getMonth();
+    const targetYear = selectedMonth.getFullYear();
 
     // Get actual spending for this category (transactions + recurring)
     const categoryTransactions = transactions.filter((t) => {
       const transactionDate = new Date(t.date);
       return (
-        transactionDate.getMonth() === currentMonth &&
-        transactionDate.getFullYear() === currentYear &&
+        transactionDate.getMonth() === targetMonth &&
+        transactionDate.getFullYear() === targetYear &&
         t.type === "expense" &&
         t.category === category.name
       );
     });
 
     const categoryRecurring = recurringTransactions.filter((rt) => {
-      return (
-        rt.type === "expense" && rt.isActive && rt.category === category.name
-      );
+      // Only include recurring expenses that are active in the selected month
+      if (
+        rt.type !== "expense" ||
+        !rt.isActive ||
+        rt.category !== category.name
+      )
+        return false;
+
+      // Check if the recurring transaction was created before or during the selected month
+      const startDate = new Date(rt.startDate || rt.date);
+      const startMonth = startDate.getMonth();
+      const startYear = startDate.getFullYear();
+
+      // If start date is after the selected month, exclude it
+      if (
+        startYear > targetYear ||
+        (startYear === targetYear && startMonth > targetMonth)
+      ) {
+        return false;
+      }
+
+      // If there's an end date, check if the selected month is before the end date
+      if (rt.endDate) {
+        const endDate = new Date(rt.endDate);
+        const endMonth = endDate.getMonth();
+        const endYear = endDate.getFullYear();
+
+        // If selected month is after the end date, exclude it
+        if (
+          targetYear > endYear ||
+          (targetYear === endYear && targetMonth > endMonth)
+        ) {
+          return false;
+        }
+      }
+
+      return true;
     });
 
     const actualSpending =
@@ -120,21 +157,54 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     }, [user?.uid, refreshBudgetSettings])
   );
 
-  // Calculate current month data
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+  // Calculate data for the selected month
+  const targetMonth = selectedMonth.getMonth();
+  const targetYear = selectedMonth.getFullYear();
 
   const monthlyTransactions = transactions.filter((transaction) => {
     const transactionDate = new Date(transaction.date);
     return (
-      transactionDate.getMonth() === currentMonth &&
-      transactionDate.getFullYear() === currentYear &&
+      transactionDate.getMonth() === targetMonth &&
+      transactionDate.getFullYear() === targetYear &&
       transaction.type === "expense"
     );
   });
 
   const monthlyRecurringExpenses = recurringTransactions
-    .filter((t) => t.type === "expense" && t.isActive)
+    .filter((t) => {
+      // Only include recurring expenses that are active in the selected month
+      if (t.type !== "expense" || !t.isActive) return false;
+
+      // Check if the recurring transaction was created before or during the selected month
+      const startDate = new Date(t.startDate || t.date);
+      const startMonth = startDate.getMonth();
+      const startYear = startDate.getFullYear();
+
+      // If start date is after the selected month, exclude it
+      if (
+        startYear > targetYear ||
+        (startYear === targetYear && startMonth > targetMonth)
+      ) {
+        return false;
+      }
+
+      // If there's an end date, check if the selected month is before the end date
+      if (t.endDate) {
+        const endDate = new Date(t.endDate);
+        const endMonth = endDate.getMonth();
+        const endYear = endDate.getFullYear();
+
+        // If selected month is after the end date, exclude it
+        if (
+          targetYear > endYear ||
+          (targetYear === endYear && targetMonth > endMonth)
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    })
     .reduce((sum: number, rt: any) => {
       let monthlyAmount = rt.amount;
       if (rt.frequency === "weekly") {
@@ -150,15 +220,48 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     .filter((t) => {
       const transactionDate = new Date(t.date);
       return (
-        transactionDate.getMonth() === currentMonth &&
-        transactionDate.getFullYear() === currentYear &&
+        transactionDate.getMonth() === targetMonth &&
+        transactionDate.getFullYear() === targetYear &&
         t.type === "income"
       );
     })
     .reduce((sum, t) => sum + t.amount, 0);
 
   const recurringMonthlyIncome = recurringTransactions
-    .filter((t) => t.type === "income" && t.isActive)
+    .filter((t) => {
+      // Only include recurring income that is active in the selected month
+      if (t.type !== "income" || !t.isActive) return false;
+
+      // Check if the recurring transaction was created before or during the selected month
+      const startDate = new Date(t.startDate || t.date);
+      const startMonth = startDate.getMonth();
+      const startYear = startDate.getFullYear();
+
+      // If start date is after the selected month, exclude it
+      if (
+        startYear > targetYear ||
+        (startYear === targetYear && startMonth > targetMonth)
+      ) {
+        return false;
+      }
+
+      // If there's an end date, check if the selected month is before the end date
+      if (t.endDate) {
+        const endDate = new Date(t.endDate);
+        const endMonth = endDate.getMonth();
+        const endYear = endDate.getFullYear();
+
+        // If selected month is after the end date, exclude it
+        if (
+          targetYear > endYear ||
+          (targetYear === endYear && targetMonth > endMonth)
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    })
     .reduce((sum: number, rt: any) => {
       let monthlyAmount = rt.amount;
       if (rt.frequency === "weekly") {
@@ -195,12 +298,42 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
 
     // Get actual spending from recurring transactions in this category
     const actualRecurringSpending = recurringTransactions
-      .filter(
-        (t) =>
-          t.type === "expense" &&
-          t.isActive &&
-          t.category.toLowerCase() === categoryName.toLowerCase()
-      )
+      .filter((t) => {
+        // Only include recurring expenses that are active in the selected month
+        if (t.type !== "expense" || !t.isActive) return false;
+        if (t.category.toLowerCase() !== categoryName.toLowerCase())
+          return false;
+
+        // Check if the recurring transaction was created before or during the selected month
+        const startDate = new Date(t.startDate || t.date);
+        const startMonth = startDate.getMonth();
+        const startYear = startDate.getFullYear();
+
+        // If start date is after the selected month, exclude it
+        if (
+          startYear > targetYear ||
+          (startYear === targetYear && startMonth > targetMonth)
+        ) {
+          return false;
+        }
+
+        // If there's an end date, check if the selected month is before the end date
+        if (t.endDate) {
+          const endDate = new Date(t.endDate);
+          const endMonth = endDate.getMonth();
+          const endYear = endDate.getFullYear();
+
+          // If selected month is after the end date, exclude it
+          if (
+            targetYear > endYear ||
+            (targetYear === endYear && targetMonth > endMonth)
+          ) {
+            return false;
+          }
+        }
+
+        return true;
+      })
       .reduce((sum: number, rt: any) => {
         let monthlyAmount = rt.amount;
         if (rt.frequency === "weekly") {
@@ -454,7 +587,11 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
               marginBottom: 12,
             }}
           >
-            Monthly Overview
+            {selectedMonth.toLocaleDateString("en-US", {
+              month: "long",
+              year: "numeric",
+            })}{" "}
+            Overview
           </Text>
           <Text
             style={{

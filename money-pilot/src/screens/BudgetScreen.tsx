@@ -805,7 +805,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           onPressSettings={() => {
             // Clear the badge by refreshing budget categories
             loadBudgetCategories();
-            navigation.navigate("BudgetCategories");
+            navigation.navigate("BudgetCategories", { selectedMonth });
           }}
           onPressIncome={handleAddIncome}
           onPressExpense={handleAddExpense}
