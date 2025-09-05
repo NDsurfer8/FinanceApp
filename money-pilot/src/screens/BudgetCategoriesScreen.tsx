@@ -655,7 +655,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StandardHeader
         title="Set Your Budget"
-        subtitle="Manage your monthly spending"
+        subtitle="Budget your monthly spending"
         showBackButton={true}
         onBack={() => navigation.goBack()}
         rightComponent={
@@ -693,7 +693,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
         >
           <Text
             style={{
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: "700",
               color: colors.text,
               marginBottom: 12,
@@ -707,7 +707,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
           </Text>
           <Text
             style={{
-              fontSize: 11,
+              fontSize: 14,
               color: colors.textSecondary,
               marginBottom: 16,
               lineHeight: 16,
@@ -726,12 +726,12 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                 paddingVertical: 4,
               }}
             >
-              <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+              <Text style={{ fontSize: 18, color: colors.textSecondary }}>
                 Total Budget
               </Text>
               <Text
                 style={{
-                  fontSize: 15,
+                  fontSize: 18,
                   fontWeight: "600",
                   color: colors.primary,
                 }}
@@ -748,11 +748,11 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                 paddingVertical: 4,
               }}
             >
-              <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+              <Text style={{ fontSize: 18, color: colors.textSecondary }}>
                 Recurring Expenses
               </Text>
               <Text
-                style={{ fontSize: 13, fontWeight: "500", color: colors.text }}
+                style={{ fontSize: 18, fontWeight: "500", color: colors.text }}
               >
                 ${monthlyRecurringExpenses.toLocaleString()}
               </Text>
@@ -766,11 +766,11 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                 paddingVertical: 4,
               }}
             >
-              <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+              <Text style={{ fontSize: 18, color: colors.textSecondary }}>
                 Actual Spending
               </Text>
               <Text
-                style={{ fontSize: 13, fontWeight: "500", color: colors.text }}
+                style={{ fontSize: 18, fontWeight: "500", color: colors.text }}
               >
                 $
                 {(
@@ -914,7 +914,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       backgroundColor: colors.surfaceSecondary,
                     }}
                   >
-                    <Ionicons name="pencil" size={14} color={colors.primary} />
+                    <Ionicons name="pencil" size={24} color={colors.primary} />
                   </TouchableOpacity>
 
                   {/* Only show delete button for user-added categories */}
@@ -929,7 +929,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     >
                       <Ionicons
                         name="trash"
-                        size={14}
+                        size={24}
                         color={colors.buttonText}
                       />
                     </TouchableOpacity>
@@ -947,12 +947,12 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     paddingVertical: 3,
                   }}
                 >
-                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                  <Text style={{ fontSize: 18, color: colors.textSecondary }}>
                     Monthly Limit
                   </Text>
                   <Text
                     style={{
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: "600",
                       color: colors.text,
                     }}
@@ -969,10 +969,10 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     paddingVertical: 3,
                   }}
                 >
-                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                  <Text style={{ fontSize: 16, color: colors.textSecondary }}>
                     Actual
                   </Text>
-                  <Text style={{ fontSize: 13, color: colors.primary }}>
+                  <Text style={{ fontSize: 16, color: colors.primary }}>
                     ${spending.actual.toFixed(0)}
                   </Text>
                 </View>
@@ -985,12 +985,12 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     paddingVertical: 3,
                   }}
                 >
-                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                  <Text style={{ fontSize: 16, color: colors.textSecondary }}>
                     Remaining
                   </Text>
                   <Text
                     style={{
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: "600",
                       color: remaining >= 0 ? colors.success : colors.error,
                     }}
@@ -1004,9 +1004,9 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
               <View style={{ marginTop: 14 }}>
                 <View
                   style={{
-                    height: 6,
+                    height: 10,
                     backgroundColor: colors.border,
-                    borderRadius: 3,
+                    borderRadius: 5,
                     overflow: "hidden",
                   }}
                 >

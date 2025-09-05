@@ -86,7 +86,7 @@ export const HelpfulTooltip: React.FC<HelpfulTooltipProps> = ({
     return <>{children}</>;
   }
 
-  const getTooltipStyle = () => {
+  const getTooltipStyle = (): any => {
     const baseStyle = {
       position: "absolute" as const,
       zIndex: 1000,
@@ -117,7 +117,7 @@ export const HelpfulTooltip: React.FC<HelpfulTooltipProps> = ({
     }
   };
 
-  const getArrowStyle = () => {
+  const getArrowStyle = (): any => {
     const baseStyle = {
       position: "absolute" as const,
       width: 0,
