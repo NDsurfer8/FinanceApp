@@ -69,7 +69,6 @@ class AIUsageTracker {
         AIUsageTracker.CONFIG_KEY,
         JSON.stringify(this.config)
       );
-      console.log("AI usage config updated:", this.config);
     } catch (error) {
       console.error("Error saving AI usage config:", error);
     }
@@ -289,7 +288,6 @@ class AIUsageTracker {
     try {
       const key = `${AIUsageTracker.USAGE_PREFIX}${userId}`;
       await AsyncStorage.removeItem(key);
-      console.log(`AI usage reset for user: ${userId}`);
     } catch (error) {
       console.error("Error resetting AI usage:", error);
     }

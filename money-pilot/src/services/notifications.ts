@@ -54,9 +54,6 @@ export class NotificationService {
           shouldShowList: true,
         }),
       });
-      console.log(
-        `Notification handler updated - badge enabled: ${badgeEnabled}`
-      );
     } catch (error) {
       console.error("Error updating notification handler:", error);
     }
@@ -70,8 +67,6 @@ export class NotificationService {
 
       // Persist badge count to AsyncStorage
       await AsyncStorage.setItem("app_badge_count", this.badgeCount.toString());
-
-      console.log(`Badge count set to: ${this.badgeCount}`);
     } catch (error) {
       console.error("Error setting badge count:", error);
     }
@@ -109,7 +104,6 @@ export class NotificationService {
       if (persistedCount) {
         this.badgeCount = parseInt(persistedCount, 10) || 0;
         await Notifications.setBadgeCountAsync(this.badgeCount);
-        console.log(`Loaded persisted badge count: ${this.badgeCount}`);
       }
     } catch (error) {
       console.error("Error loading persisted badge count:", error);
@@ -139,13 +133,11 @@ export class NotificationService {
       }
 
       if (finalStatus !== "granted") {
-        console.log("Failed to get push token for push notification!");
         return false;
       }
 
       return true;
     } else {
-      console.log("Must use physical device for Push Notifications");
       return false;
     }
   }
@@ -202,8 +194,6 @@ export class NotificationService {
 
       // Get push token (this will also set up permissions)
       await this.getPushToken();
-
-      console.log("Push notifications initialized successfully");
     } catch (error) {
       console.error("Error initializing push notifications:", error);
     }
@@ -234,18 +224,8 @@ export class NotificationService {
     // For immediate notifications (like webhooks), always send them
     // For scheduled notifications, respect app state
     if (notification.trigger && this.isAppActive()) {
-      console.log(
-        "App is active, skipping scheduled notification:",
-        notification.title
-      );
       return "";
     }
-
-    console.log(
-      `Scheduling notification: ${
-        notification.title
-      } (App active: ${this.isAppActive()})`
-    );
 
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
@@ -257,7 +237,6 @@ export class NotificationService {
       trigger: notification.trigger || null,
     });
 
-    console.log(`Notification scheduled with ID: ${notificationId}`);
     return notificationId;
   }
 
@@ -311,9 +290,6 @@ export class NotificationService {
 
     // Don't schedule if the reminder date is in the past
     if (reminderDate <= new Date()) {
-      console.log(
-        `Bill reminder for ${billName} would be in the past, skipping`
-      );
       return "";
     }
 
@@ -531,8 +507,6 @@ export class NotificationService {
   private handleNotificationReceived = async (
     notification: Notifications.Notification
   ) => {
-    console.log("Notification received:", notification);
-
     // Increment badge count when notification is received
     try {
       await this.incrementBadge();
@@ -544,8 +518,6 @@ export class NotificationService {
   private handleNotificationResponse = async (
     response: Notifications.NotificationResponse
   ) => {
-    console.log("Notification response:", response);
-
     // Clear badge when notification is tapped
     try {
       await this.clearBadge();
@@ -559,48 +531,37 @@ export class NotificationService {
     switch (data?.type) {
       case "budget-reminder":
         // Navigate to budget screen
-        console.log("Navigating to budget screen");
         break;
       case "bill-reminder":
         // Navigate to bills/expenses screen
-        console.log("Navigating to transactions screen");
         break;
       case "goal-reminder":
         // Navigate to goals screen
-        console.log("Navigating to goals screen");
         break;
       case "weekly-report":
         // Navigate to reports screen
-        console.log("Navigating to reports screen");
         break;
       case "monthly-report":
         // Navigate to reports screen
-        console.log("Navigating to reports screen");
         break;
       case "low-balance":
         // Navigate to accounts screen
-        console.log("Navigating to accounts screen");
         break;
       case "savings-reminder":
         // Navigate to savings/goals screen
-        console.log("Navigating to goals screen");
         break;
       case "webhook-transactions":
         // Navigate to bank transactions screen
-        console.log("Navigating to bank transactions screen");
         break;
       case "webhook-accounts":
         // Navigate to bank transactions screen to see new accounts
-        console.log("Navigating to bank transactions screen");
         break;
 
       case "goal-reminder":
         // Navigate to goals screen
-        console.log("Navigating to goals screen");
         break;
       case "webhook-issue":
         // Navigate to settings or bank connection screen
-        console.log("Navigating to bank connection settings");
         break;
     }
   };
