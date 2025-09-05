@@ -94,9 +94,10 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     },
   ];
 
-  // Load tour completion status
+  // Load tour completion status and tooltips setting
   useEffect(() => {
     loadTourStatus();
+    loadTooltipsSetting();
   }, [user]);
 
   const loadTourStatus = async () => {
@@ -130,6 +131,29 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
       setHasCompletedTourState(completed);
     } catch (error) {
       console.error("Error saving tour status:", error);
+    }
+  };
+
+  const loadTooltipsSetting = async () => {
+    if (!user) return;
+
+    try {
+      const saved = await AsyncStorage.getItem(`show_tooltips_${user.uid}`);
+      if (saved !== null) {
+        setShowTooltips(saved === "true");
+      }
+    } catch (error) {
+      console.error("Error loading tooltips setting:", error);
+    }
+  };
+
+  const saveTooltipsSetting = async (show: boolean) => {
+    if (!user) return;
+
+    try {
+      await AsyncStorage.setItem(`show_tooltips_${user.uid}`, show.toString());
+    } catch (error) {
+      console.error("Error saving tooltips setting:", error);
     }
   };
 
@@ -229,6 +253,12 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     }
   };
 
+  // Wrapper function to save tooltips setting when changed
+  const handleSetShowTooltips = async (show: boolean) => {
+    setShowTooltips(show);
+    await saveTooltipsSetting(show);
+  };
+
   const value: TourContextType = {
     isTourActive,
     currentStep,
@@ -240,7 +270,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     hasCompletedTour,
     isTourStatusLoaded,
     showTooltips,
-    setShowTooltips,
+    setShowTooltips: handleSetShowTooltips,
     setHasCompletedTour: setHasCompletedTourState,
     isNewUser,
     reloadTourStatus,
