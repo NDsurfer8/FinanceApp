@@ -1675,8 +1675,8 @@ Original Request: ${basePrompt}
           backgroundColor: colors.background,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
-          paddingVertical: 12,
-          paddingHorizontal: 16,
+          paddingVertical: 16,
+          paddingHorizontal: 20,
           opacity: headerOpacity,
         }}
       >
@@ -1684,19 +1684,24 @@ Original Request: ${basePrompt}
           style={{
             flexDirection: "row",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: "center",
+            position: "relative",
+            minHeight: 40,
           }}
         >
+          {/* Back Button - Positioned absolutely on the left */}
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={{
-              marginRight: 20,
+              position: "absolute",
+              left: 0,
               padding: 4,
             }}
           >
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
 
+          {/* Vectra Section - Centered */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <VectraAvatar size={20} />
             <Text
@@ -1710,6 +1715,7 @@ Original Request: ${basePrompt}
             </Text>
           </View>
 
+          {/* Clear Button - Positioned absolutely on the right */}
           <TouchableOpacity
             onPress={() => {
               Alert.alert(
@@ -1726,6 +1732,8 @@ Original Request: ${basePrompt}
               );
             }}
             style={{
+              position: "absolute",
+              right: 0,
               padding: 8,
               borderRadius: 6,
             }}
