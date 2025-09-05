@@ -944,8 +944,18 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   <Text style={{ fontSize: 16, color: colors.textSecondary }}>
                     Spent
                   </Text>
-                  <Text style={{ fontSize: 16, color: colors.primary }}>
-                    ${spending.actual.toFixed(0)}
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color:
+                        spending.actual === 0
+                          ? colors.textSecondary
+                          : colors.error,
+                    }}
+                  >
+                    {spending.actual === 0
+                      ? "$0"
+                      : `-$${spending.actual.toFixed(0)}`}
                   </Text>
                 </View>
 
@@ -967,7 +977,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       color: remaining >= 0 ? colors.success : colors.error,
                     }}
                   >
-                    ${remaining.toFixed(0)}
+                    {remaining >= 0 ? `$${remaining.toFixed(0)}` : "$0"}
                   </Text>
                 </View>
               </View>
