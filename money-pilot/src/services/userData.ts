@@ -318,8 +318,6 @@ const updateNetWorthCallbacks: { [userId: string]: NodeJS.Timeout } = {};
 export const updateNetWorthFromAssetsAndDebts = async (
   userId: string
 ): Promise<void> => {
-  console.log("updateNetWorthFromAssetsAndDebts called for user:", userId);
-
   // Clear any existing timeout for this user
   if (updateNetWorthCallbacks[userId]) {
     clearTimeout(updateNetWorthCallbacks[userId]);
@@ -328,10 +326,6 @@ export const updateNetWorthFromAssetsAndDebts = async (
   // Return a Promise that resolves when the update is complete
   return new Promise((resolve, reject) => {
     updateNetWorthCallbacks[userId] = setTimeout(async () => {
-      console.log(
-        "updateNetWorthFromAssetsAndDebts executing for user:",
-        userId
-      );
       try {
         // Get current assets and debts
         const [assets, debts] = await Promise.all([
@@ -349,10 +343,6 @@ export const updateNetWorthFromAssetsAndDebts = async (
           0
         );
         const netWorth = totalAssets - totalDebts;
-
-        console.log(
-          `📊 Net worth calculation: Assets: ${totalAssets}, Debts: ${totalDebts}, Net Worth: ${netWorth}`
-        );
 
         // Get existing net worth entries
         const entries = await getUserNetWorthEntries(userId);
@@ -999,7 +989,6 @@ export const saveBudgetSettings = async (
       updatedAt: Date.now(),
     });
 
-    console.log("Budget settings saved successfully");
     return budgetSettingsId;
   } catch (error) {
     console.error("Error saving budget settings:", error);
@@ -1055,7 +1044,6 @@ export const updateBudgetSettings = async (
       ...encryptedSettings,
       updatedAt: Date.now(),
     });
-    console.log("Budget settings updated successfully");
   } catch (error) {
     console.error("Error updating budget settings:", error);
     throw error;
@@ -1325,7 +1313,6 @@ export const deleteSharedGroup = async (
     // Delete all shared financial data for this group
     const sharedFinanceDataRef = ref(db, `sharedFinanceData/${groupId}`);
     await remove(sharedFinanceDataRef);
-    console.log("✅ Shared financial data deleted for group:", groupId);
 
     // Delete all invitations for this group
     const invitationsRef = ref(db, `invitations`);
@@ -1606,8 +1593,6 @@ export const addSelectiveUserDataToGroup = async (
     const cleanSelectiveUserData = cleanDataForFirebase(selectiveUserData);
 
     await set(groupRef, cleanSelectiveUserData);
-
-    console.log("Selective user data added to shared group successfully");
   } catch (error) {
     console.error("Error adding selective user data to group:", error);
     throw error;
@@ -1864,47 +1849,37 @@ export const getGroupAggregatedData = async (
 
 export const deleteUserAccount = async (userId: string): Promise<void> => {
   try {
-    console.log(`Starting account deletion for user: ${userId}`);
-
     // 1. Delete user's transactions
     const transactionsRef = ref(db, `users/${userId}/transactions`);
     await remove(transactionsRef);
-    console.log("Deleted user transactions");
 
     // 2. Delete user's assets
     const assetsRef = ref(db, `users/${userId}/assets`);
     await remove(assetsRef);
-    console.log("Deleted user assets");
 
     // 3. Delete user's debts
     const debtsRef = ref(db, `users/${userId}/debts`);
     await remove(debtsRef);
-    console.log("Deleted user debts");
 
     // 4. Delete user's goals
     const goalsRef = ref(db, `users/${userId}/goals`);
     await remove(goalsRef);
-    console.log("Deleted user goals");
 
     // 5. Delete user's emergency fund
     const emergencyFundRef = ref(db, `users/${userId}/emergencyFund`);
     await remove(emergencyFundRef);
-    console.log("Deleted user emergency fund");
 
     // 6. Delete user's budget settings
     const budgetSettingsRef = ref(db, `users/${userId}/budgetSettings`);
     await remove(budgetSettingsRef);
-    console.log("Deleted user budget settings");
 
     // 7. Delete user's profile
     const profileRef = ref(db, `users/${userId}/profile`);
     await remove(profileRef);
-    console.log("Deleted user profile");
 
     // 8. Delete the entire user node
     const userRef = ref(db, `users/${userId}`);
     await remove(userRef);
-    console.log("Deleted entire user node");
 
     // 9. Handle shared groups - remove user from all groups they're a member of
     try {
@@ -2699,7 +2674,6 @@ export const saveBudgetCategories = async (
   try {
     const key = `budgetCategories_${userId}`;
     await AsyncStorage.setItem(key, JSON.stringify(categories));
-    console.log("Budget categories saved to AsyncStorage successfully");
   } catch (error) {
     console.error("Error saving budget categories:", error);
     throw error;

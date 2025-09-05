@@ -172,20 +172,6 @@ export const FloatingAIChatbot: React.FC<FloatingAIChatbotProps> = ({
       }),
     ]).start();
 
-    // Debug: Log what month we're sending
-    console.log(
-      "🔍 FloatingAI Debug - Selected month being sent:",
-      selectedMonth
-    );
-    console.log(
-      "🔍 FloatingAI Debug - Selected month timestamp:",
-      selectedMonth.getTime()
-    );
-    console.log(
-      "🔍 FloatingAI Debug - Selected month string:",
-      selectedMonth.toLocaleDateString()
-    );
-
     navigation.navigate("AIFinancialAdvisor", {
       selectedMonth: selectedMonth.getTime(),
     });

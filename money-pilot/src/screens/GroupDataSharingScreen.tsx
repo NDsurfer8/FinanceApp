@@ -122,7 +122,6 @@ export default function GroupDataSharingScreen({
 
       if (savedSettings) {
         const parsedSettings = JSON.parse(savedSettings);
-        console.log("✅ Loaded settings from AsyncStorage:", parsedSettings);
         setSettings(parsedSettings);
       } else {
         console.log("⚠️ No saved settings found, using defaults");
@@ -138,7 +137,6 @@ export default function GroupDataSharingScreen({
 
       const storageKey = getStorageKey();
       await AsyncStorage.setItem(storageKey, JSON.stringify(newSettings));
-      console.log("💾 Settings saved to AsyncStorage:", newSettings);
     } catch (error) {
       console.error("❌ Error saving sharing settings:", error);
     }

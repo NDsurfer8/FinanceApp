@@ -155,8 +155,6 @@ export default function SharedGroupDetailFixed({
         // Automatically sync user's data when opening the group
         if (user?.uid) {
           try {
-            console.log("🔄 Auto-syncing user data when opening group");
-
             // Get user's current sharing settings for this group
             const userSharingSettings = await getUserGroupSharingSettings(
               user.uid,
@@ -356,7 +354,6 @@ export default function SharedGroupDetailFixed({
           `🎯 Final totals - Net Worth: ${totalNetWorth}, Assets: ${totalAssets}, Debts: ${totalDebts}, Income: ${totalMonthlyIncome}, Expenses: ${totalMonthlyExpenses}`
         );
         console.log(`👥 Member incomes:`, memberIncomes);
-        console.log(`📊 Total transactions:`, allTransactions.length);
 
         setGroupData({
           netWorth: totalNetWorth,

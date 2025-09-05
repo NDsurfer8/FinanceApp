@@ -269,11 +269,6 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           1
         );
 
-  // Debug: Log what we received from navigation
-  console.log("🔍 AI Debug - Route params:", route.params);
-  console.log("🔍 AI Debug - Raw selectedMonth from params:", selectedMonth);
-  console.log("🔍 AI Debug - Final targetMonth:", targetMonth);
-  console.log("🔍 AI Debug - Current date for comparison:", new Date());
   const { hideChatbot, showChatbot } = useChatbot();
   const { hasPremiumAccess } = useSubscription();
   const {
@@ -465,32 +460,6 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     const targetMonthNum = targetMonth.getMonth();
     const targetYear = targetMonth.getFullYear();
 
-    // Debug: Log all transactions to see what data we have
-    console.log("🔍 AI Debug - All transactions:", transactions.length);
-    console.log(
-      "🔍 AI Debug - All recurring transactions:",
-      recurringTransactions.length
-    );
-    console.log(
-      "🔍 AI Debug - Selected month:",
-      targetMonth.toLocaleDateString()
-    );
-    console.log("🔍 AI Debug - Target month/year:", targetMonthNum, targetYear);
-    console.log(
-      "🔍 AI Debug - Month name:",
-      targetMonth.toLocaleDateString("en-US", {
-        month: "long",
-        year: "numeric",
-      })
-    );
-
-    // Debug: Show what months we have transactions in
-    const transactionMonths = transactions.map((t) => {
-      const date = new Date(t.date);
-      return `${date.getMonth()}/${date.getFullYear()} (${date.toLocaleDateString()})`;
-    });
-    console.log("🔍 AI Debug - Transaction months:", transactionMonths);
-
     // Calculate monthly income and expenses from actual transactions for the selected month
     const monthlyTransactions = transactions.filter((transaction) => {
       const transactionDate = new Date(transaction.date);
@@ -499,22 +468,6 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
         transactionDate.getFullYear() === targetYear
       );
     });
-
-    // Debug: Log filtered transactions
-    console.log(
-      "🔍 AI Debug - Monthly transactions:",
-      monthlyTransactions.length
-    );
-    console.log(
-      "🔍 AI Debug - Monthly transactions details:",
-      monthlyTransactions.map((t) => ({
-        id: t.id,
-        description: t.description,
-        amount: t.amount,
-        type: t.type,
-        date: new Date(t.date).toLocaleDateString(),
-      }))
-    );
 
     const actualMonthlyIncome = monthlyTransactions
       .filter((t) => t.type === "income")
@@ -624,16 +577,6 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     const monthlyIncome = actualMonthlyIncome + recurringMonthlyIncome;
     const monthlyExpenses = actualMonthlyExpenses + recurringMonthlyExpenses;
     const netIncome = monthlyIncome - monthlyExpenses;
-
-    // Debug: Log final totals
-    console.log("🔍 AI Debug - Final totals:");
-    console.log("  - Actual monthly income:", actualMonthlyIncome);
-    console.log("  - Recurring monthly income:", recurringMonthlyIncome);
-    console.log("  - Total monthly income:", monthlyIncome);
-    console.log("  - Actual monthly expenses:", actualMonthlyExpenses);
-    console.log("  - Recurring monthly expenses:", recurringMonthlyExpenses);
-    console.log("  - Total monthly expenses:", monthlyExpenses);
-    console.log("  - Net income:", netIncome);
 
     // Debug logging to verify calculations
 

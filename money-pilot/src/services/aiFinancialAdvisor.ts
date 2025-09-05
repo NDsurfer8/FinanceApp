@@ -69,9 +69,6 @@ class AIFinancialAdvisorService {
     selectedMonth?: Date
   ): Promise<string> {
     try {
-      console.log("Using backend AI... sending snapshot to backend");
-      console.log("User preferences:", userPreferences);
-
       // Prepare financial data for backend - optimized for token usage
       const financialData = {
         // Month context - what month we're analyzing
