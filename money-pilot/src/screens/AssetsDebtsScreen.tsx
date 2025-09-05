@@ -27,6 +27,7 @@ import { usePaywall } from "../hooks/usePaywall";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 import { useScrollDetection } from "../hooks/useScrollDetection";
 import { TourGuide } from "../components/TourGuide";
+import { HelpfulTooltip } from "../components/HelpfulTooltip";
 
 interface AssetsDebtsScreenProps {
   navigation: any;
@@ -800,264 +801,288 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
         {renderFinancialInsights()}
 
         {/* Assets Section */}
-        <TourGuide zone={2} screen="AssetsDebts">
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 24,
-              marginBottom: 20,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
-            }}
-          >
+        <HelpfulTooltip
+          tooltipId="assets-section"
+          title="Track Your Assets"
+          description="Add your savings accounts, investments, property, and other valuable assets. This helps you see your total wealth and track growth over time."
+          position="top"
+          delay={2000}
+        >
+          <TourGuide zone={2} screen="AssetsDebts">
             <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                backgroundColor: colors.surface,
+                borderRadius: 20,
+                padding: 24,
                 marginBottom: 20,
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 4,
               }}
             >
               <View
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: colors.success + "20",
+                  flexDirection: "row",
                   alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 16,
+                  marginBottom: 20,
                 }}
               >
-                <Ionicons name="trending-up" size={20} color={colors.success} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
+                <View
                   style={{
-                    fontSize: 20,
-                    fontWeight: "700",
-                    color: colors.text,
-                    fontFamily: fontFamily.bold,
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: colors.success + "20",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 16,
                   }}
                 >
-                  {translate("assets", isFriendlyMode)}
-                </Text>
-                <Text
+                  <Ionicons
+                    name="trending-up"
+                    size={20}
+                    color={colors.success}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "700",
+                      color: colors.text,
+                      fontFamily: fontFamily.bold,
+                    }}
+                  >
+                    {translate("assets", isFriendlyMode)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      fontFamily: fontFamily.regular,
+                    }}
+                  >
+                    {assets.length} item{assets.length !== 1 ? "s" : ""} •
+                    Total: ${assetTotal.toLocaleString()}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setIsAssetsCollapsed(!isAssetsCollapsed)}
                   style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    fontFamily: fontFamily.regular,
+                    padding: 12,
+                    borderRadius: 12,
+                    backgroundColor: colors.surfaceSecondary,
                   }}
+                  activeOpacity={0.7}
                 >
-                  {assets.length} item{assets.length !== 1 ? "s" : ""} • Total:
-                  ${assetTotal.toLocaleString()}
-                </Text>
+                  <Ionicons
+                    name={isAssetsCollapsed ? "chevron-down" : "chevron-up"}
+                    size={20}
+                    color={colors.primary}
+                  />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                onPress={() => setIsAssetsCollapsed(!isAssetsCollapsed)}
-                style={{
-                  padding: 12,
-                  borderRadius: 12,
-                  backgroundColor: colors.surfaceSecondary,
-                }}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={isAssetsCollapsed ? "chevron-down" : "chevron-up"}
-                  size={20}
-                  color={colors.primary}
-                />
-              </TouchableOpacity>
-            </View>
 
-            {!isAssetsCollapsed && (
-              <>
-                {!hasAssets ? (
-                  renderEmptyState(
-                    "asset",
-                    "wallet-outline",
-                    `No ${translate(
-                      "assets",
-                      isFriendlyMode
-                    ).toLowerCase()} yet. Start building your wealth by adding your first asset.`
-                  )
-                ) : (
-                  <>
-                    {assets.map((asset, i) => renderAssetItem(asset, i))}
-                    <View
-                      style={{
-                        height: 1,
-                        backgroundColor: colors.border,
-                        marginVertical: 16,
-                      }}
-                    />
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Text
+              {!isAssetsCollapsed && (
+                <>
+                  {!hasAssets ? (
+                    renderEmptyState(
+                      "asset",
+                      "wallet-outline",
+                      `No ${translate(
+                        "assets",
+                        isFriendlyMode
+                      ).toLowerCase()} yet. Start building your wealth by adding your first asset.`
+                    )
+                  ) : (
+                    <>
+                      {assets.map((asset, i) => renderAssetItem(asset, i))}
+                      <View
                         style={{
-                          fontFamily: fontFamily.semiBold,
-                          fontWeight: "600",
-                          fontSize: 16,
-                          color: colors.text,
+                          height: 1,
+                          backgroundColor: colors.border,
+                          marginVertical: 16,
+                        }}
+                      />
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
                         }}
                       >
-                        Total Assets
-                      </Text>
-                      <Text
-                        style={{
-                          fontFamily: fontFamily.bold,
-                          fontWeight: "700",
-                          fontSize: 20,
-                          color: colors.success,
-                        }}
-                      >
-                        ${assetTotal.toLocaleString()}
-                      </Text>
-                    </View>
-                  </>
-                )}
-              </>
-            )}
-          </View>
-        </TourGuide>
+                        <Text
+                          style={{
+                            fontFamily: fontFamily.semiBold,
+                            fontWeight: "600",
+                            fontSize: 16,
+                            color: colors.text,
+                          }}
+                        >
+                          Total Assets
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: fontFamily.bold,
+                            fontWeight: "700",
+                            fontSize: 20,
+                            color: colors.success,
+                          }}
+                        >
+                          ${assetTotal.toLocaleString()}
+                        </Text>
+                      </View>
+                    </>
+                  )}
+                </>
+              )}
+            </View>
+          </TourGuide>
+        </HelpfulTooltip>
 
         {/* Debts Section */}
-        <TourGuide zone={3} screen="AssetsDebts">
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 24,
-              marginBottom: 20,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
-            }}
-          >
+        <HelpfulTooltip
+          tooltipId="debts-section"
+          title="Manage Your Debts"
+          description="Track your loans, credit cards, and other debts. Understanding your total debt helps you create a plan to pay it off faster."
+          position="top"
+          delay={3000}
+        >
+          <TourGuide zone={3} screen="AssetsDebts">
             <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                backgroundColor: colors.surface,
+                borderRadius: 20,
+                padding: 24,
                 marginBottom: 20,
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 4,
               }}
             >
               <View
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: colors.error + "20",
+                  flexDirection: "row",
                   alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 16,
+                  marginBottom: 20,
                 }}
               >
-                <Ionicons name="trending-down" size={20} color={colors.error} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
+                <View
                   style={{
-                    fontSize: 20,
-                    fontWeight: "700",
-                    color: colors.text,
-                    fontFamily: fontFamily.bold,
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: colors.error + "20",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 16,
                   }}
                 >
-                  {translate("debt", isFriendlyMode)}
-                </Text>
-                <Text
+                  <Ionicons
+                    name="trending-down"
+                    size={20}
+                    color={colors.error}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "700",
+                      color: colors.text,
+                      fontFamily: fontFamily.bold,
+                    }}
+                  >
+                    {translate("debt", isFriendlyMode)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      fontFamily: fontFamily.regular,
+                    }}
+                  >
+                    {debts.length} item{debts.length !== 1 ? "s" : ""} • Total:
+                    ${totalDebt.toLocaleString()}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setIsDebtsCollapsed(!isDebtsCollapsed)}
                   style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    fontFamily: fontFamily.regular,
+                    padding: 12,
+                    borderRadius: 12,
+                    backgroundColor: colors.surfaceSecondary,
                   }}
+                  activeOpacity={0.7}
                 >
-                  {debts.length} item{debts.length !== 1 ? "s" : ""} • Total: $
-                  {totalDebt.toLocaleString()}
-                </Text>
+                  <Ionicons
+                    name={isDebtsCollapsed ? "chevron-down" : "chevron-up"}
+                    size={20}
+                    color={colors.primary}
+                  />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                onPress={() => setIsDebtsCollapsed(!isDebtsCollapsed)}
-                style={{
-                  padding: 12,
-                  borderRadius: 12,
-                  backgroundColor: colors.surfaceSecondary,
-                }}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={isDebtsCollapsed ? "chevron-down" : "chevron-up"}
-                  size={20}
-                  color={colors.primary}
-                />
-              </TouchableOpacity>
-            </View>
 
-            {!isDebtsCollapsed && (
-              <>
-                {!hasDebts ? (
-                  renderEmptyState(
-                    "debt",
-                    "card-outline",
-                    `No ${translate(
+              {!isDebtsCollapsed && (
+                <>
+                  {!hasDebts ? (
+                    renderEmptyState(
                       "debt",
-                      isFriendlyMode
-                    ).toLowerCase()} yet. Track your debts to better manage your finances.`
-                  )
-                ) : (
-                  <>
-                    {debts.map((debt, i) => renderDebtItem(debt, i))}
-                    <View
-                      style={{
-                        height: 1,
-                        backgroundColor: colors.border,
-                        marginVertical: 16,
-                      }}
-                    />
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Text
+                      "card-outline",
+                      `No ${translate(
+                        "debt",
+                        isFriendlyMode
+                      ).toLowerCase()} yet. Track your debts to better manage your finances.`
+                    )
+                  ) : (
+                    <>
+                      {debts.map((debt, i) => renderDebtItem(debt, i))}
+                      <View
                         style={{
-                          fontFamily: fontFamily.semiBold,
-                          fontWeight: "600",
-                          fontSize: 16,
-                          color: colors.text,
+                          height: 1,
+                          backgroundColor: colors.border,
+                          marginVertical: 16,
+                        }}
+                      />
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
                         }}
                       >
-                        Total Debt
-                      </Text>
-                      <Text
-                        style={{
-                          fontFamily: fontFamily.bold,
-                          fontWeight: "700",
-                          fontSize: 20,
-                          color: colors.error,
-                        }}
-                      >
-                        ${totalDebt.toLocaleString()}
-                      </Text>
-                    </View>
-                  </>
-                )}
-              </>
-            )}
-          </View>
-        </TourGuide>
+                        <Text
+                          style={{
+                            fontFamily: fontFamily.semiBold,
+                            fontWeight: "600",
+                            fontSize: 16,
+                            color: colors.text,
+                          }}
+                        >
+                          Total Debt
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: fontFamily.bold,
+                            fontWeight: "700",
+                            fontSize: 20,
+                            color: colors.error,
+                          }}
+                        >
+                          ${totalDebt.toLocaleString()}
+                        </Text>
+                      </View>
+                    </>
+                  )}
+                </>
+              )}
+            </View>
+          </TourGuide>
+        </HelpfulTooltip>
 
         {/* Action Buttons */}
         <TourGuide zone={4} screen="AssetsDebts">

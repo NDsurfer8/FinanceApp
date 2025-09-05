@@ -28,6 +28,7 @@ import { StandardHeader } from "../components/StandardHeader";
 import { CustomTrendChart } from "../components/CustomTrendChart";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 import { TourGuide } from "../components/TourGuide";
+import { HelpfulTooltip } from "../components/HelpfulTooltip";
 
 interface DashboardScreenProps {
   navigation: any;
@@ -961,93 +962,104 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </TourGuide>
 
         {/* Balance Sheet Card */}
-        <TourGuide zone={2} screen="Dashboard">
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 24,
-              marginBottom: 20,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
-            }}
-          >
-            <Text
+        <HelpfulTooltip
+          tooltipId="balance-sheet"
+          title="Your Net Worth"
+          description="This shows your total assets minus debts. Track how your net worth grows over time as you save and invest!"
+          position="top"
+          delay={2500}
+        >
+          <TourGuide zone={2} screen="Dashboard">
+            <View
               style={{
-                fontSize: 20,
-                fontWeight: "700",
+                backgroundColor: colors.surface,
+                borderRadius: 20,
+                padding: 24,
                 marginBottom: 20,
-                color: colors.text,
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 4,
               }}
             >
-              Balance Sheet Snapshot
-            </Text>
-
-            <View style={{ alignItems: "center", marginBottom: 24 }}>
               <Text
                 style={{
-                  fontSize: 36,
-                  fontWeight: "800",
-                  color: netWorth >= 0 ? colors.success : colors.error,
-                  marginBottom: 8,
+                  fontSize: 20,
+                  fontWeight: "700",
+                  marginBottom: 20,
+                  color: colors.text,
                 }}
               >
-                {formatCurrency(netWorth)}
+                Balance Sheet Snapshot
               </Text>
-              <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
-              </Text>
-            </View>
 
-            <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
-            >
-              <View style={{ alignItems: "center", flex: 1 }}>
+              <View style={{ alignItems: "center", marginBottom: 24 }}>
                 <Text
                   style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    marginBottom: 4,
+                    fontSize: 36,
+                    fontWeight: "800",
+                    color: netWorth >= 0 ? colors.success : colors.error,
+                    marginBottom: 8,
                   }}
                 >
-                  Total {translate("assets", isFriendlyMode)}
+                  {formatCurrency(netWorth)}
                 </Text>
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "700",
-                    color: colors.success,
-                  }}
-                >
-                  {formatCurrency(totalAssets)}
+                <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                  {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
                 </Text>
               </View>
-              <View style={{ alignItems: "center", flex: 1 }}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    marginBottom: 4,
-                  }}
-                >
-                  Total {translate("liabilities", isFriendlyMode)}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "700",
-                    color: colors.error,
-                  }}
-                >
-                  {formatCurrency(totalDebts)}
-                </Text>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View style={{ alignItems: "center", flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginBottom: 4,
+                    }}
+                  >
+                    Total {translate("assets", isFriendlyMode)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: "700",
+                      color: colors.success,
+                    }}
+                  >
+                    {formatCurrency(totalAssets)}
+                  </Text>
+                </View>
+                <View style={{ alignItems: "center", flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginBottom: 4,
+                    }}
+                  >
+                    Total {translate("liabilities", isFriendlyMode)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: "700",
+                      color: colors.error,
+                    }}
+                  >
+                    {formatCurrency(totalDebts)}
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
-        </TourGuide>
+          </TourGuide>
+        </HelpfulTooltip>
 
         {/* Smart Insights - Only show if there are insights */}
         {insights.length > 0 && (

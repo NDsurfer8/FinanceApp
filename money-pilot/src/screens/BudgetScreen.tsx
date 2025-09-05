@@ -24,6 +24,7 @@ import { BudgetOverviewCard } from "../components/BudgetOverviewCard";
 import { TransactionListCard } from "../components/TransactionListCard";
 import { BudgetSettingsModal } from "../components/BudgetSettingsModal";
 import { TourGuide } from "../components/TourGuide";
+import { HelpfulTooltip } from "../components/HelpfulTooltip";
 import {
   saveBudgetSettings,
   updateBudgetSettings,
@@ -1090,58 +1091,76 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         )}
 
         {/* Income Section */}
-        <TransactionListCard
-          title="Income"
-          icon="trending-up"
-          iconColor={colors.success}
-          transactions={selectedMonthTransactions.filter(
-            (t) => t.type === "income"
-          )}
-          projectedTransactions={projectedTransactions.filter(
-            (t) => t.type === "income"
-          )}
-          isCollapsed={isIncomeCollapsed}
-          onToggleCollapse={() => setIsIncomeCollapsed(!isIncomeCollapsed)}
-          onTransactionPress={(transaction) =>
-            navigation.navigate("AddTransaction", {
-              type: "income",
-              editMode: true,
-              transaction: transaction,
-            })
-          }
-          onAddTransaction={handleAddIncome}
-          isFutureMonth={isFutureMonth}
-          formatCurrency={formatCurrency}
-          formatDate={formatDate}
-          isRecurringTransaction={isRecurringTransaction}
-        />
+        <HelpfulTooltip
+          tooltipId="income-section"
+          title="Track Your Income"
+          description="Add your salary, freelance income, and other earnings here. This helps you understand your total monthly income for better budgeting."
+          position="top"
+          delay={2000}
+        >
+          <TransactionListCard
+            title="Income"
+            icon="trending-up"
+            iconColor={colors.success}
+            transactions={selectedMonthTransactions.filter(
+              (t) => t.type === "income"
+            )}
+            projectedTransactions={projectedTransactions.filter(
+              (t) => t.type === "income"
+            )}
+            isCollapsed={isIncomeCollapsed}
+            onToggleCollapse={() => setIsIncomeCollapsed(!isIncomeCollapsed)}
+            onTransactionPress={(transaction) =>
+              navigation.navigate("AddTransaction", {
+                type: "income",
+                editMode: true,
+                transaction: transaction,
+              })
+            }
+            onAddTransaction={handleAddIncome}
+            isFutureMonth={isFutureMonth}
+            formatCurrency={formatCurrency}
+            formatDate={formatDate}
+            isRecurringTransaction={isRecurringTransaction}
+          />
+        </HelpfulTooltip>
 
         {/* Expenses Section */}
-        <TransactionListCard
-          title="Expenses"
-          icon="trending-down"
-          iconColor={colors.error}
-          transactions={selectedMonthTransactions.filter(
-            (t) => t.type === "expense"
-          )}
-          projectedTransactions={projectedTransactions.filter(
-            (t) => t.type === "expense"
-          )}
-          isCollapsed={isExpensesCollapsed}
-          onToggleCollapse={() => setIsExpensesCollapsed(!isExpensesCollapsed)}
-          onTransactionPress={(transaction) =>
-            navigation.navigate("AddTransaction", {
-              type: "expense",
-              editMode: true,
-              transaction: transaction,
-            })
-          }
-          onAddTransaction={handleAddExpense}
-          isFutureMonth={isFutureMonth}
-          formatCurrency={formatCurrency}
-          formatDate={formatDate}
-          isRecurringTransaction={isRecurringTransaction}
-        />
+        <HelpfulTooltip
+          tooltipId="expenses-section"
+          title="Track Your Expenses"
+          description="Add your monthly expenses like rent, groceries, and utilities. This helps you see where your money goes and stay within your budget."
+          position="top"
+          delay={3000}
+        >
+          <TransactionListCard
+            title="Expenses"
+            icon="trending-down"
+            iconColor={colors.error}
+            transactions={selectedMonthTransactions.filter(
+              (t) => t.type === "expense"
+            )}
+            projectedTransactions={projectedTransactions.filter(
+              (t) => t.type === "expense"
+            )}
+            isCollapsed={isExpensesCollapsed}
+            onToggleCollapse={() =>
+              setIsExpensesCollapsed(!isExpensesCollapsed)
+            }
+            onTransactionPress={(transaction) =>
+              navigation.navigate("AddTransaction", {
+                type: "expense",
+                editMode: true,
+                transaction: transaction,
+              })
+            }
+            onAddTransaction={handleAddExpense}
+            isFutureMonth={isFutureMonth}
+            formatCurrency={formatCurrency}
+            formatDate={formatDate}
+            isRecurringTransaction={isRecurringTransaction}
+          />
+        </HelpfulTooltip>
 
         {/* Budget Settings Modal */}
         <BudgetSettingsModal

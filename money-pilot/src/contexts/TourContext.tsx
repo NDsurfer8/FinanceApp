@@ -27,6 +27,9 @@ export interface TourContextType {
   skipTour: () => void;
   hasCompletedTour: boolean;
   isTourStatusLoaded: boolean;
+  showTooltips: boolean;
+  setShowTooltips: (show: boolean) => void;
+  setHasCompletedTour: (completed: boolean) => void;
 }
 
 const TourContext = createContext<TourContextType | undefined>(undefined);
@@ -49,6 +52,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [hasCompletedTour, setHasCompletedTourState] = useState(false);
   const [isTourStatusLoaded, setIsTourStatusLoaded] = useState(false);
+  const [showTooltips, setShowTooltips] = useState(true); // Default to true for new users
 
   // Professional tour steps for each tab
   const tourSteps: TourStep[] = [
@@ -196,6 +200,9 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     skipTour,
     hasCompletedTour,
     isTourStatusLoaded,
+    showTooltips,
+    setShowTooltips,
+    setHasCompletedTour: setHasCompletedTourState,
   };
 
   return <TourContext.Provider value={value}>{children}</TourContext.Provider>;

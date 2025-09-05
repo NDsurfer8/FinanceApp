@@ -28,6 +28,7 @@ import { AIUsageAdminScreen } from "./AIUsageAdminScreen";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 import { useScrollDetection } from "../hooks/useScrollDetection";
 import { useTour } from "../contexts/TourContext";
+import { HelpfulTooltip } from "../components/HelpfulTooltip";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -902,57 +903,65 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.settingItem,
-              { borderBottomColor: colors.borderLight },
-            ]}
-            onPress={() => setShowTooltips(!showTooltips)}
+          <HelpfulTooltip
+            tooltipId="tooltips-setting"
+            title="Helpful Tooltips"
+            description="When enabled, you'll see helpful hints and tips throughout the app to guide you through features. Perfect for new users!"
+            position="left"
+            delay={1000}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons
-                name="help-circle"
-                size={20}
-                color={colors.textSecondary}
-                style={{ marginRight: 12 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text }]}>
-                Show Helpful Tooltips
-              </Text>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  marginRight: 8,
-                  fontSize: 14,
-                }}
-              >
-                {showTooltips ? "On" : "Off"}
-              </Text>
-              <View
-                style={{
-                  width: 44,
-                  height: 24,
-                  borderRadius: 12,
-                  backgroundColor: showTooltips
-                    ? colors.primary
-                    : colors.border,
-                  padding: 2,
-                }}
-              >
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                { borderBottomColor: colors.borderLight },
+              ]}
+              onPress={() => setShowTooltips(!showTooltips)}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons
+                  name="help-circle"
+                  size={20}
+                  color={colors.textSecondary}
+                  style={{ marginRight: 12 }}
+                />
+                <Text style={[styles.settingText, { color: colors.text }]}>
+                  Show Helpful Tooltips
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    marginRight: 8,
+                    fontSize: 14,
+                  }}
+                >
+                  {showTooltips ? "On" : "Off"}
+                </Text>
                 <View
                   style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 10,
-                    backgroundColor: "#fff",
-                    transform: [{ translateX: showTooltips ? 20 : 0 }],
+                    width: 44,
+                    height: 24,
+                    borderRadius: 12,
+                    backgroundColor: showTooltips
+                      ? colors.primary
+                      : colors.border,
+                    padding: 2,
                   }}
-                />
+                >
+                  <View
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: "#fff",
+                      transform: [{ translateX: showTooltips ? 20 : 0 }],
+                    }}
+                  />
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </HelpfulTooltip>
 
           <TouchableOpacity
             style={[
