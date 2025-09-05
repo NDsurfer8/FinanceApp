@@ -20,6 +20,7 @@ export interface FinancialSnapshot {
   transactions: any[]; // Selected month transactions only
   allTransactions?: any[]; // All transactions for reference
   recurringTransactions?: any[]; // Full recurring transaction data
+  budgetCategories?: any[]; // Budget categories with spending analysis
 }
 
 class AIFinancialAdvisorService {
@@ -412,6 +413,12 @@ class AIFinancialAdvisorService {
             ).length,
           },
         },
+
+        // Budget categories with spending analysis (only included when budget-related questions are asked)
+        budgetCategories:
+          snapshot.budgetCategories && snapshot.budgetCategories.length > 0
+            ? snapshot.budgetCategories
+            : undefined,
       };
 
       const result = await callBackendAI(

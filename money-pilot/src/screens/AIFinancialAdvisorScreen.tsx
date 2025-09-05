@@ -36,29 +36,15 @@ import {
   saveFinancialPlan,
   updateBudgetSettings,
   saveBudgetSettings,
+  getUserBudgetCategories,
+  saveBudgetCategories,
+  BudgetCategory,
 } from "../services/userData";
 import { VectraAvatar } from "../components/VectraAvatar";
 import { sendBackendAIFeedback } from "../services/backendAI";
 
 // Local responses for common app questions (no API call needed)
 const APP_NAVIGATION_RESPONSES = {
-  // Budget screen questions
-  "budget add income": {
-    response:
-      "Perfect! Since you're already on the Budget screen, just tap the 'Add Income' button right there on your screen. You'll see it - it's designed to make adding income super easy! 💰",
-    isLocal: true,
-  },
-  "budget add expense": {
-    response:
-      "Great! You're already on the Budget screen, so just tap the 'Add Expense' button right there. It's that simple! 📝",
-    isLocal: true,
-  },
-  "budget how to": {
-    response:
-      "You're on the Budget screen! Here's what you can do:\n\n• Tap 'Add Income' to add new income\n• Tap 'Add Expense' to add new expenses\n• Use the percentage sliders to adjust savings/debt payoff\n• Check the Budget Summary card for your overview\n\nEverything you need is right there on your screen! 📊",
-    isLocal: true,
-  },
-
   // Dashboard questions
   "dashboard add transaction": {
     response:
@@ -165,19 +151,7 @@ function getLocalResponse(
     }
   }
 
-  // Check for common patterns
-  if (
-    lowerQuestion.includes("budget") &&
-    (lowerQuestion.includes("add") || lowerQuestion.includes("how"))
-  ) {
-    if (lowerQuestion.includes("income")) {
-      return APP_NAVIGATION_RESPONSES["budget add income"];
-    }
-    if (lowerQuestion.includes("expense")) {
-      return APP_NAVIGATION_RESPONSES["budget add expense"];
-    }
-    return APP_NAVIGATION_RESPONSES["budget how to"];
-  }
+  // Check for common patterns (budget questions now go to AI for analysis)
 
   if (lowerQuestion.includes("dashboard") && lowerQuestion.includes("add")) {
     if (lowerQuestion.includes("transaction")) {
@@ -266,6 +240,11 @@ interface Message {
     savingsPercentage?: number;
     debtPayoffPercentage?: number;
   };
+  budgetCategorySuggestions?: Array<{
+    categoryName: string;
+    suggestedLimit: number;
+    currentLimit: number;
+  }>;
 }
 
 // Chat history configuration
@@ -314,6 +293,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const [lastRequestTime, setLastRequestTime] = useState(0);
 
   const [isPlanRequest, setIsPlanRequest] = useState(false);
+  const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>(
+    []
+  );
   const [feedbackStates, setFeedbackStates] = useState<{
     [messageId: string]: { liked?: boolean; disliked?: boolean };
   }>({});
@@ -363,6 +345,18 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     isUser: false,
     timestamp: new Date(),
   });
+
+  // Load budget categories
+  const loadBudgetCategories = async () => {
+    if (user?.uid) {
+      try {
+        const categories = await getUserBudgetCategories(user.uid);
+        setBudgetCategories(categories);
+      } catch (error) {
+        console.error("Error loading budget categories:", error);
+      }
+    }
+  };
 
   // Load chat history from AsyncStorage
   const loadChatHistory = async () => {
@@ -436,8 +430,38 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     }
   };
 
+  // Check if user is asking about budget-related topics
+  const isBudgetRelatedQuestion = (question: string): boolean => {
+    const budgetKeywords = [
+      "budget",
+      "budgeting",
+      "category",
+      "categories",
+      "limit",
+      "limits",
+      "spending",
+      "overspend",
+      "over budget",
+      "under budget",
+      "budget breakdown",
+      "budget analysis",
+      "budget review",
+      "budget categories",
+      "monthly limit",
+      "spending limit",
+      "budget allocation",
+      "budget management",
+      "budget planning",
+    ];
+
+    const lowerQuestion = question.toLowerCase();
+    return budgetKeywords.some((keyword) => lowerQuestion.includes(keyword));
+  };
+
   // Generate financial snapshot for AI analysis
-  const generateFinancialSnapshot = (): FinancialSnapshot => {
+  const generateFinancialSnapshot = (
+    userQuestion?: string
+  ): FinancialSnapshot => {
     const targetMonthNum = targetMonth.getMonth();
     const targetYear = targetMonth.getFullYear();
 
@@ -683,6 +707,39 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       return true;
     });
 
+    // Calculate budget categories with spending analysis - only if budget-related question
+    const shouldIncludeBudgetCategories = userQuestion
+      ? isBudgetRelatedQuestion(userQuestion)
+      : false;
+    const budgetCategoriesWithSpending = shouldIncludeBudgetCategories
+      ? budgetCategories.map((category) => {
+          // Calculate actual spending for this category in the selected month
+          const categoryTransactions = monthlyTransactions.filter((t) => {
+            return t.category === category.name && t.type === "expense";
+          });
+
+          const actualSpending = categoryTransactions.reduce(
+            (sum, t) => sum + t.amount,
+            0
+          );
+          const remaining = Math.max(0, category.monthlyLimit - actualSpending);
+          const isOverBudget = actualSpending > category.monthlyLimit;
+          const percentageUsed =
+            category.monthlyLimit > 0
+              ? (actualSpending / category.monthlyLimit) * 100
+              : 0;
+
+          return {
+            ...category,
+            actualSpending,
+            remaining,
+            isOverBudget,
+            percentageUsed: Math.round(percentageUsed),
+            transactionCount: categoryTransactions.length,
+          };
+        })
+      : [];
+
     return {
       monthlyIncome,
       monthlyExpenses,
@@ -703,7 +760,52 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       transactions: monthlyTransactions, // Only selected month transactions
       allTransactions: transactions, // Keep all transactions for reference
       recurringTransactions: allRecurringTransactions,
+      budgetCategories: budgetCategoriesWithSpending,
     };
+  };
+
+  // Function to update budget categories based on AI suggestions
+  const updateBudgetCategory = async (
+    categoryName: string,
+    newLimit: number
+  ) => {
+    if (!user?.uid) return;
+
+    try {
+      const updatedCategories = budgetCategories.map((category) => {
+        if (category.name === categoryName) {
+          return { ...category, monthlyLimit: newLimit };
+        }
+        return category;
+      });
+
+      await saveBudgetCategories(updatedCategories, user.uid);
+      setBudgetCategories(updatedCategories);
+
+      // Show success message
+      const successMessage: Message = {
+        id: Date.now().toString(),
+        text: `✅ Updated ${categoryName} budget limit to $${newLimit.toFixed(
+          2
+        )}`,
+        isUser: false,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, successMessage]);
+    } catch (error) {
+      console.error("Error updating budget category:", error);
+
+      // Show error message
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        text: `❌ Failed to update ${categoryName} budget limit. Please try again.`,
+        isUser: false,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+    }
   };
 
   const sendMessage = async () => {
@@ -758,7 +860,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     setMessages(newMessages);
 
     try {
-      const snapshot = generateFinancialSnapshot();
+      const snapshot = generateFinancialSnapshot(userMessage.text);
 
       // Check if user is requesting a financial plan
       const isPlanRequest = aiFinancialAdvisorService.isPlanRequest(
@@ -885,6 +987,10 @@ Requirements:
       // Detect percentage suggestions in the AI response
       const suggestions = detectPercentageSuggestions(aiResponse);
 
+      // Detect budget category update suggestions
+      const budgetCategorySuggestions =
+        detectBudgetCategorySuggestions(aiResponse);
+
       const updatedMessages = newMessages.map((msg) =>
         msg.isLoading
           ? {
@@ -896,6 +1002,7 @@ Requirements:
                 suggestions.debtPayoffPercentage
                   ? suggestions
                   : undefined,
+              budgetCategorySuggestions: budgetCategorySuggestions,
             }
           : msg
       );
@@ -928,6 +1035,7 @@ Requirements:
   useEffect(() => {
     loadChatHistory();
     loadFeedbackStates();
+    loadBudgetCategories();
   }, []);
 
   // Load feedback states from AsyncStorage
@@ -1322,6 +1430,63 @@ Requirements:
     }
 
     // AI Response percentage suggestions detected
+    return suggestions;
+  };
+
+  // Detect budget category update suggestions in AI responses
+  const detectBudgetCategorySuggestions = (
+    text: string
+  ): Array<{
+    categoryName: string;
+    suggestedLimit: number;
+    currentLimit: number;
+  }> => {
+    const suggestions: Array<{
+      categoryName: string;
+      suggestedLimit: number;
+      currentLimit: number;
+    }> = [];
+
+    // Look for patterns like "increase Groceries budget to $500" or "set Entertainment limit to $200"
+    const budgetUpdatePatterns = [
+      /(?:increase|raise|boost|set|update|change)\s+(\w+)\s+(?:budget|limit|spending)\s+(?:to|at)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/gi,
+      /(?:set|update|change)\s+(?:your\s+)?(\w+)\s+(?:budget|limit)\s+(?:to|at)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/gi,
+      /(?:recommend|suggest)\s+(?:increasing|setting|updating)\s+(?:your\s+)?(\w+)\s+(?:budget|limit)\s+(?:to|at)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/gi,
+      /(?:budget|limit)\s+(?:for\s+)?(\w+)\s+(?:should\s+be|to)\s+\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/gi,
+    ];
+
+    for (const pattern of budgetUpdatePatterns) {
+      const matches = text.match(pattern);
+      if (matches) {
+        for (const match of matches) {
+          const categoryMatch = match.match(
+            /(\w+)\s+(?:budget|limit|spending)/i
+          );
+          const amountMatch = match.match(/\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/);
+
+          if (categoryMatch && amountMatch) {
+            const categoryName = categoryMatch[1];
+            const suggestedAmount = parseFloat(
+              amountMatch[1].replace(/,/g, "")
+            );
+
+            // Find the current budget category
+            const currentCategory = budgetCategories.find(
+              (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
+            );
+
+            if (currentCategory && suggestedAmount > 0) {
+              suggestions.push({
+                categoryName: currentCategory.name,
+                suggestedLimit: suggestedAmount,
+                currentLimit: currentCategory.monthlyLimit,
+              });
+            }
+          }
+        }
+      }
+    }
+
     return suggestions;
   };
 
@@ -1808,6 +1973,77 @@ Original Request: ${basePrompt}
                           >
                             {message.text}
                           </Text>
+
+                          {/* Budget Category Suggestions */}
+                          {message.budgetCategorySuggestions &&
+                            message.budgetCategorySuggestions.length > 0 && (
+                              <View style={{ marginTop: 16, marginBottom: 8 }}>
+                                <Text
+                                  style={{
+                                    color: colors.text,
+                                    fontSize: 14,
+                                    fontWeight: "600",
+                                    marginBottom: 8,
+                                  }}
+                                >
+                                  💡 Budget Suggestions:
+                                </Text>
+                                {message.budgetCategorySuggestions.map(
+                                  (suggestion, idx) => (
+                                    <View
+                                      key={idx}
+                                      style={{
+                                        backgroundColor: colors.surface,
+                                        borderRadius: 8,
+                                        padding: 12,
+                                        marginBottom: 8,
+                                        borderWidth: 1,
+                                        borderColor: colors.border,
+                                      }}
+                                    >
+                                      <Text
+                                        style={{
+                                          color: colors.text,
+                                          fontSize: 14,
+                                          fontWeight: "500",
+                                          marginBottom: 4,
+                                        }}
+                                      >
+                                        {suggestion.categoryName}: $
+                                        {suggestion.currentLimit.toFixed(2)} → $
+                                        {suggestion.suggestedLimit.toFixed(2)}
+                                      </Text>
+                                      <TouchableOpacity
+                                        onPress={() =>
+                                          updateBudgetCategory(
+                                            suggestion.categoryName,
+                                            suggestion.suggestedLimit
+                                          )
+                                        }
+                                        style={{
+                                          backgroundColor: colors.primary,
+                                          paddingHorizontal: 12,
+                                          paddingVertical: 6,
+                                          borderRadius: 6,
+                                          alignSelf: "flex-start",
+                                        }}
+                                      >
+                                        <Text
+                                          style={{
+                                            color: "#fff",
+                                            fontSize: 12,
+                                            fontWeight: "600",
+                                          }}
+                                        >
+                                          Apply Suggestion
+                                        </Text>
+                                      </TouchableOpacity>
+                                    </View>
+                                  )
+                                )}
+                              </View>
+                            )}
+
                           {index === messages.length - 1 && !message.isUser && (
                             <View
                               style={{
