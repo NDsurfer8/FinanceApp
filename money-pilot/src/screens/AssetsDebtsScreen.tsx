@@ -9,6 +9,7 @@ import {
   Animated,
   Alert,
   StatusBar,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fontFamily } from "../config/fonts";
@@ -47,6 +48,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   const [loading, setLoading] = useState(false);
   const [isAssetsCollapsed, setIsAssetsCollapsed] = useState(false);
   const [isDebtsCollapsed, setIsDebtsCollapsed] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const { hasPremiumAccess } = useSubscription();
@@ -665,21 +667,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           showBackButton={false}
           rightComponent={
             <TouchableOpacity
-              onPress={() => {
-                Alert.alert("Add Item", "What would you like to add?", [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Add Asset",
-                    onPress: () => handleQuickAction("asset"),
-                    style: "default",
-                  },
-                  {
-                    text: "Add Debt",
-                    onPress: () => handleQuickAction("debt"),
-                    style: "default",
-                  },
-                ]);
-              }}
+              onPress={() => setShowAddModal(true)}
               style={{
                 padding: 12,
                 borderRadius: 12,
@@ -1002,6 +990,213 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
 
       {/* Floating AI Chatbot - only show on main tab screens */}
       <FloatingAIChatbot hideOnScroll={true} isScrolling={isScrolling} />
+
+      {/* Add Item Modal */}
+      <Modal
+        visible={showAddModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAddModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              width: "100%",
+              maxWidth: 320,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.25,
+              shadowRadius: 20,
+              shadowOffset: { width: 0, height: 10 },
+              elevation: 10,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: "700",
+                color: colors.text,
+                fontFamily: fontFamily.bold,
+                textAlign: "center",
+                marginBottom: 20,
+              }}
+            >
+              Add New Item
+            </Text>
+
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                fontFamily: fontFamily.regular,
+                textAlign: "center",
+                marginBottom: 24,
+              }}
+            >
+              What would you like to add to your financial portfolio?
+            </Text>
+
+            <View style={{ gap: 12 }}>
+              {/* Add Asset Option */}
+              <TouchableOpacity
+                onPress={() => {
+                  setShowAddModal(false);
+                  handleQuickAction("asset");
+                }}
+                style={{
+                  backgroundColor: colors.success + "15",
+                  borderRadius: 12,
+                  padding: 16,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: colors.success + "30",
+                }}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: colors.success + "20",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 16,
+                  }}
+                >
+                  <Ionicons
+                    name="trending-up"
+                    size={20}
+                    color={colors.success}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "600",
+                      color: colors.text,
+                      fontFamily: fontFamily.semiBold,
+                      marginBottom: 2,
+                    }}
+                  >
+                    Add Asset
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: colors.textSecondary,
+                      fontFamily: fontFamily.regular,
+                    }}
+                  >
+                    Track your investments, savings, and valuable items
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.textTertiary}
+                />
+              </TouchableOpacity>
+
+              {/* Add Debt Option */}
+              <TouchableOpacity
+                onPress={() => {
+                  setShowAddModal(false);
+                  handleQuickAction("debt");
+                }}
+                style={{
+                  backgroundColor: colors.error + "15",
+                  borderRadius: 12,
+                  padding: 16,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: colors.error + "30",
+                }}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: colors.error + "20",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 16,
+                  }}
+                >
+                  <Ionicons
+                    name="trending-down"
+                    size={20}
+                    color={colors.error}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "600",
+                      color: colors.text,
+                      fontFamily: fontFamily.semiBold,
+                      marginBottom: 2,
+                    }}
+                  >
+                    Add Debt
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: colors.textSecondary,
+                      fontFamily: fontFamily.regular,
+                    }}
+                  >
+                    Track your loans, credit cards, and other debts
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.textTertiary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Cancel Button */}
+            <TouchableOpacity
+              onPress={() => setShowAddModal(false)}
+              style={{
+                marginTop: 20,
+                paddingVertical: 12,
+                alignItems: "center",
+              }}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: colors.textSecondary,
+                  fontFamily: fontFamily.medium,
+                }}
+              >
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
