@@ -443,25 +443,67 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   const confirmDeleteAccount = async () => {
     if (!user) return;
 
-    Alert.prompt(
-      "Verify Password",
-      "Enter your password to confirm account deletion:",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete Account",
-          style: "destructive",
-          onPress: async (password) => {
-            if (password && user.email) {
+    // Check if user signed in with Apple
+    const isAppleUser = user.providerData.some(
+      (provider) => provider.providerId === "apple.com"
+    );
+
+    if (isAppleUser) {
+      // For Apple Sign-In users, show confirmation dialog without password
+      Alert.alert(
+        "Delete Account",
+        "Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete Account",
+            style: "destructive",
+            onPress: async () => {
               try {
                 setLoading(true);
 
-                // First, re-authenticate the user
-                const credential = EmailAuthProvider.credential(
-                  user.email,
-                  password
-                );
-                await reauthenticateWithCredential(user, credential);
+                // For Apple Sign-In users, we need to re-authenticate before deleting
+                // This handles the "requires-recent-login" error
+                try {
+                  // Import Apple Authentication
+                  const AppleAuthModule = await import(
+                    "expo-apple-authentication"
+                  );
+                  const AppleAuthentication =
+                    AppleAuthModule.default || AppleAuthModule;
+
+                  // Check if Apple Authentication is available
+                  if (AppleAuthentication && AppleAuthentication.signInAsync) {
+                    // Request Apple authentication again
+                    const credential = await AppleAuthentication.signInAsync({
+                      requestedScopes: [
+                        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                      ],
+                    });
+
+                    if (credential.identityToken) {
+                      // Create Firebase OAuth provider and re-authenticate
+                      const { OAuthProvider } = await import("firebase/auth");
+                      const provider = new OAuthProvider("apple.com");
+                      const firebaseCredential = provider.credential({
+                        idToken: credential.identityToken,
+                      });
+
+                      await reauthenticateWithCredential(
+                        user,
+                        firebaseCredential
+                      );
+                    }
+                  } else {
+                    console.log(
+                      "Apple Authentication not available, skipping re-auth"
+                    );
+                  }
+                } catch (reauthError) {
+                  console.error("Re-authentication failed:", reauthError);
+                  // Continue with deletion attempt even if re-auth fails
+                }
 
                 // Delete all user data from Firebase Realtime Database
                 await deleteUserAccount(user.uid);
@@ -486,19 +528,76 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                 console.error("Error deleting account:", error);
                 Alert.alert(
                   "Error",
-                  error.code === "wrong-password"
-                    ? "Password is incorrect."
+                  error.code === "auth/requires-recent-login"
+                    ? "Please sign out and sign back in, then try deleting your account again."
                     : "Failed to delete account. Please try again."
                 );
               } finally {
                 setLoading(false);
               }
-            }
+            },
           },
-        },
-      ],
-      "secure-text"
-    );
+        ]
+      );
+    } else {
+      // For email/password users, require password verification
+      Alert.prompt(
+        "Verify Password",
+        "Enter your password to confirm account deletion:",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete Account",
+            style: "destructive",
+            onPress: async (password) => {
+              if (password && user.email) {
+                try {
+                  setLoading(true);
+
+                  // First, re-authenticate the user
+                  const credential = EmailAuthProvider.credential(
+                    user.email,
+                    password
+                  );
+                  await reauthenticateWithCredential(user, credential);
+
+                  // Delete all user data from Firebase Realtime Database
+                  await deleteUserAccount(user.uid);
+
+                  // Finally, delete the Firebase Auth account
+                  await deleteUser(user);
+
+                  Alert.alert(
+                    "Account Deleted",
+                    "Your account and all associated data have been permanently deleted.",
+                    [
+                      {
+                        text: "OK",
+                        onPress: () => {
+                          // The user will be automatically logged out when the auth state changes
+                          // due to the account being deleted
+                        },
+                      },
+                    ]
+                  );
+                } catch (error: any) {
+                  console.error("Error deleting account:", error);
+                  Alert.alert(
+                    "Error",
+                    error.code === "wrong-password"
+                      ? "Password is incorrect."
+                      : "Failed to delete account. Please try again."
+                  );
+                } finally {
+                  setLoading(false);
+                }
+              }
+            },
+          },
+        ],
+        "secure-text"
+      );
+    }
   };
 
   const openPrivacyPolicy = () => {
