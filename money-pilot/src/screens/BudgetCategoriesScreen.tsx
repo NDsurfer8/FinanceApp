@@ -743,6 +743,12 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       return a.name.localeCompare(b.name);
     });
 
+  // Calculate total spending across all categories
+  const totalActualSpending = filteredCategories.reduce((sum, category) => {
+    const spending = getCategorySpending(category.name);
+    return sum + spending.actual;
+  }, 0);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StandardHeader
@@ -817,61 +823,253 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
             })}{" "}
             Overview
           </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: colors.textSecondary,
-              marginBottom: 16,
-              lineHeight: 16,
-            }}
-          >
-            Total Budget = Total Income - Savings ({savingsPercentage}%) - Debt
-            Payoff ({debtPayoffPercentage}%) - Goal Contribution
-          </Text>
 
-          <View style={{ gap: 12 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingVertical: 4,
-              }}
-            >
-              <Text style={{ fontSize: 18, color: colors.textSecondary }}>
-                Total Income
-              </Text>
+          <View style={{ gap: 16 }}>
+            {/* Income Section */}
+            <View>
               <Text
                 style={{
-                  fontSize: 18,
+                  fontSize: 14,
                   fontWeight: "600",
-                  color: colors.success,
+                  color: colors.textSecondary,
+                  marginBottom: 8,
                 }}
               >
-                ${totalIncome.toLocaleString()}
+                Starting Point
               </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 6,
+                  paddingHorizontal: 12,
+                  backgroundColor: colors.surfaceSecondary,
+                  borderRadius: 8,
+                }}
+              >
+                <Text style={{ fontSize: 16, color: colors.text }}>
+                  Total Income
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: colors.success,
+                  }}
+                >
+                  ${totalIncome.toLocaleString()}
+                </Text>
+              </View>
             </View>
 
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingVertical: 4,
-              }}
-            >
-              <Text style={{ fontSize: 18, color: colors.textSecondary }}>
-                Total Budget
-              </Text>
+            {/* Deductions Section */}
+            <View>
               <Text
                 style={{
-                  fontSize: 18,
+                  fontSize: 14,
                   fontWeight: "600",
-                  color: colors.primary,
+                  color: colors.textSecondary,
+                  marginBottom: 8,
                 }}
               >
-                ${totalBudget.toLocaleString()}
+                Automatic Allocations
               </Text>
+              <View
+                style={{
+                  backgroundColor: colors.surfaceSecondary,
+                  borderRadius: 8,
+                  padding: 12,
+                  gap: 8,
+                }}
+              >
+                {/* Savings */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Ionicons
+                      name={
+                        includeSavings ? "checkmark-circle" : "close-circle"
+                      }
+                      size={16}
+                      color={includeSavings ? colors.success : colors.error}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: colors.text,
+                        textDecorationLine: includeSavings
+                          ? "none"
+                          : "line-through",
+                      }}
+                    >
+                      Savings ({savingsPercentage}% of income)
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: includeSavings
+                        ? colors.error
+                        : colors.textSecondary,
+                      textDecorationLine: includeSavings
+                        ? "none"
+                        : "line-through",
+                    }}
+                  >
+                    {includeSavings ? "-" : ""}${savingsAmount.toLocaleString()}
+                  </Text>
+                </View>
+
+                {/* Debt Payoff */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Ionicons
+                      name={
+                        includeDebtPayoff ? "checkmark-circle" : "close-circle"
+                      }
+                      size={16}
+                      color={includeDebtPayoff ? colors.success : colors.error}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: colors.text,
+                        textDecorationLine: includeDebtPayoff
+                          ? "none"
+                          : "line-through",
+                      }}
+                    >
+                      Debt Payoff ({debtPayoffPercentage}% of income)
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: includeDebtPayoff
+                        ? colors.error
+                        : colors.textSecondary,
+                      textDecorationLine: includeDebtPayoff
+                        ? "none"
+                        : "line-through",
+                    }}
+                  >
+                    {includeDebtPayoff ? "-" : ""}$
+                    {debtPayoffAmount.toLocaleString()}
+                  </Text>
+                </View>
+
+                {/* Goal Contributions */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Ionicons
+                      name={
+                        includeGoalContributions
+                          ? "checkmark-circle"
+                          : "close-circle"
+                      }
+                      size={16}
+                      color={
+                        includeGoalContributions ? colors.success : colors.error
+                      }
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: colors.text,
+                        textDecorationLine: includeGoalContributions
+                          ? "none"
+                          : "line-through",
+                      }}
+                    >
+                      Goal Contributions
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: includeGoalContributions
+                        ? colors.error
+                        : colors.textSecondary,
+                      textDecorationLine: includeGoalContributions
+                        ? "none"
+                        : "line-through",
+                    }}
+                  >
+                    {includeGoalContributions ? "-" : ""}$
+                    {monthlyGoalsContribution.toLocaleString()}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Available Budget Section */}
+            <View>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: colors.textSecondary,
+                  marginBottom: 8,
+                }}
+              >
+                Available for Categories
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  backgroundColor: colors.primary + "15",
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: colors.primary + "30",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: colors.text,
+                  }}
+                >
+                  Total Budget
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: colors.primary,
+                  }}
+                >
+                  ${totalBudget.toLocaleString()}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -1061,7 +1259,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                         {((category.monthlyLimit / totalIncome) * 100).toFixed(
                           1
                         )}
-                        %)
+                        % of income)
                       </Text>
                     )}
                   </Text>
