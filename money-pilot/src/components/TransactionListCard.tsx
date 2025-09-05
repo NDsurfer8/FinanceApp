@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
+import { HelpfulTooltip } from "./HelpfulTooltip";
 
 interface Transaction {
   id: string;
@@ -392,47 +393,67 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
           )}
 
           {/* Add Transaction Button */}
-          <TouchableOpacity
-            onPress={onAddTransaction}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              paddingVertical: 12,
-              marginTop: 16,
-              backgroundColor: title.toLowerCase().includes("expense")
-                ? colors.error + "20"
-                : colors.surfaceSecondary,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: title.toLowerCase().includes("expense")
-                ? colors.error
-                : colors.border,
-              borderStyle: "dashed",
-            }}
+          <HelpfulTooltip
+            tooltipId={
+              title.toLowerCase().includes("expense")
+                ? "expenses-section"
+                : "income-section"
+            }
+            title={
+              title.toLowerCase().includes("expense")
+                ? "Track Your Expenses"
+                : "Track Your Income"
+            }
+            description={
+              title.toLowerCase().includes("expense")
+                ? "Add your monthly expenses like rent, groceries, and utilities here. This helps you see where your money goes and stay within your budget."
+                : "Add your salary, freelance income, and other earnings here. This helps you understand your total monthly income for better budgeting."
+            }
+            position="top"
+            delay={title.toLowerCase().includes("expense") ? 3000 : 2000}
           >
-            <Ionicons
-              name="add-circle"
-              size={20}
-              color={
-                title.toLowerCase().includes("expense")
-                  ? colors.error
-                  : colors.primary
-              }
-            />
-            <Text
+            <TouchableOpacity
+              onPress={onAddTransaction}
               style={{
-                color: title.toLowerCase().includes("expense")
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: 12,
+                marginTop: 16,
+                backgroundColor: title.toLowerCase().includes("expense")
+                  ? colors.error + "20"
+                  : colors.surfaceSecondary,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: title.toLowerCase().includes("expense")
                   ? colors.error
-                  : colors.primary,
-                fontSize: 14,
-                fontWeight: "600",
-                marginLeft: 8,
+                  : colors.border,
+                borderStyle: "dashed",
               }}
             >
-              {`Add ${title}`}
-            </Text>
-          </TouchableOpacity>
+              <Ionicons
+                name="add-circle"
+                size={20}
+                color={
+                  title.toLowerCase().includes("expense")
+                    ? colors.error
+                    : colors.primary
+                }
+              />
+              <Text
+                style={{
+                  color: title.toLowerCase().includes("expense")
+                    ? colors.error
+                    : colors.primary,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  marginLeft: 8,
+                }}
+              >
+                {`Add ${title}`}
+              </Text>
+            </TouchableOpacity>
+          </HelpfulTooltip>
         </>
       )}
     </View>
