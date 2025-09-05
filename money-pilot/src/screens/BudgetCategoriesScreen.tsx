@@ -1013,7 +1013,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   <View
                     style={{
                       width: `${progressPercentage}%`,
-                      height: 6,
+                      height: 18,
                       backgroundColor:
                         progressPercentage > 100
                           ? colors.error
