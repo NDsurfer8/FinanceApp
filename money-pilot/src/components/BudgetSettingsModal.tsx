@@ -92,11 +92,16 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
   );
   const goalsPercentage = netIncome > 0 ? (goalsAmount / netIncome) * 100 : 0;
 
+  // Calculate expenses as percentage of total income
+  const expensesPercentage =
+    netIncome > 0 ? (totalExpenses / netIncome) * 100 : 0;
+
   const totalAllocated =
     parseFloat(localSavings || "0") +
     parseFloat(localDebt || "0") +
-    goalsPercentage;
-  const remainingPercentage = 100 - totalAllocated;
+    goalsPercentage +
+    expensesPercentage;
+  const remainingPercentage = Math.max(0, 100 - totalAllocated);
 
   const handleGoalContributionChange = (
     goalId: string,
@@ -317,11 +322,21 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                     height: 24,
                   }}
                 />
+
                 {localGoals.length > 0 && (
                   <View
                     style={{
                       width: `${goalsPercentage}%` as any,
                       backgroundColor: colors.info || "#3b82f6",
+                      height: 24,
+                    }}
+                  />
+                )}
+                {expensesPercentage > 0 && (
+                  <View
+                    style={{
+                      width: `${expensesPercentage}%` as any,
+                      backgroundColor: "#dc2626", // Dark red for expenses
                       height: 24,
                     }}
                   />
@@ -370,6 +385,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                     {localDebt}%
                   </Text>
                 </View>
+
                 {localGoals.length > 0 && (
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <View
@@ -383,6 +399,22 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                     />
                     <Text style={{ fontSize: 12, color: colors.textSecondary }}>
                       {goalsPercentage.toFixed(1)}%
+                    </Text>
+                  </View>
+                )}
+                {expensesPercentage > 0 && (
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <View
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: "#dc2626", // Dark red for expenses
+                        marginRight: 4,
+                      }}
+                    />
+                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                      {expensesPercentage.toFixed(1)}%
                     </Text>
                   </View>
                 )}
