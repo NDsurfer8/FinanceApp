@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
@@ -79,6 +80,22 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [emailVerificationLoading, setEmailVerificationLoading] =
     useState(false);
   const [bankConnectionLoading, setBankConnectionLoading] = useState(false);
+
+  // Haptic feedback wrapper functions
+  const handleToggleTheme = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toggleTheme();
+  };
+
+  const handleToggleChatbot = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toggleChatbot();
+  };
+
+  const handleToggleTooltips = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowTooltips(!showTooltips);
+  };
 
   // Check if user is admin (you can modify this logic as needed)
   const isAdmin =
@@ -779,7 +796,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               styles.settingItem,
               { borderBottomColor: colors.borderLight },
             ]}
-            onPress={toggleTheme}
+            onPress={handleToggleTheme}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons
@@ -830,7 +847,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               styles.settingItem,
               { borderBottomColor: colors.borderLight },
             ]}
-            onPress={toggleChatbot}
+            onPress={handleToggleChatbot}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons
@@ -915,7 +932,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 styles.settingItem,
                 { borderBottomColor: colors.borderLight },
               ]}
-              onPress={() => setShowTooltips(!showTooltips)}
+              onPress={handleToggleTooltips}
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Ionicons

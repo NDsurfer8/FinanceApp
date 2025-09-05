@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { plaidService } from "../services/plaid";
 import { fontFamily } from "../config/fonts";
 import { useAuth } from "../hooks/useAuth";
@@ -242,6 +243,9 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     // Update last tap time
     setLastTapTime(now);
 
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     // Check if user has premium access
     if (!hasPremiumAccess()) {
       Alert.alert(
@@ -440,6 +444,9 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   };
 
   const handleDisconnectBank = async () => {
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     Alert.alert(
       "Disconnect Bank",
       "Are you sure you want to disconnect your bank account?",
