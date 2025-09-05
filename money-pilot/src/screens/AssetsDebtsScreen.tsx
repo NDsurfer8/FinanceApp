@@ -313,47 +313,47 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
       <TouchableOpacity
         style={{
           backgroundColor: colors.surface,
-          borderRadius: 16,
-          padding: 20,
-          marginBottom: 12,
-          borderLeftWidth: 4,
-          borderLeftColor: colors.success,
+          borderRadius: 12,
+          padding: 16,
+          marginBottom: 8,
+          borderWidth: 1,
+          borderColor: colors.border,
           shadowColor: colors.shadow,
-          shadowOpacity: 0.06,
-          shadowRadius: 8,
-          shadowOffset: { width: 0, height: 2 },
-          elevation: 2,
+          shadowOpacity: 0.04,
+          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 1 },
+          elevation: 1,
         }}
         onPress={() => handleEditItem(asset, "asset")}
-        activeOpacity={0.7}
+        activeOpacity={0.6}
       >
         <View
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
-            alignItems: "flex-start",
+            alignItems: "center",
           }}
         >
-          <View style={{ flex: 1, marginRight: 16 }}>
+          <View style={{ flex: 1, marginRight: 12 }}>
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 6,
+                marginBottom: 4,
               }}
             >
               <View
                 style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
                   backgroundColor: colors.success,
                   marginRight: 8,
                 }}
               />
               <Text
                 style={{
-                  fontSize: 18,
+                  fontSize: 16,
                   color: colors.text,
                   fontWeight: "600",
                   fontFamily: fontFamily.semiBold,
@@ -364,9 +364,10 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             </View>
             <Text
               style={{
-                fontSize: 14,
+                fontSize: 13,
                 color: colors.textSecondary,
                 fontFamily: fontFamily.regular,
+                marginLeft: 14,
               }}
             >
               {getAssetTypeLabel(asset.type)}
@@ -375,36 +376,20 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           <View style={{ alignItems: "flex-end" }}>
             <Text
               style={{
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: "700",
                 color: colors.success,
                 fontFamily: fontFamily.bold,
+                marginBottom: 2,
               }}
             >
               ${asset.balance.toLocaleString()}
             </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginTop: 4,
-              }}
-            >
-              <Ionicons
-                name="chevron-forward"
-                size={14}
-                color={colors.textTertiary}
-              />
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: colors.textTertiary,
-                  marginLeft: 4,
-                }}
-              >
-                Edit
-              </Text>
-            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={12}
+              color={colors.textTertiary}
+            />
           </View>
         </View>
       </TouchableOpacity>
@@ -416,47 +401,47 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
       <TouchableOpacity
         style={{
           backgroundColor: colors.surface,
-          borderRadius: 16,
-          padding: 20,
-          marginBottom: 12,
-          borderLeftWidth: 4,
-          borderLeftColor: colors.error,
+          borderRadius: 12,
+          padding: 16,
+          marginBottom: 8,
+          borderWidth: 1,
+          borderColor: colors.border,
           shadowColor: colors.shadow,
-          shadowOpacity: 0.06,
-          shadowRadius: 8,
-          shadowOffset: { width: 0, height: 2 },
-          elevation: 2,
+          shadowOpacity: 0.04,
+          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 1 },
+          elevation: 1,
         }}
         onPress={() => handleEditItem(debt, "debt")}
-        activeOpacity={0.7}
+        activeOpacity={0.6}
       >
         <View
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
-            alignItems: "flex-start",
+            alignItems: "center",
           }}
         >
-          <View style={{ flex: 1, marginRight: 16 }}>
+          <View style={{ flex: 1, marginRight: 12 }}>
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 6,
+                marginBottom: 4,
               }}
             >
               <View
                 style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
                   backgroundColor: colors.error,
                   marginRight: 8,
                 }}
               />
               <Text
                 style={{
-                  fontSize: 18,
+                  fontSize: 16,
                   color: colors.text,
                   fontWeight: "600",
                   fontFamily: fontFamily.semiBold,
@@ -470,11 +455,12 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 flexDirection: "row",
                 alignItems: "center",
                 flexWrap: "wrap",
+                marginLeft: 14,
               }}
             >
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: 13,
                   color: colors.textSecondary,
                   fontFamily: fontFamily.regular,
                   marginRight: 12,
@@ -484,7 +470,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               </Text>
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: 13,
                   color: colors.textSecondary,
                   fontFamily: fontFamily.regular,
                 }}
@@ -496,36 +482,20 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           <View style={{ alignItems: "flex-end" }}>
             <Text
               style={{
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: "700",
                 color: colors.error,
                 fontFamily: fontFamily.bold,
+                marginBottom: 2,
               }}
             >
               ${debt.balance.toLocaleString()}
             </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginTop: 4,
-              }}
-            >
-              <Ionicons
-                name="chevron-forward"
-                size={14}
-                color={colors.textTertiary}
-              />
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: colors.textTertiary,
-                  marginLeft: 4,
-                }}
-              >
-                Edit
-              </Text>
-            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={12}
+              color={colors.textTertiary}
+            />
           </View>
         </View>
       </TouchableOpacity>
@@ -533,191 +503,89 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   );
 
   const renderFinancialInsights = () => (
-    <View
-      style={{
-        backgroundColor: colors.surface,
-        borderRadius: 20,
-        padding: 24,
-        marginBottom: 20,
-        shadowColor: colors.shadow,
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 4,
-      }}
-    >
-      <View
-        style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}
-      >
-        <View
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: colors.surfaceSecondary,
-            alignItems: "center",
-            justifyContent: "center",
-            marginRight: 16,
-          }}
-        >
-          <Ionicons name="analytics" size={20} color={colors.primary} />
-        </View>
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "700",
-            color: colors.text,
-            fontFamily: fontFamily.bold,
-          }}
-        >
-          Financial Insights
-        </Text>
-      </View>
-
-      {/* Net Worth Summary */}
-      <TourGuide zone={1} screen="AssetsDebts">
-        <View
-          style={{
-            backgroundColor: colors.surfaceSecondary,
-            borderRadius: 16,
-            padding: 20,
-            marginBottom: 16,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-              color: colors.textSecondary,
-              marginBottom: 12,
-              fontFamily: fontFamily.medium,
-            }}
-          >
-            Net Worth
-          </Text>
-          <Text
-            style={{
-              fontSize: 28,
-              fontWeight: "800",
-              color: netWorth >= 0 ? colors.success : colors.error,
-              fontFamily: fontFamily.bold,
-              marginBottom: 8,
-            }}
-          >
-            ${Math.abs(netWorth).toLocaleString()}
-            {netWorth < 0 ? " (Negative)" : ""}
-          </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: colors.textSecondary,
-              fontFamily: fontFamily.regular,
-            }}
-          >
-            {netWorth >= 0
-              ? "Great job! You're building wealth."
-              : "Focus on debt reduction to improve your financial health."}
-          </Text>
-        </View>
-      </TourGuide>
-
-      {/* Debt-to-Asset Ratio */}
+    <TourGuide zone={1} screen="AssetsDebts">
       <View
         style={{
-          backgroundColor: colors.surfaceSecondary,
+          backgroundColor: colors.surface,
           borderRadius: 16,
           padding: 20,
           marginBottom: 16,
+          shadowColor: colors.shadow,
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 2 },
+          elevation: 2,
         }}
       >
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-            color: colors.textSecondary,
-            marginBottom: 12,
-            fontFamily: fontFamily.medium,
-          }}
-        >
-          Debt-to-Asset Ratio
-        </Text>
+        {/* Net Worth - Main Focus */}
         <View
           style={{
             flexDirection: "row",
+            justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 8,
+            marginBottom: 16,
           }}
         >
-          <Text
-            style={{
-              fontSize: 24,
-              fontWeight: "700",
-              color: isHealthyRatio ? colors.success : colors.warning,
-              fontFamily: fontFamily.bold,
-              marginRight: 12,
-            }}
-          >
-            {debtToAssetRatio.toFixed(1)}%
-          </Text>
-          <View
-            style={{
-              backgroundColor: isHealthyRatio
-                ? colors.successLight
-                : colors.warningLight,
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              borderRadius: 12,
-            }}
-          >
+          <View>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                fontFamily: fontFamily.medium,
+                marginBottom: 4,
+              }}
+            >
+              Net Worth
+            </Text>
+            <Text
+              style={{
+                fontSize: 24,
+                fontWeight: "700",
+                color: netWorth >= 0 ? colors.success : colors.error,
+                fontFamily: fontFamily.bold,
+              }}
+            >
+              ${Math.abs(netWorth).toLocaleString()}
+            </Text>
+          </View>
+
+          {/* Quick Stats */}
+          <View style={{ alignItems: "flex-end" }}>
+            <View
+              style={{
+                backgroundColor: isHealthyRatio
+                  ? colors.success + "15"
+                  : colors.warning + "15",
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 8,
+                marginBottom: 4,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "600",
+                  color: isHealthyRatio ? colors.success : colors.warning,
+                  fontFamily: fontFamily.medium,
+                }}
+              >
+                {debtToAssetRatio.toFixed(0)}% Debt Ratio
+              </Text>
+            </View>
             <Text
               style={{
                 fontSize: 12,
-                fontWeight: "600",
-                color: isHealthyRatio ? colors.success : colors.warning,
-                fontFamily: fontFamily.medium,
+                color: colors.textSecondary,
+                fontFamily: fontFamily.regular,
               }}
             >
               {isHealthyRatio ? "Healthy" : "High"}
             </Text>
           </View>
         </View>
-        <View
-          style={{
-            height: 8,
-            backgroundColor: colors.border,
-            borderRadius: 4,
-            overflow: "hidden",
-          }}
-        >
-          <View
-            style={{
-              height: "100%",
-              width: `${Math.min(debtToAssetRatio, 100)}%`,
-              backgroundColor: isHealthyRatio ? colors.success : colors.warning,
-              borderRadius: 4,
-            }}
-          />
-        </View>
-        <Text
-          style={{
-            fontSize: 14,
-            color: colors.textSecondary,
-            marginTop: 8,
-            fontFamily: fontFamily.regular,
-          }}
-        >
-          {isHealthyRatio
-            ? "Your debt is well-managed relative to your assets."
-            : "Consider reducing debt or increasing assets to improve this ratio."}
-        </Text>
-      </View>
 
-      {/* Quick Actions */}
-      <View
-        style={{
-          marginTop: 16,
-        }}
-      >
+        {/* Quick Action */}
         <TouchableOpacity
           onPress={() => {
             if (hasPremiumAccess()) {
@@ -728,11 +596,11 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           }}
           style={{
             backgroundColor: colors.surfaceSecondary,
-            paddingHorizontal: 20,
-            paddingVertical: 14,
-            borderRadius: 12,
-            alignItems: "center",
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            borderRadius: 10,
             flexDirection: "row",
+            alignItems: "center",
             justifyContent: "center",
           }}
         >
@@ -755,7 +623,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             <View
               style={{
                 backgroundColor: colors.primary,
-                borderRadius: 8,
+                borderRadius: 6,
                 paddingHorizontal: 6,
                 paddingVertical: 2,
                 marginLeft: 8,
@@ -774,7 +642,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </TourGuide>
   );
 
   return (
@@ -795,6 +663,40 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           title={translate("assetsDebts", isFriendlyMode)}
           subtitle="Track your net worth and financial health"
           showBackButton={false}
+          rightComponent={
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert("Add Item", "What would you like to add?", [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Add Asset",
+                    onPress: () => handleQuickAction("asset"),
+                    style: "default",
+                  },
+                  {
+                    text: "Add Debt",
+                    onPress: () => handleQuickAction("debt"),
+                    style: "default",
+                  },
+                ]);
+              }}
+              style={{
+                padding: 12,
+                borderRadius: 12,
+                backgroundColor: colors.primary,
+                alignItems: "center",
+                justifyContent: "center",
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                shadowOffset: { width: 0, height: 2 },
+                elevation: 2,
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={20} color={colors.buttonText} />
+            </TouchableOpacity>
+          }
         />
 
         {/* Financial Insights Section */}
@@ -816,64 +718,57 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               elevation: 4,
             }}
           >
-            <View
+            <TouchableOpacity
+              onPress={() => setIsAssetsCollapsed(!isAssetsCollapsed)}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 20,
+                marginBottom: 16,
+                paddingVertical: 4,
               }}
+              activeOpacity={0.7}
             >
               <View
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
                   backgroundColor: colors.success + "20",
                   alignItems: "center",
                   justifyContent: "center",
-                  marginRight: 16,
+                  marginRight: 12,
                 }}
               >
-                <Ionicons name="trending-up" size={20} color={colors.success} />
+                <Ionicons name="trending-up" size={16} color={colors.success} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text
                   style={{
-                    fontSize: 20,
-                    fontWeight: "700",
+                    fontSize: 18,
+                    fontWeight: "600",
                     color: colors.text,
-                    fontFamily: fontFamily.bold,
+                    fontFamily: fontFamily.semiBold,
                   }}
                 >
                   {translate("assets", isFriendlyMode)}
                 </Text>
                 <Text
                   style={{
-                    fontSize: 14,
+                    fontSize: 13,
                     color: colors.textSecondary,
                     fontFamily: fontFamily.regular,
                   }}
                 >
-                  {assets.length} item{assets.length !== 1 ? "s" : ""} • Total:
-                  ${assetTotal.toLocaleString()}
+                  {assets.length} item{assets.length !== 1 ? "s" : ""} • $
+                  {assetTotal.toLocaleString()}
                 </Text>
               </View>
-              <TouchableOpacity
-                onPress={() => setIsAssetsCollapsed(!isAssetsCollapsed)}
-                style={{
-                  padding: 12,
-                  borderRadius: 12,
-                  backgroundColor: colors.surfaceSecondary,
-                }}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={isAssetsCollapsed ? "chevron-down" : "chevron-up"}
-                  size={20}
-                  color={colors.primary}
-                />
-              </TouchableOpacity>
-            </View>
+              <Ionicons
+                name={isAssetsCollapsed ? "chevron-down" : "chevron-up"}
+                size={18}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
 
             {!isAssetsCollapsed && (
               <>
@@ -947,64 +842,57 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               elevation: 4,
             }}
           >
-            <View
+            <TouchableOpacity
+              onPress={() => setIsDebtsCollapsed(!isDebtsCollapsed)}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 20,
+                marginBottom: 16,
+                paddingVertical: 4,
               }}
+              activeOpacity={0.7}
             >
               <View
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
                   backgroundColor: colors.error + "20",
                   alignItems: "center",
                   justifyContent: "center",
-                  marginRight: 16,
+                  marginRight: 12,
                 }}
               >
-                <Ionicons name="trending-down" size={20} color={colors.error} />
+                <Ionicons name="trending-down" size={16} color={colors.error} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text
                   style={{
-                    fontSize: 20,
-                    fontWeight: "700",
+                    fontSize: 18,
+                    fontWeight: "600",
                     color: colors.text,
-                    fontFamily: fontFamily.bold,
+                    fontFamily: fontFamily.semiBold,
                   }}
                 >
                   {translate("debt", isFriendlyMode)}
                 </Text>
                 <Text
                   style={{
-                    fontSize: 14,
+                    fontSize: 13,
                     color: colors.textSecondary,
                     fontFamily: fontFamily.regular,
                   }}
                 >
-                  {debts.length} item{debts.length !== 1 ? "s" : ""} • Total: $
+                  {debts.length} item{debts.length !== 1 ? "s" : ""} • $
                   {totalDebt.toLocaleString()}
                 </Text>
               </View>
-              <TouchableOpacity
-                onPress={() => setIsDebtsCollapsed(!isDebtsCollapsed)}
-                style={{
-                  padding: 12,
-                  borderRadius: 12,
-                  backgroundColor: colors.surfaceSecondary,
-                }}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={isDebtsCollapsed ? "chevron-down" : "chevron-up"}
-                  size={20}
-                  color={colors.primary}
-                />
-              </TouchableOpacity>
-            </View>
+              <Ionicons
+                name={isDebtsCollapsed ? "chevron-down" : "chevron-up"}
+                size={18}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
 
             {!isDebtsCollapsed && (
               <>
@@ -1062,138 +950,54 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           </View>
         </TourGuide>
 
-        {/* Action Buttons */}
-        <TourGuide zone={4} screen="AssetsDebts">
+        {/* Chart Section */}
+        {(hasAssets || hasDebts) && (
           <View
             style={{
-              flexDirection: "row",
-              gap: 16,
-              marginTop: 24,
-              marginBottom: 24,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => handleQuickAction("asset")}
-              style={{
-                backgroundColor: colors.success,
-                paddingHorizontal: 20,
-                paddingVertical: 12,
-                borderRadius: 12,
-                flex: 1,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                shadowColor: colors.shadow,
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 4,
-              }}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name="add"
-                size={20}
-                color={colors.buttonText}
-                style={{ marginRight: 8 }}
-              />
-              <Text
-                style={{
-                  fontFamily: fontFamily.semiBold,
-                  color: colors.buttonText,
-                  fontWeight: "600",
-                  fontSize: 16,
-                }}
-              >
-                Add Asset
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => handleQuickAction("debt")}
-              style={{
-                backgroundColor: colors.error,
-                paddingHorizontal: 20,
-                paddingVertical: 12,
-                borderRadius: 12,
-                flex: 1,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                shadowColor: colors.shadow,
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 4,
-              }}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name="add"
-                size={20}
-                color={colors.buttonText}
-                style={{ marginRight: 8 }}
-              />
-              <Text
-                style={{
-                  fontFamily: fontFamily.semiBold,
-                  color: colors.buttonText,
-                  fontWeight: "600",
-                  fontSize: 16,
-                }}
-              >
-                Add Debt
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </TourGuide>
-
-        {/* Enhanced Chart Section */}
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 20,
-            padding: 24,
-            shadowColor: colors.shadow,
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 20,
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 20,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.06,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 2 },
+              elevation: 2,
             }}
           >
             <View
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: colors.surfaceSecondary,
+                flexDirection: "row",
                 alignItems: "center",
-                justifyContent: "center",
-                marginRight: 16,
+                marginBottom: 16,
               }}
             >
-              <Ionicons name="pie-chart" size={20} color={colors.primary} />
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: colors.surfaceSecondary,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="pie-chart" size={16} color={colors.primary} />
+              </View>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: colors.text,
+                  fontFamily: fontFamily.semiBold,
+                }}
+              >
+                Visual Breakdown
+              </Text>
             </View>
-            <Text
-              style={{
-                fontSize: 20,
-                fontWeight: "700",
-                color: colors.text,
-                fontFamily: fontFamily.bold,
-              }}
-            >
-              Visual Breakdown
-            </Text>
+            <AssetsDebtsChart assets={chartAssets} debts={chartDebts} />
           </View>
-          <AssetsDebtsChart assets={chartAssets} debts={chartDebts} />
-        </View>
+        )}
       </ScrollView>
 
       {/* Floating AI Chatbot - only show on main tab screens */}
