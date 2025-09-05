@@ -24,6 +24,8 @@ import {
   getUserBudgetCategories,
   BudgetCategory,
 } from "../services/userData";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 
 interface BudgetCategoriesScreenProps {
   navigation: any;
@@ -56,6 +58,80 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [tempCategoryLimit, setTempCategoryLimit] = useState("");
   const scrollViewRef = useRef<ScrollView>(null);
+
+  // Budget allocation settings
+  const [includeSavings, setIncludeSavings] = useState(true);
+  const [includeDebtPayoff, setIncludeDebtPayoff] = useState(true);
+  const [includeGoalContributions, setIncludeGoalContributions] =
+    useState(true);
+  const [showBudgetSettingsModal, setShowBudgetSettingsModal] = useState(false);
+
+  // AsyncStorage keys for budget settings
+  const BUDGET_SETTINGS_KEY = `budget_allocation_settings_${
+    user?.uid || "anonymous"
+  }`;
+
+  // Load budget settings from AsyncStorage
+  const loadBudgetSettings = async () => {
+    try {
+      const savedSettings = await AsyncStorage.getItem(BUDGET_SETTINGS_KEY);
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        setIncludeSavings(settings.includeSavings ?? true);
+        setIncludeDebtPayoff(settings.includeDebtPayoff ?? true);
+        setIncludeGoalContributions(settings.includeGoalContributions ?? true);
+      }
+    } catch (error) {
+      console.error("Error loading budget settings:", error);
+    }
+  };
+
+  // Save budget settings to AsyncStorage
+  const saveBudgetSettings = async (settings: {
+    includeSavings: boolean;
+    includeDebtPayoff: boolean;
+    includeGoalContributions: boolean;
+  }) => {
+    try {
+      await AsyncStorage.setItem(BUDGET_SETTINGS_KEY, JSON.stringify(settings));
+    } catch (error) {
+      console.error("Error saving budget settings:", error);
+    }
+  };
+
+  // Toggle handlers with haptic feedback and persistence
+  const toggleSavings = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newValue = !includeSavings;
+    setIncludeSavings(newValue);
+    await saveBudgetSettings({
+      includeSavings: newValue,
+      includeDebtPayoff,
+      includeGoalContributions,
+    });
+  };
+
+  const toggleDebtPayoff = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newValue = !includeDebtPayoff;
+    setIncludeDebtPayoff(newValue);
+    await saveBudgetSettings({
+      includeSavings,
+      includeDebtPayoff: newValue,
+      includeGoalContributions,
+    });
+  };
+
+  const toggleGoalContributions = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newValue = !includeGoalContributions;
+    setIncludeGoalContributions(newValue);
+    await saveBudgetSettings({
+      includeSavings,
+      includeDebtPayoff,
+      includeGoalContributions: newValue,
+    });
+  };
 
   // Check if a category is over budget
   const isCategoryOverBudget = (category: BudgetCategory) => {
@@ -265,6 +341,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     React.useCallback(() => {
       if (user?.uid) {
         refreshBudgetSettings();
+        loadBudgetSettings(); // Load budget allocation settings
       }
     }, [user?.uid, refreshBudgetSettings])
   );
@@ -398,9 +475,12 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     .filter((goal) => goal.monthlyContribution > 0)
     .reduce((sum, goal) => sum + goal.monthlyContribution, 0);
 
-  // Calculate total budget: Total Income - Savings - Debt Payoff - Goal Contribution
+  // Calculate total budget based on user settings
   const totalBudget =
-    totalIncome - savingsAmount - debtPayoffAmount - monthlyGoalsContribution;
+    totalIncome -
+    (includeSavings ? savingsAmount : 0) -
+    (includeDebtPayoff ? debtPayoffAmount : 0) -
+    (includeGoalContributions ? monthlyGoalsContribution : 0);
 
   const getCategorySpending = (categoryName: string) => {
     // Get actual spending from transactions in this category
@@ -671,17 +751,37 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
         showBackButton={true}
         onBack={() => navigation.goBack()}
         rightComponent={
-          <TouchableOpacity
-            onPress={() => setShowAddModal(true)}
+          <View
             style={{
-              backgroundColor: colors.primary,
-              padding: 12,
-              borderRadius: 12,
+              flexDirection: "row",
+              alignItems: "center",
               marginRight: 20,
             }}
           >
-            <Ionicons name="add" size={20} color={colors.buttonText} />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowBudgetSettingsModal(true)}
+              style={{
+                backgroundColor: colors.surface,
+                padding: 12,
+                borderRadius: 12,
+                marginRight: 8,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Ionicons name="settings-outline" size={20} color={colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowAddModal(true)}
+              style={{
+                backgroundColor: colors.primary,
+                padding: 12,
+                borderRadius: 12,
+              }}
+            >
+              <Ionicons name="add" size={20} color={colors.buttonText} />
+            </TouchableOpacity>
+          </View>
         }
       />
 
@@ -730,6 +830,28 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
           </Text>
 
           <View style={{ gap: 12 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingVertical: 4,
+              }}
+            >
+              <Text style={{ fontSize: 18, color: colors.textSecondary }}>
+                Total Income
+              </Text>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "600",
+                  color: colors.success,
+                }}
+              >
+                ${totalIncome.toLocaleString()}
+              </Text>
+            </View>
+
             <View
               style={{
                 flexDirection: "row",
@@ -930,6 +1052,18 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     }}
                   >
                     ${category.monthlyLimit.toLocaleString()}
+                    {totalIncome > 0 && (
+                      <Text
+                        style={{ fontSize: 14, color: colors.textSecondary }}
+                      >
+                        {" "}
+                        (
+                        {((category.monthlyLimit / totalIncome) * 100).toFixed(
+                          1
+                        )}
+                        %)
+                      </Text>
+                    )}
                   </Text>
                 </View>
 
@@ -1406,6 +1540,275 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                 </TouchableOpacity>
               </View>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Budget Settings Modal */}
+      <Modal
+        visible={showBudgetSettingsModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowBudgetSettingsModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "flex-end",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.background,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              padding: 20,
+              maxHeight: "80%",
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
+                Budget Allocation Settings
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowBudgetSettingsModal(false)}
+                style={{
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <Text
+              style={{
+                fontSize: 16,
+                color: colors.textSecondary,
+                marginBottom: 20,
+                lineHeight: 22,
+              }}
+            >
+              Choose which allocations to include in your total budget
+              calculation:
+            </Text>
+
+            <View style={{ gap: 16 }}>
+              {/* Savings Toggle */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  backgroundColor: colors.surface,
+                  borderRadius: 12,
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "600",
+                      color: colors.text,
+                    }}
+                  >
+                    Include Savings ({savingsPercentage}%)
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    ${savingsAmount.toLocaleString()}/month
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={toggleSavings}
+                  style={{
+                    width: 50,
+                    height: 30,
+                    borderRadius: 15,
+                    backgroundColor: includeSavings
+                      ? colors.primary
+                      : colors.border,
+                    justifyContent: "center",
+                    alignItems: includeSavings ? "flex-end" : "flex-start",
+                    paddingHorizontal: 2,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 13,
+                      backgroundColor: "#fff",
+                    }}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {/* Debt Payoff Toggle */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  backgroundColor: colors.surface,
+                  borderRadius: 12,
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "600",
+                      color: colors.text,
+                    }}
+                  >
+                    Include Debt Payoff ({debtPayoffPercentage}%)
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    ${debtPayoffAmount.toLocaleString()}/month
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={toggleDebtPayoff}
+                  style={{
+                    width: 50,
+                    height: 30,
+                    borderRadius: 15,
+                    backgroundColor: includeDebtPayoff
+                      ? colors.primary
+                      : colors.border,
+                    justifyContent: "center",
+                    alignItems: includeDebtPayoff ? "flex-end" : "flex-start",
+                    paddingHorizontal: 2,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 13,
+                      backgroundColor: "#fff",
+                    }}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {/* Goal Contributions Toggle */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  backgroundColor: colors.surface,
+                  borderRadius: 12,
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "600",
+                      color: colors.text,
+                    }}
+                  >
+                    Include Goal Contributions
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    ${monthlyGoalsContribution.toLocaleString()}/month
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={toggleGoalContributions}
+                  style={{
+                    width: 50,
+                    height: 30,
+                    borderRadius: 15,
+                    backgroundColor: includeGoalContributions
+                      ? colors.primary
+                      : colors.border,
+                    justifyContent: "center",
+                    alignItems: includeGoalContributions
+                      ? "flex-end"
+                      : "flex-start",
+                    paddingHorizontal: 2,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 13,
+                      backgroundColor: "#fff",
+                    }}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View
+              style={{
+                marginTop: 30,
+                paddingTop: 20,
+                borderTopWidth: 1,
+                borderTopColor: colors.border,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: colors.text,
+                  marginBottom: 8,
+                }}
+              >
+                Current Total Budget
+              </Text>
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontWeight: "700",
+                  color: colors.primary,
+                }}
+              >
+                ${totalBudget.toLocaleString()}
+              </Text>
+            </View>
           </View>
         </View>
       </Modal>
