@@ -45,6 +45,18 @@ export const TourGuide: React.FC<TourGuideProps> = ({
     currentTourStep?.zone === zone &&
     currentTourStep?.screen === screen;
 
+  // Debug logging
+  useEffect(() => {
+    console.log("🎯 TourGuide Debug:", {
+      isTourActive,
+      currentStep,
+      zone,
+      screen,
+      currentTourStep: currentTourStep?.id,
+      isCurrentStep,
+    });
+  }, [isTourActive, currentStep, zone, screen, currentTourStep, isCurrentStep]);
+
   useEffect(() => {
     if (isCurrentStep) {
       // Entrance animation with fun bounces

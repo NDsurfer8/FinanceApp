@@ -48,7 +48,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const { goals, budgetSettings, refreshAssetsDebts } = useData();
   const { isScrolling, handleScrollBegin, handleScrollEnd } =
     useScrollDetection();
-  const { startTour, hasCompletedTour, isTourStatusLoaded } = useTour();
+  const { startTour, hasCompletedTour, isTourStatusLoaded, isNewUser } =
+    useTour();
 
   const [loading, setLoading] = useState(false);
   const [trendData, setTrendData] = useState<any[]>([]);
@@ -87,18 +88,62 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     }
   }, [user]);
 
-  // Auto-start tour for new users
+  // Auto-start tour for new users (Firebase-based detection)
   React.useEffect(() => {
-    if (user && !hasCheckedForTour && isTourStatusLoaded && !hasCompletedTour) {
-      setHasCheckedForTour(true);
+    const checkAndShowTour = async () => {
+      console.log("🎯 Auto-tour check triggered:", {
+        user: !!user,
+        userUid: user?.uid,
+        hasCheckedForTour,
+        isTourStatusLoaded,
+        hasCompletedTour,
+      });
 
-      // Small delay to ensure the screen is fully loaded
-      const timer = setTimeout(() => {
-        startTour(navigation);
-      }, 1000);
+      // Only proceed if user is authenticated and has a valid UID
+      if (
+        user &&
+        user.uid &&
+        !hasCheckedForTour &&
+        isTourStatusLoaded &&
+        !hasCompletedTour
+      ) {
+        console.log("🎯 All conditions met, checking if user is new...");
+        const isNew = await isNewUser(user);
 
-      return () => clearTimeout(timer);
-    }
+        if (isNew) {
+          console.log(
+            "🎯 New user detected! Starting tour after dashboard loads..."
+          );
+          setHasCheckedForTour(true);
+
+          // Wait for dashboard to fully render
+          const timer = setTimeout(() => {
+            console.log("🎯 About to call startTour...");
+            startTour(navigation);
+            console.log("🎯 startTour called");
+          }, 2000);
+
+          return () => clearTimeout(timer);
+        } else {
+          console.log("🎯 Returning user, skipping tour");
+          setHasCheckedForTour(true);
+        }
+      } else if (!user) {
+        // Reset tour check when user logs out
+        console.log("🎯 No user, resetting tour check");
+        setHasCheckedForTour(false);
+      } else {
+        console.log("🎯 Conditions not met for auto-tour:", {
+          hasUser: !!user,
+          hasUid: !!user?.uid,
+          hasChecked: hasCheckedForTour,
+          statusLoaded: isTourStatusLoaded,
+          completed: hasCompletedTour,
+        });
+      }
+    };
+
+    checkAndShowTour();
   }, [
     user,
     hasCheckedForTour,
@@ -106,6 +151,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     hasCompletedTour,
     startTour,
     navigation,
+    isNewUser,
   ]);
 
   // Background refresh when screen comes into focus

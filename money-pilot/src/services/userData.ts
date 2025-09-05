@@ -2713,11 +2713,11 @@ export const getUserBudgetCategories = async (
   try {
     const key = `budgetCategories_${userId}`;
     const stored = await AsyncStorage.getItem(key);
-    
+
     if (stored) {
       return JSON.parse(stored);
     }
-    
+
     // Return default categories if none exist
     return [
       { id: "1", name: "Rent", monthlyLimit: 1200, color: "#FF6B6B" },
