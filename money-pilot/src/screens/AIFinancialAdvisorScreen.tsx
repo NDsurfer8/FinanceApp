@@ -25,6 +25,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useChatbot } from "../contexts/ChatbotContext";
+import { StandardHeader } from "../components/StandardHeader";
 import { useSubscription } from "../contexts/SubscriptionContext";
 import { aiUsageTracker } from "../services/aiUsageTracker";
 import {
@@ -1689,11 +1690,11 @@ Original Request: ${basePrompt}
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={{
-              padding: 8,
-              borderRadius: 6,
+              marginRight: 20,
+              padding: 4,
             }}
           >
-            <Ionicons name="arrow-back" size={20} color={colors.text} />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>

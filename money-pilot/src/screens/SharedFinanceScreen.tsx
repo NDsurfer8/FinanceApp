@@ -919,7 +919,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.05)",
   },
   backButton: {
-    padding: 8,
+    marginRight: 20,
+    padding: 10,
   },
   headerTitle: {
     fontSize: 24,

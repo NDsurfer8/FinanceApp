@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useData } from "../contexts/DataContext";
+import { StandardHeader } from "../components/StandardHeader";
 import { useSubscription } from "../contexts/SubscriptionContext";
 import { usePaywall } from "../hooks/usePaywall";
 import { plaidService } from "../services/plaid";
@@ -215,60 +216,12 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
         }
       >
         {/* Header */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "flex-start",
-            marginBottom: 20,
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 8,
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={{
-                  padding: 12, // Increased from 10 to ensure minimum 44px touch target
-                  marginRight: 12,
-                  minWidth: 44, // Ensure minimum width
-                  minHeight: 44, // Ensure minimum height
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Ionicons name="arrow-back" size={18} color={colors.text} />
-              </TouchableOpacity>
-              <Text
-                style={{
-                  fontSize: 24,
-                  fontWeight: "800",
-                  color: colors.text,
-                  letterSpacing: -0.5,
-                  flex: 1,
-                }}
-                numberOfLines={1}
-              >
-                Accounts Overview
-              </Text>
-            </View>
-            <Text
-              style={{
-                fontSize: 14,
-                color: colors.textSecondary,
-                marginLeft: 46,
-                fontWeight: "500",
-              }}
-              numberOfLines={1}
-            >
-              Real-time from your connected accounts
-            </Text>
-          </View>
-        </View>
+        <StandardHeader
+          title="Accounts Overview"
+          subtitle="Real-time from your connected accounts"
+          onBack={() => navigation.goBack()}
+          showBackButton={true}
+        />
 
         {/* Account Summary Section - Show when bank is connected */}
         {isBankConnected && (

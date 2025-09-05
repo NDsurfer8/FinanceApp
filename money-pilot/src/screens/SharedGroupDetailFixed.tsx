@@ -1088,7 +1088,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   backButton: {
-    padding: 8,
+    marginRight: 20,
+    padding: 10,
   },
   headerInfo: {
     flex: 1,

@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useZeroLoading } from "../hooks/useZeroLoading";
+import { StandardHeader } from "../components/StandardHeader";
 import {
   saveAsset,
   saveDebt,
@@ -285,25 +286,13 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           keyboardShouldPersistTaps="handled"
         >
           {/* Header */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 24,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ marginRight: 16 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text
-              style={{ fontSize: 20, fontWeight: "600", color: colors.text }}
-            >
-              {editMode ? "Edit" : "Add"} {type === "asset" ? "Asset" : "Debt"}
-            </Text>
-          </View>
+          <StandardHeader
+            title={`${editMode ? "Edit" : "Add"} ${
+              type === "asset" ? "Asset" : "Debt"
+            }`}
+            onBack={() => navigation.goBack()}
+            showBackButton={true}
+          />
 
           {/* Form Fields */}
           {/* Name */}

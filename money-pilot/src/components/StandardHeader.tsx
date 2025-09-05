@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 20,
-    padding: 10,
+    padding: 4,
   },
   titleContainer: {
     flex: 1,

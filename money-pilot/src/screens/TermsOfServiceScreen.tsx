@@ -34,8 +34,8 @@ export const TermsOfServiceScreen: React.FC<TermsOfServiceScreenProps> = ({
       backgroundColor: colors.card,
     },
     backButton: {
-      padding: 8,
-      marginRight: 8,
+      marginRight: 20,
+      padding: 10,
     },
     headerTitle: {
       fontSize: 18,

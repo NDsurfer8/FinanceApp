@@ -382,7 +382,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(0,0,0,0.1)",
   },
   backButton: {
-    padding: 8,
+    marginRight: 20,
+    padding: 10,
   },
   headerTitle: {
     fontSize: 20,
