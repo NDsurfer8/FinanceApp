@@ -64,15 +64,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
   const { selectedMonth, setSelectedMonth } = useSelectedMonth();
 
-  // Debug: Log the selected month from context
-  console.log(
-    "🔍 BudgetScreen Debug - Selected month from context:",
-    selectedMonth
-  );
-  console.log(
-    "🔍 BudgetScreen Debug - Selected month string:",
-    selectedMonth.toLocaleDateString()
-  );
   const [savingsPercentage, setSavingsPercentage] = useState("20");
   const [debtPayoffPercentage, setDebtPayoffPercentage] = useState("5");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
