@@ -1070,6 +1070,41 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   ${totalBudget.toLocaleString()}
                 </Text>
               </View>
+
+              {/* Allocated to Categories */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 6,
+                  paddingHorizontal: 12,
+                  backgroundColor: colors.surface,
+                  borderRadius: 8,
+                  marginTop: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                  }}
+                >
+                  Allocated to Categories
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: colors.text,
+                  }}
+                >
+                  $
+                  {categories
+                    .reduce((sum, cat) => sum + cat.monthlyLimit, 0)
+                    .toLocaleString()}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -1517,76 +1552,16 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   />
                 </View>
 
-                {/* Budget Summary */}
+                {/* Available to Allocate */}
                 <View
                   style={{
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    paddingVertical: 16,
-                    paddingHorizontal: 20,
-                    backgroundColor: colors.primary + "10",
-                    borderRadius: 16,
-                    borderLeftWidth: 4,
-                    borderLeftColor: colors.primary,
-                  }}
-                >
-                  <View style={{ alignItems: "flex-start" }}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                        marginBottom: 2,
-                        fontWeight: "500",
-                      }}
-                    >
-                      Budget Status
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                      }}
-                    >
-                      $
-                      {editingCategory
-                        ? categories
-                            .filter((cat) => cat.id !== editingCategory.id)
-                            .reduce((sum, cat) => sum + cat.monthlyLimit, 0) +
-                          (parseFloat(tempCategoryLimit) || 0)
-                        : categories
-                            .reduce((sum, cat) => sum + cat.monthlyLimit, 0)
-                            .toLocaleString()}{" "}
-                      allocated
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: "flex-end" }}>
-                    <Text
-                      style={{
-                        fontSize: 20,
-                        fontWeight: "800",
-                        color: (() => {
-                          const available =
-                            totalBudget -
-                            (editingCategory
-                              ? categories
-                                  .filter(
-                                    (cat) => cat.id !== editingCategory.id
-                                  )
-                                  .reduce(
-                                    (sum, cat) => sum + cat.monthlyLimit,
-                                    0
-                                  ) + (parseFloat(tempCategoryLimit) || 0)
-                              : categories.reduce(
-                                  (sum, cat) => sum + cat.monthlyLimit,
-                                  0
-                                ));
-                          return available < 0 ? colors.error : colors.success;
-                        })(),
-                      }}
-                    >
-                      $
-                      {(
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    backgroundColor: (() => {
+                      const available =
                         totalBudget -
                         (editingCategory
                           ? categories
@@ -1596,37 +1571,61 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                           : categories.reduce(
                               (sum, cat) => sum + cat.monthlyLimit,
                               0
-                            ))
-                      ).toLocaleString()}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: (() => {
-                          const available =
-                            totalBudget -
-                            (editingCategory
-                              ? categories
-                                  .filter(
-                                    (cat) => cat.id !== editingCategory.id
-                                  )
-                                  .reduce(
-                                    (sum, cat) => sum + cat.monthlyLimit,
-                                    0
-                                  ) +
-                                (editingCategory
-                                  ? parseFloat(tempCategoryLimit) || 0
-                                  : 0)
-                              : categories.reduce(
-                                  (sum, cat) => sum + cat.monthlyLimit,
-                                  0
-                                ));
-                          return available < 0 ? colors.error : colors.success;
-                        })(),
-                        fontWeight: "600",
-                      }}
-                    >
-                      {(() => {
+                            ));
+                      return available < 0
+                        ? colors.error + "15"
+                        : colors.success + "15";
+                    })(),
+                    borderRadius: 12,
+                    marginBottom: 20,
+                    borderWidth: 1,
+                    borderColor: (() => {
+                      const available =
+                        totalBudget -
+                        (editingCategory
+                          ? categories
+                              .filter((cat) => cat.id !== editingCategory.id)
+                              .reduce((sum, cat) => sum + cat.monthlyLimit, 0) +
+                            (parseFloat(tempCategoryLimit) || 0)
+                          : categories.reduce(
+                              (sum, cat) => sum + cat.monthlyLimit,
+                              0
+                            ));
+                      return available < 0
+                        ? colors.error + "30"
+                        : colors.success + "30";
+                    })(),
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: colors.text,
+                    }}
+                  >
+                    {(() => {
+                      const available =
+                        totalBudget -
+                        (editingCategory
+                          ? categories
+                              .filter((cat) => cat.id !== editingCategory.id)
+                              .reduce((sum, cat) => sum + cat.monthlyLimit, 0) +
+                            (parseFloat(tempCategoryLimit) || 0)
+                          : categories.reduce(
+                              (sum, cat) => sum + cat.monthlyLimit,
+                              0
+                            ));
+                      return available < 0
+                        ? "Over Budget"
+                        : "Available to Allocate";
+                    })()}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: (() => {
                         const available =
                           totalBudget -
                           (editingCategory
@@ -1635,20 +1634,29 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                                 .reduce(
                                   (sum, cat) => sum + cat.monthlyLimit,
                                   0
-                                ) +
-                              (editingCategory
-                                ? parseFloat(tempCategoryLimit) || 0
-                                : 0)
+                                ) + (parseFloat(tempCategoryLimit) || 0)
                             : categories.reduce(
                                 (sum, cat) => sum + cat.monthlyLimit,
                                 0
                               ));
-                        return available < 0
-                          ? "Over budget"
-                          : "Available to allocate";
-                      })()}
-                    </Text>
-                  </View>
+                        return available < 0 ? colors.error : colors.success;
+                      })(),
+                    }}
+                  >
+                    $
+                    {(
+                      totalBudget -
+                      (editingCategory
+                        ? categories
+                            .filter((cat) => cat.id !== editingCategory.id)
+                            .reduce((sum, cat) => sum + cat.monthlyLimit, 0) +
+                          (parseFloat(tempCategoryLimit) || 0)
+                        : categories.reduce(
+                            (sum, cat) => sum + cat.monthlyLimit,
+                            0
+                          ))
+                    ).toLocaleString()}
+                  </Text>
                 </View>
 
                 <View>
