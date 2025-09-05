@@ -17,7 +17,8 @@ export interface FinancialSnapshot {
   recurringExpenses: any[];
   assets: any[];
   debts: any[];
-  transactions: any[];
+  transactions: any[]; // Selected month transactions only
+  allTransactions?: any[]; // All transactions for reference
   recurringTransactions?: any[]; // Full recurring transaction data
 }
 
@@ -63,7 +64,8 @@ class AIFinancialAdvisorService {
     userQuestion: string,
     snapshot: FinancialSnapshot,
     userPreferences?: any,
-    conversationHistory?: Array<{ role: string; content: string }>
+    conversationHistory?: Array<{ role: string; content: string }>,
+    selectedMonth?: Date
   ): Promise<string> {
     try {
       console.log("Using backend AI... sending snapshot to backend");
@@ -71,6 +73,29 @@ class AIFinancialAdvisorService {
 
       // Prepare financial data for backend - optimized for token usage
       const financialData = {
+        // Month context - what month we're analyzing
+        analysisMonth: selectedMonth
+          ? {
+              month: selectedMonth.getMonth() + 1, // Convert 0-indexed to 1-indexed
+              year: selectedMonth.getFullYear(),
+              monthName: selectedMonth.toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric",
+              }),
+              isCurrentMonth:
+                selectedMonth.getMonth() === new Date().getMonth() &&
+                selectedMonth.getFullYear() === new Date().getFullYear(),
+            }
+          : {
+              month: new Date().getMonth() + 1, // Convert 0-indexed to 1-indexed
+              year: new Date().getFullYear(),
+              monthName: new Date().toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric",
+              }),
+              isCurrentMonth: true,
+            },
+
         // Core metrics (includes recurring transactions)
         monthlyIncome: snapshot.monthlyIncome,
         monthlyExpenses: snapshot.monthlyExpenses,

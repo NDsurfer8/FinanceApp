@@ -15,7 +15,11 @@ import {
   Clipboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import {
+  useNavigation,
+  useFocusEffect,
+  useRoute,
+} from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
@@ -270,7 +274,27 @@ const CHAT_HISTORY_KEY = "ai_financial_advisor_chat_history";
 
 export const AIFinancialAdvisorScreen: React.FC = () => {
   const navigation = useNavigation();
+  const route = useRoute();
   const { user } = useAuth();
+
+  // Get selected month from route params, default to current month
+  const selectedMonth = (route.params as any)?.selectedMonth || new Date();
+
+  // Ensure selectedMonth is a Date object and normalize it to the first day of the month
+  const targetMonth =
+    selectedMonth instanceof Date
+      ? new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1)
+      : new Date(
+          new Date(selectedMonth).getFullYear(),
+          new Date(selectedMonth).getMonth(),
+          1
+        );
+
+  // Debug: Log what we received from navigation
+  console.log("🔍 AI Debug - Route params:", route.params);
+  console.log("🔍 AI Debug - Raw selectedMonth from params:", selectedMonth);
+  console.log("🔍 AI Debug - Final targetMonth:", targetMonth);
+  console.log("🔍 AI Debug - Current date for comparison:", new Date());
   const { hideChatbot, showChatbot } = useChatbot();
   const { hasPremiumAccess } = useSubscription();
   const {
@@ -414,17 +438,59 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
 
   // Generate financial snapshot for AI analysis
   const generateFinancialSnapshot = (): FinancialSnapshot => {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
+    const targetMonthNum = targetMonth.getMonth();
+    const targetYear = targetMonth.getFullYear();
 
-    // Calculate monthly income and expenses from actual transactions
+    // Debug: Log all transactions to see what data we have
+    console.log("🔍 AI Debug - All transactions:", transactions.length);
+    console.log(
+      "🔍 AI Debug - All recurring transactions:",
+      recurringTransactions.length
+    );
+    console.log(
+      "🔍 AI Debug - Selected month:",
+      targetMonth.toLocaleDateString()
+    );
+    console.log("🔍 AI Debug - Target month/year:", targetMonthNum, targetYear);
+    console.log(
+      "🔍 AI Debug - Month name:",
+      targetMonth.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      })
+    );
+
+    // Debug: Show what months we have transactions in
+    const transactionMonths = transactions.map((t) => {
+      const date = new Date(t.date);
+      return `${date.getMonth()}/${date.getFullYear()} (${date.toLocaleDateString()})`;
+    });
+    console.log("🔍 AI Debug - Transaction months:", transactionMonths);
+
+    // Calculate monthly income and expenses from actual transactions for the selected month
     const monthlyTransactions = transactions.filter((transaction) => {
       const transactionDate = new Date(transaction.date);
       return (
-        transactionDate.getMonth() === currentMonth &&
-        transactionDate.getFullYear() === currentYear
+        transactionDate.getMonth() === targetMonthNum &&
+        transactionDate.getFullYear() === targetYear
       );
     });
+
+    // Debug: Log filtered transactions
+    console.log(
+      "🔍 AI Debug - Monthly transactions:",
+      monthlyTransactions.length
+    );
+    console.log(
+      "🔍 AI Debug - Monthly transactions details:",
+      monthlyTransactions.map((t) => ({
+        id: t.id,
+        description: t.description,
+        amount: t.amount,
+        type: t.type,
+        date: new Date(t.date).toLocaleDateString(),
+      }))
+    );
 
     const actualMonthlyIncome = monthlyTransactions
       .filter((t) => t.type === "income")
@@ -434,22 +500,91 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       .filter((t) => t.type === "expense")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Calculate recurring monthly income and expenses
-    const recurringMonthlyIncome = recurringTransactions
-      .filter((t) => t.type === "income" && t.isActive)
-      .reduce((sum, rt) => {
-        let monthlyAmount = rt.amount;
-        if (rt.frequency === "weekly") {
-          monthlyAmount = rt.amount * 4; // 4 weeks in a month
-        } else if (rt.frequency === "biweekly") {
-          monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
-        }
-        return sum + monthlyAmount;
-      }, 0);
+    // Calculate recurring monthly income and expenses - only those active during the selected month
+    const activeRecurringIncome = recurringTransactions.filter((t) => {
+      if (t.type !== "income" || !t.isActive) return false;
 
-    const recurringMonthlyExpenses = recurringTransactions
-      .filter((t) => t.type === "expense" && t.isActive)
-      .reduce((sum, rt) => {
+      // Check if the recurring transaction was active during the selected month
+      const startDate = t.startDate ? new Date(t.startDate) : null;
+      const endDate = t.endDate ? new Date(t.endDate) : null;
+
+      // If no start date, assume it was always active (backward compatibility)
+      if (!startDate) return true;
+
+      // Check if the selected month is after or on the start date
+      const selectedMonthStart = new Date(targetYear, targetMonthNum, 1);
+      const selectedMonthEnd = new Date(targetYear, targetMonthNum + 1, 0); // Last day of month
+
+      // Transaction must have started by the end of the selected month
+      if (startDate > selectedMonthEnd) return false;
+
+      // If there's an end date, transaction must not have ended before the start of the selected month
+      if (endDate && endDate < selectedMonthStart) return false;
+
+      return true;
+    });
+
+    const activeRecurringExpenses = recurringTransactions.filter((t) => {
+      if (t.type !== "expense" || !t.isActive) return false;
+
+      // Check if the recurring transaction was active during the selected month
+      const startDate = t.startDate ? new Date(t.startDate) : null;
+      const endDate = t.endDate ? new Date(t.endDate) : null;
+
+      // If no start date, assume it was always active (backward compatibility)
+      if (!startDate) return true;
+
+      // Check if the selected month is after or on the start date
+      const selectedMonthStart = new Date(targetYear, targetMonthNum, 1);
+      const selectedMonthEnd = new Date(targetYear, targetMonthNum + 1, 0); // Last day of month
+
+      // Transaction must have started by the end of the selected month
+      if (startDate > selectedMonthEnd) return false;
+
+      // If there's an end date, transaction must not have ended before the start of the selected month
+      if (endDate && endDate < selectedMonthStart) return false;
+
+      return true;
+    });
+
+    // Debug: Log recurring transactions
+    console.log(
+      "🔍 AI Debug - Active recurring income:",
+      activeRecurringIncome.length
+    );
+    console.log(
+      "🔍 AI Debug - Active recurring expenses:",
+      activeRecurringExpenses.length
+    );
+    console.log(
+      "🔍 AI Debug - Recurring expenses details:",
+      activeRecurringExpenses.map((rt) => ({
+        id: rt.id,
+        description: rt.description,
+        amount: rt.amount,
+        frequency: rt.frequency,
+        isActive: rt.isActive,
+        startDate: rt.startDate
+          ? new Date(rt.startDate).toLocaleDateString()
+          : "No start date",
+        endDate: rt.endDate
+          ? new Date(rt.endDate).toLocaleDateString()
+          : "No end date",
+      }))
+    );
+
+    const recurringMonthlyIncome = activeRecurringIncome.reduce((sum, rt) => {
+      let monthlyAmount = rt.amount;
+      if (rt.frequency === "weekly") {
+        monthlyAmount = rt.amount * 4; // 4 weeks in a month
+      } else if (rt.frequency === "biweekly") {
+        monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
+      }
+      return sum + monthlyAmount;
+    }, 0);
+
+    const recurringMonthlyExpenses = activeRecurringExpenses.reduce(
+      (sum, rt) => {
         let monthlyAmount = rt.amount;
         if (rt.frequency === "weekly") {
           monthlyAmount = rt.amount * 4; // 4 weeks in a month
@@ -457,12 +592,24 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
         }
         return sum + monthlyAmount;
-      }, 0);
+      },
+      0
+    );
 
     // Total monthly amounts including recurring
     const monthlyIncome = actualMonthlyIncome + recurringMonthlyIncome;
     const monthlyExpenses = actualMonthlyExpenses + recurringMonthlyExpenses;
     const netIncome = monthlyIncome - monthlyExpenses;
+
+    // Debug: Log final totals
+    console.log("🔍 AI Debug - Final totals:");
+    console.log("  - Actual monthly income:", actualMonthlyIncome);
+    console.log("  - Recurring monthly income:", recurringMonthlyIncome);
+    console.log("  - Total monthly income:", monthlyIncome);
+    console.log("  - Actual monthly expenses:", actualMonthlyExpenses);
+    console.log("  - Recurring monthly expenses:", recurringMonthlyExpenses);
+    console.log("  - Total monthly expenses:", monthlyExpenses);
+    console.log("  - Net income:", netIncome);
 
     // Debug logging to verify calculations
 
@@ -488,15 +635,53 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       0
     );
 
-    // Get recurring expenses
-    const recurringExpenses = recurringTransactions.filter(
-      (t) => t.type === "expense" && t.isActive
-    );
+    // Get recurring expenses - only those active during the selected month
+    const recurringExpenses = recurringTransactions.filter((t) => {
+      if (t.type !== "expense" || !t.isActive) return false;
 
-    // Get all recurring transactions for comprehensive analysis
-    const allRecurringTransactions = recurringTransactions.filter(
-      (t) => t.isActive
-    );
+      // Check if the recurring transaction was active during the selected month
+      const startDate = t.startDate ? new Date(t.startDate) : null;
+      const endDate = t.endDate ? new Date(t.endDate) : null;
+
+      // If no start date, assume it was always active (backward compatibility)
+      if (!startDate) return true;
+
+      // Check if the selected month is after or on the start date
+      const selectedMonthStart = new Date(targetYear, targetMonthNum, 1);
+      const selectedMonthEnd = new Date(targetYear, targetMonthNum + 1, 0); // Last day of month
+
+      // Transaction must have started by the end of the selected month
+      if (startDate > selectedMonthEnd) return false;
+
+      // If there's an end date, transaction must not have ended before the start of the selected month
+      if (endDate && endDate < selectedMonthStart) return false;
+
+      return true;
+    });
+
+    // Get all recurring transactions for comprehensive analysis - only those active during the selected month
+    const allRecurringTransactions = recurringTransactions.filter((t) => {
+      if (!t.isActive) return false;
+
+      // Check if the recurring transaction was active during the selected month
+      const startDate = t.startDate ? new Date(t.startDate) : null;
+      const endDate = t.endDate ? new Date(t.endDate) : null;
+
+      // If no start date, assume it was always active (backward compatibility)
+      if (!startDate) return true;
+
+      // Check if the selected month is after or on the start date
+      const selectedMonthStart = new Date(targetYear, targetMonthNum, 1);
+      const selectedMonthEnd = new Date(targetYear, targetMonthNum + 1, 0); // Last day of month
+
+      // Transaction must have started by the end of the selected month
+      if (startDate > selectedMonthEnd) return false;
+
+      // If there's an end date, transaction must not have ended before the start of the selected month
+      if (endDate && endDate < selectedMonthStart) return false;
+
+      return true;
+    });
 
     return {
       monthlyIncome,
@@ -515,7 +700,8 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       recurringExpenses,
       assets,
       debts,
-      transactions,
+      transactions: monthlyTransactions, // Only selected month transactions
+      allTransactions: transactions, // Keep all transactions for reference
       recurringTransactions: allRecurringTransactions,
     };
   };
@@ -651,9 +837,9 @@ Requirements:
           aiResponse = await aiFinancialAdvisorService.generateAIResponse(
             optimizedPlanPrompt,
             snapshot,
-            true, // isPlanRequest
             userPreferences,
-            conversationHistory
+            conversationHistory,
+            targetMonth
           );
           aiResponse += `\n\n💾 Would you like to save this plan to your account?`;
         } catch (planError) {
@@ -661,9 +847,9 @@ Requirements:
           aiResponse = await aiFinancialAdvisorService.generateAIResponse(
             userMessage.text,
             snapshot,
-            false, // isPlanRequest
             userPreferences,
-            conversationHistory
+            conversationHistory,
+            targetMonth
           );
         }
       } else {
@@ -674,9 +860,9 @@ Requirements:
         aiResponse = await aiFinancialAdvisorService.generateAIResponse(
           optimizedPrompt,
           snapshot,
-          false, // isPlanRequest
           userPreferences,
-          conversationHistory
+          conversationHistory,
+          targetMonth
         );
 
         // Clean up markdown formatting from AI responses

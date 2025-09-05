@@ -52,7 +52,7 @@ export type RootStackParamList = {
   RecurringTransactions: undefined;
   Subscription: undefined;
   BankTransactions: undefined;
-  AIFinancialAdvisor: undefined;
+  AIFinancialAdvisor: { selectedMonth?: number };
   FinancialPlans: undefined;
   PrivacyPolicy: undefined;
   TermsOfService: undefined;

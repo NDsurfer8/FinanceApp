@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
 import { useChatbot } from "../contexts/ChatbotContext";
+import { useSelectedMonth } from "../contexts/SelectedMonthContext";
 
 interface FloatingAIChatbotProps {
   hideOnAIScreen?: boolean;
@@ -24,6 +25,7 @@ export const FloatingAIChatbot: React.FC<FloatingAIChatbotProps> = ({
   const { isVisible } = useChatbot();
   const navigation = useNavigation<any>();
   const { colors } = useTheme();
+  const { selectedMonth } = useSelectedMonth();
 
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [screenDimensions, setScreenDimensions] = useState(
@@ -170,7 +172,23 @@ export const FloatingAIChatbot: React.FC<FloatingAIChatbotProps> = ({
       }),
     ]).start();
 
-    navigation.navigate("AIFinancialAdvisor");
+    // Debug: Log what month we're sending
+    console.log(
+      "🔍 FloatingAI Debug - Selected month being sent:",
+      selectedMonth
+    );
+    console.log(
+      "🔍 FloatingAI Debug - Selected month timestamp:",
+      selectedMonth.getTime()
+    );
+    console.log(
+      "🔍 FloatingAI Debug - Selected month string:",
+      selectedMonth.toLocaleDateString()
+    );
+
+    navigation.navigate("AIFinancialAdvisor", {
+      selectedMonth: selectedMonth.getTime(),
+    });
   };
 
   if (!isVisible || hideOnAIScreen || position.x === 0) return null;

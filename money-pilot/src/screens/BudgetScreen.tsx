@@ -16,6 +16,7 @@ import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { useSelectedMonth } from "../contexts/SelectedMonthContext";
 import { useFocusEffect } from "@react-navigation/native";
 import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
@@ -61,7 +62,17 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     refreshBankData,
   } = useData();
 
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const { selectedMonth, setSelectedMonth } = useSelectedMonth();
+
+  // Debug: Log the selected month from context
+  console.log(
+    "🔍 BudgetScreen Debug - Selected month from context:",
+    selectedMonth
+  );
+  console.log(
+    "🔍 BudgetScreen Debug - Selected month string:",
+    selectedMonth.toLocaleDateString()
+  );
   const [savingsPercentage, setSavingsPercentage] = useState("20");
   const [debtPayoffPercentage, setDebtPayoffPercentage] = useState("5");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
