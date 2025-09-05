@@ -82,17 +82,15 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
   }, [visible]); // Remove goals dependency to prevent updates after modal opens
 
   const netIncomeAmount = netIncome - totalExpenses;
-  const savingsAmount =
-    (netIncomeAmount * parseFloat(localSavings || "0")) / 100;
-  const debtAmount = (netIncomeAmount * parseFloat(localDebt || "0")) / 100;
+  const savingsAmount = (netIncome * parseFloat(localSavings || "0")) / 100;
+  const debtAmount = (netIncome * parseFloat(localDebt || "0")) / 100;
 
   // Calculate goals allocation
   const goalsAmount = localGoals.reduce(
     (sum, goal) => sum + goal.monthlyContribution,
     0
   );
-  const goalsPercentage =
-    netIncomeAmount > 0 ? (goalsAmount / netIncomeAmount) * 100 : 0;
+  const goalsPercentage = netIncome > 0 ? (goalsAmount / netIncome) * 100 : 0;
 
   const totalAllocated =
     parseFloat(localSavings || "0") +

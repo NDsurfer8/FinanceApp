@@ -46,6 +46,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     refreshInBackground,
   } = useZeroLoading();
   const { goals, budgetSettings, refreshAssetsDebts } = useData();
+  console.log("goals", goals);
+  console.log("budgetSettings", budgetSettings);
   const { isScrolling, handleScrollBegin, handleScrollEnd } =
     useScrollDetection();
   const { startTour, hasCompletedTour, isTourStatusLoaded, isNewUser } =
@@ -207,12 +209,16 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   // Calculate available amount (same as BudgetScreen)
   const savingsPercent = budgetSettings?.savingsPercentage
     ? parseFloat(budgetSettings.savingsPercentage)
-    : 0;
+    : 20;
   const debtPayoffPercent = budgetSettings?.debtPayoffPercentage
     ? parseFloat(budgetSettings.debtPayoffPercentage)
-    : 0;
-  const savingsAmount = netIncome * (savingsPercent / 100);
-  const debtPayoffAmount = netIncome * (debtPayoffPercent / 100);
+    : 5;
+  const savingsAmount = monthlyIncome * (savingsPercent / 100);
+  const debtPayoffAmount = monthlyIncome * (debtPayoffPercent / 100);
+  // console.log("savingsAmount", savingsAmount);
+  // console.log("debtPayoffAmount", debtPayoffAmount);
+  // console.log("monthlyIncome", monthlyIncome);
+  // console.log("monthlyExpenses", monthlyExpenses);
 
   // Calculate total goal contributions
   const totalGoalContributions = goals.reduce((total, goal) => {
@@ -369,7 +375,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
     return insights;
   };
-
+  // Available amount is discretionary income
   const allInsights = React.useMemo(
     () => getInsights(),
     [

@@ -751,46 +751,6 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                 ${totalBudget.toLocaleString()}
               </Text>
             </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingVertical: 4,
-              }}
-            >
-              <Text style={{ fontSize: 18, color: colors.textSecondary }}>
-                Recurring Expenses
-              </Text>
-              <Text
-                style={{ fontSize: 18, fontWeight: "500", color: colors.text }}
-              >
-                ${monthlyRecurringExpenses.toLocaleString()}
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingVertical: 4,
-              }}
-            >
-              <Text style={{ fontSize: 18, color: colors.textSecondary }}>
-                Actual Spending
-              </Text>
-              <Text
-                style={{ fontSize: 18, fontWeight: "500", color: colors.text }}
-              >
-                $
-                {(
-                  monthlyTransactions.reduce((sum, t) => sum + t.amount, 0) +
-                  monthlyRecurringExpenses
-                ).toLocaleString()}
-              </Text>
-            </View>
           </View>
         </View>
 
@@ -982,7 +942,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   }}
                 >
                   <Text style={{ fontSize: 16, color: colors.textSecondary }}>
-                    Actual
+                    Spent
                   </Text>
                   <Text style={{ fontSize: 16, color: colors.primary }}>
                     ${spending.actual.toFixed(0)}
@@ -1341,7 +1301,9 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                                 (sum, cat) => sum + cat.monthlyLimit,
                                 0
                               ));
-                        return available < 0 ? "over budget" : "available";
+                        return available < 0
+                          ? "Over budget"
+                          : "Available to allocate";
                       })()}
                     </Text>
                   </View>

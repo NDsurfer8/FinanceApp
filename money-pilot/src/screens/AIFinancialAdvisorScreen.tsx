@@ -593,8 +593,8 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     const debtPayoffRate = budgetSettings?.debtPayoffPercentage || 5;
 
     // Calculate monthly savings and debt payoff amounts
-    const monthlySavingsAmount = (netIncome * savingsRate) / 100;
-    const monthlyDebtPayoffAmount = (netIncome * debtPayoffRate) / 100;
+    const monthlySavingsAmount = (monthlyIncome * savingsRate) / 100;
+    const monthlyDebtPayoffAmount = (monthlyIncome * debtPayoffRate) / 100;
 
     // Calculate total monthly goal contributions
     const totalMonthlyGoalContributions = goals.reduce(

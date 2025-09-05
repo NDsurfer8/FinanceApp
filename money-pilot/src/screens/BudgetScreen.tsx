@@ -50,6 +50,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     updateDataOptimistically,
     refreshData,
   } = useZeroLoading();
+  const { refreshBudgetSettings } = useData();
   const { isScrolling, handleScrollBegin, handleScrollEnd } =
     useScrollDetection();
 
@@ -241,8 +242,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const netIncome = totalIncome - totalExpenses;
 
   // Calculate budget allocations
-  const savingsAmount = (netIncome * parseFloat(savingsPercentage)) / 100;
-  const debtPayoffAmount = (netIncome * parseFloat(debtPayoffPercentage)) / 100;
+  const savingsAmount = (totalIncome * parseFloat(savingsPercentage)) / 100;
+  const debtPayoffAmount =
+    (totalIncome * parseFloat(debtPayoffPercentage)) / 100;
   const goalsAmount = goals.reduce(
     (sum, goal) => sum + goal.monthlyContribution,
     0
@@ -453,6 +455,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       } else {
         await saveBudgetSettings(newSettings);
       }
+
+      // Refresh budget settings in the DataContext to update dashboard
+      await refreshBudgetSettings();
 
       setHasUnsavedChanges(false);
       Alert.alert("Success", "Budget settings saved successfully!");
@@ -1181,6 +1186,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 } else {
                   await saveBudgetSettings(newSettings);
                 }
+
+                // Refresh budget settings in the DataContext to update dashboard
+                await refreshBudgetSettings();
 
                 setHasUnsavedChanges(false);
                 Alert.alert("Success", "Budget settings saved successfully!");
