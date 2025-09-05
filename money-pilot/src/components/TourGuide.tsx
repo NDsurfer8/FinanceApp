@@ -45,17 +45,7 @@ export const TourGuide: React.FC<TourGuideProps> = ({
     currentTourStep?.zone === zone &&
     currentTourStep?.screen === screen;
 
-  // Debug logging
-  useEffect(() => {
-    console.log("🎯 TourGuide Debug:", {
-      isTourActive,
-      currentStep,
-      zone,
-      screen,
-      currentTourStep: currentTourStep?.id,
-      isCurrentStep,
-    });
-  }, [isTourActive, currentStep, zone, screen, currentTourStep, isCurrentStep]);
+  // Tour guide state management
 
   useEffect(() => {
     if (isCurrentStep) {

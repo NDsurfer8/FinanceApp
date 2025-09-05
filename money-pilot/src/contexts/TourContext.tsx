@@ -153,13 +153,11 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
   };
 
   const startTour = (navigation?: any) => {
-    console.log("🎯 startTour called - setting tour active");
     setIsTourActive(true);
     setCurrentStep(0);
 
     if (navigation && tourSteps[0]) {
       const firstStep = tourSteps[0];
-      console.log("🎯 Navigating to first step:", firstStep.screen);
       navigateToScreen(navigation, firstStep.screen);
     }
   };
@@ -223,18 +221,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
       const isNew = createdAtDate > oneHourAgo;
 
-      console.log(
-        `🎯 User ${
-          user.uid
-        } created at: ${createdAtDate.toISOString()}, isNew: ${isNew}`
-      );
-      console.log(`🎯 Timestamp details:`, {
-        createdAt: createdAt,
-        createdAtDate: createdAtDate.toISOString(),
-        oneHourAgo: oneHourAgo.toISOString(),
-        timeDiff: createdAtDate.getTime() - oneHourAgo.getTime(),
-        isNew: isNew,
-      });
+      // User timestamp checked successfully
       return isNew;
     } catch (error) {
       console.error("Error checking if user is new:", error);
