@@ -229,7 +229,6 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
       ...profile,
       updatedAt: Date.now(),
     });
-    console.log("User profile saved successfully to database");
   } catch (error) {
     console.error("Error saving user profile:", error);
     throw error;
@@ -275,7 +274,6 @@ export const saveNetWorthEntry = async (
       id: entryId,
     });
 
-    console.log("Net worth entry saved successfully");
     return entryId;
   } catch (error) {
     console.error("Error saving net worth entry:", error);
@@ -374,7 +372,6 @@ export const updateNetWorthFromAssetsAndDebts = async (
             `users/${userId}/netWorth/${currentMonthEntry.id}`
           );
           await set(entryRef, encryptedEntry);
-          console.log("Current month net worth updated successfully");
         } else {
           // Create new entry for current month
           const currentMonth = new Date(
@@ -382,7 +379,6 @@ export const updateNetWorthFromAssetsAndDebts = async (
             currentDate.getMonth(),
             1
           );
-          console.log("Creating new net worth entry for month:", currentMonth);
           const newEntry: NetWorthEntry = {
             userId,
             netWorth,
@@ -393,13 +389,11 @@ export const updateNetWorthFromAssetsAndDebts = async (
             updatedAt: Date.now(),
           };
           await saveNetWorthEntry(newEntry);
-          console.log("New net worth entry created for current month");
         }
 
         // Maintain only last 6 entries
         await maintainNetWorthHistory(userId);
 
-        console.log("✅ Net worth update completed successfully");
         resolve();
       } catch (error) {
         console.error("Error updating net worth from assets and debts:", error);
@@ -429,7 +423,6 @@ export const maintainNetWorthHistory = async (
           await remove(entryRef);
         }
       }
-      console.log(`Deleted ${entriesToDelete.length} old net worth entries`);
     }
   } catch (error) {
     console.error("Error maintaining net worth history:", error);
@@ -521,8 +514,6 @@ export const saveAsset = async (asset: Asset): Promise<string> => {
       id: assetId,
     });
 
-    console.log("Asset saved successfully");
-
     // Auto-update shared groups
     await updateSharedGroupsForUser(asset.userId);
 
@@ -583,8 +574,6 @@ export const saveDebt = async (debt: Debt): Promise<string> => {
       ...encryptedDebt,
       id: debtId,
     });
-
-    console.log("Debt saved successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(debt.userId);
@@ -735,7 +724,6 @@ export const removeDebt = async (
   try {
     const debtRef = ref(db, `users/${userId}/debts/${debtId}`);
     await remove(debtRef);
-    console.log("Debt removed successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(userId);
@@ -759,7 +747,6 @@ export const updateDebt = async (debt: Debt): Promise<void> => {
       ...encryptedDebt,
       updatedAt: Date.now(),
     });
-    console.log("Debt updated successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(debt.userId);
@@ -794,8 +781,6 @@ export const saveGoal = async (goal: FinancialGoal): Promise<string> => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-
-    console.log("Goal saved successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(goal.userId);
@@ -844,7 +829,6 @@ export const updateGoal = async (goal: FinancialGoal): Promise<void> => {
       ...encryptedGoal,
       updatedAt: Date.now(),
     });
-    console.log("Goal updated successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(goal.userId);
@@ -862,7 +846,6 @@ export const removeGoal = async (
   try {
     const goalRef = ref(db, `users/${userId}/goals/${goalId}`);
     await remove(goalRef);
-    console.log("Goal removed successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(userId);
@@ -899,7 +882,6 @@ export const saveEmergencyFund = async (
       updatedAt: Date.now(),
     });
 
-    console.log("Emergency fund saved successfully");
     return emergencyFundId;
   } catch (error) {
     console.error("Error saving emergency fund:", error);
@@ -955,7 +937,6 @@ export const updateEmergencyFund = async (
       ...encryptedFund,
       updatedAt: Date.now(),
     });
-    console.log("Emergency fund updated successfully");
   } catch (error) {
     console.error("Error updating emergency fund:", error);
     throw error;
@@ -1074,7 +1055,6 @@ export const saveFinancialPlan = async (
       updatedAt: plan.updatedAt,
     });
 
-    console.log("Financial plan saved successfully");
     return planId;
   } catch (error) {
     console.error("Error saving financial plan:", error);
@@ -1117,7 +1097,6 @@ export const deleteFinancialPlan = async (
   try {
     const planRef = ref(db, `users/${userId}/financialPlans/${planId}`);
     await remove(planRef);
-    console.log("Financial plan deleted successfully");
   } catch (error) {
     console.error("Error deleting financial plan:", error);
     throw error;
@@ -1146,7 +1125,6 @@ export const createSharedGroup = async (
       updatedAt: Date.now(),
     });
 
-    console.log("Shared group created successfully");
     return groupId;
   } catch (error) {
     console.error("Error creating shared group:", error);
@@ -1209,7 +1187,6 @@ export const updateSharedGroup = async (group: SharedGroup): Promise<void> => {
       ...group,
       updatedAt: Date.now(),
     });
-    console.log("Shared group updated successfully");
   } catch (error) {
     console.error("Error updating shared group:", error);
     throw error;
@@ -1236,7 +1213,6 @@ export const addGroupMember = async (
       members: updatedMembers,
       updatedAt: Date.now(),
     });
-    console.log("Member added to group successfully");
   } catch (error) {
     console.error("Error adding member to group:", error);
     throw error;
@@ -1274,11 +1250,6 @@ export const removeGroupMember = async (
     await remove(sharedFinanceDataRef);
 
     // User's shared data is already removed above
-    console.log("✅ User's shared finance data cleaned up");
-
-    console.log("✅ Member removed from group successfully");
-    console.log("✅ Member's shared finance data cleaned up");
-    console.log("✅ Real-time listeners stopped");
   } catch (error) {
     console.error("Error removing member from group:", error);
     throw error;
@@ -1333,12 +1304,6 @@ export const deleteSharedGroup = async (
         const invitationRef = ref(db, `invitations/${invitationId}`);
         await remove(invitationRef);
       }
-      console.log(
-        "✅ Deleted",
-        invitationsToDelete.length,
-        "invitations for group:",
-        groupId
-      );
     }
 
     // Remove shared data for all members
@@ -1347,9 +1312,6 @@ export const deleteSharedGroup = async (
         try {
           // Remove user's shared data from the group
           await removeUserFromGroup(member.userId, groupId);
-          console.log(
-            `✅ Removed shared data for user ${member.userId} in group ${groupId}`
-          );
         } catch (dataError) {
           console.error(
             `Error removing shared data for user ${member.userId}:`,
@@ -1358,14 +1320,10 @@ export const deleteSharedGroup = async (
           // Continue even if data cleanup fails
         }
       }
-      console.log("✅ Removed shared data for all members");
     }
 
     // Delete the group itself
     await remove(groupRef);
-    console.log("✅ Shared group deleted successfully");
-
-    console.log("✅ Complete cleanup completed for group:", groupId);
   } catch (error) {
     console.error("Error deleting shared group:", error);
     throw error;
@@ -1378,13 +1336,10 @@ export const deleteSharedGroup = async (
  */
 export const cleanupOrphanedSharedData = async (): Promise<void> => {
   try {
-    console.log("🧹 Starting cleanup of orphaned shared finance data...");
-
     const sharedFinanceDataRef = ref(db, `sharedFinanceData`);
     const sharedDataSnapshot = await get(sharedFinanceDataRef);
 
     if (!sharedDataSnapshot.exists()) {
-      console.log("✅ No shared finance data to clean up");
       return;
     }
 
@@ -1393,9 +1348,7 @@ export const cleanupOrphanedSharedData = async (): Promise<void> => {
     const groupsSnapshot = await get(groupsRef);
 
     if (!groupsSnapshot.exists()) {
-      console.log("⚠️ No shared groups found, cleaning up all shared data");
       await remove(sharedFinanceDataRef);
-      console.log("✅ All shared finance data cleaned up");
       return;
     }
 
@@ -1409,17 +1362,10 @@ export const cleanupOrphanedSharedData = async (): Promise<void> => {
         const orphanedDataRef = ref(db, `sharedFinanceData/${groupId}`);
         await remove(orphanedDataRef);
         cleanedCount++;
-        console.log(`🗑️ Cleaned up orphaned data for group: ${groupId}`);
       }
     }
 
-    if (cleanedCount > 0) {
-      console.log(
-        `✅ Cleanup completed. Removed ${cleanedCount} orphaned shared data entries.`
-      );
-    } else {
-      console.log("✅ No orphaned data found");
-    }
+    // Cleanup completed
   } catch (error) {
     console.error("❌ Error during cleanup of orphaned shared data:", error);
   }
@@ -1445,10 +1391,7 @@ export const createInvitation = async (
       expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
     };
 
-    console.log("Creating invitation with data:", invitationData);
     await set(newInvitationRef, invitationData);
-
-    console.log("Invitation created successfully with ID:", invitationId);
     return invitationId;
   } catch (error) {
     console.error("Error creating invitation:", error);
@@ -1469,16 +1412,13 @@ export const getUserInvitations = async (
 
       snapshot.forEach((childSnapshot) => {
         const invitation = childSnapshot.val();
-        console.log("Found invitation:", invitation);
         if (
           invitation.inviteeEmail === email &&
           invitation.status === "pending"
         ) {
-          console.log("Match found! Adding invitation");
           invitations.push(invitation);
         }
       });
-      console.log("Total invitations found:", invitations.length);
       return invitations.sort((a, b) => b.createdAt - a.createdAt);
     }
     return [];
@@ -1496,7 +1436,6 @@ export const updateInvitationStatus = async (
   try {
     const invitationRef = ref(db, `invitations/${invitationId}`);
     await update(invitationRef, { status });
-    console.log("Invitation status updated successfully");
   } catch (error) {
     console.error("Error updating invitation status:", error);
     throw error;
@@ -1532,8 +1471,6 @@ export const addUserDataToGroup = async (
     const cleanUserData = cleanDataForFirebase(userData);
 
     await set(groupRef, cleanUserData);
-
-    console.log("User data added to shared group successfully");
   } catch (error) {
     console.error("Error adding user data to group:", error);
     throw error;
@@ -1672,10 +1609,6 @@ export const updateSharedGroupsForUser = async (
         await addUserDataToGroup(groupId, userId);
       }
     }
-
-    console.log(
-      `Updated shared data for user ${userId} in ${groupIds.length} groups`
-    );
   } catch (error) {
     console.error("Error updating shared groups for user:", error);
     // Don't throw error to avoid breaking the main save operation
@@ -1900,16 +1833,14 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
             if (updatedMembers.length === 0) {
               // If no members left, delete the entire group
               await remove(ref(db, `sharedGroups/${groupId}`));
-              console.log(`Deleted empty shared group: ${groupId}`);
             } else {
               // Update group with remaining members
               await update(ref(db, `sharedGroups/${groupId}`), {
                 members: updatedMembers,
               });
-              console.log(`Removed user from shared group: ${groupId}`);
             }
           } catch (groupError) {
-            console.log(
+            console.error(
               `Could not update shared group ${groupId}:`,
               groupError
             );
@@ -1918,7 +1849,7 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
         }
       }
     } catch (sharedGroupsError) {
-      console.log("Could not access shared groups:", sharedGroupsError);
+      console.error("Could not access shared groups:", sharedGroupsError);
       // Continue with account deletion even if shared groups fail
     }
 
@@ -1936,10 +1867,9 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
             const groupData = sharedData[groupId];
             if (groupData[userId]) {
               await remove(ref(db, `sharedData/${groupId}/${userId}`));
-              console.log(`Deleted shared data for user in group: ${groupId}`);
             }
           } catch (sharedDataError) {
-            console.log(
+            console.error(
               `Could not delete shared data for group ${groupId}:`,
               sharedDataError
             );
@@ -1948,7 +1878,7 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
         }
       }
     } catch (sharedDataError) {
-      console.log("Could not access shared data:", sharedDataError);
+      console.error("Could not access shared data:", sharedDataError);
       // Continue with account deletion
     }
 
@@ -1969,10 +1899,9 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
               invitation.invitedUserId === userId
             ) {
               await remove(ref(db, `invitations/${invitationId}`));
-              console.log(`Deleted invitation: ${invitationId}`);
             }
           } catch (invitationError) {
-            console.log(
+            console.error(
               `Could not delete invitation ${invitationId}:`,
               invitationError
             );
@@ -1981,11 +1910,9 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
         }
       }
     } catch (invitationsError) {
-      console.log("Could not access invitations:", invitationsError);
+      console.error("Could not access invitations:", invitationsError);
       // Continue with account deletion
     }
-
-    console.log(`Account deletion completed for user: ${userId}`);
   } catch (error) {
     console.error("Error deleting user account:", error);
     throw new Error("Failed to delete user account and associated data");
@@ -2027,10 +1954,6 @@ export const saveRecurringTransaction = async (
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-
-    console.log(
-      "Recurring transaction saved successfully under user collection"
-    );
 
     return transactionId;
   } catch (error) {
