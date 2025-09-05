@@ -752,8 +752,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StandardHeader
-        title="Set Your Budget"
-        subtitle="Budget your monthly spending"
+        title="Set Budget"
+        subtitle="Plan your monthly spending"
         showBackButton={true}
         onBack={() => navigation.goBack()}
         rightComponent={
@@ -767,15 +767,25 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
             <TouchableOpacity
               onPress={() => setShowBudgetSettingsModal(true)}
               style={{
-                backgroundColor: colors.surface,
+                backgroundColor: colors.surfaceSecondary,
                 padding: 12,
                 borderRadius: 12,
                 marginRight: 8,
                 borderWidth: 1,
                 borderColor: colors.border,
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.08,
+                shadowRadius: 4,
+                shadowOffset: { width: 0, height: 2 },
+                elevation: 2,
               }}
+              activeOpacity={0.7}
             >
-              <Ionicons name="settings-outline" size={20} color={colors.text} />
+              <Ionicons
+                name="settings-outline"
+                size={20}
+                color={colors.primary}
+              />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setShowAddModal(true)}
@@ -1991,6 +2001,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
               style={{
                 marginTop: 30,
                 paddingTop: 20,
+                paddingBottom: 30,
                 borderTopWidth: 1,
                 borderTopColor: colors.border,
               }}
