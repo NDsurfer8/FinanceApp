@@ -31,6 +31,7 @@ import {
   cleanupOrphanedSharedData,
 } from "../services/userData";
 import { TourGuide } from "../components/TourGuide";
+import { StandardHeader } from "../components/StandardHeader";
 
 interface SharedFinanceScreenProps {
   navigation: any;
@@ -537,64 +538,42 @@ export default function SharedFinanceScreen({
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       {/* Header */}
-      <TourGuide zone={1} screen="SharedFinance">
-        <View style={[styles.header, { backgroundColor: colors.surface }]}>
-          <View style={styles.headerContent}>
+      <StandardHeader
+        title="Shared Finances"
+        onBack={() => navigation.goBack()}
+        rightComponent={
+          <TourGuide zone={2} screen="SharedFinance">
             <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
+              style={{
+                backgroundColor: colors.primary,
+                padding: 12,
+                borderRadius: 12,
+                marginRight: 20,
+              }}
+              onPress={() => setShowCreateModal(true)}
             >
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <View style={styles.headerInfo}>
-              <Text style={[styles.headerTitle, { color: colors.text }]}>
-                Shared Finances
-              </Text>
-              {loading && (
-                <Text
-                  style={[styles.loadingText, { color: colors.textSecondary }]}
+              <Ionicons name="add" size={20} color={colors.buttonText} />
+              {!hasPremiumAccess() && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -2,
+                    right: -2,
+                    backgroundColor: colors.warning,
+                    borderRadius: 8,
+                    width: 16,
+                    height: 16,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  Loading...
-                </Text>
+                  <Ionicons name="star" size={10} color={colors.buttonText} />
+                </View>
               )}
-            </View>
-            <View style={styles.headerActions}>
-              <TourGuide zone={2} screen="SharedFinance">
-                <TouchableOpacity
-                  style={[
-                    styles.createButton,
-                    { backgroundColor: colors.primary },
-                  ]}
-                  onPress={() => setShowCreateModal(true)}
-                >
-                  <Ionicons name="add" size={24} color={colors.buttonText} />
-                  {!hasPremiumAccess() && (
-                    <View
-                      style={{
-                        position: "absolute",
-                        top: -2,
-                        right: -2,
-                        backgroundColor: colors.warning,
-                        borderRadius: 8,
-                        width: 16,
-                        height: 16,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Ionicons
-                        name="star"
-                        size={10}
-                        color={colors.buttonText}
-                      />
-                    </View>
-                  )}
-                </TouchableOpacity>
-              </TourGuide>
-            </View>
-          </View>
-        </View>
-      </TourGuide>
+            </TouchableOpacity>
+          </TourGuide>
+        }
+      />
 
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -949,13 +928,6 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 12,
     marginTop: 2,
-  },
-  createButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
   },
   createButtonText: {
     fontSize: 14,

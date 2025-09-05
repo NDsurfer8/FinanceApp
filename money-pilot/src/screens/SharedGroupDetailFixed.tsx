@@ -25,6 +25,7 @@ import {
   syncUserDataToGroup,
   getUserGroupSharingSettings,
 } from "../services/sharedFinanceDataSync";
+import { StandardHeader } from "../components/StandardHeader";
 
 interface SharedGroupDetailProps {
   navigation: any;
@@ -629,115 +630,93 @@ export default function SharedGroupDetailFixed({
     group?.members?.some((member) => member.userId === user?.uid) || false;
 
   const renderHeader = () => (
-    <View style={[styles.header, { backgroundColor: colors.surface }]}>
-      <View style={styles.headerContent}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.primary} />
-        </TouchableOpacity>
-        <View style={styles.headerInfo}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>
-            {group?.name || "Group Details"}
-          </Text>
-          <Text
-            style={[styles.headerSubtitle, { color: colors.textSecondary }]}
-          >
-            {group?.members.length} people sharing finances
-          </Text>
-        </View>
+    <StandardHeader
+      title={group?.name || "Group Details"}
+      subtitle={`${group?.members.length} people sharing finances`}
+      onBack={() => navigation.goBack()}
+      rightComponent={
         <TouchableOpacity
           style={styles.optionsButton}
           onPress={() => setShowGroupOptions(!showGroupOptions)}
         >
           <Ionicons name="ellipsis-vertical" size={24} color={colors.primary} />
         </TouchableOpacity>
-      </View>
+      }
+    />
+  );
 
-      {/* Group Options Modal */}
-      {showGroupOptions && (
-        <View
-          style={[
-            styles.optionsModal,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
-        >
-          {isOwner && (
-            <>
-              <TouchableOpacity
-                style={[
-                  styles.optionItem,
-                  { borderBottomColor: colors.border },
-                ]}
-                onPress={() => {
-                  setShowGroupOptions(false);
-                  navigation.navigate("GroupMembers", { groupId, group });
-                }}
-              >
-                <Ionicons name="people" size={20} color={colors.primary} />
-                <Text style={[styles.optionText, { color: colors.text }]}>
-                  Manage Members
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.optionItem,
-                  { borderBottomColor: colors.border },
-                ]}
-                onPress={handleTransferOwnership}
-              >
-                <Ionicons
-                  name="swap-horizontal"
-                  size={20}
-                  color={colors.primary}
-                />
-                <Text style={[styles.optionText, { color: colors.text }]}>
-                  Transfer Ownership
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.optionItem,
-                  { borderBottomColor: colors.border },
-                ]}
-                onPress={handleDeleteGroup}
-              >
-                <Ionicons name="trash" size={20} color={colors.error} />
-                <Text style={[styles.optionText, { color: colors.error }]}>
-                  Delete Group
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
-
-          {isMember && !isOwner && (
+  const renderGroupOptionsModal = () =>
+    showGroupOptions && (
+      <View
+        style={[
+          styles.optionsModal,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+      >
+        {isOwner && (
+          <>
             <TouchableOpacity
               style={[styles.optionItem, { borderBottomColor: colors.border }]}
-              onPress={handleLeaveGroup}
+              onPress={() => {
+                setShowGroupOptions(false);
+                navigation.navigate("GroupMembers", { groupId, group });
+              }}
             >
-              <Ionicons name="exit" size={20} color={colors.warning} />
-              <Text style={[styles.optionText, { color: colors.warning }]}>
-                Leave Group
+              <Ionicons name="people" size={20} color={colors.primary} />
+              <Text style={[styles.optionText, { color: colors.text }]}>
+                Manage Members
               </Text>
             </TouchableOpacity>
-          )}
 
+            <TouchableOpacity
+              style={[styles.optionItem, { borderBottomColor: colors.border }]}
+              onPress={handleTransferOwnership}
+            >
+              <Ionicons
+                name="swap-horizontal"
+                size={20}
+                color={colors.primary}
+              />
+              <Text style={[styles.optionText, { color: colors.text }]}>
+                Transfer Ownership
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.optionItem, { borderBottomColor: colors.border }]}
+              onPress={handleDeleteGroup}
+            >
+              <Ionicons name="trash" size={20} color={colors.error} />
+              <Text style={[styles.optionText, { color: colors.error }]}>
+                Delete Group
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        {isMember && !isOwner && (
           <TouchableOpacity
-            style={styles.optionItem}
-            onPress={() => setShowGroupOptions(false)}
+            style={[styles.optionItem, { borderBottomColor: colors.border }]}
+            onPress={handleLeaveGroup}
           >
-            <Ionicons name="close" size={20} color={colors.textSecondary} />
-            <Text style={[styles.optionText, { color: colors.textSecondary }]}>
-              Close
+            <Ionicons name="exit" size={20} color={colors.warning} />
+            <Text style={[styles.optionText, { color: colors.warning }]}>
+              Leave Group
             </Text>
           </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  );
+        )}
+
+        <TouchableOpacity
+          style={styles.optionItem}
+          onPress={() => setShowGroupOptions(false)}
+        >
+          <Ionicons name="close" size={20} color={colors.textSecondary} />
+          <Text style={[styles.optionText, { color: colors.textSecondary }]}>
+            Close
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
 
   const renderNetWorthCard = () => (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -1076,6 +1055,7 @@ export default function SharedGroupDetailFixed({
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       {renderHeader()}
+      {renderGroupOptionsModal()}
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.cardsContainer}>

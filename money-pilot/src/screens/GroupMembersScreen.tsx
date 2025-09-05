@@ -13,6 +13,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../hooks/useAuth";
 import { SharedGroup, removeGroupMember } from "../services/userData";
+import { StandardHeader } from "../components/StandardHeader";
 
 interface GroupMembersScreenProps {
   navigation: any;
@@ -135,23 +136,10 @@ export default function GroupMembersScreen({
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      <View
-        style={[
-          styles.header,
-          { backgroundColor: colors.surface, borderBottomColor: colors.border },
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.primary} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Group Members
-        </Text>
-        <View style={styles.placeholder} />
-      </View>
+      <StandardHeader
+        title="Group Members"
+        onBack={() => navigation.goBack()}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.groupInfo}>

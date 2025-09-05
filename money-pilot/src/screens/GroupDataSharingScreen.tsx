@@ -17,6 +17,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useData } from "../contexts/DataContext";
 import { SharedGroup, getSharedGroup } from "../services/userData";
 import { syncUserDataToGroup } from "../services/sharedFinanceDataSync";
+import { StandardHeader } from "../components/StandardHeader";
 
 interface GroupDataSharingSettings {
   shareNetWorth: boolean;
@@ -267,23 +268,10 @@ export default function GroupDataSharingScreen({
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      <View
-        style={[
-          styles.header,
-          { backgroundColor: colors.surface, borderBottomColor: colors.border },
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.primary} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Share Data with {group.name}
-        </Text>
-        <View style={styles.placeholder} />
-      </View>
+      <StandardHeader
+        title={`Share Data with ${group.name}`}
+        onBack={() => navigation.goBack()}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.groupInfo, { backgroundColor: colors.surface }]}>
