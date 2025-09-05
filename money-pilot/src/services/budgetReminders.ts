@@ -71,10 +71,10 @@ export class BudgetReminderService {
         return total + goal.monthlyContribution;
       }, 0);
 
+      const debtPayoffAmount = totalIncome * (debtPayoffPercent / 100);
       const discretionaryIncome =
-        netIncome - savingsAmount - totalGoalContributions;
-      const debtPayoffAmount = discretionaryIncome * (debtPayoffPercent / 100);
-      const remainingBalance = discretionaryIncome - debtPayoffAmount;
+        netIncome - savingsAmount - debtPayoffAmount - totalGoalContributions;
+      const remainingBalance = discretionaryIncome;
 
       // Schedule different types of budget reminders
       await this.scheduleMonthlyBudgetReminder(remainingBalance, totalIncome);
@@ -353,10 +353,10 @@ export class BudgetReminderService {
         0
       );
 
+      const debtPayoffAmount = totalIncome * (debtPayoffPercent / 100);
       const discretionaryIncome =
-        netIncome - savingsAmount - totalGoalContributions;
-      const debtPayoffAmount = discretionaryIncome * (debtPayoffPercent / 100);
-      const remainingBalance = discretionaryIncome - debtPayoffAmount;
+        netIncome - savingsAmount - debtPayoffAmount - totalGoalContributions;
+      const remainingBalance = discretionaryIncome;
 
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
       const daysLeft = daysInMonth - new Date().getDate();
