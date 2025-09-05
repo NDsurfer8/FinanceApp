@@ -907,7 +907,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             tooltipId="tooltips-setting"
             title="Helpful Tooltips"
             description="When enabled, you'll see helpful hints and tips throughout the app to guide you through features. Perfect for new users!"
-            position="left"
+            position="bottom"
             delay={1000}
           >
             <TouchableOpacity
