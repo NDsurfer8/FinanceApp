@@ -646,10 +646,22 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     setTempCategoryLimit("");
   };
 
-  // Filter categories based on search query
-  const filteredCategories = categories.filter((category) =>
-    category.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter and sort categories - overbudget items first, then alphabetically
+  const filteredCategories = categories
+    .filter((category) =>
+      category.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      const aOverBudget = isCategoryOverBudget(a);
+      const bOverBudget = isCategoryOverBudget(b);
+
+      // If one is over budget and the other isn't, prioritize the overbudget one
+      if (aOverBudget && !bOverBudget) return -1;
+      if (!aOverBudget && bOverBudget) return 1;
+
+      // If both are over budget or both are not over budget, sort alphabetically
+      return a.name.localeCompare(b.name);
+    });
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
