@@ -163,7 +163,11 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
     totalMonthlyExpenses > 0 ? totalAssets / totalMonthlyExpenses : 0;
   const debtAssetRatio = totalAssets > 0 ? totalLiabilities / totalAssets : 0;
   const debtSafetyRatio =
-    totalMonthlyIncome > 0 ? totalMonthlyDebtPayments / totalMonthlyIncome : 0;
+    totalMonthlyIncome > 0
+      ? totalMonthlyDebtPayments / totalMonthlyIncome
+      : totalMonthlyDebtPayments > 0
+      ? Infinity
+      : 0;
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString()}`;
