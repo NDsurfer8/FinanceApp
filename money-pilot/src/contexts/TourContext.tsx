@@ -56,7 +56,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [hasCompletedTour, setHasCompletedTourState] = useState(false);
   const [isTourStatusLoaded, setIsTourStatusLoaded] = useState(false);
-  const [showTooltips, setShowTooltips] = useState(true); // Default to true for new users
+  const [showTooltips, setShowTooltips] = useState(false); // Default to false for new users
 
   // Professional tour steps for each tab
   const tourSteps: TourStep[] = [
@@ -241,9 +241,9 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
       // Convert timestamp to Date object
       const createdAtDate = new Date(createdAt);
 
-      // User is "new" if created within last 1 hour
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-      const isNew = createdAtDate > oneHourAgo;
+      // User is "new" if created within last 5 minutes
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      const isNew = createdAtDate > fiveMinutesAgo;
 
       // User timestamp checked successfully
       return isNew;

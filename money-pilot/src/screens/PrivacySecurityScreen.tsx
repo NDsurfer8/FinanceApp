@@ -30,6 +30,7 @@ import {
 } from "../services/settings";
 import { biometricAuthService } from "../services/biometricAuth";
 import { useTheme } from "../contexts/ThemeContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface PrivacySecurityScreenProps {
   navigation: any;
@@ -412,6 +413,17 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
     );
   };
 
+  const clearAllAsyncStorage = async () => {
+    try {
+      // Clear all AsyncStorage data
+      await AsyncStorage.clear();
+      console.log("AsyncStorage cleared successfully");
+    } catch (error) {
+      console.error("Error clearing AsyncStorage:", error);
+      // Don't throw here - continue with account deletion even if AsyncStorage fails
+    }
+  };
+
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete Account",
@@ -492,6 +504,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
         // Delete all user data from Firebase Realtime Database
         await deleteUserAccount(user.uid);
 
+        // Clear all AsyncStorage data
+        await clearAllAsyncStorage();
+
         // Finally, delete the Firebase Auth account
         await deleteUser(user);
 
@@ -543,6 +558,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
                   // Delete all user data from Firebase Realtime Database
                   await deleteUserAccount(user.uid);
+
+                  // Clear all AsyncStorage data
+                  await clearAllAsyncStorage();
 
                   // Finally, delete the Firebase Auth account
                   await deleteUser(user);
