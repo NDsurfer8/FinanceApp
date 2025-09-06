@@ -216,7 +216,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               {isAppleAuthAvailable && (
                 <AppleAuthentication.AppleAuthenticationButton
                   buttonType={
-                    AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+                    AppleAuthentication.AppleAuthenticationButtonType.CONTINUE
                   }
                   buttonStyle={
                     AppleAuthentication.AppleAuthenticationButtonStyle.WHITE

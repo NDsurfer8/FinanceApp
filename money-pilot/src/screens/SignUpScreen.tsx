@@ -388,7 +388,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               {isAppleAuthAvailable && (
                 <AppleAuthentication.AppleAuthenticationButton
                   buttonType={
-                    AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
+                    AppleAuthentication.AppleAuthenticationButtonType.CONTINUE
                   }
                   buttonStyle={
                     AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
