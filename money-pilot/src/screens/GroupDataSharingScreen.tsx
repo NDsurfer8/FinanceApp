@@ -124,8 +124,6 @@ export default function GroupDataSharingScreen({
       if (savedSettings) {
         const parsedSettings = JSON.parse(savedSettings);
         setSettings(parsedSettings);
-      } else {
-        console.log("⚠️ No saved settings found, using defaults");
       }
     } catch (error) {
       console.error("❌ Error loading sharing settings:", error);
@@ -178,15 +176,12 @@ export default function GroupDataSharingScreen({
 
     setIsLoading(true);
     try {
-      console.log("💾 Saving sharing settings:", settings);
-
       // Get user's current financial data
       const userData = await getUserFinancialData(user.uid);
 
       // Sync user's data to the group with the selected settings
       await syncUserDataToGroup(user.uid, group.id!, settings, userData);
 
-      console.log("✅ Data sync complete");
       Alert.alert(
         "Success",
         `Your data has been synced to ${group.name}! You can manually sync again anytime you want to update the shared data.`

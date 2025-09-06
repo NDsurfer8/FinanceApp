@@ -2086,9 +2086,6 @@ export const deleteRecurringTransaction = async (
         }
 
         if (transactionIdsToUpdate.length > 0) {
-          console.log(
-            `Updated ${transactionIdsToUpdate.length} transactions to remove recurring reference`
-          );
         }
       }
     } catch (cleanupError) {
@@ -2204,9 +2201,6 @@ export const generateRecurringTransactions = async (
           };
 
           await saveTransaction(newTransaction);
-          console.log(
-            `Generated recurring transaction: ${recurringTransaction.name}`
-          );
         }
       }
     }

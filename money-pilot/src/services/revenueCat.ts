@@ -155,7 +155,6 @@ class RevenueCatService {
 
     try {
       await Purchases.logIn(userId);
-      console.log("RevenueCat user set:", userId);
     } catch (error: any) {
       console.error("Failed to set RevenueCat user:", {
         error: error.message,

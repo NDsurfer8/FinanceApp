@@ -83,13 +83,6 @@ export const syncUserDataToGroup = async (
   }
 ): Promise<void> => {
   try {
-    console.log(
-      "🔄 Starting manual sync for user:",
-      userId,
-      "to group:",
-      groupId
-    );
-
     // Get user's profile to get their display name
     const userProfile = await getUserProfile(userId);
     const displayName = userProfile?.displayName || "User";
@@ -129,7 +122,6 @@ export const syncUserDataToGroup = async (
           },
         ],
       };
-      console.log("✅ Net worth synced:", netWorth);
     }
 
     if (userSettings.shareMonthlyIncome || userSettings.shareMonthlyExpenses) {
@@ -161,7 +153,6 @@ export const syncUserDataToGroup = async (
           .reduce((sum, rt) => sum + (rt.amount || 0), 0);
 
         sharedData.monthlyIncome = monthlyIncome + recurringIncome;
-        console.log("✅ Monthly income synced:", sharedData.monthlyIncome);
       }
 
       if (userSettings.shareMonthlyExpenses) {
@@ -175,13 +166,11 @@ export const syncUserDataToGroup = async (
           .reduce((sum, rt) => sum + (rt.amount || 0), 0);
 
         sharedData.monthlyExpenses = monthlyExpenses + recurringExpenses;
-        console.log("✅ Monthly expenses synced:", sharedData.monthlyExpenses);
       }
     }
 
     if (userSettings.shareTransactions && userData.transactions.length > 0) {
       sharedData.transactions = userData.transactions;
-      console.log("✅ Transactions synced:", userData.transactions.length);
     }
 
     if (
@@ -189,25 +178,18 @@ export const syncUserDataToGroup = async (
       userData.recurringTransactions.length > 0
     ) {
       sharedData.recurringTransactions = userData.recurringTransactions;
-      console.log(
-        "✅ Recurring transactions synced:",
-        userData.recurringTransactions.length
-      );
     }
 
     if (userSettings.shareAssets && userData.assets.length > 0) {
       sharedData.assets = userData.assets;
-      console.log("✅ Assets synced:", userData.assets.length);
     }
 
     if (userSettings.shareDebts && userData.debts.length > 0) {
       sharedData.debts = userData.debts;
-      console.log("✅ Debts synced:", userData.debts.length);
     }
 
     if (userSettings.shareGoals && userData.goals.length > 0) {
       sharedData.goals = userData.goals;
-      console.log("✅ Goals synced:", userData.goals.length);
     }
 
     // Clean the data and write to Firebase
@@ -218,13 +200,6 @@ export const syncUserDataToGroup = async (
       `sharedFinanceData/${groupId}/members/${userId}`
     );
     await set(sharedDataRef, cleanData);
-
-    console.log(
-      "✅ Manual sync completed successfully for user:",
-      userId,
-      "in group:",
-      groupId
-    );
   } catch (error) {
     console.error("❌ Error during manual sync:", error);
     throw error;
