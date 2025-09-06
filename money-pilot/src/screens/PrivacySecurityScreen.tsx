@@ -426,21 +426,21 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      "Delete Account",
-      "This action cannot be undone. All your financial data, transactions, and account information will be permanently deleted.",
+      "⚠️ PERMANENT ACCOUNT DELETION",
+      "This action CANNOT be undone. The following will be PERMANENTLY deleted:\n\n• All financial transactions\n• All bank account connections\n• All assets and debts\n• All financial goals\n• All budget settings\n• All shared finance groups\n• All AI chat history\n• All app settings and preferences\n• Your entire user profile\n\nThis data will be completely removed from our servers and cannot be recovered.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Delete",
+          text: "I UNDERSTAND - DELETE EVERYTHING",
           style: "destructive",
           onPress: () => {
             Alert.alert(
-              "Final Confirmation",
-              "Are you absolutely sure you want to delete your account? This action is irreversible.",
+              "🚨 FINAL WARNING - NO TURNING BACK",
+              "This is your LAST CHANCE to cancel. Once you proceed:\n\n✅ Your account will be PERMANENTLY deleted\n✅ ALL your financial data will be GONE FOREVER\n✅ You will lose access to ALL your information\n✅ This action CANNOT be reversed\n\nAre you absolutely certain you want to proceed?",
               [
-                { text: "Cancel", style: "cancel" },
+                { text: "CANCEL - Keep My Data", style: "cancel" },
                 {
-                  text: "Yes, Delete My Account",
+                  text: "YES - DELETE EVERYTHING NOW",
                   style: "destructive",
                   onPress: () => confirmDeleteAccount(),
                 },
@@ -975,28 +975,22 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                     { color: colors.textSecondary },
                   ]}
                 >
-                  Permanently delete your account and all data
+                  ⚠️ Permanently delete your account and ALL data (transactions,
+                  goals, settings, everything)
                 </Text>
               </View>
             </View>
 
             <TouchableOpacity
               style={[
-                styles.actionButton,
-                styles.dangerButton,
+                styles.deleteButton,
                 { backgroundColor: "#fef2f2", borderColor: "#fecaca" },
               ]}
               onPress={handleDeleteAccount}
               disabled={loading}
             >
-              <Text
-                style={[
-                  styles.actionButtonText,
-                  styles.dangerButtonText,
-                  { color: "#ef4444" },
-                ]}
-              >
-                {loading ? "Loading..." : "Delete"}
+              <Text style={[styles.deleteButtonText, { color: "#ef4444" }]}>
+                {loading ? "Loading..." : "Delete Account"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1142,5 +1136,20 @@ const styles = StyleSheet.create({
   },
   dangerButtonText: {
     color: "#ef4444",
+  },
+  deleteButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignSelf: "center",
+    minWidth: 140,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
   },
 });
