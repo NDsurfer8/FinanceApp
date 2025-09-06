@@ -78,6 +78,16 @@ export const IntroSliderScreen: React.FC<IntroSliderScreenProps> = ({
         </View>
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.text}>{item.text}</Text>
+
+        {/* AI Advice Disclaimer - Show only for Vectra AI slide */}
+        {item.key === "1" && (
+          <View style={styles.disclaimerContainer}>
+            <Text style={styles.disclaimerText}>
+              ⚠️ AI advice is for informational purposes only. Consult qualified
+              professionals for financial decisions.
+            </Text>
+          </View>
+        )}
       </View>
     );
   };
@@ -214,5 +224,22 @@ const styles = StyleSheet.create({
     marginRight: 3,
     marginTop: 3,
     marginBottom: 3,
+  },
+  disclaimerContainer: {
+    marginTop: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+  disclaimerText: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.8)",
+    textAlign: "center",
+    lineHeight: 16,
+    fontWeight: "500",
+    fontStyle: "italic",
   },
 });

@@ -30,6 +30,7 @@ import {
 } from "../services/settings";
 import { biometricAuthService } from "../services/biometricAuth";
 import { useTheme } from "../contexts/ThemeContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface PrivacySecurityScreenProps {
   navigation: any;
@@ -412,23 +413,45 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
     );
   };
 
+  const clearAllAsyncStorage = async () => {
+    try {
+      // Preserve onboarding status when clearing data
+      const hasSeenIntro = await AsyncStorage.getItem("hasSeenIntro");
+
+      // Clear all AsyncStorage data
+      await AsyncStorage.clear();
+
+      // Restore onboarding status so user doesn't see intro again
+      if (hasSeenIntro) {
+        await AsyncStorage.setItem("hasSeenIntro", hasSeenIntro);
+      }
+
+      console.log(
+        "AsyncStorage cleared successfully (preserved onboarding status)"
+      );
+    } catch (error) {
+      console.error("Error clearing AsyncStorage:", error);
+      // Don't throw here - continue with account deletion even if AsyncStorage fails
+    }
+  };
+
   const handleDeleteAccount = () => {
     Alert.alert(
-      "Delete Account",
-      "This action cannot be undone. All your financial data, transactions, and account information will be permanently deleted.",
+      "⚠️ PERMANENT ACCOUNT DELETION",
+      "This action CANNOT be undone. The following will be PERMANENTLY deleted:\n\n• All financial transactions\n• All bank account connections\n• All assets and debts\n• All financial goals\n• All budget settings\n• All shared finance groups\n• All AI chat history\n• All app settings and preferences\n• Your entire user profile\n\nThis data will be completely removed from our servers and cannot be recovered.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Delete",
+          text: "I UNDERSTAND - DELETE EVERYTHING",
           style: "destructive",
           onPress: () => {
             Alert.alert(
-              "Final Confirmation",
-              "Are you absolutely sure you want to delete your account? This action is irreversible.",
+              "🚨 FINAL WARNING - NO TURNING BACK",
+              "This is your LAST CHANCE to cancel. Once you proceed:\n\n✅ Your account will be PERMANENTLY deleted\n✅ ALL your financial data will be GONE FOREVER\n✅ You will lose access to ALL your information\n✅ This action CANNOT be reversed\n\nAre you absolutely certain you want to proceed?",
               [
-                { text: "Cancel", style: "cancel" },
+                { text: "CANCEL - Keep My Data", style: "cancel" },
                 {
-                  text: "Yes, Delete My Account",
+                  text: "YES - DELETE EVERYTHING NOW",
                   style: "destructive",
                   onPress: () => confirmDeleteAccount(),
                 },
@@ -449,96 +472,83 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
     );
 
     if (isAppleUser) {
-      // For Apple Sign-In users, show confirmation dialog without password
-      Alert.alert(
-        "Delete Account",
-        "Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete Account",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                setLoading(true);
+      // For Apple Sign-In users, proceed directly with deletion (confirmation already shown)
+      try {
+        setLoading(true);
 
-                // For Apple Sign-In users, we need to re-authenticate before deleting
-                // This handles the "requires-recent-login" error
-                try {
-                  // Import Apple Authentication
-                  const AppleAuthModule = await import(
-                    "expo-apple-authentication"
-                  );
-                  const AppleAuthentication =
-                    AppleAuthModule.default || AppleAuthModule;
+        // For Apple Sign-In users, we need to re-authenticate before deleting
+        // This handles the "requires-recent-login" error
+        try {
+          // Import Apple Authentication
+          const AppleAuthModule = await import("expo-apple-authentication");
+          const AppleAuthentication =
+            AppleAuthModule.default || AppleAuthModule;
 
-                  // Check if Apple Authentication is available
-                  if (AppleAuthentication && AppleAuthentication.signInAsync) {
-                    // Request Apple authentication again
-                    const credential = await AppleAuthentication.signInAsync({
-                      requestedScopes: [
-                        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-                        AppleAuthentication.AppleAuthenticationScope.EMAIL,
-                      ],
-                    });
+          // Check if Apple Authentication is available
+          if (AppleAuthentication && AppleAuthentication.signInAsync) {
+            // Request Apple authentication again
+            const credential = await AppleAuthentication.signInAsync({
+              requestedScopes: [
+                AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                AppleAuthentication.AppleAuthenticationScope.EMAIL,
+              ],
+            });
 
-                    if (credential.identityToken) {
-                      // Create Firebase OAuth provider and re-authenticate
-                      const { OAuthProvider } = await import("firebase/auth");
-                      const provider = new OAuthProvider("apple.com");
-                      const firebaseCredential = provider.credential({
-                        idToken: credential.identityToken,
-                      });
+            if (credential.identityToken) {
+              // Create Firebase OAuth provider and re-authenticate
+              const { OAuthProvider } = await import("firebase/auth");
+              const provider = new OAuthProvider("apple.com");
+              const firebaseCredential = provider.credential({
+                idToken: credential.identityToken,
+              });
 
-                      await reauthenticateWithCredential(
-                        user,
-                        firebaseCredential
-                      );
-                    }
-                  } else {
-                    console.log(
-                      "Apple Authentication not available, skipping re-auth"
-                    );
-                  }
-                } catch (reauthError) {
-                  console.error("Re-authentication failed:", reauthError);
-                  // Continue with deletion attempt even if re-auth fails
-                }
+              await reauthenticateWithCredential(user, firebaseCredential);
+            }
+          } else {
+            console.log("Apple Authentication not available, skipping re-auth");
+          }
+        } catch (reauthError) {
+          console.error("Re-authentication failed:", reauthError);
+          // Continue with deletion attempt even if re-auth fails
+        }
 
-                // Delete all user data from Firebase Realtime Database
-                await deleteUserAccount(user.uid);
+        // Delete all user data from Firebase Realtime Database
+        await deleteUserAccount(user.uid);
 
-                // Finally, delete the Firebase Auth account
-                await deleteUser(user);
+        // Clear all AsyncStorage data
+        await clearAllAsyncStorage();
 
-                Alert.alert(
-                  "Account Deleted",
-                  "Your account and all associated data have been permanently deleted.",
-                  [
-                    {
-                      text: "OK",
-                      onPress: () => {
-                        // The user will be automatically logged out when the auth state changes
-                        // due to the account being deleted
-                      },
-                    },
-                  ]
-                );
-              } catch (error: any) {
-                console.error("Error deleting account:", error);
-                Alert.alert(
-                  "Error",
-                  error.code === "auth/requires-recent-login"
-                    ? "Please sign out and sign back in, then try deleting your account again."
-                    : "Failed to delete account. Please try again."
-                );
-              } finally {
-                setLoading(false);
-              }
+        // Clear PlaidService state to prevent permission errors
+        const { plaidService } = await import("../services/plaid");
+        plaidService.clearState();
+
+        // Finally, delete the Firebase Auth account
+        await deleteUser(user);
+
+        Alert.alert(
+          "Account Deleted",
+          "Your account and all associated data have been permanently deleted.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // The user will be automatically logged out when the auth state changes
+                // due to the account being deleted
+              },
             },
-          },
-        ]
-      );
+          ]
+        );
+      } catch (error: any) {
+        console.error("Error deleting account:", error);
+        Alert.alert(
+          "Error",
+          error.code === "auth/requires-recent-login"
+            ? "Please sign out and sign back in, then try deleting your account again."
+            : "Failed to delete account. Please try again."
+        );
+      } finally {
+        setLoading(false);
+      }
     } else {
       // For email/password users, require password verification
       Alert.prompt(
@@ -563,6 +573,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
                   // Delete all user data from Firebase Realtime Database
                   await deleteUserAccount(user.uid);
+
+                  // Clear all AsyncStorage data
+                  await clearAllAsyncStorage();
 
                   // Finally, delete the Firebase Auth account
                   await deleteUser(user);
@@ -977,28 +990,22 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                     { color: colors.textSecondary },
                   ]}
                 >
-                  Permanently delete your account and all data
+                  ⚠️ Permanently delete your account and ALL data (transactions,
+                  goals, settings, everything)
                 </Text>
               </View>
             </View>
 
             <TouchableOpacity
               style={[
-                styles.actionButton,
-                styles.dangerButton,
+                styles.deleteButton,
                 { backgroundColor: "#fef2f2", borderColor: "#fecaca" },
               ]}
               onPress={handleDeleteAccount}
               disabled={loading}
             >
-              <Text
-                style={[
-                  styles.actionButtonText,
-                  styles.dangerButtonText,
-                  { color: "#ef4444" },
-                ]}
-              >
-                {loading ? "Loading..." : "Delete"}
+              <Text style={[styles.deleteButtonText, { color: "#ef4444" }]}>
+                {loading ? "Loading..." : "Delete Account"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1144,5 +1151,20 @@ const styles = StyleSheet.create({
   },
   dangerButtonText: {
     color: "#ef4444",
+  },
+  deleteButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignSelf: "center",
+    minWidth: 140,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
   },
 });

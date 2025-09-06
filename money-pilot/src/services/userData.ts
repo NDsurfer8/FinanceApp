@@ -6,6 +6,14 @@ import {
   removeGroupSharedData,
 } from "./sharedFinanceDataSync";
 
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 /**
  * Cleans data by removing undefined values before writing to Firebase
  * Firebase doesn't allow undefined values - they must be null or removed
@@ -32,6 +40,37 @@ const cleanDataForFirebase = <T>(data: T): T => {
   }
 
   return data;
+};
+
+// Save user profile to database (create or update)
+export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
+  try {
+    const userRef = ref(db, `users/${profile.uid}/profile`);
+
+    // Check if user already exists
+    const snapshot = await get(userRef);
+
+    if (snapshot.exists()) {
+      // User exists, update the profile with new data but preserve original createdAt
+      const existingData = snapshot.val();
+      await set(userRef, {
+        ...profile,
+        createdAt: existingData.createdAt || profile.createdAt, // Preserve original creation time
+        updatedAt: Date.now(),
+      });
+      console.log("User profile updated:", profile.uid);
+    } else {
+      // User doesn't exist, create new profile
+      await set(userRef, {
+        ...profile,
+        updatedAt: Date.now(),
+      });
+      console.log("New user profile created:", profile.uid);
+    }
+  } catch (error) {
+    console.error("Error saving user profile:", error);
+    throw error;
+  }
 };
 
 export interface DataSharingSettings {
@@ -220,20 +259,6 @@ export interface NetWorthEntry {
   createdAt: number;
   updatedAt: number;
 }
-
-// Create or update user profile
-export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
-  try {
-    const userRef = ref(db, `users/${profile.uid}/profile`);
-    await set(userRef, {
-      ...profile,
-      updatedAt: Date.now(),
-    });
-  } catch (error) {
-    console.error("Error saving user profile:", error);
-    throw error;
-  }
-};
 
 // Get user profile
 export const getUserProfile = async (
@@ -1691,7 +1716,21 @@ export const getGroupSharedData = async (
       transactions: allTransactions,
       goals: allGoals,
     };
-  } catch (error) {
+  } catch (error: any) {
+    // Handle permission denied errors (user account deleted)
+    if (
+      error?.code === "PERMISSION_DENIED" ||
+      error?.message?.includes("Permission denied")
+    ) {
+      console.log("User account no longer exists, returning empty shared data");
+      return {
+        assets: [],
+        debts: [],
+        transactions: [],
+        goals: [],
+      };
+    }
+
     console.error("Error getting group shared data:", error);
     throw error;
   }
@@ -1848,8 +1887,18 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
           }
         }
       }
-    } catch (sharedGroupsError) {
-      console.error("Could not access shared groups:", sharedGroupsError);
+    } catch (sharedGroupsError: any) {
+      // Handle permission denied errors (user account already deleted)
+      if (
+        sharedGroupsError?.code === "PERMISSION_DENIED" ||
+        sharedGroupsError?.message?.includes("Permission denied")
+      ) {
+        console.log(
+          "User account already deleted, skipping shared groups cleanup"
+        );
+      } else {
+        console.error("Could not access shared groups:", sharedGroupsError);
+      }
       // Continue with account deletion even if shared groups fail
     }
 
@@ -1877,8 +1926,18 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
           }
         }
       }
-    } catch (sharedDataError) {
-      console.error("Could not access shared data:", sharedDataError);
+    } catch (sharedDataError: any) {
+      // Handle permission denied errors (user account already deleted)
+      if (
+        sharedDataError?.code === "PERMISSION_DENIED" ||
+        sharedDataError?.message?.includes("Permission denied")
+      ) {
+        console.log(
+          "User account already deleted, skipping shared data cleanup"
+        );
+      } else {
+        console.error("Could not access shared data:", sharedDataError);
+      }
       // Continue with account deletion
     }
 
@@ -1909,8 +1968,18 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
           }
         }
       }
-    } catch (invitationsError) {
-      console.error("Could not access invitations:", invitationsError);
+    } catch (invitationsError: any) {
+      // Handle permission denied errors (user account already deleted)
+      if (
+        invitationsError?.code === "PERMISSION_DENIED" ||
+        invitationsError?.message?.includes("Permission denied")
+      ) {
+        console.log(
+          "User account already deleted, skipping invitations cleanup"
+        );
+      } else {
+        console.error("Could not access invitations:", invitationsError);
+      }
       // Continue with account deletion
     }
   } catch (error) {
@@ -2611,43 +2680,43 @@ export const getUserBudgetCategories = async (
 
     // Return default categories if none exist
     return [
-      { id: "1", name: "Rent", monthlyLimit: 1200, color: "#FF6B6B" },
-      { id: "2", name: "Car Payment", monthlyLimit: 400, color: "#4ECDC4" },
-      { id: "3", name: "Insurance", monthlyLimit: 200, color: "#45B7D1" },
-      { id: "4", name: "Utilities", monthlyLimit: 150, color: "#96CEB4" },
-      { id: "5", name: "Internet", monthlyLimit: 80, color: "#FFEAA7" },
-      { id: "6", name: "Phone", monthlyLimit: 100, color: "#DDA0DD" },
-      { id: "7", name: "Subscriptions", monthlyLimit: 50, color: "#FFB6C1" },
-      { id: "8", name: "Credit Card", monthlyLimit: 300, color: "#98FB98" },
-      { id: "9", name: "Loan Payment", monthlyLimit: 200, color: "#F0E68C" },
-      { id: "10", name: "Food", monthlyLimit: 400, color: "#FFA07A" },
-      { id: "11", name: "Transport", monthlyLimit: 150, color: "#87CEEB" },
-      { id: "12", name: "Health", monthlyLimit: 100, color: "#D8BFD8" },
-      { id: "13", name: "Entertainment", monthlyLimit: 100, color: "#FFD700" },
-      { id: "14", name: "Shopping", monthlyLimit: 200, color: "#FF69B4" },
-      { id: "15", name: "Business", monthlyLimit: 100, color: "#20B2AA" },
-      { id: "16", name: "Other", monthlyLimit: 100, color: "#C0C0C0" },
+      { id: "1", name: "Rent", monthlyLimit: 0, color: "#FF6B6B" },
+      { id: "2", name: "Car Payment", monthlyLimit: 0, color: "#4ECDC4" },
+      { id: "3", name: "Insurance", monthlyLimit: 0, color: "#45B7D1" },
+      { id: "4", name: "Utilities", monthlyLimit: 0, color: "#96CEB4" },
+      { id: "5", name: "Internet", monthlyLimit: 0, color: "#FFEAA7" },
+      { id: "6", name: "Phone", monthlyLimit: 0, color: "#DDA0DD" },
+      { id: "7", name: "Subscriptions", monthlyLimit: 0, color: "#FFB6C1" },
+      { id: "8", name: "Credit Card", monthlyLimit: 0, color: "#98FB98" },
+      { id: "9", name: "Loan Payment", monthlyLimit: 0, color: "#F0E68C" },
+      { id: "10", name: "Food", monthlyLimit: 0, color: "#FFA07A" },
+      { id: "11", name: "Transportation", monthlyLimit: 0, color: "#87CEEB" },
+      { id: "12", name: "Health", monthlyLimit: 0, color: "#D8BFD8" },
+      { id: "13", name: "Entertainment", monthlyLimit: 0, color: "#FFD700" },
+      { id: "14", name: "Shopping", monthlyLimit: 0, color: "#FF69B4" },
+      { id: "15", name: "Business", monthlyLimit: 0, color: "#20B2AA" },
+      { id: "16", name: "Other Expenses", monthlyLimit: 0, color: "#C0C0C0" },
     ];
   } catch (error) {
     console.error("Error getting budget categories:", error);
     // Return default categories on error
     return [
-      { id: "1", name: "Rent", monthlyLimit: 1200, color: "#FF6B6B" },
-      { id: "2", name: "Car Payment", monthlyLimit: 400, color: "#4ECDC4" },
-      { id: "3", name: "Insurance", monthlyLimit: 200, color: "#45B7D1" },
-      { id: "4", name: "Utilities", monthlyLimit: 150, color: "#96CEB4" },
-      { id: "5", name: "Internet", monthlyLimit: 80, color: "#FFEAA7" },
-      { id: "6", name: "Phone", monthlyLimit: 100, color: "#DDA0DD" },
-      { id: "7", name: "Subscriptions", monthlyLimit: 50, color: "#FFB6C1" },
-      { id: "8", name: "Credit Card", monthlyLimit: 300, color: "#98FB98" },
-      { id: "9", name: "Loan Payment", monthlyLimit: 200, color: "#F0E68C" },
-      { id: "10", name: "Food", monthlyLimit: 400, color: "#FFA07A" },
-      { id: "11", name: "Transport", monthlyLimit: 150, color: "#87CEEB" },
-      { id: "12", name: "Health", monthlyLimit: 100, color: "#D8BFD8" },
-      { id: "13", name: "Entertainment", monthlyLimit: 100, color: "#FFD700" },
-      { id: "14", name: "Shopping", monthlyLimit: 200, color: "#FF69B4" },
-      { id: "15", name: "Business", monthlyLimit: 100, color: "#20B2AA" },
-      { id: "16", name: "Other", monthlyLimit: 100, color: "#C0C0C0" },
+      { id: "1", name: "Rent", monthlyLimit: 0, color: "#FF6B6B" },
+      { id: "2", name: "Car Payment", monthlyLimit: 0, color: "#4ECDC4" },
+      { id: "3", name: "Insurance", monthlyLimit: 0, color: "#45B7D1" },
+      { id: "4", name: "Utilities", monthlyLimit: 0, color: "#96CEB4" },
+      { id: "5", name: "Internet", monthlyLimit: 0, color: "#FFEAA7" },
+      { id: "6", name: "Phone", monthlyLimit: 0, color: "#DDA0DD" },
+      { id: "7", name: "Subscriptions", monthlyLimit: 0, color: "#FFB6C1" },
+      { id: "8", name: "Credit Card", monthlyLimit: 0, color: "#98FB98" },
+      { id: "9", name: "Loan Payment", monthlyLimit: 0, color: "#F0E68C" },
+      { id: "10", name: "Food", monthlyLimit: 0, color: "#FFA07A" },
+      { id: "11", name: "Transportation", monthlyLimit: 0, color: "#87CEEB" },
+      { id: "12", name: "Health", monthlyLimit: 0, color: "#D8BFD8" },
+      { id: "13", name: "Entertainment", monthlyLimit: 0, color: "#FFD700" },
+      { id: "14", name: "Shopping", monthlyLimit: 0, color: "#FF69B4" },
+      { id: "15", name: "Business", monthlyLimit: 0, color: "#20B2AA" },
+      { id: "16", name: "Other Expenses", monthlyLimit: 0, color: "#C0C0C0" },
     ];
   }
 };

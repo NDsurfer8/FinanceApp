@@ -40,8 +40,6 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [agreedToAIDisclaimer, setAgreedToAIDisclaimer] = useState(false);
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalModalType, setLegalModalType] = useState<"privacy" | "terms">(
@@ -94,22 +92,6 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
 
     if (password !== confirmPassword) {
       Alert.alert("Error", "Passwords do not match");
-      return false;
-    }
-
-    if (!agreedToTerms) {
-      Alert.alert(
-        "Error",
-        "Please agree to the Terms of Service and Privacy Policy"
-      );
-      return false;
-    }
-
-    if (!agreedToAIDisclaimer) {
-      Alert.alert(
-        "Error",
-        "Please acknowledge the AI Financial Advice Disclaimer"
-      );
       return false;
     }
 
@@ -302,64 +284,6 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               </TouchableOpacity>
             </View>
 
-            {/* Terms Agreement */}
-            <View style={styles.termsContainer}>
-              <TouchableOpacity
-                style={styles.checkboxContainer}
-                onPress={() => setAgreedToTerms(!agreedToTerms)}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={[
-                    styles.checkbox,
-                    agreedToTerms && styles.checkboxChecked,
-                  ]}
-                >
-                  {agreedToTerms && (
-                    <Ionicons name="checkmark" size={16} color="white" />
-                  )}
-                </View>
-              </TouchableOpacity>
-              <View style={styles.termsTextContainer}>
-                <Text style={styles.termsText} numberOfLines={0}>
-                  I agree to the{" "}
-                  <Text style={styles.termsLink} onPress={openTermsOfService}>
-                    Terms of Service
-                  </Text>{" "}
-                  and{" "}
-                  <Text style={styles.termsLink} onPress={openPrivacyPolicy}>
-                    Privacy Policy
-                  </Text>
-                </Text>
-              </View>
-            </View>
-
-            {/* AI Financial Advice Disclaimer */}
-            <View style={styles.termsContainer}>
-              <TouchableOpacity
-                style={styles.checkboxContainer}
-                onPress={() => setAgreedToAIDisclaimer(!agreedToAIDisclaimer)}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={[
-                    styles.checkbox,
-                    agreedToAIDisclaimer && styles.checkboxChecked,
-                  ]}
-                >
-                  {agreedToAIDisclaimer && (
-                    <Ionicons name="checkmark" size={16} color="white" />
-                  )}
-                </View>
-              </TouchableOpacity>
-              <View style={styles.termsTextContainer}>
-                <Text style={styles.termsText} numberOfLines={0}>
-                  I acknowledge that AI financial advice is for informational
-                  purposes only and not personalized financial advice.
-                </Text>
-              </View>
-            </View>
-
             {/* Sign Up Button */}
             <TouchableOpacity
               style={[
@@ -388,7 +312,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               {isAppleAuthAvailable && (
                 <AppleAuthentication.AppleAuthenticationButton
                   buttonType={
-                    AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
+                    AppleAuthentication.AppleAuthenticationButtonType.CONTINUE
                   }
                   buttonStyle={
                     AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
@@ -396,23 +320,6 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                   cornerRadius={12}
                   style={styles.appleButton}
                   onPress={async () => {
-                    // Validate that both checkboxes are checked
-                    if (!agreedToTerms) {
-                      Alert.alert(
-                        "Error",
-                        "Please agree to the Terms of Service and Privacy Policy"
-                      );
-                      return;
-                    }
-
-                    if (!agreedToAIDisclaimer) {
-                      Alert.alert(
-                        "Error",
-                        "Please acknowledge the AI Financial Advice Disclaimer"
-                      );
-                      return;
-                    }
-
                     setIsLoading(true);
                     try {
                       await signInWithApple();
@@ -429,6 +336,24 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                   }}
                 />
               )}
+            </View>
+
+            {/* Privacy Policy Disclaimer */}
+            <View style={styles.disclaimerContainer}>
+              <Text style={styles.disclaimerText}>
+                By continuing, you agree to our{" "}
+                <Text
+                  style={styles.disclaimerLink}
+                  onPress={openTermsOfService}
+                >
+                  Terms of Service
+                </Text>{" "}
+                and{" "}
+                <Text style={styles.disclaimerLink} onPress={openPrivacyPolicy}>
+                  Privacy Policy
+                </Text>
+                .
+              </Text>
             </View>
 
             {/* Login Link */}
@@ -1224,53 +1149,13 @@ const styles = StyleSheet.create({
   eyeIcon: {
     padding: 8,
   },
-  termsContainer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 24,
-    paddingHorizontal: 4,
-  },
-  checkboxContainer: {
-    padding: 8,
-    marginRight: 8,
-    marginTop: 2,
-    flexShrink: 0,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: "#374151",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkboxChecked: {
-    backgroundColor: "#10b981",
-    borderColor: "#10b981",
-  },
-  termsTextContainer: {
-    flex: 1,
-    paddingTop: 2,
-    paddingRight: 4,
-    minWidth: 0, // Allows text to wrap properly
-  },
-  termsText: {
-    fontSize: 14,
-    color: "#9ca3af",
-    lineHeight: 20,
-    flexShrink: 1, // Allows text to shrink and wrap
-  },
-  termsLink: {
-    color: "#10b981",
-    fontWeight: "600",
-  },
   signUpButton: {
     backgroundColor: "#10b981",
     borderRadius: 12,
     height: 56,
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 8,
     marginBottom: 24,
   },
   signUpButtonDisabled: {
@@ -1298,7 +1183,8 @@ const styles = StyleSheet.create({
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 24,
+    marginTop: 10,
+    marginBottom: 30,
   },
   dividerLine: {
     flex: 1,
@@ -1314,7 +1200,7 @@ const styles = StyleSheet.create({
   socialButtons: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   socialButton: {
     flexDirection: "row",
@@ -1401,5 +1287,26 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     marginTop: 24,
     textAlign: "center",
+  },
+  // Disclaimer styles
+  disclaimerContainer: {
+    marginBottom: 24,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#111111",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#1f2937",
+  },
+  disclaimerText: {
+    fontSize: 13,
+    color: "#9ca3af",
+    textAlign: "center",
+    lineHeight: 18,
+    fontWeight: "400",
+  },
+  disclaimerLink: {
+    color: "#10b981",
+    fontWeight: "600",
   },
 });

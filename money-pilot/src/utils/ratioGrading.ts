@@ -68,7 +68,11 @@ export function gradeRatio(
 
 // Formatting helpers
 export const fmt = {
-  ratio: (x: number) => `${x.toFixed(2)}x`,
+  ratio: (x: number) => {
+    if (isNaN(x)) return "0.00x";
+    if (x === Infinity) return "∞";
+    return `${x.toFixed(2)}x`;
+  },
   months: (m: number) => (m >= 12 ? "12+ mo" : `${m.toFixed(1)} mo`),
   pct: (p: number) => `${(p * 100).toFixed(1)}%`,
 };

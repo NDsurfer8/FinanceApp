@@ -60,12 +60,21 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   );
   const [hasCheckedForTour, setHasCheckedForTour] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<number>(0);
+  const [isNewUserState, setIsNewUserState] = useState<boolean>(false);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
   // TODO: use this function
   const shouldWrapName = (name: string) => {
     return name.length > 15;
+  };
+
+  // Generate personalized welcome message
+  const getWelcomeMessage = () => {
+    const userName = user?.displayName || "User";
+    return isNewUserState
+      ? `Welcome, ${userName}`
+      : `Welcome Back, ${userName}`;
   };
 
   // Function to fetch pending invitations
@@ -89,6 +98,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       fetchPendingInvitations();
     }
   }, [user]);
+
+  // Check if user is new for personalized welcome message
+  React.useEffect(() => {
+    const checkIfNewUser = async () => {
+      if (user) {
+        try {
+          const newUserStatus = await isNewUser(user);
+          setIsNewUserState(newUserStatus);
+        } catch (error) {
+          console.error("Error checking if user is new:", error);
+          setIsNewUserState(false); // Default to returning user on error
+        }
+      }
+    };
+
+    checkIfNewUser();
+  }, [user, isNewUser]);
 
   // Auto-start tour for new users (Firebase-based detection)
   React.useEffect(() => {
@@ -606,7 +632,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         {/* Header */}
         <StandardHeader
           title={translate("dashboard", isFriendlyMode)}
-          subtitle={`Welcome back, ${user?.displayName || "User"}`}
+          subtitle={getWelcomeMessage()}
           showBackButton={false}
           rightComponent={
             <View style={{ flexDirection: "row", gap: 12 }}>
