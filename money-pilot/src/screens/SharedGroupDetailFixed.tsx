@@ -257,7 +257,6 @@ export default function SharedGroupDetailFixed({
               0
             );
             totalDebts += memberDebts;
-            console.log(`💳 Added debts: ${memberDebts}`);
           }
 
           // Calculate net worth from assets and debts
@@ -283,7 +282,6 @@ export default function SharedGroupDetailFixed({
 
           if (memberData.monthlyIncome !== undefined) {
             totalMonthlyIncome += memberData.monthlyIncome;
-            console.log(`💵 Added monthly income: ${memberData.monthlyIncome}`);
           }
 
           if (memberData.monthlyExpenses !== undefined) {
@@ -350,11 +348,6 @@ export default function SharedGroupDetailFixed({
             }
           }
         }
-
-        console.log(
-          `🎯 Final totals - Net Worth: ${totalNetWorth}, Assets: ${totalAssets}, Debts: ${totalDebts}, Income: ${totalMonthlyIncome}, Expenses: ${totalMonthlyExpenses}`
-        );
-        console.log(`👥 Member incomes:`, memberIncomes);
 
         setGroupData({
           netWorth: totalNetWorth,

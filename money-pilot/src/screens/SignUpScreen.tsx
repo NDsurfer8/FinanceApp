@@ -41,6 +41,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToAIDisclaimer, setAgreedToAIDisclaimer] = useState(false);
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalModalType, setLegalModalType] = useState<"privacy" | "terms">(
@@ -100,6 +101,14 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
       Alert.alert(
         "Error",
         "Please agree to the Terms of Service and Privacy Policy"
+      );
+      return false;
+    }
+
+    if (!agreedToAIDisclaimer) {
+      Alert.alert(
+        "Error",
+        "Please acknowledge the AI Financial Advice Disclaimer"
       );
       return false;
     }
@@ -325,6 +334,32 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               </View>
             </View>
 
+            {/* AI Financial Advice Disclaimer */}
+            <View style={styles.termsContainer}>
+              <TouchableOpacity
+                style={styles.checkboxContainer}
+                onPress={() => setAgreedToAIDisclaimer(!agreedToAIDisclaimer)}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    styles.checkbox,
+                    agreedToAIDisclaimer && styles.checkboxChecked,
+                  ]}
+                >
+                  {agreedToAIDisclaimer && (
+                    <Ionicons name="checkmark" size={16} color="white" />
+                  )}
+                </View>
+              </TouchableOpacity>
+              <View style={styles.termsTextContainer}>
+                <Text style={styles.termsText} numberOfLines={0}>
+                  I acknowledge that AI financial advice is for informational
+                  purposes only and not personalized financial advice.
+                </Text>
+              </View>
+            </View>
+
             {/* Sign Up Button */}
             <TouchableOpacity
               style={[
@@ -361,6 +396,23 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                   cornerRadius={12}
                   style={styles.appleButton}
                   onPress={async () => {
+                    // Validate that both checkboxes are checked
+                    if (!agreedToTerms) {
+                      Alert.alert(
+                        "Error",
+                        "Please agree to the Terms of Service and Privacy Policy"
+                      );
+                      return;
+                    }
+
+                    if (!agreedToAIDisclaimer) {
+                      Alert.alert(
+                        "Error",
+                        "Please acknowledge the AI Financial Advice Disclaimer"
+                      );
+                      return;
+                    }
+
                     setIsLoading(true);
                     try {
                       await signInWithApple();

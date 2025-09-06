@@ -264,7 +264,6 @@ export const removeUserFromGroup = async (
       `sharedFinanceData/${groupId}/members/${userId}`
     );
     await remove(sharedDataRef);
-    console.log("✅ Removed user from group shared data:", userId, groupId);
   } catch (error) {
     console.error("❌ Error removing user from group:", error);
     throw error;
