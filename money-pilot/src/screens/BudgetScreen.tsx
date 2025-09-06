@@ -1400,13 +1400,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                         </View>
                       )}
                     </View>
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={20}
-                        color={colors.buttonText}
-                      />
-                    )}
                   </TouchableOpacity>
                 );
               })}
