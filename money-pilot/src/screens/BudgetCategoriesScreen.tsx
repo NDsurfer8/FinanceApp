@@ -751,60 +751,37 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <StandardHeader
-        title="Set Budget"
-        subtitle="Plan your monthly spending"
-        showBackButton={true}
-        onBack={() => navigation.goBack()}
-        rightComponent={
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginRight: 20,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => setShowBudgetSettingsModal(true)}
-              style={{
-                backgroundColor: colors.surfaceSecondary,
-                padding: 12,
-                borderRadius: 12,
-                marginRight: 8,
-                borderWidth: 1,
-                borderColor: colors.border,
-                shadowColor: colors.shadow,
-                shadowOpacity: 0.08,
-                shadowRadius: 4,
-                shadowOffset: { width: 0, height: 2 },
-                elevation: 2,
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="settings-outline"
-                size={20}
-                color={colors.primary}
-              />
-            </TouchableOpacity>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <StandardHeader
+          title="Set Budget"
+          subtitle="Plan your monthly spending"
+          showBackButton={true}
+          onBack={() => navigation.goBack()}
+          rightComponent={
             <TouchableOpacity
               onPress={() => setShowAddModal(true)}
               style={{
                 backgroundColor: colors.primary,
                 padding: 12,
                 borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                shadowOffset: { width: 0, height: 2 },
+                elevation: 2,
               }}
+              activeOpacity={0.8}
             >
               <Ionicons name="add" size={20} color={colors.buttonText} />
             </TouchableOpacity>
-          </View>
-        }
-      />
-
-      <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 30 }}
-        showsVerticalScrollIndicator={false}
-      >
+          }
+        />
         {/* Summary Card */}
         <View
           style={{
@@ -819,20 +796,51 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
             elevation: 3,
           }}
         >
-          <Text
+          <View
             style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: colors.text,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
               marginBottom: 12,
             }}
           >
-            {selectedMonth.toLocaleDateString("en-US", {
-              month: "long",
-              year: "numeric",
-            })}{" "}
-            Overview
-          </Text>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: colors.text,
+                flex: 1,
+              }}
+            >
+              {selectedMonth.toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric",
+              })}{" "}
+              Overview
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowBudgetSettingsModal(true)}
+              style={{
+                backgroundColor: colors.surfaceSecondary,
+                padding: 10,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: colors.border,
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.06,
+                shadowRadius: 3,
+                shadowOffset: { width: 0, height: 1 },
+                elevation: 1,
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="settings-outline"
+                size={18}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+          </View>
 
           <View style={{ gap: 16 }}>
             {/* Income Section */}
