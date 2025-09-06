@@ -392,83 +392,58 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 );
               })()}
 
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View
-                  style={{
-                    backgroundColor: "#f0fdf4",
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                    borderRadius: 12,
-                    marginRight: 10,
-                    shadowColor: "#16a34a",
-                    shadowOpacity: 0.2,
-                    shadowRadius: 6,
-                    shadowOffset: { width: 0, height: 3 },
-                    elevation: 4,
-                    borderWidth: 1.5,
-                    borderColor: "#bbf7d0",
-                  }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <View
-                      style={{
-                        width: 4,
-                        height: 4,
-                        borderRadius: 2,
-                        backgroundColor: "#16a34a",
-                        marginRight: 5,
-                        shadowColor: "#16a34a",
-                        shadowOpacity: 0.3,
-                        shadowRadius: 2,
-                        shadowOffset: { width: 0, height: 1 },
-                      }}
-                    />
-                    <Text
-                      style={{
-                        fontSize: 10,
-                        color: "#15803d",
-                        fontWeight: "800",
-                        textTransform: "uppercase",
-                        letterSpacing: 1,
-                      }}
-                    >
-                      Active
-                    </Text>
-                  </View>
-                </View>
-                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                  Member since{" "}
-                  {currentUser?.metadata?.creationTime
-                    ? new Date(
-                        currentUser.metadata.creationTime
-                      ).toLocaleDateString("en-US", {
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "Recently"}
-                </Text>
-              </View>
+              <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                Member since{" "}
+                {currentUser?.metadata?.creationTime
+                  ? new Date(
+                      currentUser.metadata.creationTime
+                    ).toLocaleDateString("en-US", {
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "Recently"}
+              </Text>
             </View>
             <TouchableOpacity
               style={{
-                backgroundColor: colors.primary,
-                borderRadius: 12,
-                borderColor: colors.primary,
+                backgroundColor: colors.surface,
+                borderRadius: 16,
+                borderWidth: 1.5,
+                borderColor: colors.border,
                 alignSelf: "flex-start",
-                shadowColor: colors.primary,
-                shadowOpacity: 0.2,
-                shadowRadius: 8,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 4,
-                minWidth: 40,
-                minHeight: 40,
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 6 },
+                elevation: 3,
+                minWidth: 44,
+                minHeight: 44,
                 justifyContent: "center",
                 alignItems: "center",
+                paddingHorizontal: 12,
+                paddingVertical: 8,
               }}
               onPress={() => navigation.navigate("EditProfile")}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <Ionicons name="create" size={30} color={colors.buttonText} />
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons
+                  name="create-outline"
+                  size={18}
+                  color={colors.text}
+                  style={{ marginRight: 6 }}
+                />
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    color: colors.text,
+                    letterSpacing: 0.3,
+                  }}
+                >
+                  Edit
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
 
@@ -485,10 +460,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <View style={{ alignItems: "center", flex: 1 }}>
               <Text
                 style={{
-                  fontSize: 20,
-                  fontWeight: "700",
+                  fontSize: 18,
+                  fontWeight: "600",
                   color: colors.text,
-                  marginBottom: 4,
+                  marginBottom: 6,
+                  fontFamily: "System",
                 }}
               >
                 {currentUser?.metadata?.lastSignInTime
@@ -502,11 +478,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </Text>
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   color: colors.textSecondary,
                   fontWeight: "500",
                   textTransform: "uppercase",
-                  letterSpacing: 0.5,
+                  letterSpacing: 1.2,
+                  opacity: 0.8,
                 }}
               >
                 Last Login
@@ -515,23 +492,25 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <View style={{ alignItems: "center", flex: 1 }}>
               <Text
                 style={{
-                  fontSize: 20,
-                  fontWeight: "700",
+                  fontSize: 18,
+                  fontWeight: "600",
                   color: subscriptionStatus?.isPremium
-                    ? colors.warning
+                    ? "#10b981"
                     : colors.text,
-                  marginBottom: 4,
+                  marginBottom: 6,
+                  fontFamily: "System",
                 }}
               >
                 {subscriptionStatus?.isPremium ? "Premium" : "Free"}
               </Text>
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   color: colors.textSecondary,
                   fontWeight: "500",
                   textTransform: "uppercase",
-                  letterSpacing: 0.5,
+                  letterSpacing: 1.2,
+                  opacity: 0.8,
                 }}
               >
                 Plan
@@ -540,21 +519,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <View style={{ alignItems: "center", flex: 1 }}>
               <Text
                 style={{
-                  fontSize: 20,
-                  fontWeight: "700",
-                  color: colors.text,
-                  marginBottom: 4,
+                  fontSize: 18,
+                  fontWeight: "600",
+                  color: currentUser?.emailVerified ? "#10b981" : "#ef4444",
+                  marginBottom: 6,
+                  fontFamily: "System",
                 }}
               >
                 {currentUser?.emailVerified ? "✓" : "✗"}
               </Text>
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   color: colors.textSecondary,
                   fontWeight: "500",
                   textTransform: "uppercase",
-                  letterSpacing: 0.5,
+                  letterSpacing: 1.2,
+                  opacity: 0.8,
                 }}
               >
                 Verified
@@ -681,7 +662,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             marginBottom: 12,
           }}
         >
-          <View
+          {/* <View
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -705,12 +686,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 style={{ marginLeft: 6 }}
               />
             )}
-          </View>
+          </View> */}
 
           {subscriptionStatus?.isPremium ? (
             <View>
               <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-                Premium + Plaid: review, label, add to budget.
+                Premium + Plaid: Review, label and manage your budget.
               </Text>
               {subscriptionStatus.expirationDate && (
                 <Text
@@ -727,22 +708,28 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </View>
           ) : (
             <View>
-              <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>
-                {introOfferEligible
-                  ? "Start your free trial and unlock auto-import, AI budgeting, and unlimited accounts."
-                  : "Unlock auto-import, AI budgeting, and unlimited accounts."}
-              </Text>
               <TouchableOpacity
                 style={{
-                  backgroundColor: "#0ea5e9",
-                  paddingVertical: 12,
-                  paddingHorizontal: 14,
-                  borderRadius: 12,
+                  backgroundColor: introOfferEligible ? "#10b981" : "#6366f1",
+                  paddingVertical: 16,
+                  paddingHorizontal: 24,
+                  borderRadius: 16,
                   alignSelf: "flex-start",
                   opacity: loading ? 0.6 : 1,
+                  shadowColor: introOfferEligible ? "#10b981" : "#6366f1",
+                  shadowOpacity: 0.3,
+                  shadowRadius: 12,
+                  shadowOffset: { width: 0, height: 6 },
+                  elevation: 8,
+                  borderWidth: 1,
+                  borderColor: introOfferEligible ? "#059669" : "#4f46e5",
+                  minWidth: 160,
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}
                 onPress={handlePaywallPress}
                 disabled={loading}
+                activeOpacity={0.8}
               >
                 {loading ? (
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -751,14 +738,38 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       color="white"
                       style={{ marginRight: 8 }}
                     />
-                    <Text style={{ color: "white", fontWeight: "700" }}>
+                    <Text
+                      style={{
+                        color: "white",
+                        fontWeight: "700",
+                        fontSize: 16,
+                        letterSpacing: 0.5,
+                      }}
+                    >
                       Loading...
                     </Text>
                   </View>
                 ) : (
-                  <Text style={{ color: "white", fontWeight: "700" }}>
-                    {introOfferEligible ? "Start Free Trial" : "Get Premium"}
-                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Ionicons
+                      name={introOfferEligible ? "gift" : "star"}
+                      size={20}
+                      color="white"
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      style={{
+                        color: "white",
+                        fontWeight: "700",
+                        fontSize: 16,
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      {introOfferEligible
+                        ? "See Plans & Pricing"
+                        : "See Plans & Pricing"}
+                    </Text>
+                  </View>
                 )}
               </TouchableOpacity>
             </View>
@@ -1132,42 +1143,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               />
             </TouchableOpacity>
           )}
-
-          <TouchableOpacity
-            style={[
-              styles.settingItem,
-              { borderBottomColor: colors.borderLight },
-            ]}
-            onPress={async () => {
-              try {
-                await AsyncStorage.removeItem("hasSeenIntro");
-                Alert.alert(
-                  "Onboarding Reset",
-                  "The onboarding slider will show on the next app launch. Please restart the app to see it.",
-                  [{ text: "OK" }]
-                );
-              } catch (error) {
-                Alert.alert("Error", "Failed to reset onboarding");
-              }
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons
-                name="refresh"
-                size={20}
-                color={colors.textSecondary}
-                style={{ marginRight: 12 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text }]}>
-                Reset Onboarding
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={16}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
         </View>
 
         {/* Logout */}

@@ -510,8 +510,8 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
               {isConnected
                 ? "Connected via Plaid"
                 : hasPremiumAccess()
-                ? "Connect your bank account"
-                : "Upgrade to connect bank"}
+                ? "Connect bank"
+                : "Connect bank"}
             </Text>
           </View>
         </View>
@@ -531,7 +531,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
               fontSize: 14,
             }}
           >
-            {isConnected ? "Connected" : "Disconnected"}
+            {isConnected ? "" : "Disconnected"}
           </Text>
           <View
             style={{
