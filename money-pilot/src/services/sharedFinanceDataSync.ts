@@ -12,6 +12,18 @@ import {
   getUserProfile,
 } from "./userData";
 
+// Utility function to handle permission denied errors
+const handlePermissionError = (error: any, context: string) => {
+  if (
+    error?.code === "PERMISSION_DENIED" ||
+    error?.message?.includes("Permission denied")
+  ) {
+    console.log(`User account no longer exists, ${context}`);
+    return true;
+  }
+  return false;
+};
+
 /**
  * Cleans data by removing undefined values before writing to Firebase
  * Firebase doesn't allow undefined values - they must be null or removed
@@ -200,7 +212,11 @@ export const syncUserDataToGroup = async (
       `sharedFinanceData/${groupId}/members/${userId}`
     );
     await set(sharedDataRef, cleanData);
-  } catch (error) {
+  } catch (error: any) {
+    if (handlePermissionError(error, "skipping sync")) {
+      return;
+    }
+
     console.error("❌ Error during manual sync:", error);
     throw error;
   }
@@ -220,7 +236,11 @@ export const getGroupSharedData = async (
       return snapshot.val();
     }
     return null;
-  } catch (error) {
+  } catch (error: any) {
+    if (handlePermissionError(error, "returning null for shared data")) {
+      return null;
+    }
+
     console.error("Error getting group shared data:", error);
     throw error;
   }
@@ -245,7 +265,11 @@ export const getUserGroupSharingSettings = async (
       return userData.sharingSettings || null;
     }
     return null;
-  } catch (error) {
+  } catch (error: any) {
+    if (handlePermissionError(error, "returning null for sharing settings")) {
+      return null;
+    }
+
     console.error("Error getting user group sharing settings:", error);
     return null;
   }
@@ -264,7 +288,11 @@ export const removeUserFromGroup = async (
       `sharedFinanceData/${groupId}/members/${userId}`
     );
     await remove(sharedDataRef);
-  } catch (error) {
+  } catch (error: any) {
+    if (handlePermissionError(error, "skipping user removal from group")) {
+      return;
+    }
+
     console.error("❌ Error removing user from group:", error);
     throw error;
   }
@@ -278,7 +306,11 @@ export const removeGroupSharedData = async (groupId: string): Promise<void> => {
     const sharedDataRef = ref(db, `sharedFinanceData/${groupId}`);
     await remove(sharedDataRef);
     console.log("✅ Removed all shared data for group:", groupId);
-  } catch (error) {
+  } catch (error: any) {
+    if (handlePermissionError(error, "skipping group shared data removal")) {
+      return;
+    }
+
     console.error("❌ Error removing group shared data:", error);
     throw error;
   }

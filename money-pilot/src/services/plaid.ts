@@ -82,6 +82,15 @@ class PlaidService {
     this.userId = userId;
   }
 
+  // Clear all PlaidService state (useful when user logs out or account is deleted)
+  clearState() {
+    this.accessToken = null;
+    this.itemId = null;
+    this.userId = null;
+    this.requestCache.clear();
+    this.onBankConnectedCallbacks = [];
+  }
+
   // Generate cache key for requests
   private getCacheKey(endpoint: string, params: any): string {
     return `${endpoint}_${JSON.stringify(params)}`;
@@ -973,6 +982,17 @@ class PlaidService {
     }
 
     try {
+      // First check if user still exists in Firebase
+      const userRef = ref(db, `users/${this.userId}`);
+      const userSnapshot = await get(userRef);
+
+      if (!userSnapshot.exists()) {
+        // User account has been deleted, clear local state and return false
+        this.accessToken = null;
+        this.itemId = null;
+        return false;
+      }
+
       // Check Firebase for existing connection
       const plaidRef = ref(db, `users/${this.userId}/plaid`);
       const snapshot = await get(plaidRef);
@@ -1008,7 +1028,20 @@ class PlaidService {
       }
 
       return false;
-    } catch (error) {
+    } catch (error: any) {
+      // Handle permission denied errors (user account deleted)
+      if (
+        error?.code === "PERMISSION_DENIED" ||
+        error?.message?.includes("Permission denied")
+      ) {
+        console.log(
+          "PlaidService: User account no longer exists, clearing bank connection state"
+        );
+        this.accessToken = null;
+        this.itemId = null;
+        return false;
+      }
+
       console.error("PlaidService: Error checking bank connection:", error);
       return false;
     }

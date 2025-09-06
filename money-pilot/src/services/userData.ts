@@ -1691,7 +1691,21 @@ export const getGroupSharedData = async (
       transactions: allTransactions,
       goals: allGoals,
     };
-  } catch (error) {
+  } catch (error: any) {
+    // Handle permission denied errors (user account deleted)
+    if (
+      error?.code === "PERMISSION_DENIED" ||
+      error?.message?.includes("Permission denied")
+    ) {
+      console.log("User account no longer exists, returning empty shared data");
+      return {
+        assets: [],
+        debts: [],
+        transactions: [],
+        goals: [],
+      };
+    }
+
     console.error("Error getting group shared data:", error);
     throw error;
   }
@@ -1848,8 +1862,18 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
           }
         }
       }
-    } catch (sharedGroupsError) {
-      console.error("Could not access shared groups:", sharedGroupsError);
+    } catch (sharedGroupsError: any) {
+      // Handle permission denied errors (user account already deleted)
+      if (
+        sharedGroupsError?.code === "PERMISSION_DENIED" ||
+        sharedGroupsError?.message?.includes("Permission denied")
+      ) {
+        console.log(
+          "User account already deleted, skipping shared groups cleanup"
+        );
+      } else {
+        console.error("Could not access shared groups:", sharedGroupsError);
+      }
       // Continue with account deletion even if shared groups fail
     }
 
@@ -1877,8 +1901,18 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
           }
         }
       }
-    } catch (sharedDataError) {
-      console.error("Could not access shared data:", sharedDataError);
+    } catch (sharedDataError: any) {
+      // Handle permission denied errors (user account already deleted)
+      if (
+        sharedDataError?.code === "PERMISSION_DENIED" ||
+        sharedDataError?.message?.includes("Permission denied")
+      ) {
+        console.log(
+          "User account already deleted, skipping shared data cleanup"
+        );
+      } else {
+        console.error("Could not access shared data:", sharedDataError);
+      }
       // Continue with account deletion
     }
 
@@ -1909,8 +1943,18 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
           }
         }
       }
-    } catch (invitationsError) {
-      console.error("Could not access invitations:", invitationsError);
+    } catch (invitationsError: any) {
+      // Handle permission denied errors (user account already deleted)
+      if (
+        invitationsError?.code === "PERMISSION_DENIED" ||
+        invitationsError?.message?.includes("Permission denied")
+      ) {
+        console.log(
+          "User account already deleted, skipping invitations cleanup"
+        );
+      } else {
+        console.error("Could not access invitations:", invitationsError);
+      }
       // Continue with account deletion
     }
   } catch (error) {

@@ -507,6 +507,10 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
         // Clear all AsyncStorage data
         await clearAllAsyncStorage();
 
+        // Clear PlaidService state to prevent permission errors
+        const { plaidService } = await import("../services/plaid");
+        plaidService.clearState();
+
         // Finally, delete the Firebase Auth account
         await deleteUser(user);
 
