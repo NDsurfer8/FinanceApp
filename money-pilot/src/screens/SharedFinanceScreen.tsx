@@ -537,46 +537,54 @@ export default function SharedFinanceScreen({
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      {/* Header */}
-      <StandardHeader
-        title="Shared Finances"
-        onBack={() => navigation.goBack()}
-        rightComponent={
-          <TourGuide zone={2} screen="SharedFinance">
-            <TouchableOpacity
-              style={{
-                backgroundColor: colors.primary,
-                padding: 12,
-                borderRadius: 12,
-                marginRight: 20,
-              }}
-              onPress={() => setShowCreateModal(true)}
-            >
-              <Ionicons name="add" size={20} color={colors.buttonText} />
-              {!hasPremiumAccess() && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: -2,
-                    right: -2,
-                    backgroundColor: colors.warning,
-                    borderRadius: 8,
-                    width: 16,
-                    height: 16,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons name="star" size={10} color={colors.buttonText} />
-                </View>
-              )}
-            </TouchableOpacity>
-          </TourGuide>
-        }
-      />
-
-      {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <StandardHeader
+          title="Shared Finances"
+          onBack={() => navigation.goBack()}
+          rightComponent={
+            <TourGuide zone={2} screen="SharedFinance">
+              <TouchableOpacity
+                onPress={() => setShowCreateModal(true)}
+                style={{
+                  backgroundColor: colors.primary,
+                  padding: 12,
+                  borderRadius: 12,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  shadowColor: colors.shadow,
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 2,
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="add" size={20} color={colors.buttonText} />
+                {!hasPremiumAccess() && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: -2,
+                      right: -2,
+                      backgroundColor: colors.warning,
+                      borderRadius: 8,
+                      width: 16,
+                      height: 16,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Ionicons name="star" size={10} color={colors.buttonText} />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </TourGuide>
+          }
+        />
         {/* Invitations Section */}
         {invitations.length > 0 && (
           <View style={styles.invitationsContainer}>

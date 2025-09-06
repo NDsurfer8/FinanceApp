@@ -614,18 +614,21 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 onPress={() => navigation.navigate("FinancialRisk")}
                 style={{
                   backgroundColor: colors.error,
-                  padding: 14,
-                  borderRadius: 14,
-                  shadowColor: colors.error,
-                  shadowOpacity: 0.2,
-                  shadowRadius: 8,
+                  padding: 12,
+                  borderRadius: 12,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  shadowColor: colors.shadow,
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
                   shadowOffset: { width: 0, height: 2 },
-                  elevation: 3,
+                  elevation: 2,
                 }}
+                activeOpacity={0.8}
               >
                 <Ionicons
                   name="shield-checkmark"
-                  size={22}
+                  size={20}
                   color={colors.buttonText}
                 />
               </TouchableOpacity>
@@ -633,17 +636,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 onPress={() => navigation.navigate("SharedFinance")}
                 style={{
                   backgroundColor: "#8b5cf6",
-                  padding: 14,
-                  borderRadius: 14,
-                  shadowColor: "#8b5cf6",
-                  shadowOpacity: 0.2,
-                  shadowRadius: 8,
+                  padding: 12,
+                  borderRadius: 12,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  shadowColor: colors.shadow,
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
                   shadowOffset: { width: 0, height: 2 },
-                  elevation: 3,
+                  elevation: 2,
                 }}
+                activeOpacity={0.8}
               >
                 <View style={{ position: "relative" }}>
-                  <Ionicons name="people" size={22} color={colors.buttonText} />
+                  <Ionicons name="people" size={20} color={colors.buttonText} />
                   {pendingInvitations > 0 && (
                     <View
                       style={{
