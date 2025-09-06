@@ -8,6 +8,7 @@ import {
   Alert,
   Share,
   ActivityIndicator,
+  SafeAreaView,
 } from "react-native";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
@@ -17,6 +18,7 @@ import {
   FinancialPlan,
 } from "../services/userData";
 import { Ionicons } from "@expo/vector-icons";
+import { StandardHeader } from "../components/StandardHeader";
 
 export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
   navigation,
@@ -157,21 +159,18 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.card }]}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Financial Plans
-        </Text>
-        <View style={styles.headerSpacer} />
-      </View>
-
-      <ScrollView style={styles.content}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <StandardHeader
+          title="Financial Plans"
+          subtitle="View and export financial plans"
+          onBack={() => navigation.goBack()}
+          showBackButton={true}
+        />
         {plans.length === 0 ? (
           <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
             <Ionicons
@@ -355,7 +354,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
           </>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
