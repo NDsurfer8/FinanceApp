@@ -6,6 +6,14 @@ import {
   removeGroupSharedData,
 } from "./sharedFinanceDataSync";
 
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 /**
  * Cleans data by removing undefined values before writing to Firebase
  * Firebase doesn't allow undefined values - they must be null or removed
@@ -32,6 +40,37 @@ const cleanDataForFirebase = <T>(data: T): T => {
   }
 
   return data;
+};
+
+// Save user profile to database (create or update)
+export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
+  try {
+    const userRef = ref(db, `users/${profile.uid}/profile`);
+
+    // Check if user already exists
+    const snapshot = await get(userRef);
+
+    if (snapshot.exists()) {
+      // User exists, update the profile with new data but preserve original createdAt
+      const existingData = snapshot.val();
+      await set(userRef, {
+        ...profile,
+        createdAt: existingData.createdAt || profile.createdAt, // Preserve original creation time
+        updatedAt: Date.now(),
+      });
+      console.log("User profile updated:", profile.uid);
+    } else {
+      // User doesn't exist, create new profile
+      await set(userRef, {
+        ...profile,
+        updatedAt: Date.now(),
+      });
+      console.log("New user profile created:", profile.uid);
+    }
+  } catch (error) {
+    console.error("Error saving user profile:", error);
+    throw error;
+  }
 };
 
 export interface DataSharingSettings {
@@ -220,20 +259,6 @@ export interface NetWorthEntry {
   createdAt: number;
   updatedAt: number;
 }
-
-// Create or update user profile
-export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
-  try {
-    const userRef = ref(db, `users/${profile.uid}/profile`);
-    await set(userRef, {
-      ...profile,
-      updatedAt: Date.now(),
-    });
-  } catch (error) {
-    console.error("Error saving user profile:", error);
-    throw error;
-  }
-};
 
 // Get user profile
 export const getUserProfile = async (

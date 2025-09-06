@@ -55,22 +55,48 @@ export const signInWithApple = async (): Promise<UserData> => {
     const rawNonce = Array.from(randomBytes)
       .map((b: number) => b.toString(16).padStart(2, "0"))
       .join("");
+
+    // Ensure nonce is properly formatted
+    if (!rawNonce || rawNonce.length !== 64) {
+      throw {
+        code: "auth/invalid-nonce",
+        message: "Failed to generate valid nonce for Apple Sign-In",
+      } as AuthErrorType;
+    }
+
     const hashedNonce = await Crypto.digestStringAsync(
       Crypto.CryptoDigestAlgorithm.SHA256,
-      rawNonce
+      rawNonce,
+      { encoding: Crypto.CryptoEncoding.HEX }
     );
+
+    console.log("Nonce generated:", {
+      rawNonceLength: rawNonce.length,
+      hashedNonceLength: hashedNonce.length,
+      rawNoncePrefix: rawNonce.substring(0, 8),
+      hashedNoncePrefix: hashedNonce.substring(0, 8),
+    });
 
     console.log("Starting Apple authentication...");
 
     // Request Apple authentication
-    const credential = await AppleAuthentication.signInAsync({
-      requestedScopes: [
-        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-        AppleAuthentication.AppleAuthenticationScope.EMAIL,
-      ],
-      // Pass the SHA-256 hashed nonce to Apple (required for Firebase)
-      nonce: hashedNonce,
-    });
+    let credential;
+    try {
+      credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+        // Pass the SHA-256 hashed nonce to Apple (required for Firebase)
+        nonce: hashedNonce,
+      });
+    } catch (appleError: any) {
+      console.error("Apple authentication error:", appleError);
+      throw {
+        code: "auth/apple-signin-failed",
+        message: `Apple Sign-In failed: ${appleError.message}`,
+      } as AuthErrorType;
+    }
 
     console.log("Apple authentication completed:", {
       hasIdentityToken: !!credential.identityToken,
@@ -97,8 +123,31 @@ export const signInWithApple = async (): Promise<UserData> => {
       rawNonce,
     });
 
+    console.log("Firebase credential created, attempting sign-in...");
+
     // Sign in to Firebase
-    const userCredential = await signInWithCredential(auth, firebaseCredential);
+    let userCredential;
+    try {
+      userCredential = await signInWithCredential(auth, firebaseCredential);
+    } catch (firebaseError: any) {
+      console.error("Firebase sign-in error:", firebaseError);
+      console.log("Firebase error code:", firebaseError.code);
+
+      // Handle specific Firebase error codes
+      if (firebaseError.code === "auth/error-code:-40") {
+        throw {
+          code: "auth/apple-nonce-mismatch",
+          message:
+            "Apple Sign-In nonce verification failed. This may be due to a timing issue or invalid nonce generation.",
+        } as AuthErrorType;
+      }
+
+      throw {
+        code: firebaseError.code || "auth/unknown",
+        message: `Firebase authentication failed: ${firebaseError.message}`,
+      } as AuthErrorType;
+    }
+
     const user = userCredential.user;
 
     console.log("Apple Sign In successful:", {
@@ -107,44 +156,68 @@ export const signInWithApple = async (): Promise<UserData> => {
       displayName: user.displayName,
     });
 
-    // Only save user profile to database for new Apple users
-    // Check if this is a new user by checking if user has metadata
-    const isNewUser =
-      !user.metadata.lastSignInTime ||
-      user.metadata.creationTime === user.metadata.lastSignInTime;
+    // Apple Sign-In should work the same for both login and signup
+    // Always ensure user profile exists in database (create if missing, update if exists)
+    let displayName = "";
 
-    if (isNewUser) {
-      const displayName = credential.fullName
-        ? `${credential.fullName.givenName || ""} ${
-            credential.fullName.familyName || ""
-          }`.trim()
-        : "Apple User";
-
-      // Update display name if we have it from Apple
-      if (credential.fullName && displayName) {
-        await updateProfile(user, {
-          displayName: displayName,
-        });
+    // First, try to get name from Apple's credential
+    if (credential.fullName) {
+      const appleName = `${credential.fullName.givenName || ""} ${
+        credential.fullName.familyName || ""
+      }`.trim();
+      if (appleName) {
+        displayName = appleName;
       }
+    }
 
-      // Save user profile to database only for new users
-      const userProfile: UserProfile = {
-        uid: user.uid,
-        email: credential.email || user.email || "",
+    // If no name from Apple, try Firebase user's display name
+    if (!displayName && user.displayName) {
+      displayName = user.displayName;
+    }
+
+    // If still no name, try to extract from email
+    if (!displayName && user.email) {
+      const emailName = user.email.split("@")[0];
+      if (emailName && emailName !== "apple-user") {
+        displayName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+      }
+    }
+
+    // Last resort fallback
+    if (!displayName) {
+      displayName = "Apple User";
+    }
+
+    console.log("Display name resolution:", {
+      appleFullName: credential.fullName,
+      firebaseDisplayName: user.displayName,
+      userEmail: user.email,
+      finalDisplayName: displayName,
+    });
+
+    // Update display name if we have a better name than what's currently set
+    if (displayName && displayName !== user.displayName) {
+      await updateProfile(user, {
         displayName: displayName,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
+      });
+    }
 
-      try {
-        await saveUserProfile(userProfile);
-        console.log("New Apple user profile saved to database:", userProfile);
-      } catch (dbError) {
-        console.error("Error saving Apple user profile to database:", dbError);
-        // Don't throw here - auth was successful, just database save failed
-      }
-    } else {
-      console.log("Existing Apple user signed in, no profile save needed");
+    // Always ensure user profile exists in database
+    // This handles both new users and returning users seamlessly
+    const userProfile: UserProfile = {
+      uid: user.uid,
+      email: credential.email || user.email || "apple-user@example.com",
+      displayName: displayName || "Apple User",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    try {
+      await saveUserProfile(userProfile);
+      console.log("Apple user profile ensured in database:", userProfile);
+    } catch (dbError) {
+      console.error("Error saving Apple user profile to database:", dbError);
+      // Don't throw here - auth was successful, just database save failed
     }
 
     return {
