@@ -268,12 +268,14 @@ export default function GroupDataSharingScreen({
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      <StandardHeader
-        title={`Share Data with ${group.name}`}
-        onBack={() => navigation.goBack()}
-      />
-
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <StandardHeader
+          title={`Share Data with ${group.name}`}
+          onBack={() => navigation.goBack()}
+        />
         <View style={[styles.groupInfo, { backgroundColor: colors.surface }]}>
           <Text style={[styles.groupName, { color: colors.text }]}>
             {group.name}
@@ -425,10 +427,6 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     width: 40,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
   },
   groupInfo: {
     padding: 20,

@@ -1054,10 +1054,14 @@ export default function SharedGroupDetailFixed({
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      {renderHeader()}
       {renderGroupOptionsModal()}
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {renderHeader()}
+
         <View style={styles.cardsContainer}>
           {renderNetWorthCard()}
           {renderIncomeCard()}
@@ -1106,10 +1110,6 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     padding: 8,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
   },
   cardsContainer: {
     paddingVertical: 20,
