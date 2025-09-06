@@ -19,6 +19,7 @@ import {
   getUserAssets,
   getUserDebts,
   getUserTransactions,
+  getUserRecurringTransactions,
 } from "../services/userData";
 
 interface FinancialRiskScreenProps {
@@ -34,6 +35,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
   const [assets, setAssets] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [recurringTransactions, setRecurringTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
@@ -41,14 +43,21 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
 
     try {
       setLoading(true);
-      const [userAssets, userDebts, userTransactions] = await Promise.all([
+      const [
+        userAssets,
+        userDebts,
+        userTransactions,
+        userRecurringTransactions,
+      ] = await Promise.all([
         getUserAssets(user.uid),
         getUserDebts(user.uid),
         getUserTransactions(user.uid),
+        getUserRecurringTransactions(user.uid),
       ]);
       setAssets(userAssets);
       setDebts(userDebts);
       setTransactions(userTransactions);
+      setRecurringTransactions(userRecurringTransactions);
     } catch (error) {
       console.error("Error loading balance sheet data:", error);
       Alert.alert("Error", "Failed to load data");
@@ -74,11 +83,11 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
   // Calculate totals
   const totalAssets = assets.reduce((sum, asset) => sum + asset.balance, 0);
   const totalLiabilities = debts.reduce((sum, debt) => sum + debt.balance, 0);
-  const netWorth = totalAssets - totalLiabilities;
   const totalMonthlyDebtPayments = debts.reduce(
     (sum, debt) => sum + debt.payment,
     0
   );
+  // Total monthly debt payments
 
   // Calculate current month income and expenses
   const currentMonth = new Date().getMonth();
@@ -95,15 +104,55 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
     .filter((t) => t.type === "income")
     .reduce((sum, t) => sum + t.amount, 0);
 
+  // Calculate recurring monthly income from recurring transactions
+
+  const recurringMonthlyIncome = recurringTransactions
+    .filter((rt) => rt.type === "income")
+    .reduce((sum, rt) => {
+      let monthlyAmount = 0;
+      if (rt.frequency === "weekly") {
+        monthlyAmount = rt.amount * 4.33; // Average weeks per month
+      } else if (rt.frequency === "biweekly") {
+        monthlyAmount = rt.amount * 2.17; // Average biweekly periods per month
+      } else if (rt.frequency === "monthly") {
+        monthlyAmount = rt.amount * 1;
+      }
+      return sum + monthlyAmount;
+    }, 0);
+
+  // Total monthly income including recurring
+  const totalMonthlyIncome = monthlyIncome + recurringMonthlyIncome;
+  // Total monthly income
+
   const monthlyExpenses = monthlyTransactions
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
+
+  // Calculate recurring monthly expenses
+  const recurringMonthlyExpenses = recurringTransactions
+    .filter((rt) => rt.type === "expense")
+    .reduce((sum, rt) => {
+      let monthlyAmount = 0;
+      if (rt.frequency === "weekly") {
+        monthlyAmount = rt.amount * 4.33; // Average weeks per month
+      } else if (rt.frequency === "biweekly") {
+        monthlyAmount = rt.amount * 2.17; // Average biweekly periods per month
+      } else if (rt.frequency === "monthly") {
+        monthlyAmount = rt.amount * 1;
+      }
+      return sum + monthlyAmount;
+    }, 0);
+
+  // Total monthly expenses including recurring
+  const totalMonthlyExpenses = monthlyExpenses + recurringMonthlyExpenses;
+
+  // DEBUG monthlyExpenses calculation
 
   // Calculate savings breakdown
   const totalSavings = assets
     .filter((asset) => asset.type === "savings")
     .reduce((sum, asset) => sum + asset.balance, 0);
-  const emergencyFundTarget = monthlyExpenses * 6;
+  const emergencyFundTarget = totalMonthlyExpenses * 6;
   const emergencyFundProgress =
     emergencyFundTarget > 0 ? (totalSavings / emergencyFundTarget) * 100 : 0;
 
@@ -111,16 +160,16 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
   const liquidityRatio =
     totalLiabilities > 0 ? totalAssets / totalLiabilities : 0;
   const monthlyLivingExpensesCoverage =
-    monthlyExpenses > 0 ? totalAssets / monthlyExpenses : 0;
-  const debtAssetRatio =
-    totalAssets > 0 ? (totalLiabilities / totalAssets) * 100 : 0;
+    totalMonthlyExpenses > 0 ? totalAssets / totalMonthlyExpenses : 0;
+  const debtAssetRatio = totalAssets > 0 ? totalLiabilities / totalAssets : 0;
   const debtSafetyRatio =
-    monthlyIncome > 0 ? (totalMonthlyDebtPayments / monthlyIncome) * 100 : 0;
+    totalMonthlyIncome > 0 ? totalMonthlyDebtPayments / totalMonthlyIncome : 0;
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString()}`;
   };
 
+  // TODO: use this function
   const formatRatio = (ratio: number) => {
     return ratio.toFixed(2);
   };
@@ -257,10 +306,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                 fontWeight: "800",
                 color:
                   emergencyFundProgress >= 100
-                    ? "#16a34a"
+                    ? colors.success
                     : emergencyFundProgress >= 50
                     ? "#d97706"
-                    : "#dc2626",
+                    : colors.error,
                 marginBottom: 4,
               }}
             >
@@ -299,10 +348,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   height: "100%",
                   backgroundColor:
                     emergencyFundProgress >= 100
-                      ? "#16a34a"
+                      ? colors.success
                       : emergencyFundProgress >= 50
                       ? "#d97706"
-                      : "#dc2626",
+                      : colors.error,
                   width: `${Math.min(emergencyFundProgress, 100)}%`,
                 }}
               />
@@ -350,7 +399,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                 style={{
                   fontSize: 16,
                   fontWeight: "700",
-                  color: "#dc2626",
+                  color:
+                    emergencyFundTarget - totalSavings <= 0
+                      ? colors.success
+                      : colors.error,
                   textAlign: "center",
                 }}
               >
@@ -378,8 +430,8 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   textAlign: "center",
                 }}
               >
-                {monthlyExpenses > 0
-                  ? (totalSavings / monthlyExpenses).toFixed(1)
+                {totalMonthlyExpenses > 0
+                  ? (totalSavings / totalMonthlyExpenses).toFixed(1)
                   : "0"}
               </Text>
             </View>
@@ -552,7 +604,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
             <Text
               style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
             >
-              {fmt.pct(debtAssetRatio)}
+              {fmt.ratio(debtAssetRatio)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               {translate("totalLiabilitiesTotalAssets", isFriendlyMode)}
@@ -593,7 +645,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
             <Text
               style={{ fontSize: 16, fontWeight: "700", color: colors.text }}
             >
-              {fmt.pct(debtSafetyRatio)}
+              {fmt.ratio(debtSafetyRatio)}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               {translate("totalMonthlyDebtPaymentsTotalIncome", isFriendlyMode)}

@@ -40,14 +40,7 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
 
   useEffect(() => {
     const preloadData = async () => {
-      console.log(
-        "DataPreloader: Starting preload, user:",
-        !!user,
-        "hasData:",
-        hasData,
-        "isBankConnected:",
-        isBankConnected
-      );
+      // Starting preload
 
       // Add a timeout to prevent infinite loading
       const timeoutId = setTimeout(() => {
@@ -59,18 +52,14 @@ export const DataPreloader: React.FC<DataPreloaderProps> = ({ children }) => {
           // DataContext already handles data loading when user changes
           // Only preload if DataContext hasn't loaded anything yet
           if (!hasData && !isLoading) {
-            console.log(
-              "DataPreloader: DataContext hasn't loaded data, triggering refresh"
-            );
+            // DataContext hasn't loaded data, triggering refresh
             await refreshData();
           }
 
           // Bank data is also handled by DataContext
           // Only preload if DataContext hasn't loaded bank data yet
           if (isBankConnected && !hasBankData && !isBankDataLoading) {
-            console.log(
-              "DataPreloader: DataContext hasn't loaded bank data, triggering refresh"
-            );
+            // DataContext hasn't loaded bank data, triggering refresh
             try {
               await refreshBankData();
             } catch (error) {

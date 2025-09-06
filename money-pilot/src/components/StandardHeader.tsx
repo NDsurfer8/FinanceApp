@@ -29,7 +29,13 @@ export const StandardHeader: React.FC<StandardHeaderProps> = ({
           </TouchableOpacity>
         )}
         <View style={styles.titleContainer}>
-          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+          <Text
+            style={[styles.title, { color: colors.text }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {title}
+          </Text>
           {subtitle && (
             <Text
               style={[styles.subtitle, { color: colors.textSecondary }]}
@@ -54,19 +60,22 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: 24,
-    paddingTop: 8,
+    paddingTop: 12,
+    paddingHorizontal: 0,
   },
   leftSection: {
     flexDirection: "row",
     alignItems: "flex-start",
     flex: 1,
+    paddingLeft: 4,
   },
   backButton: {
     marginRight: 20,
-    padding: 10,
+    padding: 4,
   },
   titleContainer: {
     flex: 1,
+    paddingRight: 8,
   },
   title: {
     fontSize: 28,

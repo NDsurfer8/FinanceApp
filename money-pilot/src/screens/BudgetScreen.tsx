@@ -6,11 +6,9 @@ import {
   Text,
   TouchableOpacity,
   Alert,
-  TextInput,
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { useAuth } from "../hooks/useAuth";
@@ -18,12 +16,25 @@ import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { useSelectedMonth } from "../contexts/SelectedMonthContext";
+import { useFocusEffect } from "@react-navigation/native";
 import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
-import { AccountSelector } from "../components/AccountSelector";
-import { saveBudgetSettings, updateBudgetSettings } from "../services/userData";
+import { AutoBudgetImporter } from "../components/AutoBudgetImporter";
+import { BudgetOverviewCard } from "../components/BudgetOverviewCard";
+import { TransactionListCard } from "../components/TransactionListCard";
+import { BudgetSettingsModal } from "../components/BudgetSettingsModal";
+import { TourGuide } from "../components/TourGuide";
+import { HelpfulTooltip } from "../components/HelpfulTooltip";
+import {
+  saveBudgetSettings,
+  updateBudgetSettings,
+  getUserBudgetCategories,
+} from "../services/userData";
 import { getProjectedTransactionsForMonth } from "../services/transactionService";
-import { billReminderService } from "../services/billReminders";
+import { timestampToDateString } from "../utils/dateUtils";
+import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
+import { useScrollDetection } from "../hooks/useScrollDetection";
 
 interface BudgetScreenProps {
   navigation: any;
@@ -36,46 +47,35 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     budgetSettings,
     goals,
     recurringTransactions,
-    hasData,
-    getDataInstantly,
     updateDataOptimistically,
-    refreshInBackground,
     refreshData,
   } = useZeroLoading();
+  const { refreshBudgetSettings } = useData();
+  const { isScrolling, handleScrollBegin, handleScrollEnd } =
+    useScrollDetection();
 
   // Bank data from global context
   const {
     bankTransactions,
-    bankRecurringSuggestions: recurringSuggestions,
-    bankAccounts,
     isBankConnected,
-    bankDataLastUpdated,
-    isBankDataLoading,
+    bankConnectionError,
+    setBankConnectionError,
     refreshBankData,
-    isBankDataStale,
-    refreshBudgetSettings,
   } = useData();
 
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const { selectedMonth, setSelectedMonth } = useSelectedMonth();
+
   const [savingsPercentage, setSavingsPercentage] = useState("20");
   const [debtPayoffPercentage, setDebtPayoffPercentage] = useState("5");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [editingTransactionId, setEditingTransactionId] = useState<
-    string | null
-  >(null);
-  const [editingAmount, setEditingAmount] = useState("");
   const [projectedTransactions, setProjectedTransactions] = useState<any[]>([]);
   const [isFutureMonth, setIsFutureMonth] = useState(false);
-  const [showBankSuggestions, setShowBankSuggestions] = useState(false);
-  const [showNonRecurringTransactions, setShowNonRecurringTransactions] =
-    useState(false);
+
   const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(
     new Set()
   );
   const [showMonthPicker, setShowMonthPicker] = useState(false);
-  const [selectedBankAccount, setSelectedBankAccount] = useState<string | null>(
-    null
-  );
+
   const [microFeedback, setMicroFeedback] = useState<{
     message: string;
     type: "income" | "expense";
@@ -83,179 +83,313 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   } | null>(null);
   const [isIncomeCollapsed, setIsIncomeCollapsed] = useState(false);
   const [isExpensesCollapsed, setIsExpensesCollapsed] = useState(false);
+  const [showAutoImporter, setShowAutoImporter] = useState(false);
+  const [showBudgetSettingsModal, setShowBudgetSettingsModal] = useState(false);
+  const [importSuccess, setImportSuccess] = useState<{
+    count: number;
+    message: string;
+  } | null>(null);
+  const [budgetCategories, setBudgetCategories] = useState<any[]>([]);
+  const [seenOverBudgetCategories, setSeenOverBudgetCategories] = useState<
+    Map<string, Set<string>>
+  >(new Map());
   const monthPickerScrollRef = useRef<ScrollView>(null);
+  const lastMonthRef = useRef<string>("");
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
-  // Custom Slider Component
-  const CustomSlider = ({
-    value,
-    onValueChange,
-    min = 0,
-    max = 100,
-    step = 1,
-    color = colors.primary,
-  }: {
-    value: number;
-    onValueChange: (value: number) => void;
-    min?: number;
-    max?: number;
-    step?: number;
-    color?: string;
-  }) => {
-    const [sliderWidth, setSliderWidth] = useState(0);
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragValue, setDragValue] = useState(value);
-    const percentage =
-      (((isDragging ? dragValue : value) - min) / (max - min)) * 100;
-
-    const handleSliderPress = (event: any) => {
-      if (!isDragging) {
-        const { locationX } = event.nativeEvent;
-        const newPercentage = Math.max(
-          0,
-          Math.min(100, (locationX / sliderWidth) * 100)
-        );
-        const newValue = Math.round((newPercentage / 100) * (max - min) + min);
-        // Round to nearest 5
-        const roundedValue = Math.round(newValue / 5) * 5;
-        onValueChange(roundedValue);
+  // Load budget categories and check for over-budget items
+  const loadBudgetCategories = async () => {
+    if (user?.uid) {
+      try {
+        const categories = await getUserBudgetCategories(user.uid);
+        setBudgetCategories(categories);
+      } catch (error) {
+        console.error("Error loading budget categories:", error);
       }
-    };
-
-    const onGestureEvent = (event: any) => {
-      const { translationX, state } = event.nativeEvent;
-
-      if (state === State.BEGAN) {
-        setIsDragging(true);
-        setDragValue(value);
-      } else if (state === State.ACTIVE) {
-        const currentPercentage = ((value - min) / (max - min)) * 100;
-        const translationPercentage = (translationX / sliderWidth) * 100;
-        const newPercentage = Math.max(
-          0,
-          Math.min(100, currentPercentage + translationPercentage)
-        );
-        const newValue = Math.round((newPercentage / 100) * (max - min) + min);
-        // Round to nearest 5
-        const roundedValue = Math.round(newValue / 5) * 5;
-        setDragValue(roundedValue);
-      } else if (state === State.END || state === State.CANCELLED) {
-        setIsDragging(false);
-        onValueChange(dragValue);
-      }
-    };
-
-    return (
-      <View style={{ flex: 1 }}>
-        <View
-          style={{
-            height: 6,
-            backgroundColor: colors.border,
-            borderRadius: 3,
-            position: "relative",
-          }}
-          onLayout={(event) => setSliderWidth(event.nativeEvent.layout.width)}
-        >
-          <View
-            style={{
-              width: `${percentage}%`,
-              height: 6,
-              backgroundColor: color,
-              borderRadius: 3,
-            }}
-          />
-        </View>
-        <PanGestureHandler onGestureEvent={onGestureEvent}>
-          <View
-            style={{
-              position: "absolute",
-              left: `${percentage}%`,
-              top: -5,
-              width: 16,
-              height: 16,
-              backgroundColor: color,
-              borderRadius: 8,
-              borderWidth: 2,
-              borderColor: colors.surface,
-              transform: [{ translateX: -8 }],
-            }}
-            hitSlop={{ top: 60, bottom: 60, left: 60, right: 60 }}
-          />
-        </PanGestureHandler>
-        <TouchableOpacity
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "transparent",
-          }}
-          onPress={handleSliderPress}
-          activeOpacity={1}
-          hitSlop={{ top: 30, bottom: 30, left: 30, right: 30 }}
-        />
-      </View>
-    );
+    }
   };
 
-  // Filter accounts to only show checking/savings accounts (not loans)
-  const checkingAccounts = bankAccounts.filter(
-    (account) =>
-      account.type === "depository" &&
-      ["checking", "savings"].includes(account.subtype)
-  );
+  // Check if any categories are over their monthly limits
+  const hasOverBudgetItems = () => {
+    if (budgetCategories.length === 0) return false;
 
-  // Filter bank suggestions by selected account
-  const filteredBankSuggestions = selectedBankAccount
-    ? recurringSuggestions.filter((suggestion) =>
-        bankTransactions.some(
-          (transaction) =>
-            transaction.account_id === selectedBankAccount &&
-            transaction.name === suggestion.name
-        )
-      )
-    : recurringSuggestions;
+    const targetMonth = selectedMonth.getMonth();
+    const targetYear = selectedMonth.getFullYear();
+    const monthKey = `${targetMonth}-${targetYear}`;
 
-  // Filter non-recurring transactions for the current month
-  const getNonRecurringTransactions = () => {
-    const currentMonth = selectedMonth.getMonth();
-    const currentYear = selectedMonth.getFullYear();
+    return budgetCategories.some((category) => {
+      // Get actual spending for this category (transactions + recurring)
+      const categoryTransactions = transactions.filter((t) => {
+        const transactionDate = new Date(t.date);
+        return (
+          transactionDate.getMonth() === targetMonth &&
+          transactionDate.getFullYear() === targetYear &&
+          t.type === "expense" &&
+          t.category === category.name
+        );
+      });
 
-    return bankTransactions.filter((transaction) => {
-      const transactionDate = new Date(transaction.date);
-      const isCurrentMonth =
-        transactionDate.getMonth() === currentMonth &&
-        transactionDate.getFullYear() === currentYear;
+      const categoryRecurring = recurringTransactions.filter((rt) => {
+        return (
+          rt.type === "expense" && rt.isActive && rt.category === category.name
+        );
+      });
 
-      // Check if this transaction is NOT in recurring suggestions
-      const isRecurring = recurringSuggestions.some(
-        (suggestion) =>
-          suggestion.name === transaction.name &&
-          Math.abs(suggestion.amount - Math.abs(transaction.amount)) < 0.01
+      const actualSpending =
+        categoryTransactions.reduce((sum, t) => sum + t.amount, 0) +
+        categoryRecurring.reduce((sum, rt) => {
+          let monthlyAmount = rt.amount;
+          if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+          else if (rt.frequency === "biweekly") monthlyAmount = rt.amount * 2;
+          return sum + monthlyAmount;
+        }, 0);
+
+      // Only show badge if category is over budget AND user hasn't seen it yet for this month
+      const monthSeenCategories =
+        seenOverBudgetCategories.get(monthKey) || new Set();
+      return (
+        actualSpending > category.monthlyLimit &&
+        !monthSeenCategories.has(category.name)
       );
-
-      return isCurrentMonth && !isRecurring;
     });
   };
 
-  const nonRecurringTransactions = getNonRecurringTransactions();
+  // Helper function to check if a bank transaction already exists in budget (same as AutoBudgetImporter)
+  const isTransactionAlreadyImported = (bankTransaction: any): boolean => {
+    const bankDate = new Date(bankTransaction.date);
+    const bankAmount = Math.abs(bankTransaction.amount);
+    const bankName = bankTransaction.name?.toLowerCase() || "";
 
-  // Filter non-recurring transactions by selected account
-  const filteredNonRecurringTransactions = selectedBankAccount
-    ? nonRecurringTransactions.filter(
-        (transaction) => transaction.account_id === selectedBankAccount
-      )
-    : nonRecurringTransactions;
+    return transactions.some((budgetTransaction: any) => {
+      const budgetDate = new Date(budgetTransaction.date);
+      const budgetAmount = Math.abs(budgetTransaction.amount);
+      const budgetName = budgetTransaction.description?.toLowerCase() || "";
 
-  useEffect(() => {
-    if (user) {
-      // Set the percentages from saved settings or defaults
-      if (budgetSettings) {
-        setSavingsPercentage(budgetSettings.savingsPercentage.toString());
-        setDebtPayoffPercentage(budgetSettings.debtPayoffPercentage.toString());
+      // Check if dates are within 1 day of each other (to account for timezone differences)
+      const dateDiff = Math.abs(bankDate.getTime() - budgetDate.getTime());
+      const oneDayInMs = 24 * 60 * 60 * 1000;
+
+      // Check if amounts match (within $0.01 tolerance for rounding differences)
+      const amountDiff = Math.abs(bankAmount - budgetAmount);
+
+      // Check if names are similar (basic fuzzy matching)
+      const nameSimilarity =
+        bankName.includes(budgetName) || budgetName.includes(bankName);
+
+      return dateDiff <= oneDayInMs && amountDiff <= 0.01 && nameSimilarity;
+    });
+  };
+
+  // Calculate available transactions for import (excluding already imported ones)
+  const getAvailableTransactionsCount = () => {
+    if (!isBankConnected || !bankTransactions.length) return 0;
+
+    const currentMonthTransactions = bankTransactions.filter(
+      (transaction: any) => {
+        const transactionDate = new Date(transaction.date);
+        return (
+          transactionDate.getMonth() === selectedMonth.getMonth() &&
+          transactionDate.getFullYear() === selectedMonth.getFullYear()
+        );
       }
+    );
+
+    // Filter out transactions that are already imported using the same logic as AutoBudgetImporter
+    return currentMonthTransactions.filter(
+      (transaction: any) => !isTransactionAlreadyImported(transaction)
+    ).length;
+  };
+
+  // Filter transactions for the selected month
+  const selectedMonthTransactions = transactions.filter((transaction) => {
+    const transactionDate = new Date(transaction.date);
+    return (
+      transactionDate.getMonth() === selectedMonth.getMonth() &&
+      transactionDate.getFullYear() === selectedMonth.getFullYear()
+    );
+  });
+
+  // Combine actual transactions with projected recurring transactions for the selected month
+  // The transactionService already handles duplicates, so we just filter by type
+  const uniqueProjectedTransactions = isFutureMonth
+    ? projectedTransactions
+    : [];
+
+  const allMonthTransactions = [
+    ...selectedMonthTransactions,
+    ...uniqueProjectedTransactions,
+  ];
+
+  // Debug logging for projected transactions
+  if (isFutureMonth && projectedTransactions.length > 0) {
+    // Projected transactions available
+  }
+
+  const incomeTransactions = allMonthTransactions.filter(
+    (t) => t.type === "income"
+  );
+  const expenseTransactions = allMonthTransactions.filter(
+    (t) => t.type === "expense"
+  );
+
+  // Calculate totals including projected transactions
+  const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = expenseTransactions.reduce(
+    (sum, t) => sum + t.amount,
+    0
+  );
+  const netIncome = totalIncome - totalExpenses;
+
+  // Calculate budget allocations
+  const savingsAmount = (totalIncome * parseFloat(savingsPercentage)) / 100;
+  const debtPayoffAmount =
+    (totalIncome * parseFloat(debtPayoffPercentage)) / 100;
+  const goalsAmount = goals.reduce(
+    (sum, goal) => sum + goal.monthlyContribution,
+    0
+  );
+  const discretionaryIncome =
+    netIncome - savingsAmount - debtPayoffAmount - goalsAmount;
+  const remainingBalance = discretionaryIncome;
+
+  // Smart Insights generation
+  const getInsights = () => {
+    const insights = [];
+
+    if (totalIncome > 0) {
+      // Calculate discretionary savings rate (what's actually available after all allocations)
+      const discretionarySavingsRate = (remainingBalance / totalIncome) * 100;
+      if (discretionarySavingsRate >= 20) {
+        insights.push({
+          id: "excellent-savings-rate",
+          type: "success",
+          icon: "trending-up",
+          title: "Excellent Discretionary Savings!",
+          message: `You have ${discretionarySavingsRate.toFixed(
+            1
+          )}% of your income available for additional savings`,
+        });
+      } else if (discretionarySavingsRate < 0) {
+        insights.push({
+          id: "spending-more-than-income",
+          type: "warning",
+          icon: "alert-circle",
+          title: "Over Budget",
+          message: "Your expenses and allocations exceed your income",
+        });
+      }
+    }
+
+    if (totalExpenses > 0 && totalIncome > 0) {
+      const expenseToIncomeRatio = (totalExpenses / totalIncome) * 100;
+      if (expenseToIncomeRatio > 90) {
+        insights.push({
+          id: "high-expense-ratio",
+          type: "warning",
+          icon: "trending-down",
+          title: "High Expense Ratio",
+          message: `${expenseToIncomeRatio.toFixed(
+            1
+          )}% of income goes to expenses`,
+        });
+      }
+    }
+
+    if (allMonthTransactions.length >= 10) {
+      insights.push({
+        id: "active-month",
+        type: "info",
+        icon: "analytics",
+        title: "Active Month",
+        message: `${allMonthTransactions.length} transactions tracked`,
+      });
+    }
+
+    // Savings percentage insight
+    if (parseFloat(savingsPercentage) >= 25) {
+      insights.push({
+        id: "high-savings-rate",
+        type: "success",
+        icon: "trending-up",
+        title: "High Savings Rate!",
+        message: `${savingsPercentage}% savings rate is excellent`,
+      });
+    } else if (parseFloat(savingsPercentage) < 10) {
+      insights.push({
+        id: "low-savings-rate",
+        type: "warning",
+        icon: "trending-down",
+        title: "Low Savings Rate",
+        message: `Consider increasing your ${savingsPercentage}% savings rate`,
+      });
+    }
+
+    return insights;
+  };
+
+  const insights = React.useMemo(
+    () => getInsights().filter((insight) => !dismissedInsights.has(insight.id)),
+    [
+      totalIncome,
+      totalExpenses,
+      remainingBalance,
+      allMonthTransactions.length,
+      savingsPercentage,
+      dismissedInsights,
+    ]
+  );
+
+  const handleDismissInsight = (insightId: string) => {
+    setDismissedInsights((prev) => new Set([...prev, insightId]));
+  };
+
+  // Check if selected month is in the future
+  const currentMonth = new Date();
+  currentMonth.setDate(1);
+  currentMonth.setHours(0, 0, 0, 0);
+  const selectedMonthStart = new Date(selectedMonth);
+  selectedMonthStart.setDate(1);
+  selectedMonthStart.setHours(0, 0, 0, 0);
+
+  const checkIfFutureMonth = () => {
+    return selectedMonthStart >= currentMonth;
+  };
+
+  // Load projected transactions for future months
+  useEffect(() => {
+    const loadProjectedTransactions = async () => {
+      if (checkIfFutureMonth() && user) {
+        setIsFutureMonth(true);
+        try {
+          const projected = await getProjectedTransactionsForMonth(
+            user.uid,
+            selectedMonth
+          );
+          setProjectedTransactions(projected.projected);
+        } catch (error) {
+          console.error("Error loading projected transactions:", error);
+        }
+      } else {
+        setIsFutureMonth(false);
+        setProjectedTransactions([]);
+      }
+    };
+
+    loadProjectedTransactions();
+  }, [selectedMonth, recurringTransactions, user]);
+
+  // Recalculate budget when month changes or projected transactions update
+  useEffect(() => {
+    // This effect will trigger a re-render and recalculate budget values
+    // when selectedMonth or projectedTransactions change
+  }, [selectedMonth, projectedTransactions]);
+
+  // Set budget settings from saved data
+  useEffect(() => {
+    if (user && budgetSettings) {
+      setSavingsPercentage(budgetSettings.savingsPercentage.toString());
+      setDebtPayoffPercentage(budgetSettings.debtPayoffPercentage.toString());
     }
   }, [user, budgetSettings]);
 
@@ -271,7 +405,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         currentSavings !== savedSavings || currentDebt !== savedDebt;
       setHasUnsavedChanges(hasChanges);
     } else {
-      // If no settings exist, any non-default values are changes
       const currentSavings = parseFloat(savingsPercentage) || 0;
       const currentDebt = parseFloat(debtPayoffPercentage) || 0;
       const hasChanges = currentSavings !== 20 || currentDebt !== 5;
@@ -279,244 +412,62 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     }
   }, [savingsPercentage, debtPayoffPercentage, budgetSettings]);
 
-  // Get cache status for display
-  const getCacheStatus = () => {
-    if (!bankDataLastUpdated) return "No data";
-
-    const now = Date.now();
-    const ageMinutes = Math.round(
-      (now - bankDataLastUpdated.getTime()) / 1000 / 60
-    );
-
-    if (ageMinutes < 60) return `Fresh (${ageMinutes}m ago)`;
-    if (ageMinutes < 240) return `Recent (${Math.round(ageMinutes / 60)}h ago)`; // 4 hours
-    if (ageMinutes < 1440) return `Stale (${Math.round(ageMinutes / 60)}h ago)`; // 24 hours
-    return `Very stale (${Math.round(ageMinutes / 60 / 24)}d ago)`;
-  };
-
-  // Handle adding a recurring suggestion from bank data
-  const handleAddRecurringSuggestion = (suggestion: any) => {
-    navigation.navigate("AddTransaction", {
-      type: suggestion.type,
-      description: suggestion.name,
-      amount: suggestion.amount.toString(),
-      category: suggestion.category,
-      isRecurring: true,
-      frequency: suggestion.frequency,
-      fromBankSuggestion: true,
-    });
-  };
-
-  // Handle adding a non-recurring transaction from bank data
-  const handleAddNonRecurringTransaction = (transaction: any) => {
-    // Fix timezone issue by parsing the date in local timezone
-    const fixDateTimezone = (dateString: string) => {
-      try {
-        // Parse the date and create it in local timezone to avoid UTC conversion
-        const [year, month, day] = dateString.split("-").map(Number);
-        const localDate = new Date(year, month - 1, day); // month is 0-indexed
-        return localDate.toISOString().split("T")[0];
-      } catch (error) {
-        console.error("Error fixing date timezone:", error);
-        return dateString; // Return original if parsing fails
-      }
-    };
-
-    navigation.navigate("AddTransaction", {
-      type: transaction.amount < 0 ? "income" : "expense", // Plaid: negative = income, positive = expense
-      description: transaction.name,
-      amount: Math.abs(transaction.amount).toString(),
-      category: transaction.category?.[0] || "Uncategorized",
-      date: fixDateTimezone(transaction.date),
-      fromBankSuggestion: true, // Use the same flag as recurring suggestions
-    });
-  };
-
-  // Note: DataContext handles initial data loading
-  // This useEffect has been removed to prevent duplicate API calls
-
-  // Note: DataContext handles auto-loading bank data when bank connects
-  // This useEffect has been removed to prevent duplicate API calls
-
-  // Scroll to current month when modal opens
+  // Load budget categories when component mounts
   useEffect(() => {
-    if (showMonthPicker) {
-      // Use setTimeout to ensure the modal is fully rendered
-      setTimeout(() => {
-        scrollToCurrentMonth();
-      }, 100);
+    if (user?.uid) {
+      loadBudgetCategories();
     }
-  }, [showMonthPicker]);
+  }, [user?.uid]);
 
-  // Get transactions for selected month
-  const getMonthlyTransactions = (date: Date) => {
-    const month = date.getMonth();
-    const year = date.getFullYear();
+  // Reset seen over-budget categories monthly
+  useFocusEffect(
+    React.useCallback(() => {
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const currentMonthKey = `${currentMonth}-${currentYear}`;
 
-    return transactions.filter((transaction) => {
-      const transactionDate = new Date(transaction.date);
-      return (
-        transactionDate.getMonth() === month &&
-        transactionDate.getFullYear() === year
-      );
-    });
-  };
+      // Check if we need to reset for a new month
+      if (lastMonthRef.current !== currentMonthKey) {
+        // Clear the old month's seen categories but keep the Map structure
+        setSeenOverBudgetCategories(new Map());
+        lastMonthRef.current = currentMonthKey;
+      }
+    }, [])
+  );
 
-  const monthlyTransactions = getMonthlyTransactions(selectedMonth);
-
-  // Check if selected month is in the future
-  const checkIfFutureMonth = (date: Date) => {
-    const now = new Date();
-    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const selectedMonthStart = new Date(date.getFullYear(), date.getMonth(), 1);
-    return selectedMonthStart > currentMonth;
-  };
-
-  // Load projected transactions for future months
-  const loadProjectedTransactions = async (date: Date) => {
-    console.log(
-      "BudgetScreen: loadProjectedTransactions called with date:",
-      date
-    );
+  // Save budget settings
+  const handleSaveBudgetSettings = async () => {
     if (!user) return;
 
-    const isFuture = checkIfFutureMonth(date);
-    setIsFutureMonth(isFuture);
+    try {
+      const newSettings = {
+        savingsPercentage: parseFloat(savingsPercentage),
+        debtPayoffPercentage: parseFloat(debtPayoffPercentage),
+        userId: user.uid,
+        updatedAt: Date.now(),
+      };
 
-    if (isFuture) {
-      try {
-        const { projected } = await getProjectedTransactionsForMonth(
-          user.uid,
-          date
-        );
-        setProjectedTransactions(projected);
-      } catch (error) {
-        console.error("Error loading projected transactions:", error);
-        setProjectedTransactions([]);
+      if (budgetSettings?.id) {
+        await updateBudgetSettings({
+          ...newSettings,
+          id: budgetSettings.id,
+        });
+      } else {
+        await saveBudgetSettings(newSettings);
       }
-    } else {
-      setProjectedTransactions([]);
+
+      // Refresh budget settings in the DataContext to update dashboard
+      await refreshBudgetSettings();
+
+      setHasUnsavedChanges(false);
+      Alert.alert("Success", "Budget settings saved successfully!");
+    } catch (error) {
+      console.error("Error saving budget settings:", error);
+      Alert.alert("Error", "Failed to save budget settings");
     }
   };
 
-  // Load projected transactions when selected month changes
-  useEffect(() => {
-    loadProjectedTransactions(selectedMonth);
-  }, [selectedMonth, user]);
-
-  // Calculate totals
-  const incomeTransactions = monthlyTransactions
-    .filter((t) => t.type === "income")
-    .sort((a, b) => b.amount - a.amount); // Sort by amount, largest first
-  const expenseTransactions = monthlyTransactions
-    .filter((t) => t.type === "expense")
-    .sort((a, b) => b.amount - a.amount); // Sort by amount, largest first
-
-  // Include projected transactions for future months
-  const projectedIncomeTransactions = isFutureMonth
-    ? projectedTransactions.filter((t) => t.type === "income")
-    : [];
-  const projectedExpenseTransactions = isFutureMonth
-    ? projectedTransactions.filter((t) => t.type === "expense")
-    : [];
-
-  const totalIncome =
-    incomeTransactions.reduce((sum, t) => sum + t.amount, 0) +
-    projectedIncomeTransactions.reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses =
-    expenseTransactions.reduce((sum, t) => sum + t.amount, 0) +
-    projectedExpenseTransactions.reduce((sum, t) => sum + t.amount, 0);
-  const netIncome = totalIncome - totalExpenses;
-
-  // Calculate budget metrics
-  const savingsPercent = parseFloat(savingsPercentage) || 0;
-  const debtPayoffPercent = parseFloat(debtPayoffPercentage) || 0;
-  const savingsAmount = netIncome * (savingsPercent / 100);
-
-  // Calculate total goal contributions
-  const totalGoalContributions = goals.reduce((total, goal) => {
-    return total + goal.monthlyContribution;
-  }, 0);
-
-  const discretionaryIncome =
-    netIncome - savingsAmount - totalGoalContributions;
-  const debtPayoffAmount = discretionaryIncome * (debtPayoffPercent / 100);
-  const remainingBalance = discretionaryIncome - debtPayoffAmount;
-
-  // Premium Features: Smart Insights
-  const getInsights = () => {
-    const insights = [];
-
-    if (totalIncome > 0) {
-      // Calculate discretionary savings rate (what's actually available after all allocations)
-      const discretionarySavingsRate = (remainingBalance / totalIncome) * 100;
-      insights.push({
-        id: "savings-rate",
-        type: "success",
-        icon: "trending-up",
-        title: "Discretionary Savings Rate",
-        message: `You have ${discretionarySavingsRate.toFixed(
-          1
-        )}% of your income available for additional savings`,
-      });
-    }
-
-    if (expenseTransactions.length >= 10) {
-      insights.push({
-        id: "active-budgeting",
-        type: "info",
-        icon: "analytics",
-        title: "Active Budgeting",
-        message: `${expenseTransactions.length} expenses tracked this month`,
-      });
-    }
-
-    if (incomeTransactions.length >= 2) {
-      insights.push({
-        id: "diversified-income",
-        type: "success",
-        icon: "diamond",
-        title: "Diversified Income",
-        message: `You have ${incomeTransactions.length} income sources`,
-      });
-    }
-
-    return insights;
-  };
-
-  const allInsights = React.useMemo(
-    () => getInsights(),
-    [
-      totalIncome,
-      remainingBalance,
-      expenseTransactions.length,
-      incomeTransactions.length,
-    ]
-  );
-
-  const insights = React.useMemo(
-    () => allInsights.filter((insight) => !dismissedInsights.has(insight.id)),
-    [allInsights, dismissedInsights]
-  );
-
-  const handleDismissInsight = (insightId: string) => {
-    setDismissedInsights((prev) => new Set([...prev, insightId]));
-  };
-
-  const showMicroFeedback = (type: "income" | "expense", amount: number) => {
-    const message =
-      type === "income"
-        ? `Available increased by ${formatCurrency(amount)}`
-        : `Available decreased by ${formatCurrency(amount)}`;
-
-    setMicroFeedback({ message, type, amount });
-
-    // Auto-hide after 3 seconds
-    setTimeout(() => {
-      setMicroFeedback(null);
-    }, 3000);
-  };
-
+  // Utility functions
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString(undefined, {
       minimumFractionDigits: 2,
@@ -524,43 +475,91 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     })}`;
   };
 
+  const formatDate = (date: number) => {
+    return timestampToDateString(date);
+  };
+
   const formatMonth = (date: Date) => {
-    return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    return date.toLocaleDateString(undefined, {
+      month: "long",
+      year: "numeric",
+    });
   };
 
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString();
+  const formatMonthShort = (date: Date) => {
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      year: "numeric",
+    });
   };
 
-  const calculatePaymentsRemaining = (goal: any) => {
-    if (goal.monthlyContribution <= 0) return "∞";
+  const formatMonthSmart = (date: Date, maxLength: number = 15) => {
+    const longFormat = formatMonth(date);
+    if (longFormat.length <= maxLength) {
+      return longFormat;
+    }
 
-    const remainingAmount = goal.targetAmount - goal.currentAmount;
-    if (remainingAmount <= 0) return "Complete!";
+    // Try short format
+    const shortFormat = formatMonthShort(date);
+    if (shortFormat.length <= maxLength) {
+      return shortFormat;
+    }
 
-    const paymentsNeeded = Math.ceil(
-      remainingAmount / goal.monthlyContribution
-    );
-    return `${paymentsNeeded} payment${paymentsNeeded !== 1 ? "s" : ""} left`;
+    // If still too long, use just month and year without spaces
+    const month = date.toLocaleDateString(undefined, { month: "short" });
+    const year = date.getFullYear().toString();
+    const compactFormat = `${month} ${year}`;
+
+    if (compactFormat.length <= maxLength) {
+      return compactFormat;
+    }
+
+    // Last resort: use just month abbreviation
+    return month;
+  };
+
+  const getMonthStatus = (date: Date) => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    const targetYear = date.getFullYear();
+    const targetMonth = date.getMonth();
+
+    if (
+      targetYear < currentYear ||
+      (targetYear === currentYear && targetMonth < currentMonth)
+    ) {
+      return "past";
+    } else if (targetYear === currentYear && targetMonth === currentMonth) {
+      return "current";
+    } else {
+      return "future";
+    }
+  };
+
+  const getMonthColor = (date: Date) => {
+    const status = getMonthStatus(date);
+    switch (status) {
+      case "past":
+        return "#9CA3AF"; // Gray for past months
+      case "current":
+        return "#f97316"; // Orange for current month
+      case "future":
+        return "#3B82F6"; // Blue for future months
+      default:
+        return "#f97316";
+    }
   };
 
   const isRecurringTransaction = (transaction: any) => {
-    // Check if transaction has a recurring transaction ID
-    if (transaction.recurringTransactionId) {
-      return true;
-    }
-
-    // Fallback to the old method for backward compatibility
-    return recurringTransactions.some(
-      (recurring) =>
-        recurring.name === transaction.description &&
-        recurring.amount === transaction.amount &&
-        recurring.type === transaction.type &&
-        recurring.isActive
+    return (
+      transaction.recurringTransactionId ||
+      transaction.id?.startsWith("projected-")
     );
   };
 
+  // Navigation handlers
   const handleAddIncome = () => {
     navigation.navigate("AddTransaction", {
       type: "income",
@@ -575,39 +574,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     });
   };
 
-  const generateAvailableMonths = () => {
-    const months = [];
-    const currentDate = new Date();
-
-    // Generate last 12 months
-    for (let i = 12; i >= 1; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      months.push(date);
-    }
-
-    // Add current month
-    months.push(new Date());
-
-    // Generate next 12 months
-    for (let i = 1; i <= 12; i++) {
-      const date = new Date();
-      date.setMonth(date.getMonth() + i);
-      months.push(date);
-    }
-
-    return months;
-  };
-
-  const handleMonthSelect = (month: Date) => {
-    // Haptic feedback for month selection
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
-
-    setSelectedMonth(month);
-    setShowMonthPicker(false);
-  };
-
-  // Enhanced month navigation with haptic feedback
+  // Month navigation
   const navigateMonth = (direction: "prev" | "next") => {
     const newMonth = new Date(selectedMonth);
     if (direction === "prev") {
@@ -615,36 +582,67 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     } else {
       newMonth.setMonth(newMonth.getMonth() + 1);
     }
-
-    // Haptic feedback for month navigation
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
     setSelectedMonth(newMonth);
   };
 
-  // Handle swipe gestures for month navigation
-  const onGestureEvent = (event: any) => {
-    const { translationX, state } = event.nativeEvent;
-
-    if (state === State.END) {
-      const swipeThreshold = 50;
-
-      if (translationX > swipeThreshold) {
-        // Swipe right - go to previous month
-        navigateMonth("prev");
-      } else if (translationX < -swipeThreshold) {
-        // Swipe left - go to next month
-        navigateMonth("next");
-      }
-    }
+  const handleMonthSelect = (month: Date) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
+    setSelectedMonth(month);
+    setShowMonthPicker(false);
   };
 
-  // Handle long press for quick month picker
   const handleLongPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setShowMonthPicker(true);
   };
 
+  // Gesture handling
+  const onGestureEvent = (event: any) => {
+    const { translationX, state } = event.nativeEvent;
+    if (state === State.END) {
+      const swipeThreshold = 50;
+      if (translationX > swipeThreshold) {
+        navigateMonth("prev");
+      } else if (translationX < -swipeThreshold) {
+        navigateMonth("next");
+      }
+    }
+  };
+
+  // Generate available months for picker
+  const generateAvailableMonths = () => {
+    const months = [];
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+
+    // Generate last 12 months
+    for (let i = 12; i >= 1; i--) {
+      const targetMonth = currentMonth - i;
+      const targetYear = currentYear + Math.floor(targetMonth / 12);
+      const adjustedMonth = ((targetMonth % 12) + 12) % 12;
+      const date = new Date(targetYear, adjustedMonth, 1);
+      months.push(date);
+    }
+
+    // Add current month
+    months.push(new Date(currentYear, currentMonth, 1));
+
+    // Generate next 12 months
+    for (let i = 1; i <= 12; i++) {
+      const targetMonth = currentMonth + i;
+      const targetYear = currentYear + Math.floor(targetMonth / 12);
+      const adjustedMonth = targetMonth % 12;
+      const date = new Date(targetYear, adjustedMonth, 1);
+      months.push(date);
+    }
+
+    months.sort((a, b) => a.getTime() - b.getTime());
+    return months;
+  };
+
+  // Scroll to current month when modal opens
   const scrollToCurrentMonth = () => {
     const months = generateAvailableMonths();
     const currentMonthIndex = months.findIndex(
@@ -662,57 +660,25 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handleSaveBudgetSettings = async () => {
-    if (!user) return;
-
-    try {
-      const newSettings = {
-        savingsPercentage: parseFloat(savingsPercentage) || 20,
-        debtPayoffPercentage: parseFloat(debtPayoffPercentage) || 5,
-        userId: user.uid,
-        updatedAt: Date.now(),
-      };
-
-      // Optimistic update - update UI immediately
-      updateDataOptimistically({ budgetSettings: newSettings });
-
-      if (budgetSettings?.id) {
-        // Update existing settings
-        await updateBudgetSettings({
-          ...newSettings,
-          id: budgetSettings.id,
-        });
-      } else {
-        // Create new settings
-        await saveBudgetSettings(newSettings);
-      }
-
-      // Refresh data to ensure consistency
-      await refreshBudgetSettings();
-
-      // Refresh bill reminders when budget settings change
-      if (user) {
-        await billReminderService.scheduleAllBillReminders(user.uid);
-      }
-
-      Alert.alert("Success", "Budget settings saved successfully!");
-    } catch (error) {
-      console.error("BudgetScreen: Error saving budget settings:", error);
-      Alert.alert("Error", "Failed to save budget settings");
-
-      // Revert optimistic update on error
-      if (budgetSettings) {
-        console.log("BudgetScreen: Reverting optimistic update due to error");
-        updateDataOptimistically({ budgetSettings });
-      }
+  // Scroll to current month when modal opens
+  useEffect(() => {
+    if (showMonthPicker) {
+      // Use setTimeout to ensure the modal is fully rendered
+      setTimeout(() => {
+        scrollToCurrentMonth();
+      }, 100);
     }
-  };
+  }, [showMonthPicker]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={handleScrollBegin}
+        onScrollEndDrag={handleScrollEnd}
+        onMomentumScrollBegin={handleScrollBegin}
+        onMomentumScrollEnd={handleScrollEnd}
       >
         {/* Header */}
         <StandardHeader
@@ -721,12 +687,21 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           showBackButton={false}
           rightComponent={
             <PanGestureHandler onGestureEvent={onGestureEvent}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  minWidth: 210,
+                  maxWidth: 240,
+                  justifyContent: "space-between",
+                }}
+              >
                 <TouchableOpacity
                   onPress={() => navigateMonth("prev")}
                   style={{
-                    padding: 8,
-                    borderRadius: 8,
+                    padding: 6,
+                    borderRadius: 6,
+                    flexShrink: 0,
                   }}
                 >
                   <Ionicons
@@ -740,28 +715,35 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   onPress={() => setShowMonthPicker(true)}
                   onLongPress={handleLongPress}
                   style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    minWidth: 120,
+                    paddingHorizontal: 6,
+                    paddingVertical: 6,
+                    flex: 1,
                     alignItems: "center",
+                    justifyContent: "center",
+                    marginHorizontal: 2,
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: 18,
-                      fontWeight: "600",
-                      color: "#f97316",
+                      fontSize: 22,
+                      fontWeight: "500",
+                      color: getMonthColor(selectedMonth),
+                      textAlign: "center",
                     }}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.7}
                   >
-                    {formatMonth(selectedMonth)}
+                    {formatMonthSmart(selectedMonth, 10)}
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={() => navigateMonth("next")}
                   style={{
-                    padding: 8,
-                    borderRadius: 8,
+                    padding: 6,
+                    borderRadius: 6,
+                    flexShrink: 0,
                   }}
                 >
                   <Ionicons
@@ -774,6 +756,66 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
             </PanGestureHandler>
           }
         />
+
+        {/* Bank Connection Error Banner */}
+        {bankConnectionError && (
+          <View
+            style={{
+              backgroundColor: colors.errorLight,
+              borderColor: colors.error,
+              borderWidth: 1,
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+            >
+              <Ionicons
+                name="warning"
+                size={20}
+                color={colors.error}
+                style={{ marginRight: 12 }}
+              />
+              <Text
+                style={{
+                  color: colors.error,
+                  fontSize: 14,
+                  fontWeight: "500",
+                  flex: 1,
+                }}
+              >
+                {bankConnectionError}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                setBankConnectionError(null);
+                refreshBankData(true);
+              }}
+              style={{
+                backgroundColor: colors.error,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 6,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.buttonText,
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
+                Reconnect
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Micro Feedback */}
         {microFeedback && (
@@ -833,1306 +875,365 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           </View>
         )}
 
-        {/* Premium Feature: Quick Setup */}
-
-        {/* Premium Feature: Smart Insights */}
-        {insights.length > 0 && (
+        {/* Import Success Message */}
+        {importSuccess && (
           <View
             style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 24,
+              backgroundColor: colors.successLight,
+              borderRadius: 12,
+              padding: 16,
               marginBottom: 20,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
+              borderWidth: 1,
+              borderColor: colors.success,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
             <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 16,
-              }}
+              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
             >
-              <View
-                style={{
-                  backgroundColor: colors.warningLight,
-                  padding: 8,
-                  borderRadius: 10,
-                  marginRight: 12,
-                }}
-              >
-                <Ionicons name="bulb" size={20} color={colors.warning} />
-              </View>
+              <Ionicons
+                name="checkmark-circle"
+                size={20}
+                color={colors.success}
+                style={{ marginRight: 8 }}
+              />
               <Text
                 style={{
-                  fontSize: 20,
-                  fontWeight: "700",
-                  marginBottom: 20,
-                  color: colors.text,
+                  color: colors.success,
+                  fontSize: 14,
+                  fontWeight: "600",
                 }}
               >
-                {translate("smartInsights", isFriendlyMode)}
+                {importSuccess.message}
               </Text>
             </View>
-
-            {insights.map((insight, index) => (
-              <View
-                key={`insight-${insight.id}-${index}`}
-                style={{ marginBottom: 12 }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 4,
-                  }}
-                >
-                  <Ionicons
-                    name={insight.icon as any}
-                    size={16}
-                    color={insight.type === "success" ? "#16a34a" : "#d97706"}
-                    style={{ marginRight: 8 }}
-                  />
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: colors.text,
-                      flex: 1,
-                    }}
-                  >
-                    {insight.title}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => handleDismissInsight(insight.id)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    style={{
-                      padding: 4,
-                      borderRadius: 12,
-                      backgroundColor: colors.surfaceSecondary,
-                    }}
-                  >
-                    <Ionicons
-                      name="close"
-                      size={14}
-                      color={colors.textSecondary}
-                    />
-                  </TouchableOpacity>
-                </View>
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: colors.textSecondary,
-                    marginLeft: 24,
-                  }}
-                >
-                  {insight.message}
-                </Text>
-              </View>
-            ))}
+            <TouchableOpacity
+              onPress={() => setImportSuccess(null)}
+              style={{ padding: 4 }}
+            >
+              <Ionicons name="close" size={16} color={colors.success} />
+            </TouchableOpacity>
           </View>
         )}
 
-        {/* Bank Recurring Suggestions Button */}
-        {isBankConnected && (
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              marginBottom: 20,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
-              overflow: "hidden",
+        {/* Budget Overview Card */}
+        <TourGuide zone={1} screen="Budget">
+          <BudgetOverviewCard
+            netIncome={netIncome}
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+            savingsAmount={savingsAmount}
+            savingsPercentage={parseFloat(savingsPercentage)}
+            discretionaryIncome={discretionaryIncome}
+            remainingBalance={remainingBalance}
+            onPressDetails={() => setShowBudgetSettingsModal(true)}
+            onPressSettings={() => {
+              // Mark all current over-budget categories as seen for the selected month
+              const targetMonth = selectedMonth.getMonth();
+              const targetYear = selectedMonth.getFullYear();
+              const monthKey = `${targetMonth}-${targetYear}`;
+
+              const newSeenCategories = new Map(seenOverBudgetCategories);
+              const monthSeenCategories = new Set(
+                newSeenCategories.get(monthKey) || []
+              );
+
+              budgetCategories.forEach((category) => {
+                const categoryTransactions = transactions.filter((t) => {
+                  const transactionDate = new Date(t.date);
+                  return (
+                    transactionDate.getMonth() === targetMonth &&
+                    transactionDate.getFullYear() === targetYear &&
+                    t.type === "expense" &&
+                    t.category === category.name
+                  );
+                });
+
+                const categoryRecurring = recurringTransactions.filter((rt) => {
+                  return (
+                    rt.type === "expense" &&
+                    rt.isActive &&
+                    rt.category === category.name
+                  );
+                });
+
+                const actualSpending =
+                  categoryTransactions.reduce((sum, t) => sum + t.amount, 0) +
+                  categoryRecurring.reduce((sum, rt) => {
+                    let monthlyAmount = rt.amount;
+                    if (rt.frequency === "weekly")
+                      monthlyAmount = rt.amount * 4;
+                    else if (rt.frequency === "biweekly")
+                      monthlyAmount = rt.amount * 2;
+                    return sum + monthlyAmount;
+                  }, 0);
+
+                if (actualSpending > category.monthlyLimit) {
+                  monthSeenCategories.add(category.name);
+                }
+              });
+
+              newSeenCategories.set(monthKey, monthSeenCategories);
+              setSeenOverBudgetCategories(newSeenCategories);
+              navigation.navigate("BudgetCategories", { selectedMonth });
             }}
-          >
-            {/* Collapsible Button */}
-            <TouchableOpacity
-              onPress={() => setShowBankSuggestions(!showBankSuggestions)}
+            onPressIncome={handleAddIncome}
+            onPressExpense={handleAddExpense}
+            onPressImport={() => setShowAutoImporter(true)}
+            isBankConnected={isBankConnected}
+            availableTransactionsCount={getAvailableTransactionsCount()}
+            hasOverBudgetItems={hasOverBudgetItems()}
+          />
+        </TourGuide>
+
+        {/* Smart Insights - Only show if there are insights */}
+        {insights.length > 0 && (
+          <TourGuide zone={3} screen="Budget">
+            <View
               style={{
-                padding: 20,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
+                backgroundColor: colors.surface,
+                borderRadius: 20,
+                padding: 24,
+                marginBottom: 20,
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 4,
               }}
             >
               <View
-                style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 16,
+                }}
               >
                 <View
                   style={{
-                    backgroundColor: colors.infoLight,
+                    backgroundColor: colors.warningLight,
                     padding: 8,
                     borderRadius: 10,
                     marginRight: 12,
                   }}
                 >
-                  <Ionicons name="repeat" size={20} color={colors.info} />
+                  <Ionicons name="bulb" size={20} color={colors.warning} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 18,
-                      fontWeight: "700",
-                      color: colors.primary,
-                      marginBottom: 4,
-                    }}
-                    numberOfLines={1}
-                  >
-                    Bank Suggestions
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: colors.textSecondary,
-                    }}
-                  >
-                    {!showNonRecurringTransactions
-                      ? filteredBankSuggestions.length > 0
-                        ? `${filteredBankSuggestions.length} suggestions`
-                        : "No patterns found"
-                      : filteredNonRecurringTransactions.length > 0
-                      ? `${filteredNonRecurringTransactions.length} transactions`
-                      : "No transactions"}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Ionicons
-                  name={showBankSuggestions ? "chevron-up" : "chevron-down"}
-                  size={20}
-                  color={colors.info}
-                />
-              </View>
-            </TouchableOpacity>
-
-            {/* Expandable Content */}
-            {showBankSuggestions && (
-              <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
-                <AccountSelector
-                  selectedAccountId={selectedBankAccount}
-                  onAccountSelect={setSelectedBankAccount}
-                  accounts={checkingAccounts}
-                  style={{ marginBottom: 16 }}
-                />
-
-                {/* Toggle Switch */}
-                <View
+                <Text
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 16,
-                    paddingHorizontal: 4,
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: colors.text,
                   }}
                 >
+                  {translate("smartInsights", isFriendlyMode)}
+                </Text>
+              </View>
+
+              {insights.map((insight, index) => (
+                <View
+                  key={`insight-${insight.id}-${index}`}
+                  style={{ marginBottom: 12 }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <Ionicons
+                      name={insight.icon as any}
+                      size={16}
+                      color={
+                        insight.type === "success"
+                          ? colors.success
+                          : insight.type === "warning"
+                          ? colors.error
+                          : colors.primary
+                      }
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "600",
+                        color: colors.text,
+                        flex: 1,
+                      }}
+                    >
+                      {insight.title}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => handleDismissInsight(insight.id)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={{
+                        padding: 4,
+                        borderRadius: 12,
+                        backgroundColor: colors.surfaceSecondary,
+                      }}
+                    >
+                      <Ionicons
+                        name="close"
+                        size={14}
+                        color={colors.textSecondary}
+                      />
+                    </TouchableOpacity>
+                  </View>
                   <Text
                     style={{
                       fontSize: 14,
                       color: colors.textSecondary,
-                      fontWeight: "500",
+                      marginLeft: 24,
                     }}
                   >
-                    {!showNonRecurringTransactions
-                      ? "Recurring"
-                      : "Non-Recurring"}
+                    {insight.message}
                   </Text>
-                  <TouchableOpacity
-                    onPress={() =>
-                      setShowNonRecurringTransactions(
-                        !showNonRecurringTransactions
-                      )
-                    }
-                    style={{
-                      width: 48,
-                      height: 24,
-                      backgroundColor: showNonRecurringTransactions
-                        ? colors.primary
-                        : colors.border,
-                      borderRadius: 12,
-                      padding: 2,
-                      flexDirection: "row",
-                      alignItems: "center",
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 20,
-                        height: 20,
-                        backgroundColor: "white",
-                        borderRadius: 10,
-                        shadowColor: colors.shadow,
-                        shadowOpacity: 0.2,
-                        shadowRadius: 2,
-                        shadowOffset: { width: 0, height: 1 },
-                        elevation: 2,
-                        transform: [
-                          { translateX: showNonRecurringTransactions ? 24 : 0 },
-                        ],
-                      }}
-                    />
-                  </TouchableOpacity>
                 </View>
-                {!showNonRecurringTransactions ? (
-                  <>
-                    <View
-                      style={{
-                        borderTopWidth: 1,
-                        borderTopColor: colors.border,
-                        paddingTop: 16,
-                        marginBottom: 16,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          color: colors.textSecondary,
-                          lineHeight: 20,
-                          marginBottom: 8,
-                        }}
-                      >
-                        Based on your bank transactions, we found these
-                        recurring payments. Tap to add them to your budget.
-                      </Text>
-                      {bankDataLastUpdated && (
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: colors.textSecondary,
-                            fontStyle: "italic",
-                          }}
-                        >
-                          {getCacheStatus()}
-                        </Text>
-                      )}
-                    </View>
-
-                    <ScrollView
-                      style={{
-                        maxHeight: 320,
-                      }}
-                      showsVerticalScrollIndicator={false}
-                      nestedScrollEnabled={true}
-                    >
-                      {filteredBankSuggestions.map((suggestion, index) => (
-                        <TouchableOpacity
-                          key={`${suggestion.name}_${suggestion.amount}_${index}`}
-                          style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            paddingVertical: 12,
-                            paddingHorizontal: 16,
-                            backgroundColor: colors.surfaceSecondary,
-                            borderRadius: 12,
-                            marginBottom: 8,
-                            borderWidth: 1,
-                            borderColor: colors.border,
-                          }}
-                          onPress={() =>
-                            handleAddRecurringSuggestion(suggestion)
-                          }
-                        >
-                          <View style={{ flex: 1 }}>
-                            <Text
-                              style={{
-                                fontSize: 14,
-                                fontWeight: "600",
-                                color: colors.text,
-                                marginBottom: 2,
-                              }}
-                            >
-                              {suggestion.name}
-                            </Text>
-                            <View
-                              style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                              }}
-                            >
-                              <Text
-                                style={{
-                                  fontSize: 12,
-                                  color: colors.textSecondary,
-                                  marginRight: 8,
-                                }}
-                              >
-                                {suggestion.frequency} •{" "}
-                                {suggestion.occurrences} times
-                              </Text>
-                              <View
-                                style={{
-                                  backgroundColor:
-                                    suggestion.type === "income"
-                                      ? "#dcfce7"
-                                      : "#fee2e2",
-                                  paddingHorizontal: 6,
-                                  paddingVertical: 2,
-                                  borderRadius: 4,
-                                }}
-                              >
-                                <Text
-                                  style={{
-                                    fontSize: 10,
-                                    fontWeight: "600",
-                                    color:
-                                      suggestion.type === "income"
-                                        ? "#16a34a"
-                                        : "#dc2626",
-                                  }}
-                                >
-                                  {suggestion.type}
-                                </Text>
-                              </View>
-                            </View>
-                          </View>
-                          <View style={{ alignItems: "flex-end" }}>
-                            <Text
-                              style={{
-                                fontSize: 16,
-                                fontWeight: "700",
-                                color: colors.text,
-                              }}
-                            >
-                              {formatCurrency(suggestion.amount)}
-                            </Text>
-                            <Text
-                              style={{
-                                fontSize: 12,
-                                color: colors.textSecondary,
-                                marginTop: 2,
-                              }}
-                            >
-                              {suggestion.category}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </>
-                ) : (
-                  <>
-                    <View
-                      style={{
-                        borderTopWidth: 1,
-                        borderTopColor: colors.border,
-                        paddingTop: 16,
-                        marginBottom: 16,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          color: colors.textSecondary,
-                          lineHeight: 20,
-                          marginBottom: 8,
-                        }}
-                      >
-                        Non-recurring transactions for{" "}
-                        {formatMonth(selectedMonth)}. These are one-time
-                        transactions that don't follow a pattern.
-                      </Text>
-                      {bankDataLastUpdated && (
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: colors.textSecondary,
-                            fontStyle: "italic",
-                          }}
-                        >
-                          {getCacheStatus()}
-                        </Text>
-                      )}
-                    </View>
-
-                    {filteredNonRecurringTransactions.length === 0 ? (
-                      <View style={{ alignItems: "center", padding: 20 }}>
-                        <Ionicons
-                          name="receipt-outline"
-                          size={32}
-                          color={colors.textTertiary}
-                        />
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            color: colors.textSecondary,
-                            marginTop: 8,
-                            textAlign: "center",
-                          }}
-                        >
-                          No non-recurring transactions found
-                        </Text>
-                      </View>
-                    ) : (
-                      <ScrollView
-                        style={{
-                          maxHeight: 320,
-                        }}
-                        showsVerticalScrollIndicator={false}
-                        nestedScrollEnabled={true}
-                      >
-                        {filteredNonRecurringTransactions.map(
-                          (transaction, index) => (
-                            <TouchableOpacity
-                              key={`${transaction.id}_${index}`}
-                              style={{
-                                flexDirection: "row",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                paddingVertical: 12,
-                                paddingHorizontal: 16,
-                                backgroundColor: colors.surfaceSecondary,
-                                borderRadius: 12,
-                                marginBottom: 8,
-                                borderWidth: 1,
-                                borderColor: colors.border,
-                              }}
-                              onPress={() =>
-                                handleAddNonRecurringTransaction(transaction)
-                              }
-                            >
-                              <View style={{ flex: 1 }}>
-                                <Text
-                                  style={{
-                                    fontSize: 14,
-                                    fontWeight: "600",
-                                    color: colors.text,
-                                    marginBottom: 2,
-                                  }}
-                                >
-                                  {transaction.name}
-                                </Text>
-                                <View
-                                  style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                  }}
-                                >
-                                  <Text
-                                    style={{
-                                      fontSize: 12,
-                                      color: colors.textSecondary,
-                                      marginRight: 8,
-                                    }}
-                                  >
-                                    {new Date(
-                                      transaction.date
-                                    ).toLocaleDateString()}{" "}
-                                    •{" "}
-                                    {transaction.category?.[0] ||
-                                      "Uncategorized"}
-                                  </Text>
-                                  <View
-                                    style={{
-                                      backgroundColor:
-                                        transaction.amount < 0
-                                          ? "#dcfce7"
-                                          : "#fee2e2",
-                                      paddingHorizontal: 6,
-                                      paddingVertical: 2,
-                                      borderRadius: 4,
-                                    }}
-                                  >
-                                    <Text
-                                      style={{
-                                        fontSize: 10,
-                                        fontWeight: "600",
-                                        color:
-                                          transaction.amount < 0
-                                            ? "#16a34a"
-                                            : "#dc2626",
-                                      }}
-                                    >
-                                      {transaction.amount < 0
-                                        ? "income"
-                                        : "expense"}
-                                    </Text>
-                                  </View>
-                                </View>
-                              </View>
-                              <View style={{ alignItems: "flex-end" }}>
-                                <Text
-                                  style={{
-                                    fontSize: 16,
-                                    fontWeight: "700",
-                                    color: colors.text,
-                                  }}
-                                >
-                                  {formatCurrency(Math.abs(transaction.amount))}
-                                </Text>
-                                <Text
-                                  style={{
-                                    fontSize: 12,
-                                    color: colors.textSecondary,
-                                    marginTop: 2,
-                                  }}
-                                >
-                                  {transaction.account_id ? "Bank" : "Manual"}
-                                </Text>
-                              </View>
-                            </TouchableOpacity>
-                          )
-                        )}
-                      </ScrollView>
-                    )}
-                  </>
-                )}
-              </View>
-            )}
-          </View>
+              ))}
+            </View>
+          </TourGuide>
         )}
 
         {/* Income Section */}
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 20,
-            padding: 24,
-            marginBottom: 20,
-            shadowColor: "#000",
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: isIncomeCollapsed ? 0 : 20,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
-                style={{
-                  backgroundColor: colors.successLight,
-                  padding: 8,
-                  borderRadius: 10,
-                  marginRight: 12,
-                }}
-              >
-                <Ionicons name="trending-up" size={20} color={colors.text} />
-              </View>
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "700",
-                  color: colors.text,
-                }}
-              >
-                {translate("income", isFriendlyMode)}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => setIsIncomeCollapsed(!isIncomeCollapsed)}
-              style={{
-                padding: 8,
-                borderRadius: 8,
-                backgroundColor: colors.surfaceSecondary,
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={isIncomeCollapsed ? "chevron-down" : "chevron-up"}
-                size={20}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
 
-          {/* Income Transactions List */}
-          {!isIncomeCollapsed &&
-            [
-              ...incomeTransactions,
-              ...(isFutureMonth
-                ? projectedTransactions.filter((t) => t.type === "income")
-                : []),
-            ].map((transaction, index, array) => (
-              <TouchableOpacity
-                key={transaction.id}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 12,
-                  paddingVertical: 8,
-                  borderBottomWidth: index === array.length - 1 ? 0 : 1,
-                  borderBottomColor: colors.border,
-                }}
-                onPress={() =>
-                  navigation.navigate("AddTransaction", {
-                    type: "income",
-                    editMode: true,
-                    transaction: transaction,
-                  })
-                }
-              >
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: colors.text,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {transaction.description}
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginTop: 2,
-                    }}
-                  >
-                    <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                      {transaction.category} • {formatDate(transaction.date)}
-                    </Text>
-                    {(isRecurringTransaction(transaction) ||
-                      transaction.id?.startsWith("projected-")) && (
-                      <Ionicons
-                        name="repeat"
-                        size={12}
-                        color={colors.primary}
-                        style={{ marginLeft: 8 }}
-                      />
-                    )}
-                  </View>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "700",
-                      color: colors.text,
-                      marginRight: 8,
-                    }}
-                  >
-                    {formatCurrency(transaction.amount)}
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.textSecondary}
-                  />
-                </View>
-              </TouchableOpacity>
-            ))}
-
-          {(incomeTransactions.length > 0 ||
-            projectedIncomeTransactions.length > 0) && (
-            <View
-              style={{
-                borderTopWidth: 2,
-                borderTopColor: colors.border,
-                paddingTop: 16,
-                marginTop: 8,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "800",
-                    color: colors.text,
-                  }}
-                >
-                  Total Income
-                </Text>
-                <Text
-                  style={{ fontSize: 18, fontWeight: "800", color: "#16a34a" }}
-                >
-                  $
-                  {totalIncome.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </Text>
-              </View>
-            </View>
+        <TransactionListCard
+          title="Income"
+          icon="trending-up"
+          iconColor={colors.success}
+          transactions={selectedMonthTransactions.filter(
+            (t) => t.type === "income"
           )}
-
-          {/* Inline Add Income Button */}
-          <TouchableOpacity
-            onPress={handleAddIncome}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              paddingVertical: 12,
-              marginTop: 16,
-              backgroundColor: colors.successLight,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: colors.success,
-              borderStyle: "dashed",
-            }}
-          >
-            <Ionicons name="add-circle" size={20} color={colors.success} />
-            <Text
-              style={{
-                color: colors.success,
-                fontSize: 14,
-                fontWeight: "600",
-                marginLeft: 8,
-              }}
-              allowFontScaling={true}
-            >
-              Add Income
-            </Text>
-          </TouchableOpacity>
-        </View>
+          projectedTransactions={projectedTransactions.filter(
+            (t) => t.type === "income"
+          )}
+          isCollapsed={isIncomeCollapsed}
+          onToggleCollapse={() => setIsIncomeCollapsed(!isIncomeCollapsed)}
+          onTransactionPress={(transaction) =>
+            navigation.navigate("AddTransaction", {
+              type: "income",
+              editMode: true,
+              transaction: transaction,
+            })
+          }
+          onAddTransaction={handleAddIncome}
+          isFutureMonth={isFutureMonth}
+          formatCurrency={formatCurrency}
+          formatDate={formatDate}
+          isRecurringTransaction={isRecurringTransaction}
+        />
 
         {/* Expenses Section */}
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 20,
-            padding: 24,
-            marginBottom: 20,
-            shadowColor: colors.shadow,
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: isExpensesCollapsed ? 0 : 20,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
-                style={{
-                  backgroundColor: colors.errorLight,
-                  padding: 8,
-                  borderRadius: 10,
-                  marginRight: 12,
-                }}
-              >
-                <Ionicons name="trending-down" size={20} color={colors.text} />
-              </View>
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "700",
-                  color: colors.text,
-                }}
-              >
-                {translate("expenses", isFriendlyMode)}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => setIsExpensesCollapsed(!isExpensesCollapsed)}
-              style={{
-                padding: 8,
-                borderRadius: 8,
-                backgroundColor: colors.surfaceSecondary,
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={isExpensesCollapsed ? "chevron-down" : "chevron-up"}
-                size={20}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
 
-          {/* Expense Transactions List */}
-          {!isExpensesCollapsed &&
-            [
-              ...expenseTransactions,
-              ...(isFutureMonth
-                ? projectedTransactions.filter((t) => t.type === "expense")
-                : []),
-            ].map((transaction, index, array) => (
-              <TouchableOpacity
-                key={transaction.id}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 12,
-                  paddingVertical: 8,
-                  borderBottomWidth: index === array.length - 1 ? 0 : 1,
-                  borderBottomColor: colors.border,
-                }}
-                onPress={() =>
-                  navigation.navigate("AddTransaction", {
-                    type: "expense",
-                    editMode: true,
-                    transaction: transaction,
-                  })
-                }
-              >
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: colors.text,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {transaction.description}
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginTop: 2,
-                    }}
-                  >
-                    <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                      {transaction.category} • {formatDate(transaction.date)}
-                    </Text>
-                    {(isRecurringTransaction(transaction) ||
-                      transaction.id?.startsWith("projected-")) && (
-                      <Ionicons
-                        name="repeat"
-                        size={12}
-                        color={colors.primary}
-                        style={{ marginLeft: 8 }}
-                      />
-                    )}
-                  </View>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "700",
-                      color: colors.text,
-                      marginRight: 8,
-                    }}
-                  >
-                    {formatCurrency(transaction.amount)}
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.textSecondary}
-                  />
-                </View>
-              </TouchableOpacity>
-            ))}
-
-          {(expenseTransactions.length > 0 ||
-            projectedExpenseTransactions.length > 0) && (
-            <View
-              style={{
-                borderTopWidth: 2,
-                borderTopColor: colors.border,
-                paddingTop: 16,
-                marginTop: 8,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "800",
-                    color: colors.text,
-                  }}
-                >
-                  Total Expenses
-                </Text>
-                <Text
-                  style={{ fontSize: 18, fontWeight: "800", color: "#dc2626" }}
-                >
-                  $
-                  {totalExpenses.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </Text>
-              </View>
-            </View>
+        <TransactionListCard
+          title="Expenses"
+          icon="trending-down"
+          iconColor={colors.error}
+          transactions={selectedMonthTransactions.filter(
+            (t) => t.type === "expense"
           )}
+          projectedTransactions={projectedTransactions.filter(
+            (t) => t.type === "expense"
+          )}
+          isCollapsed={isExpensesCollapsed}
+          onToggleCollapse={() => setIsExpensesCollapsed(!isExpensesCollapsed)}
+          onTransactionPress={(transaction) =>
+            navigation.navigate("AddTransaction", {
+              type: "expense",
+              editMode: true,
+              transaction: transaction,
+            })
+          }
+          onAddTransaction={handleAddExpense}
+          isFutureMonth={isFutureMonth}
+          formatCurrency={formatCurrency}
+          formatDate={formatDate}
+          isRecurringTransaction={isRecurringTransaction}
+        />
 
-          {/* Inline Add Expense Button */}
-          <TouchableOpacity
-            onPress={handleAddExpense}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              paddingVertical: 12,
-              marginTop: 16,
-              backgroundColor: colors.surfaceSecondary,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: colors.primary,
-              borderStyle: "dashed",
-            }}
-          >
-            <Ionicons name="add-circle" size={20} color={colors.primary} />
-            <Text
-              style={{
-                color: colors.primary,
-                fontSize: 14,
-                fontWeight: "600",
-                marginLeft: 8,
-              }}
-              allowFontScaling={true}
-            >
-              Add Expense
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Budget Settings Modal */}
+        <BudgetSettingsModal
+          visible={showBudgetSettingsModal}
+          onClose={() => setShowBudgetSettingsModal(false)}
+          savingsPercentage={savingsPercentage}
+          debtPayoffPercentage={debtPayoffPercentage}
+          onSavingsChange={setSavingsPercentage}
+          onDebtChange={setDebtPayoffPercentage}
+          onSave={(localSavingsValue?: string, localDebtValue?: string) => {
+            // Create a custom save function that uses the passed local values
+            const saveWithLocalValues = async () => {
+              if (!user) return;
 
-        {/* Budget Summary */}
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 20,
-            padding: 24,
-            shadowColor: colors.shadow,
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
+              try {
+                const newSettings = {
+                  savingsPercentage: parseFloat(
+                    localSavingsValue || savingsPercentage
+                  ),
+                  debtPayoffPercentage: parseFloat(
+                    localDebtValue || debtPayoffPercentage
+                  ),
+                  userId: user.uid,
+                  updatedAt: Date.now(),
+                };
+
+                if (budgetSettings?.id) {
+                  await updateBudgetSettings({
+                    ...newSettings,
+                    id: budgetSettings.id,
+                  });
+                } else {
+                  await saveBudgetSettings(newSettings);
+                }
+
+                // Refresh budget settings in the DataContext to update dashboard
+                await refreshBudgetSettings();
+
+                setHasUnsavedChanges(false);
+                Alert.alert("Success", "Budget settings saved successfully!");
+              } catch (error) {
+                console.error("Error saving budget settings:", error);
+                Alert.alert("Error", "Failed to save budget settings");
+              }
+            };
+
+            saveWithLocalValues();
           }}
-        >
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "700",
-              marginBottom: 20,
-              color: colors.text,
-            }}
-          >
-            {translate("budget", isFriendlyMode)} Summary
-          </Text>
+          hasUnsavedChanges={hasUnsavedChanges}
+          netIncome={totalIncome}
+          totalExpenses={totalExpenses}
+          formatCurrency={formatCurrency}
+          goals={goals}
+          onGoalContributionChange={async (goalId, contribution) => {
+            // Update the goal's monthly contribution
+            const updatedGoals = goals.map((goal) =>
+              goal.id === goalId
+                ? { ...goal, monthlyContribution: contribution }
+                : goal
+            );
+            // Update the UI optimistically
+            updateDataOptimistically({ goals: updatedGoals });
 
-          <View style={{ marginBottom: 16 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 8,
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={{ fontSize: 18, marginRight: 8 }}>💵</Text>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: colors.textSecondary,
-                    fontWeight: "500",
-                  }}
-                >
-                  {translate("netIncome", isFriendlyMode)}
-                </Text>
-              </View>
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: "700",
-                  color: netIncome >= 0 ? "#16a34a" : "#dc2626",
-                }}
-              >
-                {formatCurrency(netIncome)}
-              </Text>
-            </View>
-          </View>
-
-          <View style={{ marginBottom: 16 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 8,
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={{ fontSize: 18, marginRight: 8 }}>💰</Text>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: colors.textSecondary,
-                    fontWeight: "500",
-                  }}
-                >
-                  {translate("savings", isFriendlyMode)}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: "#16a34a",
-                    fontWeight: "600",
-                    marginLeft: 8,
-                  }}
-                >
-                  {Math.round(parseFloat(savingsPercentage) || 0)}%
-                </Text>
-              </View>
-              <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#16a34a" }}
-              >
-                {formatCurrency(savingsAmount)}
-              </Text>
-            </View>
-            {/* Interactive Slider */}
-            <View style={{ marginTop: 12 }}>
-              <CustomSlider
-                value={parseFloat(savingsPercentage) || 0}
-                onValueChange={(value) =>
-                  setSavingsPercentage(value.toString())
-                }
-                min={0}
-                max={100}
-                color={colors.success}
-              />
-            </View>
-          </View>
-
-          {/* Individual Goal Fields */}
-          {goals.map((goal, index) => (
-            <View key={goal.id} style={{ marginBottom: 16 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 4,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: colors.textSecondary,
-                    fontWeight: "500",
-                  }}
-                >
-                  {goal.name}
-                </Text>
-                <Text
-                  style={{ fontSize: 16, fontWeight: "700", color: "#3b82f6" }}
-                >
-                  {formatCurrency(goal.monthlyContribution)}
-                </Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: colors.textSecondary,
-                    fontStyle: "italic",
-                  }}
-                >
-                  {calculatePaymentsRemaining(goal)}
-                </Text>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: colors.textSecondary,
-                      marginRight: 4,
-                    }}
-                  >
-                    Progress:
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: "#3b82f6",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {formatCurrency(goal.currentAmount)} /{" "}
-                    {formatCurrency(goal.targetAmount)}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          ))}
-
-          <View style={{ marginBottom: 16 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 8,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: colors.textSecondary,
-                  fontWeight: "500",
-                }}
-              >
-                {translate("discretionaryIncome", isFriendlyMode)}
-              </Text>
-              <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#f59e0b" }}
-              >
-                {formatCurrency(discretionaryIncome)}
-              </Text>
-            </View>
-          </View>
-
-          <View style={{ marginBottom: 16 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 8,
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={{ fontSize: 18, marginRight: 8 }}>💳</Text>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: colors.textSecondary,
-                    fontWeight: "500",
-                  }}
-                >
-                  Pay Debt
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: "#dc2626",
-                    fontWeight: "600",
-                    marginLeft: 8,
-                  }}
-                >
-                  {Math.round(parseFloat(debtPayoffPercentage) || 0)}%
-                </Text>
-              </View>
-              <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#dc2626" }}
-              >
-                {formatCurrency(debtPayoffAmount)}
-              </Text>
-            </View>
-            {/* Interactive Slider */}
-            <View style={{ marginTop: 12 }}>
-              <CustomSlider
-                value={parseFloat(debtPayoffPercentage) || 0}
-                onValueChange={(value) =>
-                  setDebtPayoffPercentage(value.toString())
-                }
-                min={0}
-                max={100}
-                color={colors.error}
-              />
-            </View>
-          </View>
-
-          <View
-            style={{
-              borderTopWidth: 1,
-              borderTopColor: colors.border,
-              paddingTop: 12,
-              position: "relative",
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={{ fontSize: 20, marginRight: 8 }}>💸</Text>
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "800",
-                    color: colors.text,
-                  }}
-                >
-                  {translate("availableAmount", isFriendlyMode)}
-                </Text>
-              </View>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "800",
-                  color: remainingBalance >= 0 ? "#16a34a" : "#dc2626",
-                }}
-              >
-                $
-                {remainingBalance.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </Text>
-            </View>
-          </View>
-
-          {/* Save Settings Button */}
-          <TouchableOpacity
-            style={{
-              backgroundColor: hasUnsavedChanges
-                ? colors.primary
-                : colors.surfaceSecondary,
-              borderRadius: 8,
-              padding: 12,
-              alignItems: "center",
-              marginTop: 40,
-              marginBottom: 20,
-              borderWidth: 1,
-              borderColor: hasUnsavedChanges ? colors.primary : colors.border,
-              opacity: hasUnsavedChanges ? 1 : 0.6,
-            }}
-            onPress={hasUnsavedChanges ? handleSaveBudgetSettings : undefined}
-            disabled={!hasUnsavedChanges}
-          >
-            <Text
-              style={{
-                color: hasUnsavedChanges
-                  ? colors.buttonText
-                  : colors.textSecondary,
-                fontSize: 14,
-                fontWeight: "500",
-              }}
-              allowFontScaling={true}
-            >
-              {hasUnsavedChanges
-                ? `${translate("save", isFriendlyMode)} ${translate(
-                    "budget",
-                    isFriendlyMode
-                  )} Settings`
-                : `${translate("budget", isFriendlyMode)} Settings Saved`}
-            </Text>
-          </TouchableOpacity>
-        </View>
+            // Save to database
+            try {
+              const { updateGoal } = await import("../services/userData");
+              const goalToUpdate = goals.find((goal) => goal.id === goalId);
+              if (goalToUpdate) {
+                await updateGoal({
+                  ...goalToUpdate,
+                  monthlyContribution: contribution,
+                });
+                // Goal contribution saved to database
+              }
+            } catch (error) {
+              console.error(
+                "Error saving goal contribution to database:",
+                error
+              );
+            }
+          }}
+        />
       </ScrollView>
 
       {/* Month Picker Modal */}
@@ -2239,7 +1340,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
                 return (
                   <TouchableOpacity
-                    key={index}
+                    key={`${month.getFullYear()}-${month.getMonth()}`}
                     onPress={() => handleMonthSelect(month)}
                     style={{
                       flexDirection: "row",
@@ -2265,10 +1366,17 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                         style={{
                           fontSize: 16,
                           fontWeight: isSelected ? "700" : "500",
-                          color: isSelected ? colors.buttonText : colors.text,
+                          color: isSelected
+                            ? colors.buttonText
+                            : getMonthColor(month),
+                          flex: 1,
+                          flexWrap: "wrap",
                         }}
+                        numberOfLines={2}
+                        adjustsFontSizeToFit={true}
+                        minimumFontScale={0.8}
                       >
-                        {formatMonth(month)}
+                        {formatMonthSmart(month, 18)}
                       </Text>
                       {isCurrentMonth && (
                         <View
@@ -2292,13 +1400,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                         </View>
                       )}
                     </View>
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={20}
-                        color={colors.buttonText}
-                      />
-                    )}
                   </TouchableOpacity>
                 );
               })}
@@ -2306,6 +1407,26 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Auto Budget Importer Modal */}
+      <AutoBudgetImporter
+        isVisible={showAutoImporter}
+        onClose={() => setShowAutoImporter(false)}
+        selectedMonth={selectedMonth}
+        onDataRefresh={refreshData}
+        onSuccess={(count) => {
+          refreshData();
+          setShowAutoImporter(false);
+          setImportSuccess({
+            count,
+            message: `Successfully imported ${count} transactions to your budget!`,
+          });
+          setTimeout(() => setImportSuccess(null), 5000);
+        }}
+      />
+
+      {/* Floating AI Chatbot - only show on main tab screens */}
+      <FloatingAIChatbot hideOnScroll={true} isScrolling={isScrolling} />
     </SafeAreaView>
   );
 };

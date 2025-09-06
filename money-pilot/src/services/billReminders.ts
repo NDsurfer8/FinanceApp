@@ -26,59 +26,30 @@ export class BillReminderService {
   // Schedule all bill reminders for a user
   async scheduleAllBillReminders(userId: string): Promise<void> {
     try {
-      console.log("Scheduling bill reminders for user:", userId);
-
       // Get all transactions and recurring transactions
       const [transactions, recurringTransactions] = await Promise.all([
         getUserTransactions(userId),
         getUserRecurringTransactions(userId),
       ]);
 
-      console.log(
-        `Found ${transactions.length} transactions and ${recurringTransactions.length} recurring transactions`
-      );
-
       // Cancel existing bill reminders first
       await this.cancelAllBillReminders();
 
       // Schedule reminders for regular transactions with due dates
       for (const transaction of transactions) {
-        console.log(
-          `Checking transaction: ${transaction.description}, type: ${transaction.type}, date: ${transaction.date}`
-        );
-
         if (transaction.type === "expense" && transaction.date) {
           const dueDate = new Date(transaction.date);
           const now = new Date();
 
-          console.log(
-            `Transaction ${
-              transaction.description
-            }: dueDate=${dueDate.toLocaleDateString()}, now=${now.toLocaleDateString()}, dueDate > now = ${
-              dueDate > now
-            }`
-          );
-
           // Only schedule if due date is in the future
           if (dueDate > now) {
-            console.log(
-              `Scheduling reminder for transaction: ${transaction.description}`
-            );
             await this.scheduleBillReminder(
               transaction.description,
               dueDate,
               transaction.amount,
               false
             );
-          } else {
-            console.log(
-              `Skipping transaction ${transaction.description} - due date is not in the future`
-            );
           }
-        } else {
-          console.log(
-            `Skipping transaction ${transaction.description} - not an expense or no date`
-          );
         }
       }
 
@@ -96,8 +67,6 @@ export class BillReminderService {
           }
         }
       }
-
-      console.log("All bill reminders scheduled successfully");
     } catch (error) {
       console.error("Error scheduling bill reminders:", error);
     }
@@ -204,10 +173,6 @@ export class BillReminderService {
           },
         });
       }
-
-      console.log(
-        `Scheduled reminders for ${billName} due ${dueDate.toLocaleDateString()}`
-      );
     } catch (error) {
       console.error(`Error scheduling reminder for ${billName}:`, error);
     }
@@ -269,8 +234,6 @@ export class BillReminderService {
           await notificationService.cancelNotification(notification.identifier);
         }
       }
-
-      console.log("All bill reminders cancelled");
     } catch (error) {
       console.error("Error cancelling bill reminders:", error);
     }

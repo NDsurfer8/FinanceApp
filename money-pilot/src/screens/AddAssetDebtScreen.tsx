@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useZeroLoading } from "../hooks/useZeroLoading";
+import { StandardHeader } from "../components/StandardHeader";
 import {
   saveAsset,
   saveDebt,
@@ -285,29 +286,17 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           keyboardShouldPersistTaps="handled"
         >
           {/* Header */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 24,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ marginRight: 16 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text
-              style={{ fontSize: 20, fontWeight: "600", color: colors.text }}
-            >
-              {editMode ? "Edit" : "Add"} {type === "asset" ? "Asset" : "Debt"}
-            </Text>
-          </View>
+          <StandardHeader
+            title={`${editMode ? "Edit" : "Add"} ${
+              type === "asset" ? "Asset" : "Debt"
+            }`}
+            onBack={() => navigation.goBack()}
+            showBackButton={true}
+          />
 
           {/* Form Fields */}
           {/* Name */}
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 16,
@@ -322,8 +311,8 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
+                borderRadius: 12,
+                padding: 16,
                 fontSize: 16,
                 color: colors.text,
                 backgroundColor: colors.card,
@@ -338,7 +327,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
           </View>
 
           {/* Balance */}
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 16,
@@ -353,8 +342,8 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
+                borderRadius: 12,
+                padding: 16,
                 fontSize: 16,
                 color: colors.text,
                 backgroundColor: colors.card,
@@ -372,7 +361,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
 
           {/* Asset Type (for assets only) */}
           {type === "asset" && (
-            <View style={{ marginBottom: 20 }}>
+            <View style={{ marginBottom: 24 }}>
               <Text
                 style={{
                   fontSize: 16,
@@ -450,7 +439,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
 
           {/* APR (for debts only) */}
           {type === "debt" && (
-            <View style={{ marginBottom: 20 }}>
+            <View style={{ marginBottom: 24 }}>
               <Text
                 style={{
                   fontSize: 16,
@@ -465,8 +454,8 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 style={{
                   borderWidth: 1,
                   borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
+                  borderRadius: 12,
+                  padding: 16,
                   fontSize: 16,
                   color: colors.text,
                   backgroundColor: colors.card,
@@ -484,7 +473,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
 
           {/* Monthly Payment (for debts only) */}
           {type === "debt" && (
-            <View style={{ marginBottom: 20 }}>
+            <View style={{ marginBottom: 24 }}>
               <Text
                 style={{
                   fontSize: 16,
@@ -499,8 +488,8 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 style={{
                   borderWidth: 1,
                   borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
+                  borderRadius: 12,
+                  padding: 16,
                   fontSize: 16,
                   color: colors.text,
                   backgroundColor: colors.card,
@@ -523,11 +512,16 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             <TouchableOpacity
               style={{
                 backgroundColor: colors.primary,
-                padding: 16,
-                borderRadius: 8,
+                padding: 18,
+                borderRadius: 12,
                 alignItems: "center",
                 flexDirection: "row",
                 justifyContent: "center",
+                shadowColor: colors.primary,
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 8,
               }}
               onPress={handleSave}
               disabled={loading}
@@ -543,7 +537,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 style={{
                   color: "white",
                   fontSize: 16,
-                  fontWeight: "600",
+                  fontWeight: "700",
                 }}
               >
                 {editMode ? "Update" : "Save"}{" "}
@@ -555,12 +549,14 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
             {editMode && (
               <TouchableOpacity
                 style={{
-                  backgroundColor: colors.error,
-                  padding: 16,
-                  borderRadius: 8,
+                  backgroundColor: colors.error + "20",
+                  padding: 18,
+                  borderRadius: 12,
                   alignItems: "center",
                   flexDirection: "row",
                   justifyContent: "center",
+                  borderWidth: 1,
+                  borderColor: colors.error,
                 }}
                 onPress={handleDelete}
                 disabled={deleteLoading}
@@ -568,15 +564,15 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 {deleteLoading && (
                   <ActivityIndicator
                     size="small"
-                    color="white"
+                    color={colors.error}
                     style={{ marginRight: 8 }}
                   />
                 )}
                 <Text
                   style={{
-                    color: "white",
+                    color: colors.error,
                     fontSize: 16,
-                    fontWeight: "600",
+                    fontWeight: "700",
                   }}
                 >
                   Delete {type === "asset" ? "Asset" : "Debt"}

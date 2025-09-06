@@ -15,7 +15,7 @@ import { auth } from "./firebase";
 import { saveUserProfile, UserProfile } from "./userData";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
-import * as Random from "expo-random";
+import { retryWithBackoff, checkNetworkConnectivity } from "./networkUtils";
 
 export interface AuthErrorType {
   code: string;
@@ -41,8 +41,17 @@ export const isAppleAuthAvailable = async (): Promise<boolean> => {
 // Sign in with Apple
 export const signInWithApple = async (): Promise<UserData> => {
   try {
+    // Check if Apple Authentication is available first
+    const isAvailable = await AppleAuthentication.isAvailableAsync();
+    if (!isAvailable) {
+      throw {
+        code: "auth/apple-not-available",
+        message: "Apple Sign In is not available on this device.",
+      } as AuthErrorType;
+    }
+
     // Generate a cryptographically secure random nonce and its SHA-256 hash
-    const randomBytes = Random.getRandomBytes(32);
+    const randomBytes = Crypto.getRandomBytes(32);
     const rawNonce = Array.from(randomBytes)
       .map((b: number) => b.toString(16).padStart(2, "0"))
       .join("");
@@ -50,6 +59,8 @@ export const signInWithApple = async (): Promise<UserData> => {
       Crypto.CryptoDigestAlgorithm.SHA256,
       rawNonce
     );
+
+    console.log("Starting Apple authentication...");
 
     // Request Apple authentication
     const credential = await AppleAuthentication.signInAsync({
@@ -59,6 +70,12 @@ export const signInWithApple = async (): Promise<UserData> => {
       ],
       // Pass the SHA-256 hashed nonce to Apple (required for Firebase)
       nonce: hashedNonce,
+    });
+
+    console.log("Apple authentication completed:", {
+      hasIdentityToken: !!credential.identityToken,
+      hasEmail: !!credential.email,
+      hasFullName: !!credential.fullName,
     });
 
     // identityToken is required to authenticate with Firebase
@@ -141,6 +158,8 @@ export const signInWithApple = async (): Promise<UserData> => {
     // Handle specific Apple authentication errors
     if (error && typeof error === "object" && "code" in error) {
       const appleError = error as any;
+      console.log("Apple error code:", appleError.code);
+
       switch (appleError.code) {
         case "ERR_CANCELED":
           throw {
@@ -157,10 +176,26 @@ export const signInWithApple = async (): Promise<UserData> => {
             code: "auth/not-handled",
             message: "Apple Sign In was not handled properly.",
           } as AuthErrorType;
+        case "ERR_REQUEST_EXPIRED":
+          throw {
+            code: "auth/request-expired",
+            message: "Apple Sign In request expired. Please try again.",
+          } as AuthErrorType;
+        case "ERR_REQUEST_NOT_HANDLED":
+          throw {
+            code: "auth/request-not-handled",
+            message: "Apple Sign In request was not handled.",
+          } as AuthErrorType;
+        case "ERR_REQUEST_INVALID":
+          throw {
+            code: "auth/request-invalid",
+            message: "Invalid Apple Sign In request.",
+          } as AuthErrorType;
         default:
+          console.log("Unknown Apple error code:", appleError.code);
           throw {
             code: "auth/unknown",
-            message: "An unknown error occurred with Apple Sign In.",
+            message: `An unknown error occurred with Apple Sign In. Code: ${appleError.code}`,
           } as AuthErrorType;
       }
     }
@@ -248,40 +283,63 @@ export const signIn = async (
   password: string
 ): Promise<UserData> => {
   try {
-    // First, try to refresh any existing session
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      try {
-        await currentUser.reload();
-        // If reload succeeds, user might already be signed in
-        if (currentUser.email === email) {
-          return {
-            uid: currentUser.uid,
-            email: currentUser.email,
-            displayName: currentUser.displayName || undefined,
-          };
-        }
-      } catch (reloadError) {
-        console.log("Session reload failed, proceeding with new sign in");
-      }
+    // Check network connectivity first
+    const isConnected = await checkNetworkConnectivity();
+    if (!isConnected) {
+      throw {
+        code: "auth/network-request-failed",
+        message:
+          "No internet connection. Please check your network and try again.",
+      } as AuthErrorType;
     }
 
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    // Use retry mechanism for sign in
+    return await retryWithBackoff(async () => {
+      // First, try to refresh any existing session
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        try {
+          await currentUser.reload();
+          // If reload succeeds, user might already be signed in
+          if (currentUser.email === email) {
+            return {
+              uid: currentUser.uid,
+              email: currentUser.email,
+              displayName: currentUser.displayName || undefined,
+            };
+          }
+        } catch (reloadError) {
+          console.log("Session reload failed, proceeding with new sign in");
+        }
+      }
 
-    const user = userCredential.user;
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-    return {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName || undefined,
-    };
+      const user = userCredential.user;
+
+      return {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || undefined,
+      };
+    });
   } catch (error) {
     console.error("Firebase auth error:", error);
     const authError = error as AuthError;
+
+    // Handle network errors specifically
+    if (authError.code === "auth/network-request-failed") {
+      console.warn("Network error during sign in, this might be temporary");
+      throw {
+        code: "auth/network-request-failed",
+        message:
+          "Network error. Please check your internet connection and try again.",
+      } as AuthErrorType;
+    }
 
     // Handle specific invalid credential errors
     if (

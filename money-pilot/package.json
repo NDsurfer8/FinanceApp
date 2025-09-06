@@ -27,8 +27,8 @@
     "expo-linking": "~7.1.7",
     "expo-local-authentication": "~16.0.5",
     "expo-mail-composer": "~14.1.6",
+    "expo-network": "~7.1.5",
     "expo-notifications": "^0.31.4",
-    "expo-random": "^14.0.1",
     "expo-sharing": "~13.1.5",
     "expo-status-bar": "~2.2.3",
     "expo-store-review": "~8.1.5",
@@ -45,7 +45,8 @@
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-native-svg": "15.11.2"
+    "react-native-svg": "15.11.2",
+    "react-native-tourguide": "^1.0.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

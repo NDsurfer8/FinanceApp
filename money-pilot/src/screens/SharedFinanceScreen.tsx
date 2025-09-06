@@ -1,220 +1,175 @@
 import React, { useState, useEffect } from "react";
 import {
-  SafeAreaView,
-  ScrollView,
   View,
   Text,
   TouchableOpacity,
+  ScrollView,
+  StyleSheet,
   Alert,
   Modal,
   TextInput,
-  ActivityIndicator,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
-import { useAuth } from "../hooks/useAuth";
-import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useTheme } from "../contexts/ThemeContext";
-import { StandardHeader } from "../components/StandardHeader";
+import { useAuth } from "../hooks/useAuth";
+import { useFocusEffect } from "@react-navigation/native";
+import { useSubscription } from "../contexts/SubscriptionContext";
+import { usePaywall } from "../hooks/usePaywall";
 import {
-  getUserSharedGroups,
-  getGroupAggregatedData,
-  getGroupSharedData,
   createSharedGroup,
-  addGroupMember,
-  removeGroupMember,
-  deleteSharedGroup,
   createInvitation,
+  getUserSharedGroups,
   getUserInvitations,
   updateInvitationStatus,
-  addUserDataToGroup,
-  addSelectiveUserDataToGroup,
-  getUserGroupSyncSettings,
+  addGroupMember,
+  getUserProfile,
+  saveUserProfile,
   SharedGroup,
   SharedGroupMember,
   SharedInvitation,
+  cleanupOrphanedSharedData,
 } from "../services/userData";
-import { ref, onValue, off } from "firebase/database";
-import { db } from "../services/firebase";
+import { TourGuide } from "../components/TourGuide";
+import { StandardHeader } from "../components/StandardHeader";
 
 interface SharedFinanceScreenProps {
   navigation: any;
 }
 
-const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
+export default function SharedFinanceScreen({
   navigation,
-}) => {
-  const { user } = useAuth();
-  const { goals: userGoals, updateDataOptimistically } = useZeroLoading();
+}: SharedFinanceScreenProps) {
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const { hasPremiumAccess } = useSubscription();
+  const { presentPaywall } = usePaywall();
   const [groups, setGroups] = useState<SharedGroup[]>([]);
-  const [invitations, setInvitations] = useState<SharedInvitation[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<SharedGroup | null>(null);
-  const [groupData, setGroupData] = useState<any>(null);
-  const [groupGoals, setGroupGoals] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [showInvitationsModal, setShowInvitationsModal] = useState(false);
-  const [showGoalsModal, setShowGoalsModal] = useState(false);
-  const [showSelectiveSyncModal, setShowSelectiveSyncModal] = useState(false);
-
-  // Selective sync state
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
-  const [syncTransactions, setSyncTransactions] = useState(true);
-  const [currentSyncSettings, setCurrentSyncSettings] = useState<any>(null);
-
-  // Form states
-  const [newGroup, setNewGroup] = useState({
-    name: "",
-    description: "",
-    type: "couple" as const,
-  });
-
-  // Delete group function
-  const handleDeleteGroup = async (group: SharedGroup) => {
-    const userId = user?.uid;
-    if (!userId) return;
-
-    // Check if user is the owner
-    const isOwner = group.members.some(
-      (member) => member.id === userId && member.role === "owner"
-    );
-
-    if (!isOwner) {
-      Alert.alert(
-        "Cannot Delete Group",
-        "Only group owners can delete groups."
-      );
-      return;
-    }
-
-    setDeleteLoading(group.id || null);
-
-    try {
-      Alert.alert(
-        "Delete Group",
-        `Are you sure you want to delete "${group.name}"? This action cannot be undone and will remove the group for all members.`,
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-            onPress: () => {
-              setDeleteLoading(null);
-            },
-          },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                if (group.id) {
-                  await deleteSharedGroup(group.id, userId as string);
-                  Alert.alert("Success", "Group deleted successfully");
-                  loadData(); // Refresh the groups list
-                }
-              } catch (error) {
-                console.error("Error deleting group:", error);
-                Alert.alert(
-                  "Error",
-                  "Failed to delete group. Please try again."
-                );
-              } finally {
-                setDeleteLoading(null);
-              }
-            },
-          },
-        ]
-      );
-    } catch (error) {
-      console.error("Error in delete confirmation:", error);
-      setDeleteLoading(null);
-    }
-  };
+  const [selectedGroup, setSelectedGroup] = useState<SharedGroup | null>(null);
+  const [groupName, setGroupName] = useState("");
+  const [groupDescription, setGroupDescription] = useState("");
+  const [groupType, setGroupType] = useState<
+    "couple" | "family" | "investment" | "business"
+  >("couple");
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"member" | "viewer">("member");
+  const [loading, setLoading] = useState(false);
+  const [invitations, setInvitations] = useState<SharedInvitation[]>([]);
+  const [loadingInvitations, setLoadingInvitations] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (user?.uid) {
+      loadSharedGroups();
+      // Clean up any orphaned shared data
+      cleanupOrphanedSharedData().catch((error) => {
+        console.error("Error during cleanup:", error);
+      });
+    }
+    if (user?.email) {
+      loadInvitations();
+    }
+  }, [user?.uid, user?.email]);
 
-  // Refresh data when screen comes into focus
+  // Refresh groups when screen comes into focus (e.g., after deleting a group)
   useFocusEffect(
     React.useCallback(() => {
-      if (user) {
-        loadData();
-        // Also refresh selected group data if one is selected
-        if (selectedGroup) {
-          loadGroupData(selectedGroup);
-        }
+      if (user?.uid) {
+        loadSharedGroups();
       }
-    }, [user]) // Removed selectedGroup dependency to prevent conflicts
+    }, [user?.uid])
   );
 
-  // Real-time listener for selected group data
-  useEffect(() => {
-    if (!selectedGroup?.id) return;
+  // No more real-time listeners - users will manually sync when needed
 
-    const groupDataRef = ref(db, `sharedGroups/${selectedGroup.id}/sharedData`);
-
-    const unsubscribe = onValue(groupDataRef, async (snapshot) => {
-      if (snapshot.exists()) {
-        // Refresh the aggregated data when shared data changes
-        try {
-          const data = await getGroupAggregatedData(selectedGroup.id!);
-          setGroupData(data);
-        } catch (error) {
-          console.error("Error refreshing group data:", error);
-        }
-      }
-    });
-
-    return () => {
-      off(groupDataRef, "value", unsubscribe);
-    };
-  }, [selectedGroup?.id]);
-
-  const loadData = async () => {
-    if (!user) return;
+  const loadSharedGroups = async () => {
+    if (!user?.uid) return;
 
     try {
       setLoading(true);
-      const [userGroups, userInvitations] = await Promise.all([
-        getUserSharedGroups(user.uid),
-        getUserInvitations(user.email || ""),
-      ]);
+      const userGroups = await getUserSharedGroups(user.uid);
       setGroups(userGroups);
-      setInvitations(userInvitations);
     } catch (error) {
-      console.error("Error loading shared finance data:", error);
-      Alert.alert("Error", "Failed to load shared finance data");
+      console.error("Error loading shared groups:", error);
+      Alert.alert("Error", "Failed to load shared groups");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateGroup = async () => {
-    if (!user) return;
+  const loadInvitations = async () => {
+    if (!user?.email) return;
 
-    if (!newGroup.name.trim()) {
-      Alert.alert("Error", "Please enter a group name");
+    try {
+      setLoadingInvitations(true);
+      const userInvitations = await getUserInvitations(user.email);
+      setInvitations(userInvitations);
+    } catch (error) {
+      console.error("Error loading invitations:", error);
+    } finally {
+      setLoadingInvitations(false);
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!groupName.trim() || !user?.uid) return;
+
+    // Check if user has premium access for creating groups
+    if (!hasPremiumAccess()) {
+      Alert.alert(
+        "Premium Feature",
+        "Creating shared finance groups requires a premium subscription. Upgrade to start collaborating on your finances with family, partners, or business associates.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Upgrade",
+            onPress: () => presentPaywall(),
+          },
+        ]
+      );
       return;
     }
 
     try {
-      const group: SharedGroup = {
-        name: newGroup.name,
-        description: newGroup.description,
-        type: newGroup.type,
+      // Get the user's profile to get their actual display name
+      let userProfile = await getUserProfile(user.uid);
+
+      // If no profile exists, create one with basic info
+      if (!userProfile) {
+        const basicProfile = {
+          uid: user.uid,
+          email: user.email || "",
+          displayName: user.email?.split("@")[0] || "User",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+
+        try {
+          await saveUserProfile(basicProfile);
+          userProfile = basicProfile;
+          console.log("✅ Created basic user profile for group creation");
+        } catch (error) {
+          console.error("❌ Error creating basic profile:", error);
+        }
+      }
+
+      const displayName =
+        userProfile?.displayName || user.email?.split("@")[0] || "User";
+      console.log("🔍 Using display name for group creation:", displayName);
+
+      const newGroup: SharedGroup = {
+        name: groupName.trim(),
+        description: groupDescription.trim(),
         ownerId: user.uid,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        type: groupType,
         members: [
           {
             id: user.uid,
             userId: user.uid,
-            displayName: user.displayName || "Unknown",
+            displayName: displayName,
             email: user.email || "",
             role: "owner",
             joinedAt: Date.now(),
@@ -242,1098 +197,490 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
           allowMemberInvites: true,
           requireApprovalForJoining: false,
         },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       };
 
-      await createSharedGroup(group);
-      await loadData();
+      const groupId = await createSharedGroup(newGroup);
+
+      // Set up default real-time data sharing for the group creator
+      try {
+        const defaultSharingSettings = {
+          shareNetWorth: true,
+          shareMonthlyIncome: true,
+          shareMonthlyExpenses: true,
+          shareTransactions: true,
+          shareRecurringTransactions: true,
+          shareAssets: false,
+          shareDebts: false,
+          shareGoals: false,
+        };
+
+        // No more automatic real-time sharing - users will manually sync when needed
+        console.log(
+          "✅ Group created - user can configure sharing settings when ready"
+        );
+      } catch (error) {
+        console.error("❌ Error during group creation:", error);
+        // Continue with group creation
+      }
+
+      // Reload groups to get the updated list with proper IDs
+      await loadSharedGroups();
+
       setShowCreateModal(false);
-      setNewGroup({ name: "", description: "", type: "couple" });
+      setGroupName("");
+      setGroupDescription("");
+      setGroupType("couple");
       Alert.alert("Success", "Group created successfully!");
     } catch (error) {
       console.error("Error creating group:", error);
-      Alert.alert("Error", "Failed to create group");
+      Alert.alert("Error", "Failed to create group. Please try again.");
     }
   };
 
   const handleInviteMember = async () => {
-    if (!selectedGroup || !user) return;
-
-    if (!inviteEmail.trim()) {
-      Alert.alert("Error", "Please enter an email address");
-      return;
-    }
+    if (!inviteEmail.trim() || !selectedGroup || !user?.uid) return;
 
     try {
+      // Get the user's profile to get their actual display name
+      const userProfile = await getUserProfile(user.uid);
+      const inviterName =
+        userProfile?.displayName || user.email?.split("@")[0] || "User";
+
       const invitation: SharedInvitation = {
         groupId: selectedGroup.id!,
         groupName: selectedGroup.name,
         inviterId: user.uid,
-        inviterName: user.displayName || "Unknown",
+        inviterName: inviterName,
         inviteeEmail: inviteEmail.trim(),
-        role: inviteRole,
+        role: "member",
         status: "pending",
         createdAt: Date.now(),
-        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days from now
+        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
       };
 
       await createInvitation(invitation);
-      await loadData(); // Refresh the data to show the new invitation
       setShowInviteModal(false);
       setInviteEmail("");
-      setInviteRole("member");
+      setSelectedGroup(null);
       Alert.alert("Success", "Invitation sent successfully!");
     } catch (error) {
       console.error("Error sending invitation:", error);
-      Alert.alert("Error", "Failed to send invitation");
+      Alert.alert("Error", "Failed to send invitation. Please try again.");
     }
   };
 
   const handleInvitationResponse = async (
-    invitation: SharedInvitation,
-    response: "accepted" | "declined"
+    invitationId: string,
+    status: "accepted" | "declined"
   ) => {
     try {
-      await updateInvitationStatus(invitation.id!, response);
+      // Find the invitation to get group details
+      const invitation = invitations.find((inv) => inv.id === invitationId);
+      if (!invitation) {
+        throw new Error("Invitation not found");
+      }
 
-      if (response === "accepted" && user) {
-        // Add user to the group
-        const member: SharedGroupMember = {
+      // Update invitation status first
+      await updateInvitationStatus(invitationId, status);
+
+      if (status === "accepted") {
+        // Get current user's profile to create member object
+        if (!user?.uid) {
+          throw new Error("User not authenticated");
+        }
+
+        const userProfile = await getUserProfile(user.uid);
+        if (!userProfile) {
+          throw new Error("User profile not found");
+        }
+
+        // Create the member object
+        const newMember: SharedGroupMember = {
           id: user.uid,
           userId: user.uid,
-          displayName: user.displayName || "Unknown",
+          displayName: userProfile.displayName || user.email || "Unknown User",
           email: user.email || "",
           role: invitation.role,
           joinedAt: Date.now(),
           permissions: {
-            canAddTransactions: invitation.role === "member",
-            canEditTransactions: invitation.role === "member",
-            canAddAssets: invitation.role === "member",
-            canEditAssets: invitation.role === "member",
-            canAddDebts: invitation.role === "member",
-            canEditDebts: invitation.role === "member",
-            canAddGoals: invitation.role === "member",
-            canEditGoals: invitation.role === "member",
+            canAddTransactions: true,
+            canEditTransactions: false,
+            canAddAssets: true,
+            canEditAssets: false,
+            canAddDebts: true,
+            canEditDebts: false,
+            canAddGoals: true,
+            canEditGoals: false,
             canInviteMembers: false,
             canRemoveMembers: false,
             canViewAllData: true,
           },
         };
 
-        await addGroupMember(invitation.groupId, member);
+        // Add user to the shared group
+        await addGroupMember(invitation.groupId, newMember);
+
+        // Set up default real-time data sharing for new members
+        try {
+          const defaultSharingSettings = {
+            shareNetWorth: true,
+            shareMonthlyIncome: true,
+            shareMonthlyExpenses: true,
+            shareTransactions: true,
+            shareRecurringTransactions: true,
+            shareAssets: false,
+            shareDebts: false,
+            shareGoals: false,
+          };
+
+          // No more automatic real-time sharing - users will manually sync when needed
+          console.log(
+            "✅ Member joined - they can configure sharing settings when ready"
+          );
+        } catch (error) {
+          console.error("❌ Error during invitation acceptance:", error);
+          // Continue with invitation acceptance
+        }
+
+        // Show data sharing prompt
+        Alert.alert(
+          "Welcome to the group!",
+          "You can now configure what financial data to share with the group. Set up your sharing preferences to get started.",
+          [
+            {
+              text: "Not Now",
+              style: "cancel",
+            },
+            {
+              text: "Configure Sharing",
+              onPress: () =>
+                navigation.navigate("GroupDataSharing", {
+                  groupId: invitation.groupId,
+                }),
+            },
+          ]
+        );
+
+        // Reload groups to show the new group
+        await loadSharedGroups();
       }
 
-      await loadData();
-      Alert.alert("Success", `Invitation ${response} successfully!`);
+      // Reload invitations to remove the responded one
+      await loadInvitations();
+
+      Alert.alert("Success", `Invitation ${status} successfully!`);
     } catch (error) {
       console.error("Error responding to invitation:", error);
-      Alert.alert("Error", "Failed to respond to invitation");
+      Alert.alert(
+        "Error",
+        "Failed to respond to invitation. Please try again."
+      );
     }
   };
 
-  const loadGroupData = async (group: SharedGroup) => {
-    try {
-      const data = await getGroupAggregatedData(group.id!);
-      setGroupData(data);
-      setSelectedGroup(group);
-    } catch (error) {
-      console.error("Error loading group data:", error);
-      Alert.alert("Error", "Failed to load group data");
-    }
+  const openGroup = (group: SharedGroup) => {
+    navigation.navigate("SharedGroupDetailFixed", {
+      groupId: group.id,
+      onGroupDeleted: (deletedGroupId: string) => {
+        // Remove the deleted group from local state immediately
+        setGroups((prevGroups) =>
+          prevGroups.filter((g) => g.id !== deletedGroupId)
+        );
+      },
+      onGroupLeft: (leftGroupId: string) => {
+        // Remove the group the user left from local state immediately
+        setGroups((prevGroups) =>
+          prevGroups.filter((g) => g.id !== leftGroupId)
+        );
+      },
+    });
   };
 
-  const loadGroupGoals = async (groupId: string) => {
-    try {
-      const sharedData = await getGroupSharedData(groupId);
-      setGroupGoals(sharedData.goals);
-      setShowGoalsModal(true);
-    } catch (error) {
-      console.error("Error loading group goals:", error);
-      Alert.alert("Error", "Failed to load group goals");
-    }
-  };
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <View
+        style={[styles.emptyIcon, { backgroundColor: colors.primary + "20" }]}
+      >
+        <Ionicons name="people" size={48} color={colors.primary} />
+      </View>
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+        Start Sharing Finances
+      </Text>
+      <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+        Create a group to share net worth, income, and transactions with trusted
+        people
+      </Text>
+      <TouchableOpacity
+        style={[styles.emptyStateButton, { backgroundColor: colors.primary }]}
+        onPress={() => setShowCreateModal(true)}
+      >
+        <Ionicons name="add" size={20} color={colors.buttonText} />
+        <Text style={[styles.createButtonText, { color: colors.buttonText }]}>
+          Create Your First Group
+        </Text>
+        {!hasPremiumAccess() && (
+          <Ionicons
+            name="star"
+            size={16}
+            color={colors.buttonText}
+            style={{ marginLeft: 8 }}
+          />
+        )}
+      </TouchableOpacity>
+    </View>
+  );
 
-  const syncUserDataToGroup = async (groupId: string) => {
-    if (!user) return;
+  const renderGroupCard = (group: SharedGroup) => {
+    const memberCount = group.members.length;
+    const isOwner = group.ownerId === user?.uid;
 
-    try {
-      await addUserDataToGroup(groupId, user.uid);
-      Alert.alert("Success", "Your data has been synced to the group!");
-      // Refresh the group data to show updated totals
-      if (selectedGroup) {
-        await loadGroupData(selectedGroup);
-      }
-    } catch (error) {
-      console.error("Error syncing user data to group:", error);
-      Alert.alert("Error", "Failed to sync data to group");
-    }
-  };
-
-  const openSelectiveSyncModal = async (groupId: string) => {
-    if (!user) return;
-
-    try {
-      // Load current sync settings
-      const settings = await getUserGroupSyncSettings(groupId, user.uid);
-      setCurrentSyncSettings(settings);
-
-      // Set current selections
-      if (settings) {
-        setSelectedGoals(settings.goals || []);
-        setSyncTransactions(settings.transactions !== false);
-      } else {
-        setSelectedGoals([]);
-        setSyncTransactions(true);
-      }
-
-      setShowSelectiveSyncModal(true);
-    } catch (error) {
-      console.error("Error loading sync settings:", error);
-      Alert.alert("Error", "Failed to load sync settings");
-    }
-  };
-
-  const handleSelectiveSync = async () => {
-    if (!user || !selectedGroup) return;
-
-    try {
-      await addSelectiveUserDataToGroup(selectedGroup.id!, user.uid, {
-        goals: selectedGoals,
-        transactions: syncTransactions,
-      });
-
-      Alert.alert("Success", "Selected data has been synced to the group!");
-      setShowSelectiveSyncModal(false);
-
-      // Refresh the group data
-      await loadGroupData(selectedGroup);
-    } catch (error) {
-      console.error("Error selective syncing data to group:", error);
-      Alert.alert("Error", "Failed to sync selected data to group");
-    }
-  };
-
-  const toggleGoalSelection = (goalId: string) => {
-    setSelectedGoals((prev) =>
-      prev.includes(goalId)
-        ? prev.filter((id) => id !== goalId)
-        : [...prev, goalId]
-    );
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
-
-  const getGroupTypeIcon = (type: string) => {
-    switch (type) {
-      case "couple":
-        return "heart";
-      case "family":
-        return "people";
-      case "business":
-        return "business";
-      case "investment":
-        return "trending-up";
-      default:
-        return "people";
-    }
-  };
-
-  const getGroupTypeColor = (type: string) => {
-    switch (type) {
-      case "couple":
-        return "#ec4899";
-      case "family":
-        return "#3b82f6";
-      case "business":
-        return "#10b981";
-      case "investment":
-        return "#f59e0b";
-      default:
-        return "#6b7280";
-    }
-  };
-
-  if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={{ marginTop: 16, color: colors.textSecondary }}>
-            Loading...
-          </Text>
+      <TouchableOpacity
+        key={group.id}
+        style={[styles.groupCard, { backgroundColor: colors.surface }]}
+        onPress={() => openGroup(group)}
+      >
+        <View style={styles.groupHeader}>
+          <View style={styles.groupInfo}>
+            <Text style={[styles.groupName, { color: colors.text }]}>
+              {group.name}
+            </Text>
+            <Text
+              style={[styles.groupDescription, { color: colors.textSecondary }]}
+            >
+              {group.description}
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.groupBadge,
+              { backgroundColor: colors.primary + "20" },
+            ]}
+          >
+            <Text style={[styles.groupBadgeText, { color: colors.primary }]}>
+              {group.type}
+            </Text>
+          </View>
         </View>
-      </SafeAreaView>
+
+        <View style={styles.groupStats}>
+          <View style={styles.statItem}>
+            <Ionicons name="people" size={16} color={colors.textSecondary} />
+            <Text style={[styles.statText, { color: colors.textSecondary }]}>
+              {memberCount} member{memberCount !== 1 ? "s" : ""}
+            </Text>
+          </View>
+          <View style={styles.statItem}>
+            <Ionicons
+              name="shield-checkmark"
+              size={16}
+              color={colors.textSecondary}
+            />
+            <Text style={[styles.statText, { color: colors.textSecondary }]}>
+              {isOwner ? "Owner" : "Member"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.groupActions}>
+          <TouchableOpacity
+            style={[
+              styles.actionButton,
+              { backgroundColor: colors.primary + "20" },
+            ]}
+            onPress={() => {
+              setSelectedGroup(group);
+              setShowInviteModal(true);
+            }}
+          >
+            <Ionicons name="person-add" size={16} color={colors.primary} />
+            <Text style={[styles.actionButtonText, { color: colors.primary }]}>
+              Invite
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.actionButton,
+              { backgroundColor: colors.warning + "20" },
+            ]}
+            onPress={() =>
+              navigation.navigate("GroupDataSharing", { groupId: group.id! })
+            }
+          >
+            <Ionicons name="share" size={16} color={colors.warning} />
+            <Text style={[styles.actionButtonText, { color: colors.warning }]}>
+              Share Data
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.actionButton,
+              { backgroundColor: colors.success + "20" },
+            ]}
+            onPress={() => openGroup(group)}
+          >
+            <Ionicons name="open" size={16} color={colors.success} />
+            <Text style={[styles.actionButtonText, { color: colors.success }]}>
+              Open
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
     );
-  }
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView style={{ flex: 1, padding: 20 }}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <StandardHeader
-          title="Shared Finance"
-          subtitle="Manage shared financial groups"
+          title="Shared Finances"
           onBack={() => navigation.goBack()}
-        />
-
-        {/* Action Buttons */}
-        <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              backgroundColor: colors.primary,
-              padding: 16,
-              borderRadius: 12,
-              alignItems: "center",
-            }}
-            onPress={() => setShowCreateModal(true)}
-          >
-            <Ionicons name="add" size={20} color={colors.buttonText} />
-            <Text
-              style={{
-                color: colors.buttonText,
-                fontWeight: "600",
-                marginTop: 4,
-              }}
-            >
-              Create Group
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              backgroundColor: colors.info,
-              padding: 16,
-              borderRadius: 12,
-              alignItems: "center",
-            }}
-            onPress={() => setShowInvitationsModal(true)}
-          >
-            <Ionicons name="mail" size={20} color={colors.buttonText} />
-            <Text
-              style={{
-                color: colors.buttonText,
-                fontWeight: "600",
-                marginTop: 4,
-              }}
-            >
-              Invitations ({invitations.length})
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Groups List */}
-        {groups.length === 0 ? (
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 40,
-              alignItems: "center",
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
-            }}
-          >
-            <Ionicons name="people" size={48} color={colors.textTertiary} />
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "600",
-                color: colors.text,
-                marginTop: 16,
-              }}
-            >
-              No Shared Groups
-            </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                color: colors.textSecondary,
-                textAlign: "center",
-                marginTop: 8,
-                marginBottom: 20,
-              }}
-            >
-              Create a shared group to start tracking finances together
-            </Text>
-            <TouchableOpacity
-              style={{
-                backgroundColor: colors.primary,
-                paddingHorizontal: 24,
-                paddingVertical: 12,
-                borderRadius: 8,
-              }}
-              onPress={() => setShowCreateModal(true)}
-            >
-              <Text style={{ color: colors.buttonText, fontWeight: "600" }}>
-                Create Group
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          groups.map((group) => (
-            <TouchableOpacity
-              key={group.id}
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: 20,
-                padding: 24,
-                marginBottom: 16,
-                shadowColor: colors.shadow,
-                shadowOpacity: 0.08,
-                shadowRadius: 12,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 4,
-              }}
-              onPress={() => loadGroupData(group)}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <View
-                  style={{
-                    backgroundColor: `${getGroupTypeColor(group.type)}20`,
-                    padding: 12,
-                    borderRadius: 12,
-                    marginRight: 16,
-                  }}
-                >
-                  <Ionicons
-                    name={getGroupTypeIcon(group.type) as any}
-                    size={24}
-                    color={getGroupTypeColor(group.type)}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 18,
-                      fontWeight: "700",
-                      color: colors.text,
-                    }}
-                  >
-                    {group.name}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: colors.textSecondary,
-                      marginTop: 2,
-                    }}
-                  >
-                    {group.type.charAt(0).toUpperCase() + group.type.slice(1)} •{" "}
-                    {group.members.length} member
-                    {group.members.length !== 1 ? "s" : ""}
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 12,
-                  }}
-                >
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSelectedGroup(group);
-                      setShowInviteModal(true);
-                    }}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons
-                      name="person-add"
-                      size={30}
-                      color={colors.primary}
-                    />
-                  </TouchableOpacity>
-                  {group.members.some(
-                    (member) =>
-                      member.id === user?.uid && member.role === "owner"
-                  ) && (
-                    <TouchableOpacity
-                      onPress={() => handleDeleteGroup(group)}
-                      disabled={deleteLoading === group.id}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      style={{
-                        opacity: deleteLoading === group.id ? 0.6 : 1,
-                        marginLeft: 10,
-                      }}
-                    >
-                      {deleteLoading === group.id ? (
-                        <ActivityIndicator size="small" color="#dc2626" />
-                      ) : (
-                        <Ionicons name="trash" size={30} color="#dc2626" />
-                      )}
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-
-              {group.description && (
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    marginBottom: 16,
-                  }}
-                >
-                  {group.description}
-                </Text>
-              )}
-
-              {/* Group Stats Preview */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                    Members
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "700",
-                      color: colors.text,
-                    }}
-                  >
-                    {group.members.length}
-                  </Text>
-                </View>
-                <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                    Created
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "700",
-                      color: colors.text,
-                    }}
-                  >
-                    {new Date(group.createdAt).toLocaleDateString()}
-                  </Text>
-                </View>
-                <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                    Type
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "700",
-                      color: colors.text,
-                    }}
-                  >
-                    {group.type.charAt(0).toUpperCase() + group.type.slice(1)}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
-
-        {/* Selected Group Details */}
-        {selectedGroup && groupData && (
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 24,
-              marginTop: 16,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 20,
-              }}
-            >
-              <Text
-                style={{ fontSize: 20, fontWeight: "700", color: colors.text }}
-              >
-                {selectedGroup.name} Overview
-              </Text>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                {/* <TouchableOpacity
-                  onPress={() => loadGroupData(selectedGroup)}
-                  style={{ marginRight: 12 }}
-                >
-                  <Ionicons name="refresh" size={30} color={colors.primary} />
-                </TouchableOpacity> */}
-                <TouchableOpacity
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  onPress={() => setSelectedGroup(null)}
-                >
-                  <Ionicons
-                    name="close"
-                    size={24}
-                    color={colors.textSecondary}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Enhanced Group Stats Overview */}
-            <View style={{ marginBottom: 24 }}>
-              {/* Net Worth Card - Hero Metric */}
-              <View
-                style={{
-                  backgroundColor: colors.surface,
-                  borderRadius: 16,
-                  padding: 20,
-                  marginBottom: 16,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  shadowColor:
-                    groupData.netWorth >= 0 ? colors.success : colors.error,
-                  shadowOpacity: 0.08,
-                  shadowRadius: 12,
-                  shadowOffset: { width: 0, height: 4 },
-                  elevation: 4,
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 16,
-                  }}
-                >
-                  <View
-                    style={{
-                      backgroundColor:
-                        groupData.netWorth >= 0
-                          ? colors.successLight
-                          : colors.errorLight,
-                      width: 44,
-                      height: 44,
-                      borderRadius: 22,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginRight: 16,
-                    }}
-                  >
-                    <Ionicons
-                      name={
-                        groupData.netWorth >= 0
-                          ? "trending-up"
-                          : "trending-down"
-                      }
-                      size={22}
-                      color={
-                        groupData.netWorth >= 0 ? colors.success : colors.error
-                      }
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                        fontWeight: "600",
-                        marginBottom: 4,
-                      }}
-                    >
-                      Group Net Worth
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 24,
-                        fontWeight: "700",
-                        color: colors.text,
-                      }}
-                    >
-                      {formatCurrency(groupData.netWorth)}
-                    </Text>
-                  </View>
-                </View>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    paddingTop: 16,
-                    borderTopWidth: 1,
-                    borderTopColor: colors.border,
-                  }}
-                >
-                  <View style={{ alignItems: "center", flex: 1 }}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                        fontWeight: "500",
-                        marginBottom: 6,
-                      }}
-                    >
-                      Assets
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "700",
-                        color: colors.success,
-                      }}
-                    >
-                      {formatCurrency(groupData.totalAssets)}
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: "center", flex: 1 }}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                        fontWeight: "500",
-                        marginBottom: 6,
-                      }}
-                    >
-                      Debts
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "700",
-                        color: colors.error,
-                      }}
-                    >
-                      {formatCurrency(groupData.totalDebts)}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Monthly Cash Flow Card */}
-              <View
-                style={{
-                  backgroundColor: colors.surface,
-                  borderRadius: 16,
-                  padding: 20,
-                  marginBottom: 16,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  shadowColor: colors.primary,
-                  shadowOpacity: 0.08,
-                  shadowRadius: 12,
-                  shadowOffset: { width: 0, height: 4 },
-                  elevation: 4,
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 16,
-                  }}
-                >
-                  <View
-                    style={{
-                      backgroundColor: colors.infoLight,
-                      width: 44,
-                      height: 44,
-                      borderRadius: 22,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginRight: 16,
-                    }}
-                  >
-                    <Ionicons name="cash" size={22} color={colors.info} />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: colors.textSecondary,
-                    }}
-                  >
-                    Monthly Cash Flow
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    marginBottom: 12,
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                        fontWeight: "500",
-                        marginBottom: 6,
-                      }}
-                    >
-                      Income
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 18,
-                        fontWeight: "700",
-                        color: colors.success,
-                      }}
-                    >
-                      {formatCurrency(groupData.totalIncome)}
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1, alignItems: "flex-end" }}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                        fontWeight: "500",
-                        marginBottom: 6,
-                      }}
-                    >
-                      Expenses
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 18,
-                        fontWeight: "700",
-                        color: colors.error,
-                      }}
-                    >
-                      {formatCurrency(groupData.totalExpenses)}
-                    </Text>
-                  </View>
-                </View>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    paddingTop: 16,
-                    borderTopWidth: 1,
-                    borderTopColor: "#f3f4f6",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: "#6b7280",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Net Monthly
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      fontWeight: "700",
-                      color:
-                        groupData.totalIncome - groupData.totalExpenses >= 0
-                          ? "#16a34a"
-                          : "#dc2626",
-                    }}
-                  >
-                    {formatCurrency(
-                      groupData.totalIncome - groupData.totalExpenses
-                    )}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Professional Action Buttons */}
-            <View style={{ marginBottom: 24 }}>
-              {/* View Group Goals Button */}
+          rightComponent={
+            <TourGuide zone={2} screen="SharedFinance">
               <TouchableOpacity
+                onPress={() => setShowCreateModal(true)}
                 style={{
                   backgroundColor: colors.primary,
-                  paddingVertical: 18,
-                  paddingHorizontal: 20,
-                  borderRadius: 16,
-                  flexDirection: "row",
+                  padding: 12,
+                  borderRadius: 12,
                   alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: 12,
-                  shadowColor: colors.primary,
-                  shadowOpacity: 0.15,
-                  shadowRadius: 12,
-                  shadowOffset: { width: 0, height: 4 },
-                  elevation: 4,
-                  borderWidth: 1,
-                  borderColor: colors.primary + "20",
+                  justifyContent: "center",
+                  shadowColor: colors.shadow,
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 2,
                 }}
-                onPress={() => loadGroupGoals(selectedGroup.id!)}
+                activeOpacity={0.8}
               >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    flex: 1,
-                  }}
-                >
+                <Ionicons name="add" size={20} color={colors.buttonText} />
+                {!hasPremiumAccess() && (
                   <View
                     style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 20,
-                      backgroundColor: colors.buttonText + "15",
-                      justifyContent: "center",
+                      position: "absolute",
+                      top: -2,
+                      right: -2,
+                      backgroundColor: colors.warning,
+                      borderRadius: 8,
+                      width: 16,
+                      height: 16,
                       alignItems: "center",
-                      marginRight: 12,
+                      justifyContent: "center",
                     }}
                   >
-                    <Ionicons name="flag" size={20} color={colors.buttonText} />
+                    <Ionicons name="star" size={10} color={colors.buttonText} />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        color: colors.buttonText,
-                        fontWeight: "700",
-                        fontSize: 16,
-                        marginBottom: 2,
-                      }}
-                    >
-                      View Group Goals
-                    </Text>
-                    <Text
-                      style={{
-                        color: colors.buttonText + "CC",
-                        fontWeight: "500",
-                        fontSize: 13,
-                      }}
-                    >
-                      {groupData.totalGoals} goal
-                      {groupData.totalGoals !== 1 ? "s" : ""} shared
-                    </Text>
-                  </View>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={colors.buttonText + "80"}
-                />
+                )}
               </TouchableOpacity>
-
-              {/* Selective Sync Button */}
-              <TouchableOpacity
-                style={{
-                  backgroundColor: colors.info,
-                  paddingVertical: 18,
-                  paddingHorizontal: 20,
-                  borderRadius: 16,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: 20,
-                  shadowColor: colors.info,
-                  shadowOpacity: 0.15,
-                  shadowRadius: 12,
-                  shadowOffset: { width: 0, height: 4 },
-                  elevation: 4,
-                  borderWidth: 1,
-                  borderColor: colors.info + "20",
-                }}
-                onPress={() => openSelectiveSyncModal(selectedGroup.id!)}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    flex: 1,
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 20,
-                      backgroundColor: colors.buttonText + "15",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginRight: 12,
-                    }}
-                  >
-                    <Ionicons name="sync" size={20} color={colors.buttonText} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        color: colors.buttonText,
-                        fontWeight: "700",
-                        fontSize: 16,
-                        marginBottom: 2,
-                      }}
-                    >
-                      Selective Sync
-                    </Text>
-                    <Text
-                      style={{
-                        color: colors.buttonText + "CC",
-                        fontWeight: "500",
-                        fontSize: 13,
-                      }}
-                    >
-                      Choose what to share
-                    </Text>
-                  </View>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={colors.buttonText + "80"}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* Info Section */}
-            <View
-              style={{
-                backgroundColor: colors.infoLight,
-                borderWidth: 1,
-                borderColor: colors.info,
-                borderRadius: 12,
-                padding: 16,
-                marginBottom: 20,
-              }}
-            >
+            </TourGuide>
+          }
+        />
+        {/* Invitations Section */}
+        {invitations.length > 0 && (
+          <View style={styles.invitationsContainer}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Pending Invitations ({invitations.length})
+            </Text>
+            {invitations.map((invitation) => (
               <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 8,
-                }}
+                key={invitation.id}
+                style={[
+                  styles.invitationCard,
+                  { backgroundColor: colors.surface },
+                ]}
               >
-                <Ionicons
-                  name="information-circle"
-                  size={20}
-                  color={colors.info}
-                />
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "600",
-                    color: colors.info,
-                    marginLeft: 8,
-                  }}
-                >
-                  Selective Data Syncing
-                </Text>
-              </View>
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: colors.text,
-                  lineHeight: 18,
-                  fontWeight: "500",
-                }}
-              >
-                Choose which specific goals and data to share with this group.
-                Use "Selective Sync" to customize what financial information is
-                visible to group members.
-              </Text>
-            </View>
-
-            {/* Members List */}
-            <View>
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: "600",
-                  color: colors.text,
-                  marginBottom: 12,
-                }}
-              >
-                Members
-              </Text>
-              {selectedGroup.members.map((member) => (
-                <View
-                  key={member.id}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 8,
-                    borderBottomWidth: 1,
-                    borderBottomColor: colors.border,
-                  }}
-                >
-                  <View
-                    style={{
-                      backgroundColor: colors.surfaceSecondary,
-                      width: 32,
-                      height: 32,
-                      borderRadius: 16,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginRight: 12,
-                    }}
+                <View style={styles.invitationInfo}>
+                  <Text
+                    style={[styles.invitationTitle, { color: colors.text }]}
                   >
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "600",
-                        color: colors.textSecondary,
-                      }}
-                    >
-                      {member.displayName.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        fontWeight: "500",
-                        color: colors.text,
-                      }}
-                    >
-                      {member.displayName}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                      {member.role.charAt(0).toUpperCase() +
-                        member.role.slice(1)}
-                    </Text>
-                  </View>
-                  {member.role === "owner" && (
-                    <View
-                      style={{
-                        backgroundColor: "#fef3c7",
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 12,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          fontWeight: "600",
-                          color: "#d97706",
-                        }}
-                      >
-                        Owner
-                      </Text>
-                    </View>
-                  )}
+                    {invitation.groupName}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.invitationSubtitle,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Invited by {invitation.inviterName}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.invitationRole,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Role: {invitation.role}
+                  </Text>
                 </View>
-              ))}
-            </View>
+                <View style={styles.invitationActions}>
+                  <TouchableOpacity
+                    style={[
+                      styles.actionButton,
+                      { backgroundColor: colors.success + "20" },
+                    ]}
+                    onPress={() =>
+                      handleInvitationResponse(invitation.id!, "accepted")
+                    }
+                  >
+                    <Ionicons
+                      name="checkmark"
+                      size={16}
+                      color={colors.success}
+                    />
+                    <Text
+                      style={[
+                        styles.actionButtonText,
+                        { color: colors.success },
+                      ]}
+                    >
+                      Accept
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.actionButton,
+                      { backgroundColor: colors.error + "20" },
+                    ]}
+                    onPress={() =>
+                      handleInvitationResponse(invitation.id!, "declined")
+                    }
+                  >
+                    <Ionicons name="close" size={16} color={colors.error} />
+                    <Text
+                      style={[styles.actionButtonText, { color: colors.error }]}
+                    >
+                      Decline
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
           </View>
         )}
+
+        {/* Groups Section */}
+        <TourGuide zone={3} screen="SharedFinance">
+          {groups.length === 0 ? (
+            renderEmptyState()
+          ) : (
+            <View style={styles.groupsContainer}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Your Groups ({groups.length})
+              </Text>
+              {groups.map(renderGroupCard)}
+            </View>
+          )}
+        </TourGuide>
       </ScrollView>
 
       {/* Create Group Modal */}
@@ -1343,179 +690,137 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
         transparent={true}
         onRequestClose={() => setShowCreateModal(false)}
       >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <View style={styles.modalOverlay}>
           <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              width: "90%",
-              maxWidth: 400,
-              padding: 24,
-            }}
+            style={[styles.modalContent, { backgroundColor: colors.surface }]}
           >
-            <Text
-              style={{
-                fontSize: 20,
-                fontWeight: "700",
-                marginBottom: 20,
-                color: colors.text,
-              }}
-            >
-              Create Shared Group
-            </Text>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                Create New Group
+              </Text>
+              <TouchableOpacity onPress={() => setShowCreateModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "500",
-                color: colors.text,
-                marginBottom: 8,
-              }}
-            >
-              Group Name *
-            </Text>
             <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
-                marginBottom: 16,
-                fontSize: 16,
-                backgroundColor: colors.surfaceSecondary,
-                color: colors.text,
-              }}
-              value={newGroup.name}
-              onChangeText={(text) => setNewGroup({ ...newGroup, name: text })}
-              placeholder="Enter group name"
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.background,
+                  color: colors.text,
+                  borderColor: colors.border,
+                },
+              ]}
+              placeholder="Group name"
               placeholderTextColor={colors.textSecondary}
+              value={groupName}
+              onChangeText={setGroupName}
             />
 
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "500",
-                color: colors.text,
-                marginBottom: 8,
-              }}
-            >
-              Description
-            </Text>
             <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
-                marginBottom: 16,
-                fontSize: 16,
-                backgroundColor: colors.surfaceSecondary,
-                color: colors.text,
-              }}
-              value={newGroup.description}
-              onChangeText={(text) =>
-                setNewGroup({ ...newGroup, description: text })
-              }
-              placeholder="Enter description (optional)"
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.background,
+                  color: colors.text,
+                  borderColor: colors.border,
+                },
+              ]}
+              placeholder="Description (optional)"
               placeholderTextColor={colors.textSecondary}
+              value={groupDescription}
+              onChangeText={setGroupDescription}
+              multiline
             />
 
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "500",
-                color: colors.text,
-                marginBottom: 8,
-              }}
-            >
-              Group Type
-            </Text>
-            <View style={{ flexDirection: "row", gap: 8, marginBottom: 20 }}>
-              {["couple", "family", "business", "investment"].map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={{
-                    flex: 1,
-                    padding: 12,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor:
-                      newGroup.type === type
-                        ? getGroupTypeColor(type)
-                        : colors.border,
-                    backgroundColor:
-                      newGroup.type === type
-                        ? `${getGroupTypeColor(type)}10`
-                        : colors.surface,
-                    alignItems: "center",
-                  }}
-                  onPress={() =>
-                    setNewGroup({ ...newGroup, type: type as any })
-                  }
-                >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "600",
-                      color:
-                        newGroup.type === type
-                          ? getGroupTypeColor(type)
-                          : colors.textSecondary,
-                    }}
+            {/* Group Type Selector */}
+            <View style={styles.typeSelectorContainer}>
+              <Text style={[styles.typeSelectorLabel, { color: colors.text }]}>
+                Group Type
+              </Text>
+              <View style={styles.typeSelectorGrid}>
+                {[
+                  { type: "couple", label: "Couple", icon: "heart" },
+                  { type: "family", label: "Family", icon: "people" },
+                  {
+                    type: "investment",
+                    label: "Investment",
+                    icon: "trending-up",
+                  },
+                  { type: "business", label: "Business", icon: "business" },
+                ].map((typeOption) => (
+                  <TouchableOpacity
+                    key={typeOption.type}
+                    style={[
+                      styles.typeOption,
+                      {
+                        backgroundColor:
+                          groupType === typeOption.type
+                            ? colors.primary + "20"
+                            : colors.background,
+                        borderColor:
+                          groupType === typeOption.type
+                            ? colors.primary
+                            : colors.border,
+                      },
+                    ]}
+                    onPress={() => setGroupType(typeOption.type as any)}
                   >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Ionicons
+                      name={typeOption.icon as any}
+                      size={20}
+                      color={
+                        groupType === typeOption.type
+                          ? colors.primary
+                          : colors.textSecondary
+                      }
+                    />
+                    <Text
+                      style={[
+                        styles.typeOptionLabel,
+                        {
+                          color:
+                            groupType === typeOption.type
+                              ? colors.primary
+                              : colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {typeOption.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderRadius: 8,
-                  backgroundColor: colors.surfaceSecondary,
-                }}
-                onPress={() => setShowCreateModal(false)}
+            <TouchableOpacity
+              style={[
+                styles.modalButton,
+                {
+                  backgroundColor: groupName.trim()
+                    ? colors.primary
+                    : colors.border,
+                  opacity: groupName.trim() ? 1 : 0.5,
+                },
+              ]}
+              onPress={handleCreateGroup}
+              disabled={!groupName.trim()}
+            >
+              <Text
+                style={[styles.modalButtonText, { color: colors.buttonText }]}
               >
-                <Text
-                  style={{
-                    textAlign: "center",
-                    color: colors.textSecondary,
-                    fontWeight: "600",
-                  }}
-                >
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderRadius: 8,
-                  backgroundColor: colors.primary,
-                }}
-                onPress={handleCreateGroup}
-              >
-                <Text
-                  style={{
-                    textAlign: "center",
-                    color: colors.buttonText,
-                    fontWeight: "600",
-                  }}
-                >
-                  Create Group
-                </Text>
-              </TouchableOpacity>
-            </View>
+                Create Group
+              </Text>
+              {!hasPremiumAccess() && (
+                <Ionicons
+                  name="star"
+                  size={16}
+                  color={colors.buttonText}
+                  style={{ marginLeft: 8 }}
+                />
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -1527,882 +832,331 @@ const SharedFinanceScreen: React.FC<SharedFinanceScreenProps> = ({
         transparent={true}
         onRequestClose={() => setShowInviteModal(false)}
       >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <View style={styles.modalOverlay}>
           <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              width: "90%",
-              maxWidth: 400,
-              padding: 24,
-            }}
+            style={[styles.modalContent, { backgroundColor: colors.surface }]}
           >
-            <Text
-              style={{
-                fontSize: 20,
-                fontWeight: "700",
-                marginBottom: 20,
-                color: colors.text,
-              }}
-            >
-              Invite Member
-            </Text>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                Invite Member
+              </Text>
+              <TouchableOpacity onPress={() => setShowInviteModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
             <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "500",
-                color: colors.text,
-                marginBottom: 8,
-              }}
+              style={[styles.modalSubtitle, { color: colors.textSecondary }]}
             >
-              Email Address *
+              Invite someone to join "{selectedGroup?.name}"
             </Text>
+
             <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
-                marginBottom: 16,
-                fontSize: 16,
-                backgroundColor: colors.surfaceSecondary,
-                color: colors.text,
-              }}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.background,
+                  color: colors.text,
+                  borderColor: colors.border,
+                },
+              ]}
+              placeholder="Email address"
+              placeholderTextColor={colors.textSecondary}
               value={inviteEmail}
               onChangeText={setInviteEmail}
-              placeholder="Enter email address"
-              placeholderTextColor={colors.textSecondary}
               keyboardType="email-address"
               autoCapitalize="none"
             />
 
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "500",
-                color: colors.text,
-                marginBottom: 8,
-              }}
-            >
-              Role
-            </Text>
-            <View style={{ flexDirection: "row", gap: 8, marginBottom: 20 }}>
-              {[
+            <TouchableOpacity
+              style={[
+                styles.modalButton,
                 {
-                  key: "member",
-                  label: "Member",
-                  description: "Can add/edit data",
+                  backgroundColor: inviteEmail.trim()
+                    ? colors.primary
+                    : colors.border,
+                  opacity: inviteEmail.trim() ? 1 : 0.5,
                 },
-                { key: "viewer", label: "Viewer", description: "View only" },
-              ].map((role) => (
-                <TouchableOpacity
-                  key={role.key}
-                  style={{
-                    flex: 1,
-                    padding: 12,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor:
-                      inviteRole === role.key ? colors.info : colors.border,
-                    backgroundColor:
-                      inviteRole === role.key
-                        ? colors.infoLight
-                        : colors.surface,
-                  }}
-                  onPress={() => setInviteRole(role.key as any)}
-                >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "600",
-                      color:
-                        inviteRole === role.key
-                          ? colors.info
-                          : colors.textSecondary,
-                    }}
-                  >
-                    {role.label}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color:
-                        inviteRole === role.key
-                          ? colors.info
-                          : colors.textTertiary,
-                      marginTop: 2,
-                    }}
-                  >
-                    {role.description}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderRadius: 8,
-                  backgroundColor: "#f3f4f6",
-                }}
-                onPress={() => setShowInviteModal(false)}
-              >
-                <Text
-                  style={{
-                    textAlign: "center",
-                    color: "#6b7280",
-                    fontWeight: "600",
-                  }}
-                >
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderRadius: 8,
-                  backgroundColor: "#6366f1",
-                }}
-                onPress={handleInviteMember}
-              >
-                <Text
-                  style={{
-                    textAlign: "center",
-                    color: "#fff",
-                    fontWeight: "600",
-                  }}
-                >
-                  Send Invite
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Invitations Modal */}
-      <Modal
-        visible={showInvitationsModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowInvitationsModal(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: 20,
-              width: "90%",
-              maxWidth: 400,
-              maxHeight: "80%",
-              padding: 24,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 20,
-              }}
+              ]}
+              onPress={handleInviteMember}
+              disabled={!inviteEmail.trim()}
             >
               <Text
-                style={{ fontSize: 20, fontWeight: "700", color: "#1f2937" }}
+                style={[styles.modalButtonText, { color: colors.buttonText }]}
               >
-                Invitations
+                Send Invitation
               </Text>
-              <TouchableOpacity onPress={() => setShowInvitationsModal(false)}>
-                <Ionicons name="close" size={24} color="#6b7280" />
-              </TouchableOpacity>
-            </View>
-
-            {invitations.length === 0 ? (
-              <View style={{ alignItems: "center", padding: 40 }}>
-                <Ionicons name="mail" size={48} color="#d1d5db" />
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    color: "#374151",
-                    marginTop: 16,
-                  }}
-                >
-                  No Pending Invitations
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: "#6b7280",
-                    textAlign: "center",
-                    marginTop: 8,
-                  }}
-                >
-                  You don't have any pending invitations
-                </Text>
-              </View>
-            ) : (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {invitations.map((invitation) => (
-                  <View
-                    key={invitation.id}
-                    style={{
-                      borderWidth: 1,
-                      borderColor: "#e5e7eb",
-                      borderRadius: 12,
-                      padding: 16,
-                      marginBottom: 12,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "600",
-                        color: "#374151",
-                      }}
-                    >
-                      {invitation.groupName}
-                    </Text>
-                    <Text
-                      style={{ fontSize: 14, color: "#6b7280", marginTop: 4 }}
-                    >
-                      Invited by {invitation.inviterName}
-                    </Text>
-                    <Text style={{ fontSize: 14, color: "#6b7280" }}>
-                      Role:{" "}
-                      {invitation.role.charAt(0).toUpperCase() +
-                        invitation.role.slice(1)}
-                    </Text>
-                    <Text
-                      style={{ fontSize: 12, color: "#9ca3af", marginTop: 4 }}
-                    >
-                      {new Date(invitation.createdAt).toLocaleDateString()}
-                    </Text>
-
-                    <View
-                      style={{ flexDirection: "row", gap: 8, marginTop: 12 }}
-                    >
-                      <TouchableOpacity
-                        style={{
-                          flex: 1,
-                          padding: 8,
-                          borderRadius: 6,
-                          backgroundColor: "#dc2626",
-                        }}
-                        onPress={() =>
-                          handleInvitationResponse(invitation, "declined")
-                        }
-                      >
-                        <Text
-                          style={{
-                            textAlign: "center",
-                            color: "#fff",
-                            fontSize: 12,
-                            fontWeight: "600",
-                          }}
-                        >
-                          Decline
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={{
-                          flex: 1,
-                          padding: 8,
-                          borderRadius: 6,
-                          backgroundColor: "#16a34a",
-                        }}
-                        onPress={() =>
-                          handleInvitationResponse(invitation, "accepted")
-                        }
-                      >
-                        <Text
-                          style={{
-                            textAlign: "center",
-                            color: "#fff",
-                            fontSize: 12,
-                            fontWeight: "600",
-                          }}
-                        >
-                          Accept
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ))}
-              </ScrollView>
-            )}
-          </View>
-        </View>
-      </Modal>
-
-      {/* Group Goals Modal */}
-      <Modal
-        visible={showGoalsModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowGoalsModal(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              width: "90%",
-              maxWidth: 400,
-              maxHeight: "85%",
-              padding: 24,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 20,
-              }}
-            >
-              <Text
-                style={{ fontSize: 20, fontWeight: "700", color: colors.text }}
-              >
-                Group Goals
-              </Text>
-              <TouchableOpacity onPress={() => setShowGoalsModal(false)}>
-                <Ionicons name="close" size={24} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Editable Indicator */}
-
-            {groupGoals.length === 0 ? (
-              <View style={{ alignItems: "center", padding: 40 }}>
-                <Ionicons
-                  name="flag-outline"
-                  size={48}
-                  color={colors.textTertiary}
-                />
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    color: colors.text,
-                    marginTop: 16,
-                  }}
-                >
-                  No Group Goals
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    textAlign: "center",
-                    marginTop: 8,
-                  }}
-                >
-                  Group members haven't shared any goals yet
-                </Text>
-              </View>
-            ) : (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {groupGoals.map((goal, index) => {
-                  const progress =
-                    goal.targetAmount > 0
-                      ? (goal.currentAmount / goal.targetAmount) * 100
-                      : 0;
-
-                  const getProgressColor = (progress: number) => {
-                    if (progress >= 100) return "#16a34a";
-                    if (progress >= 75) return "#d97706";
-                    if (progress >= 50) return "#f59e0b";
-                    return "#dc2626";
-                  };
-
-                  return (
-                    <View
-                      key={goal.id || index}
-                      style={{
-                        borderWidth: 1,
-                        borderColor: colors.border,
-                        borderRadius: 16,
-                        padding: 20,
-                        marginBottom: 16,
-                        backgroundColor: colors.surface,
-                        shadowColor: colors.shadow,
-                        shadowOpacity: 0.05,
-                        shadowRadius: 8,
-                        shadowOffset: { width: 0, height: 2 },
-                        elevation: 2,
-                      }}
-                    >
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginBottom: 12,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 18,
-                            fontWeight: "700",
-                            color: colors.text,
-                            flex: 1,
-                          }}
-                        >
-                          {goal.name}
-                        </Text>
-                        <View
-                          style={{
-                            backgroundColor: `${getProgressColor(progress)}20`,
-                            paddingHorizontal: 10,
-                            paddingVertical: 6,
-                            borderRadius: 12,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 14,
-                              fontWeight: "700",
-                              color: getProgressColor(progress),
-                            }}
-                          >
-                            {progress.toFixed(1)}%
-                          </Text>
-                        </View>
-                      </View>
-
-                      <Text
-                        style={{
-                          fontSize: 15,
-                          color: colors.textSecondary,
-                          marginBottom: 12,
-                          fontWeight: "500",
-                        }}
-                      >
-                        {goal.category?.charAt(0).toUpperCase() +
-                          goal.category?.slice(1) || "Other"}
-                      </Text>
-
-                      {/* Progress Bar */}
-                      <View
-                        style={{
-                          height: 8,
-                          backgroundColor: colors.surfaceSecondary,
-                          borderRadius: 4,
-                          overflow: "hidden",
-                          marginBottom: 16,
-                        }}
-                      >
-                        <View
-                          style={{
-                            height: "100%",
-                            backgroundColor: getProgressColor(progress),
-                            width: `${Math.min(progress, 100)}%`,
-                          }}
-                        />
-                      </View>
-
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <View>
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              color: colors.textSecondary,
-                              marginBottom: 8,
-                            }}
-                          >
-                            Current
-                          </Text>
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              fontWeight: "700",
-                              color: colors.text,
-                              marginBottom: 8,
-                            }}
-                          >
-                            {formatCurrency(goal.currentAmount)}
-                          </Text>
-                        </View>
-                        <View>
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              color: colors.textSecondary,
-                              marginBottom: 4,
-                            }}
-                          >
-                            Target
-                          </Text>
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              fontWeight: "700",
-                              color: colors.text,
-                            }}
-                          >
-                            {formatCurrency(goal.targetAmount)}
-                          </Text>
-                        </View>
-                        <View>
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              color: colors.textSecondary,
-                              marginBottom: 4,
-                            }}
-                          >
-                            Monthly
-                          </Text>
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              fontWeight: "700",
-                              color: "#16a34a",
-                            }}
-                          >
-                            {formatCurrency(goal.monthlyContribution)}
-                          </Text>
-                        </View>
-                      </View>
-
-                      {goal.targetDate && (
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            color: colors.textSecondary,
-                            marginTop: 12,
-                            textAlign: "center",
-                            fontWeight: "500",
-                          }}
-                        >
-                          Target Date:{" "}
-                          {new Date(goal.targetDate).toLocaleDateString()}
-                        </Text>
-                      )}
-
-                      <View
-                        style={{
-                          marginTop: 12,
-                          paddingTop: 12,
-                          borderTopWidth: 1,
-                          borderTopColor: colors.border,
-                        }}
-                      >
-                        {goal.lastUpdatedBy && (
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              marginBottom: 8,
-                            }}
-                          >
-                            <Ionicons
-                              name="time"
-                              size={14}
-                              color={colors.textTertiary}
-                            />
-                            <Text
-                              style={{
-                                fontSize: 12,
-                                color: colors.textTertiary,
-                                marginLeft: 6,
-                                fontWeight: "500",
-                              }}
-                            >
-                              Last updated by {goal.lastUpdatedBy.displayName}{" "}
-                              on{" "}
-                              {new Date(
-                                goal.lastUpdatedBy.timestamp
-                              ).toLocaleDateString()}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  );
-                })}
-              </ScrollView>
-            )}
-          </View>
-        </View>
-      </Modal>
-
-      {/* Selective Sync Modal */}
-      <Modal
-        visible={showSelectiveSyncModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowSelectiveSyncModal(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              width: "90%",
-              maxWidth: 400,
-              maxHeight: "85%",
-              padding: 24,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 20,
-              }}
-            >
-              <Text
-                style={{ fontSize: 20, fontWeight: "700", color: colors.text }}
-              >
-                Selective Sync
-              </Text>
-              <TouchableOpacity
-                onPress={() => setShowSelectiveSyncModal(false)}
-              >
-                <Ionicons name="close" size={24} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Transactions Toggle */}
-              <View style={{ marginBottom: 24 }}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 12,
-                  }}
-                >
-                  <View>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "600",
-                        color: colors.text,
-                      }}
-                    >
-                      Share Transactions
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                      }}
-                    >
-                      Include your income and expenses
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => setSyncTransactions(!syncTransactions)}
-                    style={{
-                      backgroundColor: syncTransactions
-                        ? colors.primary
-                        : colors.border,
-                      width: 48,
-                      height: 24,
-                      borderRadius: 12,
-                      justifyContent: "center",
-                      alignItems: syncTransactions ? "flex-end" : "flex-start",
-                      paddingHorizontal: 2,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: 10,
-                        backgroundColor: colors.buttonText,
-                      }}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Goals Selection */}
-              <View style={{ marginBottom: 24 }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    color: colors.text,
-                    marginBottom: 12,
-                  }}
-                >
-                  Select Goals to Share
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    marginBottom: 16,
-                  }}
-                >
-                  Choose which goals to share with this group
-                </Text>
-
-                {userGoals.length === 0 ? (
-                  <View
-                    style={{
-                      backgroundColor: colors.surfaceSecondary,
-                      borderRadius: 12,
-                      padding: 20,
-                      alignItems: "center",
-                    }}
-                  >
-                    <Ionicons
-                      name="flag-outline"
-                      size={32}
-                      color={colors.textTertiary}
-                    />
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                        marginTop: 8,
-                        textAlign: "center",
-                      }}
-                    >
-                      No goals available to sync
-                    </Text>
-                  </View>
-                ) : (
-                  userGoals.map((goal) => (
-                    <TouchableOpacity
-                      key={goal.id}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        padding: 12,
-                        borderWidth: 1,
-                        borderColor: selectedGoals.includes(goal.id!)
-                          ? colors.info
-                          : colors.border,
-                        borderRadius: 12,
-                        marginBottom: 8,
-                        backgroundColor: selectedGoals.includes(goal.id!)
-                          ? colors.infoLight
-                          : colors.surface,
-                      }}
-                      onPress={() => toggleGoalSelection(goal.id!)}
-                    >
-                      <View
-                        style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: 10,
-                          borderWidth: 2,
-                          borderColor: selectedGoals.includes(goal.id!)
-                            ? colors.info
-                            : colors.border,
-                          backgroundColor: selectedGoals.includes(goal.id!)
-                            ? colors.info
-                            : colors.surface,
-                          justifyContent: "center",
-                          alignItems: "center",
-                          marginRight: 12,
-                        }}
-                      >
-                        {selectedGoals.includes(goal.id!) && (
-                          <Ionicons
-                            name="checkmark"
-                            size={12}
-                            color={colors.buttonText}
-                          />
-                        )}
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            fontWeight: "600",
-                            color: colors.text,
-                          }}
-                        >
-                          {goal.name}
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: colors.textSecondary,
-                          }}
-                        >
-                          {goal.category} • {formatCurrency(goal.currentAmount)}{" "}
-                          / {formatCurrency(goal.targetAmount)}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))
-                )}
-              </View>
-
-              {/* Sync Button */}
-              <TouchableOpacity
-                style={{
-                  backgroundColor: colors.primary,
-                  padding: 16,
-                  borderRadius: 12,
-                  alignItems: "center",
-                  marginTop: 16,
-                }}
-                onPress={handleSelectiveSync}
-              >
-                <Text
-                  style={{
-                    color: colors.buttonText,
-                    fontWeight: "600",
-                    fontSize: 16,
-                  }}
-                >
-                  Sync Selected Data
-                </Text>
-              </TouchableOpacity>
-            </ScrollView>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
     </SafeAreaView>
   );
-};
+}
 
-export default SharedFinanceScreen;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.1)",
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  headerInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  dataSharingButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.05)",
+  },
+  backButton: {
+    marginRight: 20,
+    padding: 10,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+  },
+  loadingText: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  createButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  emptyStateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 8,
+  },
+  typeSelectorContainer: {
+    marginBottom: 8,
+  },
+  typeSelectorLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  typeSelectorGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  typeOption: {
+    flex: 1,
+    minWidth: "45%",
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: "center",
+    gap: 8,
+  },
+  typeOptionLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 80,
+    gap: 20,
+  },
+  emptyIcon: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    fontSize: 16,
+    textAlign: "center",
+    lineHeight: 24,
+    maxWidth: 280,
+  },
+  groupsContainer: {
+    paddingVertical: 20,
+    gap: 16,
+  },
+  invitationsContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  invitationCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  invitationInfo: {
+    marginBottom: 12,
+  },
+  invitationTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  invitationSubtitle: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  invitationRole: {
+    fontSize: 12,
+    fontStyle: "italic",
+  },
+  invitationActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 16,
+  },
+  groupCard: {
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  groupHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  groupInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  groupName: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  groupDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  groupBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  groupBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  groupStats: {
+    flexDirection: "row",
+    gap: 20,
+    marginBottom: 20,
+  },
+  statItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  statText: {
+    fontSize: 14,
+  },
+  groupActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: 20,
+    padding: 24,
+    gap: 20,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+  },
+  modalButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+});

@@ -9,7 +9,7 @@
 
 const { onCall } = require("firebase-functions/v2/https");
 const functions = require("firebase-functions");
-const { defineSecret } = require("firebase-functions/params");
+const { defineSecret, defineString } = require("firebase-functions/params");
 
 // Load environment variables
 require("dotenv").config();
@@ -17,6 +17,10 @@ require("dotenv").config();
 // Define secrets for Plaid
 const plaidClientId = defineSecret("PLAID_CLIENT_ID");
 const plaidSecret = defineSecret("PLAID_SECRET");
+const plaidSecretSandbox = defineSecret("PLAID_SECRET_SANDBOX");
+
+// Define Plaid environment
+const plaidEnv = defineString("PLAID_ENV", { default: "production" });
 
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
@@ -32,13 +36,13 @@ let globalPlaidClient = null;
 
 // Get Plaid client with environment validation
 function getPlaidClient(clientId, secret) {
-  if (!clientId || !secret) {
-    console.error("Plaid credentials not configured");
+  if (!clientId) {
+    console.error("Plaid client ID not configured");
     return null;
   }
 
-  // Validate environment
-  const environment = process.env.PLAID_ENV || "production";
+  // Validate environment - use Firebase Functions v2 parameter
+  const environment = plaidEnv.value();
   if (
     environment !== "production" &&
     environment !== "development" &&
@@ -48,12 +52,29 @@ function getPlaidClient(clientId, secret) {
     return null;
   }
 
-  if (!globalPlaidClient) {
-    // Ensure clientId and secret are properly trimmed and valid
-    const cleanClientId = clientId ? clientId.toString().trim() : "";
-    const cleanSecret = secret ? secret.toString().trim() : "";
+  // Use appropriate secret based on environment
+  let secretToUse;
+  if (environment === "sandbox") {
+    secretToUse = plaidSecretSandbox.value();
+  } else {
+    secretToUse = plaidSecret.value();
+  }
 
-    if (!cleanClientId || !cleanSecret) {
+  if (!secretToUse) {
+    console.error(
+      `Plaid secret not configured for environment: ${environment}`
+    );
+    return null;
+  }
+
+  // Ensure secret is properly trimmed and valid
+  secretToUse = secretToUse.toString().trim();
+
+  if (!globalPlaidClient) {
+    // Ensure clientId is properly trimmed and valid
+    const cleanClientId = clientId ? clientId.toString().trim() : "";
+
+    if (!cleanClientId) {
       return null;
     }
 
@@ -62,7 +83,7 @@ function getPlaidClient(clientId, secret) {
       baseOptions: {
         headers: {
           "PLAID-CLIENT-ID": cleanClientId,
-          "PLAID-SECRET": cleanSecret,
+          "PLAID-SECRET": secretToUse,
           "Plaid-Version": "2020-09-14", // Using stable API version - supports pagination
         },
       },
@@ -100,7 +121,7 @@ function getOpenAIClient() {
 // Create link token
 exports.createLinkToken = onCall(
   {
-    secrets: [plaidClientId, plaidSecret],
+    secrets: [plaidClientId, plaidSecret, plaidSecretSandbox],
   },
   async (data, context) => {
     // For testing purposes, use a default user ID if authentication is not available
@@ -112,7 +133,7 @@ exports.createLinkToken = onCall(
 
     try {
       // Get Plaid client with secrets
-      const client = getPlaidClient(plaidClientId.value(), plaidSecret.value());
+      const client = getPlaidClient(plaidClientId.value());
 
       // Validate Plaid client is available
       if (!client) {
@@ -125,6 +146,7 @@ exports.createLinkToken = onCall(
         products: ["transactions"],
         country_codes: ["US"],
         language: "en",
+        redirect_uri: "https://vectorfi-888.web.app/plaid-redirect",
       };
 
       const createTokenResponse = await client.linkTokenCreate(request);
@@ -157,7 +179,7 @@ exports.createLinkToken = onCall(
 // Exchange public token for access token
 exports.exchangePublicToken = onCall(
   {
-    secrets: [plaidClientId, plaidSecret],
+    secrets: [plaidClientId, plaidSecret, plaidSecretSandbox],
   },
   async (data, context) => {
     try {
@@ -188,10 +210,7 @@ exports.exchangePublicToken = onCall(
         }
 
         try {
-          const client = getPlaidClient(
-            plaidClientId.value(),
-            plaidSecret.value()
-          );
+          const client = getPlaidClient(plaidClientId.value());
           const exchangeResponse = await client.itemPublicTokenExchange({
             public_token: actualData.publicToken,
           });
@@ -224,7 +243,7 @@ exports.exchangePublicToken = onCall(
 // Get accounts
 exports.getAccounts = onCall(
   {
-    secrets: [plaidClientId, plaidSecret],
+    secrets: [plaidClientId, plaidSecret, plaidSecretSandbox],
   },
   async (data, context) => {
     // For testing purposes, allow without authentication
@@ -278,7 +297,7 @@ exports.getAccounts = onCall(
     }
 
     try {
-      const client = getPlaidClient(plaidClientId.value(), plaidSecret.value());
+      const client = getPlaidClient(plaidClientId.value());
       const accountsResponse = await client.accountsGet({
         access_token: accessToken,
       });
@@ -299,7 +318,7 @@ exports.getAccounts = onCall(
 // Get transactions
 exports.getTransactions = onCall(
   {
-    secrets: [plaidClientId, plaidSecret],
+    secrets: [plaidClientId, plaidSecret, plaidSecretSandbox],
   },
   async (data, context) => {
     // Verify user is authenticated - handle both v1 and v2 function formats
@@ -362,7 +381,7 @@ exports.getTransactions = onCall(
     }
 
     try {
-      const client = getPlaidClient(plaidClientId.value(), plaidSecret.value());
+      const client = getPlaidClient(plaidClientId.value());
 
       // Fetch transactions using modern /transactions/sync endpoint
       let allTransactions = [];
@@ -830,7 +849,7 @@ const PLAID_WEBHOOK_IPS = [
 // Simple Plaid Webhook Handler for Production
 exports.plaidWebhook = onCall(
   {
-    secrets: [plaidClientId, plaidSecret],
+    secrets: [plaidClientId, plaidSecret, plaidSecretSandbox],
   },
   async (data, context) => {
     try {

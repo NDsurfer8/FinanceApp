@@ -23,7 +23,7 @@ export const useAuth = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChange(async (user) => {
       if (user) {
-        // Validate the user session
+        // Validate the user session with retry logic
         try {
           const isValid = await isUserSessionValid();
           if (!isValid) {
@@ -43,7 +43,22 @@ export const useAuth = () => {
           }
         } catch (error) {
           console.error("Error validating user session:", error);
-          // Continue with the user if validation fails
+
+          // Handle network errors gracefully
+          if (error && typeof error === "object" && "code" in error) {
+            const firebaseError = error as any;
+            if (firebaseError.code === "auth/network-request-failed") {
+              console.warn(
+                "Network error during session validation, continuing with user"
+              );
+              // Continue with the user if it's just a network error
+            } else {
+              console.error(
+                "Non-network error during session validation:",
+                firebaseError
+              );
+            }
+          }
         }
       }
 

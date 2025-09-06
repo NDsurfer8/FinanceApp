@@ -1,3 +1,10 @@
+/**
+ * 🔒 SECURITY NOTICE: This file handles sensitive financial data
+ * - NEVER log access tokens, account numbers, or transaction details
+ * - NEVER expose sensitive data in console logs or error messages
+ * - ONLY log metadata, status, and non-sensitive identifiers
+ * - Use hashes or truncated values for debugging when needed
+ */
 import React, {
   createContext,
   useContext,
@@ -19,6 +26,10 @@ import {
 import { plaidService } from "../services/plaid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import revenueCatService from "../services/revenueCat";
+import { formatDateToLocalString } from "../utils/dateUtils";
+import { ref, onValue, off } from "firebase/database";
+import { db } from "../services/firebase";
+import { notificationService } from "../services/notifications";
 
 interface DataContextType {
   // Data
@@ -37,6 +48,7 @@ interface DataContextType {
   isBankConnected: boolean;
   bankDataLastUpdated: Date | null;
   isBankDataLoading: boolean;
+  bankConnectionError: string | null;
 
   // Loading states
   isLoading: boolean;
@@ -62,6 +74,13 @@ interface DataContextType {
   setRecurringTransactions: (transactions: any[]) => void;
   setBankAccounts: (accounts: any[]) => void;
   setSelectedBankAccount: (accountId: string | null) => void;
+  setBankConnectionError: (error: string | null) => void;
+
+  // Bank disconnection
+  disconnectBankAndClearData: () => Promise<void>;
+
+  // Webhook monitoring status
+  isWebhookMonitoringActive: boolean;
 
   // Optimistic update methods
   updateTransactionsOptimistically: (transactions: any[]) => void;
@@ -89,16 +108,16 @@ interface DataProviderProps {
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const { subscriptionStatus } = useSubscription();
+
+  // State for user data
   const [transactions, setTransactions] = useState<any[]>([]);
   const [assets, setAssets] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
   const [goals, setGoals] = useState<any[]>([]);
   const [budgetSettings, setBudgetSettings] = useState<any>(null);
   const [recurringTransactions, setRecurringTransactions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Bank Data State
+  // State for bank data
   const [bankTransactions, setBankTransactions] = useState<any[]>([]);
   const [bankRecurringSuggestions, setBankRecurringSuggestions] = useState<
     any[]
@@ -107,11 +126,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [selectedBankAccount, setSelectedBankAccount] = useState<string | null>(
     null
   );
-  const [isBankConnected, setIsBankConnected] = useState(false);
+  const [isBankConnected, setIsBankConnected] = useState<boolean>(false);
   const [bankDataLastUpdated, setBankDataLastUpdated] = useState<Date | null>(
     null
   );
-  const [isBankDataLoading, setIsBankDataLoading] = useState(false);
+  const [isBankDataLoading, setIsBankDataLoading] = useState<boolean>(false);
+  const [bankConnectionError, setBankConnectionError] = useState<string | null>(
+    null
+  );
+
+  // Loading states
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // Webhook monitoring state
+  const [isWebhookMonitoringActive, setIsWebhookMonitoringActive] =
+    useState<boolean>(false);
+
+  // Refs for tracking staleness
+  const lastDataRefresh = useRef<Date | null>(null);
+  const lastBankDataRefresh = useRef<Date | null>(null);
   const isBankDataLoadingRef = useRef(false);
 
   // Bank Data Cache Keys
@@ -123,152 +157,51 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     user?.uid || "anonymous"
   }`;
   const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours for recurring analysis
-  const TRANSACTION_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours for new transactions (increased from 4 hours)
+  const TRANSACTION_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours for new transactions
 
-  // Check if data is stale (older than 30 minutes instead of 5)
-  const isDataStale = useCallback(() => {
-    if (!lastUpdated) return true;
-    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-    return lastUpdated < thirtyMinutesAgo;
-  }, [lastUpdated]);
-
-  // Load all data with aggressive caching
-  const loadAllData = useCallback(async () => {
-    if (!user) return;
-
+  // Comprehensive bank disconnection and data clearing
+  const disconnectBankAndClearData = useCallback(async () => {
     try {
-      setIsLoading(true);
+      // 1. Disconnect from Plaid service
+      await plaidService.disconnectBank();
 
-      const [
-        userTransactions,
-        userAssets,
-        userDebts,
-        userGoals,
-        userBudgetSettings,
-        userRecurringTransactions,
-      ] = await Promise.all([
-        getUserTransactions(user.uid),
-        getUserAssets(user.uid),
-        getUserDebts(user.uid),
-        getUserGoals(user.uid),
-        getUserBudgetSettings(user.uid),
-        getUserRecurringTransactions(user.uid),
-      ]);
+      // 2. Clear all bank data from state immediately
+      setBankTransactions([]);
+      setBankRecurringSuggestions([]);
+      setBankAccounts([]);
+      setSelectedBankAccount(null);
+      setIsBankConnected(false);
+      setBankDataLastUpdated(null);
+      setBankConnectionError(null);
 
-      setTransactions(userTransactions);
-      setAssets(userAssets);
-      setDebts(userDebts);
-      setGoals(userGoals);
-      setBudgetSettings(userBudgetSettings);
-      setRecurringTransactions(userRecurringTransactions);
-      setLastUpdated(new Date());
+      // 3. Clear AsyncStorage cache
+      const keysToClear = [
+        "bankTransactions",
+        "bankRecurringSuggestions",
+        "bankAccounts",
+        "bankDataLastUpdated",
+        "isBankConnected",
+        "plaid_access_token",
+        "plaid_item_id",
+        "selectedBankAccount",
+      ];
+
+      for (const key of keysToClear) {
+        await AsyncStorage.removeItem(key);
+      }
+
+      // 4. Clear Plaid service cache
+      (plaidService as any).requestCache?.clear();
     } catch (error) {
-      console.error("Error loading data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user]);
-
-  // Optimistic data updates - update immediately without waiting for server
-  const updateTransactionsOptimistically = useCallback(
-    (newTransactions: any[]) => {
-      setTransactions(newTransactions);
-      setLastUpdated(new Date());
-    },
-    []
-  );
-
-  const updateBudgetSettingsOptimistically = useCallback((newSettings: any) => {
-    setBudgetSettings(newSettings);
-    setLastUpdated(new Date());
-  }, []);
-
-  const updateGoalsOptimistically = useCallback((newGoals: any[]) => {
-    setGoals(newGoals);
-    setLastUpdated(new Date());
-  }, []);
-
-  const updateAssetsOptimistically = useCallback((newAssets: any[]) => {
-    setAssets(newAssets);
-    setLastUpdated(new Date());
-  }, []);
-
-  const updateDebtsOptimistically = useCallback((newDebts: any[]) => {
-    setDebts(newDebts);
-    setLastUpdated(new Date());
-  }, []);
-
-  const updateRecurringTransactionsOptimistically = useCallback(
-    (newRecurring: any[]) => {
-      setRecurringTransactions(newRecurring);
-      setLastUpdated(new Date());
-    },
-    []
-  );
-
-  // Refresh specific data types
-  const refreshTransactions = useCallback(async () => {
-    if (!user) return;
-    try {
-      const userTransactions = await getUserTransactions(user.uid);
-      setTransactions(userTransactions);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error("Error refreshing transactions:", error);
-    }
-  }, [user]);
-
-  const refreshAssetsDebts = useCallback(async () => {
-    if (!user) return;
-    try {
-      const [userAssets, userDebts] = await Promise.all([
-        getUserAssets(user.uid),
-        getUserDebts(user.uid),
-      ]);
-      setAssets(userAssets);
-      setDebts(userDebts);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error("Error refreshing assets/debts:", error);
-    }
-  }, [user]);
-
-  const refreshGoals = useCallback(async () => {
-    if (!user) return;
-    try {
-      const userGoals = await getUserGoals(user.uid);
-      setGoals(userGoals);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error("Error refreshing goals:", error);
-    }
-  }, [user]);
-
-  const refreshBudgetSettings = useCallback(async () => {
-    if (!user) return;
-    try {
-      const userBudgetSettings = await getUserBudgetSettings(user.uid);
-      setBudgetSettings(userBudgetSettings);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error("Error refreshing budget settings:", error);
-    }
-  }, [user]);
-
-  const refreshRecurringTransactions = useCallback(async () => {
-    if (!user) return;
-    try {
-      const userRecurringTransactions = await getUserRecurringTransactions(
-        user.uid
+      console.error(
+        "DataContext: Error disconnecting bank and clearing data:",
+        error
       );
-      setRecurringTransactions(userRecurringTransactions);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error("Error refreshing recurring transactions:", error);
+      throw error;
     }
-  }, [user]);
+  }, []);
 
-  // Bank Data Methods
+  // Calculate frequency for recurring transactions
   const calculateFrequency = useCallback((transactions: any[]) => {
     if (transactions.length < 2) return null;
 
@@ -292,12 +225,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return null;
   }, []);
 
+  // Analyze recurring patterns
   const analyzeRecurringPatterns = useCallback(
     (transactions: any[]) => {
-      console.log(
-        "Analyzing recurring patterns for transactions:",
-        transactions.length
-      );
       const patterns: { [key: string]: any[] } = {};
       const suggestions: any[] = [];
 
@@ -341,6 +271,44 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     [calculateFrequency]
   );
 
+  // Load all user data
+  const loadAllData = useCallback(async () => {
+    if (!user?.uid) return;
+
+    setIsLoading(true);
+    try {
+      const [
+        userTransactions,
+        userAssets,
+        userDebts,
+        userGoals,
+        userBudgetSettings,
+        userRecurringTransactions,
+      ] = await Promise.all([
+        getUserTransactions(user.uid),
+        getUserAssets(user.uid),
+        getUserDebts(user.uid),
+        getUserGoals(user.uid),
+        getUserBudgetSettings(user.uid),
+        getUserRecurringTransactions(user.uid),
+      ]);
+
+      setTransactions(userTransactions);
+      setAssets(userAssets);
+      setDebts(userDebts);
+      setGoals(userGoals);
+      setBudgetSettings(userBudgetSettings);
+      setRecurringTransactions(userRecurringTransactions);
+      setLastUpdated(new Date());
+      lastDataRefresh.current = new Date();
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.uid]);
+
+  // Load cached bank data with sophisticated caching
   const loadCachedBankData = useCallback(async () => {
     try {
       const cachedData = await AsyncStorage.getItem(BANK_DATA_CACHE_KEY);
@@ -370,6 +338,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   }, []);
 
+  // Save bank data to cache with sophisticated caching
   const saveBankDataToCache = useCallback(
     async (transactions: any[], suggestions: any[], accounts: any[]) => {
       try {
@@ -391,11 +360,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         // Store the latest transaction date for incremental updates
         if (transactions.length > 0) {
-          const latestDate = transactions
-            .map((t) => new Date(t.date))
-            .sort((a, b) => b.getTime() - a.getTime())[0]
-            .toISOString()
-            .split("T")[0];
+          const latestDate = formatDateToLocalString(
+            transactions
+              .map((t) => new Date(t.date))
+              .sort((a, b) => b.getTime() - a.getTime())[0]
+          );
           await AsyncStorage.setItem(LAST_TRANSACTION_DATE_KEY, latestDate);
         }
       } catch (error) {
@@ -405,6 +374,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     []
   );
 
+  // Refresh bank data with sophisticated logic
   const refreshBankData = useCallback(
     async (forceRefresh = false) => {
       // Add debouncing property to the function
@@ -418,13 +388,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         // Don't allow calls more frequent than 5 seconds apart (unless force refresh)
         if (timeSinceLastCall < 5000 && !forceRefresh) {
-          console.log("DataContext: Debouncing API call (too frequent)");
           return;
         }
 
         // Don't load if already loading
         if (isBankDataLoadingRef.current && !forceRefresh) {
-          console.log("DataContext: Already loading, skipping duplicate call");
           return;
         }
 
@@ -433,13 +401,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const isAppJustStarted = now - appStartTime < 30000; // 30 seconds after app start
 
         if (isAppJustStarted && !forceRefresh) {
-          console.log("DataContext: App just started, using cache first");
           // For app refresh, try cache first before making API calls
           const cacheLoaded = await loadCachedBankData();
           if (cacheLoaded) {
-            console.log(
-              "DataContext: App refresh - loaded from cache, skipping API call"
-            );
             return;
           }
         }
@@ -479,16 +443,15 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const timeSinceLastFetch = now - lastFetch;
 
         let startDate: string;
-        let endDate = new Date().toISOString().split("T")[0];
+        let endDate = formatDateToLocalString(new Date());
         let fetchStrategy: "full" | "incremental" | "recurring-only";
 
         if (forceRefresh || lastFetch === 0) {
           // First time or force refresh: get 3 months of data for recurring analysis
-          startDate = new Date(Date.now() - 3 * 30 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0];
+          startDate = formatDateToLocalString(
+            new Date(Date.now() - 3 * 30 * 24 * 60 * 60 * 1000)
+          );
           fetchStrategy = "full";
-          console.log("DataContext: Full refresh - fetching 3 months of data");
         } else if (timeSinceLastFetch > TRANSACTION_UPDATE_INTERVAL) {
           // Check for new transactions (incremental update)
           const lastTransactionDate = await AsyncStorage.getItem(
@@ -496,16 +459,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           );
           startDate =
             lastTransactionDate ||
-            new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-              .toISOString()
-              .split("T")[0]; // Fallback to 7 days
+            formatDateToLocalString(
+              new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+            ); // Fallback to 7 days
           fetchStrategy = "incremental";
-          console.log(
-            "DataContext: Incremental update - fetching recent transactions"
-          );
         } else {
           // Cache is fresh, no need to fetch
-          console.log("DataContext: Cache is fresh, skipping API call");
           setIsBankDataLoading(false);
           return;
         }
@@ -553,7 +512,29 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         await saveBankDataToCache(allTransactions, suggestions, accounts);
       } catch (error) {
         console.error("Failed to load bank data:", error);
-        setIsBankConnected(false);
+
+        // Check if it's a token error that requires reconnection
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        const isTokenError =
+          errorMessage.includes("INVALID_ACCESS_TOKEN") ||
+          errorMessage.includes("ITEM_LOGIN_REQUIRED") ||
+          errorMessage.includes("ITEM_ERROR") ||
+          errorMessage.includes("access token") ||
+          errorMessage.includes("401") ||
+          errorMessage.includes("403");
+
+        if (isTokenError) {
+          console.warn("🔑 Token error detected, user needs to reconnect bank");
+          setBankConnectionError(
+            "Your bank connection has expired. Please reconnect your bank account to continue."
+          );
+          // Don't set isBankConnected to false immediately, let the user see the error
+          // and decide whether to reconnect
+        } else {
+          setIsBankConnected(false);
+          setBankConnectionError(null);
+        }
       } finally {
         setIsBankDataLoading(false);
         isBankDataLoadingRef.current = false;
@@ -562,11 +543,91 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     [loadCachedBankData, saveBankDataToCache, analyzeRecurringPatterns]
   );
 
+  // Refresh functions
+  const refreshData = useCallback(async () => {
+    await loadAllData();
+  }, [loadAllData]);
+
+  const refreshTransactions = useCallback(async () => {
+    if (!user?.uid) return;
+    const userTransactions = await getUserTransactions(user.uid);
+    setTransactions(userTransactions);
+  }, [user?.uid]);
+
+  const refreshAssetsDebts = useCallback(async () => {
+    if (!user?.uid) return;
+    const [userAssets, userDebts] = await Promise.all([
+      getUserAssets(user.uid),
+      getUserDebts(user.uid),
+    ]);
+    setAssets(userAssets);
+    setDebts(userDebts);
+  }, [user?.uid]);
+
+  const refreshGoals = useCallback(async () => {
+    if (!user?.uid) return;
+    const userGoals = await getUserGoals(user.uid);
+    setGoals(userGoals);
+  }, [user?.uid]);
+
+  const refreshBudgetSettings = useCallback(async () => {
+    if (!user?.uid) return;
+    const userBudgetSettings = await getUserBudgetSettings(user.uid);
+    setBudgetSettings(userBudgetSettings);
+  }, [user?.uid]);
+
+  const refreshRecurringTransactions = useCallback(async () => {
+    if (!user?.uid) return;
+    const userRecurringTransactions = await getUserRecurringTransactions(
+      user.uid
+    );
+    setRecurringTransactions(userRecurringTransactions);
+  }, [user?.uid]);
+
+  // Staleness checks
+  const isDataStale = useCallback(() => {
+    if (!lastDataRefresh.current) return true;
+    const now = new Date();
+    const timeDiff = now.getTime() - lastDataRefresh.current.getTime();
+    return timeDiff > 5 * 60 * 1000; // 5 minutes
+  }, []);
+
   const isBankDataStale = useCallback(() => {
     if (!bankDataLastUpdated) return true;
     const now = Date.now();
     return now - bankDataLastUpdated.getTime() > TRANSACTION_UPDATE_INTERVAL;
   }, [bankDataLastUpdated]);
+
+  // Optimistic update methods
+  const updateTransactionsOptimistically = useCallback(
+    (newTransactions: any[]) => {
+      setTransactions(newTransactions);
+    },
+    []
+  );
+
+  const updateBudgetSettingsOptimistically = useCallback((newSettings: any) => {
+    setBudgetSettings(newSettings);
+  }, []);
+
+  const updateGoalsOptimistically = useCallback((newGoals: any[]) => {
+    setGoals(newGoals);
+  }, []);
+
+  const updateAssetsOptimistically = useCallback((newAssets: any[]) => {
+    setAssets(newAssets);
+  }, []);
+
+  const updateDebtsOptimistically = useCallback((newDebts: any[]) => {
+    setDebts(newDebts);
+  }, []);
+
+  const updateRecurringTransactionsOptimistically = useCallback(
+    (newTransactions: any[]) => {
+      setRecurringTransactions(newTransactions);
+    },
+    []
+  );
 
   // Auto-load bank data when connection status changes (optimized)
   useEffect(() => {
@@ -594,13 +655,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     bankTransactions.length,
     isBankDataLoading,
   ]);
-
-  // Remove the additional effect that was causing duplicate calls
-  // Bank connection changes are now handled in the main user effect
-
-  const refreshData = useCallback(async () => {
-    await loadAllData();
-  }, [loadAllData]);
 
   // Load data when user changes (optimized for app refresh)
   useEffect(() => {
@@ -631,9 +685,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             subscriptionStatus !== undefined &&
             !subscriptionStatus.isPremium
           ) {
-            console.log(
-              "DataContext: User not premium, clearing bank connection"
-            );
+            // User not premium, clearing bank connection
             if (connected) {
               await plaidService.disconnectBank();
             }
@@ -651,7 +703,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           const cacheLoaded = await loadCachedBankData();
 
           if (cacheLoaded) {
-            console.log("DataContext: Loaded bank data from cache");
+            // Loaded bank data from cache
             return;
           }
 
@@ -661,12 +713,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           const SIX_HOURS = 6 * 60 * 60 * 1000;
 
           if (timeSinceLastFetch < SIX_HOURS) {
-            console.log("DataContext: Bank data is fresh, skipping API call");
             return;
           }
-
           // 3. Only fetch if data is stale or no cache exists
-          console.log("DataContext: Bank data is stale, fetching fresh data");
           await refreshBankData(false); // Don't force refresh, use smart strategy
         } catch (error) {
           console.error("DataContext: Failed to load bank data:", error);
@@ -707,67 +756,209 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Clear bank data when subscription expires
   useEffect(() => {
-    // Only clear data if we have a definitive subscription status and user is not premium
-    if (
-      subscriptionStatus !== null &&
-      subscriptionStatus !== undefined &&
-      !subscriptionStatus.isPremium
-    ) {
-      console.log("DataContext: Subscription expired, clearing bank data");
+    const handleSubscriptionExpiration = async () => {
+      if (
+        subscriptionStatus !== null &&
+        subscriptionStatus !== undefined &&
+        !subscriptionStatus.isPremium
+      ) {
+        await disconnectBankAndClearData();
+      }
+    };
 
-      // Clear bank data from state
-      setBankTransactions([]);
-      setBankRecurringSuggestions([]);
-      setIsBankConnected(false);
-      setBankDataLastUpdated(null);
-      setBankAccounts([]);
-      setSelectedBankAccount(null);
+    handleSubscriptionExpiration();
+  }, [subscriptionStatus?.isPremium, disconnectBankAndClearData]);
 
-      // Also disconnect the bank from Firebase and clear cache
-      const handleExpiration = async () => {
-        try {
-          console.log(
-            "DataContext: Disconnecting bank due to subscription expiration"
-          );
+  // Real-time webhook monitoring for automatic data updates
+  useEffect(() => {
+    // Webhook monitoring useEffect triggered
 
-          // Disconnect bank from Firebase
-          const isConnected = await plaidService.isBankConnected();
-          if (isConnected) {
-            await plaidService.disconnectBank();
-          }
-
-          // Clear Plaid service cache
-          (plaidService as any).requestCache?.clear();
-
-          // Clear AsyncStorage cache
-          const keysToClear = [
-            "bankTransactions",
-            "bankRecurringSuggestions",
-            "bankAccounts",
-            "bankDataLastUpdated",
-            "isBankConnected",
-            "plaid_access_token",
-            "plaid_item_id",
-          ];
-
-          for (const key of keysToClear) {
-            await AsyncStorage.removeItem(key);
-          }
-
-          console.log(
-            "DataContext: Successfully disconnected bank and cleared cache"
-          );
-        } catch (error) {
-          console.error(
-            "DataContext: Error handling subscription expiration:",
-            error
-          );
-        }
-      };
-
-      handleExpiration();
+    if (!user?.uid || !isBankConnected) {
+      // Stopping webhook monitoring - no user or bank connection
+      setIsWebhookMonitoringActive(false);
+      return;
     }
-  }, [subscriptionStatus?.isPremium]);
+
+    // Setting up real-time webhook monitoring for user
+    setIsWebhookMonitoringActive(true);
+
+    // Webhook monitoring ACTIVE - listening for updates
+
+    // 🔒 SECURITY: Never log sensitive financial data
+    // - No access tokens, account numbers, or transaction details
+    // - Only log metadata, status, and non-sensitive identifiers
+    // - Use hashes or truncated values for debugging when needed
+
+    // Webhook debouncing to prevent rapid successive calls
+    let webhookDebounceTimer: NodeJS.Timeout | null = null;
+    let lastWebhookProcessed = 0;
+    const WEBHOOK_DEBOUNCE_MS = 2000; // 2 second debounce
+
+    // Listen to Plaid webhook status changes in real-time
+    const plaidRef = ref(db, `users/${user.uid}/plaid`);
+    const unsubscribe = onValue(plaidRef, async (snapshot) => {
+      const plaidData = snapshot.val();
+
+      if (!plaidData) return;
+
+      // Debounce webhook processing to prevent rapid successive calls
+      const now = Date.now();
+      if (now - lastWebhookProcessed < WEBHOOK_DEBOUNCE_MS) {
+        // Webhook debounced, skipping rapid update
+        return;
+      }
+
+      // Webhook status update received
+
+      // Smart webhook handling: consolidate multiple webhook events into single refresh
+      let shouldRefresh = false;
+      let refreshReason = "";
+      let notificationData: { type: string; count?: number } | null = null;
+
+      // Check all webhook conditions and determine if refresh is needed
+      if (plaidData.transactionsSyncAvailable) {
+        shouldRefresh = true;
+        refreshReason = "transactions";
+        notificationData = { type: "transactions", count: 1 };
+      } else if (plaidData.hasNewAccounts) {
+        shouldRefresh = true;
+        refreshReason = "accounts";
+        const newAccountsCount =
+          plaidData.lastWebhook?.newAccounts?.length || 1;
+        notificationData = { type: "accounts", count: newAccountsCount };
+      } else if (
+        plaidData.lastWebhook?.type === "TRANSACTIONS" &&
+        plaidData.lastWebhook?.code === "SYNC_UPDATES_AVAILABLE"
+      ) {
+        shouldRefresh = true;
+        refreshReason = "sync_updates";
+        notificationData = { type: "transactions", count: 1 };
+      }
+
+      // Single refresh call for all webhook events
+      if (shouldRefresh) {
+        // Clear any existing debounce timer
+        if (webhookDebounceTimer) {
+          clearTimeout(webhookDebounceTimer);
+        }
+
+        // Set debounce timer to process webhook
+        webhookDebounceTimer = setTimeout(async () => {
+          // Processing webhook refresh after debounce
+
+          try {
+            await refreshBankData(true);
+
+            // Clear all relevant flags after successful refresh
+            const updates: any = {};
+            if (plaidData.transactionsSyncAvailable)
+              updates.transactionsSyncAvailable = false;
+            if (plaidData.hasNewAccounts) updates.hasNewAccounts = false;
+
+            // Only update Firebase if we have changes to make
+            if (Object.keys(updates).length > 0) {
+              // Use batched updates to reduce Firebase writes
+              await plaidService.queuePlaidStatusUpdate(updates);
+            }
+
+            // Send notification if we have notification data and user has enabled them
+            if (notificationData) {
+              try {
+                // Check if user has enabled this type of notification
+                const notificationKey = `notification_webhook-${notificationData.type}`;
+                const isEnabled = await AsyncStorage.getItem(notificationKey);
+
+                if (isEnabled === "true") {
+                  if (notificationData.type === "transactions") {
+                    await notificationService.notifyNewTransactions(
+                      notificationData.count || 1
+                    );
+                  } else if (notificationData.type === "accounts") {
+                    await notificationService.notifyNewAccounts(
+                      notificationData.count || 1
+                    );
+                  }
+                } else {
+                  // Webhook notifications disabled by user
+                }
+              } catch (notifError) {
+                // Failed to send webhook notification
+              }
+            }
+
+            // Update last processed time
+            lastWebhookProcessed = Date.now();
+          } catch (error) {
+            // 🔒 SECURE: Log error type, not sensitive details
+            console.error("DataContext: Failed to auto-refresh bank data:", {
+              errorType: error?.constructor?.name || "Unknown",
+              errorMessage: (error as any)?.message || "No message",
+              hasStack: !!(error as any)?.stack,
+              // ✅ Never log: access tokens, account numbers, transaction data
+            });
+          }
+        }, WEBHOOK_DEBOUNCE_MS);
+      }
+
+      // Handle bank connection issues and send notifications
+      if (plaidData.lastWebhook?.type === "ITEM") {
+        // Check if connection issue notifications are enabled
+        const connectionNotificationsEnabled = await AsyncStorage.getItem(
+          "notification_webhook-connection-issues"
+        );
+
+        if (connectionNotificationsEnabled === "true") {
+          switch (plaidData.lastWebhook?.code) {
+            case "ITEM_LOGIN_REQUIRED":
+              try {
+                await notificationService.notifyBankConnectionIssue(
+                  "login_required",
+                  "Your bank credentials have expired. Please reconnect your account."
+                );
+              } catch (notifError) {
+                // Failed to send connection issue notification
+              }
+              break;
+            case "ITEM_PENDING_EXPIRATION":
+              try {
+                await notificationService.notifyBankConnectionIssue(
+                  "expiring_soon",
+                  "Your bank connection will expire soon. Please reconnect to maintain access."
+                );
+              } catch (notifError) {
+                // Failed to send connection issue notification
+              }
+              break;
+            case "ITEM_PENDING_DISCONNECT":
+              try {
+                await notificationService.notifyBankConnectionIssue(
+                  "disconnecting",
+                  "Your bank connection is being disconnected. Please reconnect if you want to continue using this feature."
+                );
+              } catch (notifError) {
+                // Failed to send connection issue notification
+              }
+              break;
+          }
+        } else {
+          // Connection issue notifications disabled by user
+        }
+      }
+    });
+
+    return () => {
+      // Cleaning up webhook monitoring
+      setIsWebhookMonitoringActive(false);
+
+      // Clear any pending debounce timer
+      if (webhookDebounceTimer) {
+        clearTimeout(webhookDebounceTimer);
+      }
+
+      off(plaidRef);
+      unsubscribe();
+    };
+  }, [user?.uid, isBankConnected, refreshBankData]);
 
   const value: DataContextType = {
     transactions,
@@ -783,8 +974,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     isBankConnected,
     bankDataLastUpdated,
     isBankDataLoading,
+    bankConnectionError,
     isLoading,
     lastUpdated,
+    isWebhookMonitoringActive,
     refreshData,
     refreshTransactions,
     refreshAssetsDebts,
@@ -800,6 +993,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setRecurringTransactions,
     setBankAccounts,
     setSelectedBankAccount,
+    setBankConnectionError,
+    disconnectBankAndClearData,
     updateTransactionsOptimistically,
     updateBudgetSettingsOptimistically,
     updateGoalsOptimistically,

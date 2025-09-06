@@ -59,25 +59,25 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   const initializeSubscription = useCallback(async () => {
     try {
       setLoading(true);
-      console.log("SubscriptionContext: Initializing subscription...");
+      // Initializing subscription
 
       // Initialize RevenueCat if not already done
       if (!initialized) {
         await revenueCatService.initialize();
         setInitialized(true);
-        console.log("SubscriptionContext: RevenueCat initialized");
+        // RevenueCat initialized
       }
 
       // Set user if logged in
       if (user?.uid) {
         await revenueCatService.setUser(user.uid);
-        console.log("SubscriptionContext: User set for RevenueCat");
+        // User set for RevenueCat
       }
 
       // Get subscription status
       const status = await revenueCatService.checkSubscriptionStatus();
       setSubscriptionStatus(status);
-      console.log("SubscriptionContext: Initial subscription status:", status);
+      // Initial subscription status loaded
     } catch (error) {
       console.error(
         "SubscriptionContext: Failed to initialize subscription:",
@@ -97,14 +97,12 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   const refreshSubscriptionStatus = useCallback(
     async (forceRefresh: boolean = false) => {
       try {
-        console.log("SubscriptionContext: Refreshing subscription status...", {
-          forceRefresh,
-        });
+        // Refreshing subscription status
         const status = await revenueCatService.checkSubscriptionStatus(
           forceRefresh
         );
         setSubscriptionStatus(status);
-        console.log("SubscriptionContext: New subscription status:", status);
+        // New subscription status loaded
         return status;
       } catch (error) {
         console.error(
@@ -148,41 +146,10 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   // Handle subscription expiration - disconnect bank and clear data
   const handleSubscriptionExpiration = useCallback(async () => {
     try {
-      console.log("SubscriptionContext: Handling subscription expiration...");
-
-      // 1. Disconnect bank connection
-      const isConnected = await plaidService.isBankConnected();
-      if (isConnected) {
-        console.log(
-          "SubscriptionContext: Disconnecting bank due to subscription expiration"
-        );
-        await plaidService.disconnectBank();
-      }
-
-      // 2. Clear all cached data
-      console.log(
-        "SubscriptionContext: Clearing cached data due to subscription expiration"
-      );
-
-      // Clear Plaid service cache
-      (plaidService as any).requestCache?.clear();
-
-      // Clear AsyncStorage cache
-      const keysToClear = [
-        "bankTransactions",
-        "bankRecurringSuggestions",
-        "bankAccounts",
-        "bankDataLastUpdated",
-        "isBankConnected",
-        "plaid_access_token",
-        "plaid_item_id",
-      ];
-
-      for (const key of keysToClear) {
-        await AsyncStorage.removeItem(key);
-      }
-
-      console.log("SubscriptionContext: Successfully cleared all cached data");
+      // Handling subscription expiration
+      // Use DataContext's comprehensive disconnect function if available
+      // This will be handled by DataContext's useEffect that monitors subscription status
+      // Subscription expiration detected - DataContext will handle bank disconnection
     } catch (error) {
       console.error(
         "SubscriptionContext: Error handling subscription expiration:",
@@ -208,9 +175,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
 
         // If subscription expired while app was closed, handle cleanup
         if (!currentStatus.isPremium && subscriptionStatus.isPremium) {
-          console.log(
-            "SubscriptionContext: App start detected subscription expiration"
-          );
+          // App start detected subscription expiration
           await handleSubscriptionExpiration();
           setSubscriptionStatus(currentStatus);
         }
@@ -232,16 +197,12 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   useEffect(() => {
     if (!user?.uid) return;
 
-    console.log(
-      "SubscriptionContext: Setting up customer info update listener"
-    );
+    // Setting up customer info update listener
 
     // Add listener for customer info updates
     const removeListener = revenueCatService.addCustomerInfoUpdateListener(
       async (customerInfo) => {
-        console.log(
-          "SubscriptionContext: Customer info update received, refreshing subscription status"
-        );
+        // Customer info update received, refreshing subscription status
 
         try {
           // Force refresh subscription status immediately when customer info changes
@@ -256,17 +217,12 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
 
           // If user was premium but is no longer premium, handle expiration
           if (wasPremium && !isNowPremium) {
-            console.log(
-              "SubscriptionContext: Subscription expired, handling cleanup..."
-            );
+            // Subscription expired, handling cleanup
             await handleSubscriptionExpiration();
           }
 
           setSubscriptionStatus(newStatus);
-          console.log(
-            "SubscriptionContext: Subscription status updated from listener:",
-            newStatus
-          );
+          // Subscription status updated from listener
         } catch (error) {
           console.error(
             "SubscriptionContext: Failed to refresh subscription status from listener:",
@@ -278,9 +234,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
 
     // Cleanup listener when user changes or component unmounts
     return () => {
-      console.log(
-        "SubscriptionContext: Removing customer info update listener"
-      );
+      // Removing customer info update listener
       removeListener();
     };
   }, [user?.uid]);
@@ -297,9 +251,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
 
         // If subscription expired, handle cleanup
         if (!currentStatus.isPremium && subscriptionStatus.isPremium) {
-          console.log(
-            "SubscriptionContext: Periodic check detected subscription expiration"
-          );
+          // Periodic check detected subscription expiration
           await handleSubscriptionExpiration();
           setSubscriptionStatus(currentStatus);
         }
@@ -318,13 +270,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
 
   // Debug: Log subscription status changes
   useEffect(() => {
-    console.log("SubscriptionContext: Subscription status changed:", {
-      isPremium: subscriptionStatus?.isPremium,
-      isActive: subscriptionStatus?.isActive,
-      features: subscriptionStatus?.features,
-      expirationDate: subscriptionStatus?.expirationDate,
-      timestamp: new Date().toISOString(),
-    });
+    // Subscription status changed
   }, [subscriptionStatus]);
 
   const value: SubscriptionContextType = {

@@ -105,10 +105,6 @@ class RevenueCatService {
             ? REVENUECAT_API_KEYS.ios
             : REVENUECAT_API_KEYS.android;
 
-        console.log(`Using API key: ${apiKey.substring(0, 10)}...`);
-        console.log(`Platform: ${Platform.OS}`);
-        console.log(`Bundle ID: com.ndsurf888.vectorfii`);
-
         await Purchases.configure({
           apiKey,
           appUserID: null, // Will be set when user logs in
@@ -159,7 +155,6 @@ class RevenueCatService {
 
     try {
       await Purchases.logIn(userId);
-      console.log("RevenueCat user set:", userId);
     } catch (error: any) {
       console.error("Failed to set RevenueCat user:", {
         error: error.message,

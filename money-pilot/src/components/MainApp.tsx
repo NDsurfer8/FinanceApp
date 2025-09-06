@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AppState, AppStateStatus } from "react-native";
+import { AppState, AppStateStatus, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Font from "expo-font";
 import { fontsToLoad } from "../config/fonts";
 import { BottomTabParamList } from "../types/finance";
+import { RootStackParamList } from "../types/navigation";
 import { useAuth } from "../hooks/useAuth";
 import { notificationService } from "../services/notifications";
 import { billReminderService } from "../services/billReminders";
@@ -17,6 +18,8 @@ import { SubscriptionProvider } from "../contexts/SubscriptionContext";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { ChatbotProvider } from "../contexts/ChatbotContext";
 import { FriendlyModeProvider } from "../contexts/FriendlyModeContext";
+import { TourProvider } from "../contexts/TourContext";
+import { SelectedMonthProvider } from "../contexts/SelectedMonthContext";
 import { DataPreloader } from "./DataPreloader";
 import { SplashScreen } from "./SplashScreen";
 import revenueCatService from "../services/revenueCat";
@@ -36,25 +39,42 @@ import {
   AddTransactionScreen,
   AddAssetDebtScreen,
   GoalTrackingScreen,
+  AddGoalScreen,
   FinancialRiskScreen,
   SharedFinanceScreen,
+  SharedGroupDetailFixed,
+  GroupDataSharingScreen,
   EditProfileScreen,
   NotificationSettingsScreen,
   PrivacySecurityScreen,
   AboutScreen,
   HelpSupportScreen,
   ForgotPasswordScreen,
-  RecurringTransactionsScreen,
   SubscriptionScreen,
   BankTransactionsScreen,
   AIFinancialAdvisorScreen,
   FinancialPlansScreen,
+  BudgetCategoriesScreen,
 } from "../screens";
+import { AIUsageAdminScreen } from "../screens/AIUsageAdminScreen";
 import { PrivacyPolicyScreen } from "../screens/PrivacyPolicyScreen";
 import { TermsOfServiceScreen } from "../screens/TermsOfServiceScreen";
+import GroupMembersScreen from "../screens/GroupMembersScreen";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<RootStackParamList>();
+
+// Budget Stack Navigator
+const BudgetStack = createStackNavigator();
+const BudgetStackNavigator = () => (
+  <BudgetStack.Navigator screenOptions={{ headerShown: false }}>
+    <BudgetStack.Screen name="BudgetMain" component={BudgetScreen} />
+    <BudgetStack.Screen
+      name="BudgetCategories"
+      component={BudgetCategoriesScreen}
+    />
+  </BudgetStack.Navigator>
+);
 
 type AppScreenState =
   | "splash"
@@ -80,6 +100,7 @@ export const MainApp: React.FC = () => {
   const [wasPreviouslyAuthenticated, setWasPreviouslyAuthenticated] =
     useState(false);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Plaid Update Mode state
   const [showPlaidUpdateMode, setShowPlaidUpdateMode] = useState(false);
@@ -105,6 +126,21 @@ export const MainApp: React.FC = () => {
 
     return () => clearTimeout(fallbackTimeout);
   }, [isLoading]);
+
+  // Additional timeout to prevent staying on splash screen indefinitely
+  useEffect(() => {
+    const splashTimeout = setTimeout(() => {
+      if (appState === "splash" && !isLoading && !authLoading) {
+        if (isAuthenticated) {
+          setAppState("main");
+        } else {
+          setAppState("login");
+        }
+      }
+    }, 15000); // 15 seconds max on splash screen
+
+    return () => clearTimeout(splashTimeout);
+  }, [appState, isLoading, authLoading, isAuthenticated]);
 
   const checkPlaidUpdateMode = async () => {
     try {
@@ -159,7 +195,7 @@ export const MainApp: React.FC = () => {
       setLoadingMessage("Setting up notifications...");
       await setupNotifications();
 
-      setLoadingMessage("Initializing RevenueCat...");
+      setLoadingMessage("Checking authentication...");
       try {
         await revenueCatService.initialize();
       } catch (error) {
@@ -260,18 +296,19 @@ export const MainApp: React.FC = () => {
         }
       } else if (nextAppState === "active") {
         // When app becomes active, check if biometric auth is required
-        // Add a small delay to prevent immediate trigger after fresh login
+        // Add a longer delay to prevent immediate trigger after fresh login
         setTimeout(() => {
           if (
             isBiometricEnabled &&
             isAutoLockEnabled &&
             wasPreviouslyAuthenticated &&
             !isBiometricAuthenticated &&
-            !justLoggedIn // Don't show biometric overlay if user just logged in
+            !justLoggedIn && // Don't show biometric overlay if user just logged in
+            !showBiometricOverlay // Prevent multiple overlays
           ) {
             setShowBiometricOverlay(true);
           }
-        }, 1000); // 1 second delay to prevent double verification
+        }, 2000); // 2 second delay to prevent double verification
       }
     };
 
@@ -287,51 +324,49 @@ export const MainApp: React.FC = () => {
     isBiometricAuthenticated,
     justLoggedIn,
     setBiometricAuthenticated,
+    showBiometricOverlay,
   ]);
 
   // Handle app state changes based on authentication
   useEffect(() => {
-    console.log("Auth state changed:", {
-      isLoading,
-      authLoading,
-      isAuthenticated,
-      appState,
-      user: user?.uid,
-      isBiometricEnabled,
-      isAutoLockEnabled,
-      isBiometricAuthenticated,
-    });
-
-    if (!isLoading && !authLoading) {
-      if (isAuthenticated && appState !== "main") {
-        console.log("User is authenticated, checking biometric auth");
-
-        // User is authenticated, go to main app
-        console.log("User is authenticated, going to main app");
-        setWasPreviouslyAuthenticated(true);
-        setJustLoggedIn(true);
-        setAppState("main");
-
-        // Clear the justLoggedIn flag after a delay
-        setTimeout(() => {
-          setJustLoggedIn(false);
-        }, 2000); // 2 seconds to prevent immediate biometric prompt
-      } else if (isAuthenticated && appState === "main") {
-        // Ensure wasPreviouslyAuthenticated is true when user is in main app
-        if (!wasPreviouslyAuthenticated) {
-          console.log(
-            "User is in main app, setting wasPreviouslyAuthenticated to true"
-          );
+    if (!isLoading && !authLoading && !isTransitioning) {
+      // Add a small delay to prevent rapid state changes that might cause network errors
+      const timeoutId = setTimeout(() => {
+        if (isAuthenticated && appState !== "main") {
+          // Prevent rapid state changes by using transition protection
+          setIsTransitioning(true);
           setWasPreviouslyAuthenticated(true);
+          setJustLoggedIn(true);
+          setAppState("main");
+
+          // Clear the justLoggedIn flag after a longer delay
+          setTimeout(() => {
+            setJustLoggedIn(false);
+            setIsTransitioning(false);
+          }, 3000); // 3 seconds to prevent immediate biometric prompt
+        } else if (isAuthenticated && appState === "main") {
+          // Ensure wasPreviouslyAuthenticated is true when user is in main app
+          if (!wasPreviouslyAuthenticated) {
+            setWasPreviouslyAuthenticated(true);
+          }
+        } else if (!isAuthenticated && appState === "main") {
+          setIsTransitioning(true);
+          setWasPreviouslyAuthenticated(false);
+          setAppState("login");
+          setTimeout(() => setIsTransitioning(false), 1000);
+        } else if (!isAuthenticated && appState === "splash") {
+          setIsTransitioning(true);
+          setAppState("login");
+          setTimeout(() => setIsTransitioning(false), 1000);
+        } else if (isAuthenticated && appState === "splash") {
+          setIsTransitioning(true);
+          setWasPreviouslyAuthenticated(true);
+          setAppState("main");
+          setTimeout(() => setIsTransitioning(false), 1000);
         }
-      } else if (!isAuthenticated && appState === "main") {
-        console.log("User is not authenticated, going to login");
-        setWasPreviouslyAuthenticated(false);
-        setAppState("login");
-      } else if (!isAuthenticated && appState === "splash") {
-        console.log("User is not authenticated, going to login from splash");
-        setAppState("login");
-      }
+      }, 500); // 500ms delay to prevent rapid state changes
+
+      return () => clearTimeout(timeoutId);
     }
   }, [
     isLoading,
@@ -343,6 +378,7 @@ export const MainApp: React.FC = () => {
     isAutoLockEnabled,
     isBiometricAuthenticated,
     wasPreviouslyAuthenticated,
+    isTransitioning,
   ]);
 
   const checkFirstLaunch = async () => {
@@ -350,15 +386,10 @@ export const MainApp: React.FC = () => {
       const hasSeenIntro = await AsyncStorage.getItem("hasSeenIntro");
 
       if (!hasSeenIntro) {
-        console.log("First launch detected, showing intro");
         setAppState("intro");
-      } else if (!isAuthenticated) {
-        console.log("User not authenticated, showing login");
-        setAppState("login");
-      } else {
-        console.log("User authenticated, going to main app");
-        setAppState("main");
       }
+      // Don't set app state here - let the auth state effect handle it
+      // This prevents jumping to login screen during refresh
     } catch (error) {
       console.error("Error checking app state:", error);
       setAppState("intro");
@@ -434,140 +465,182 @@ export const MainApp: React.FC = () => {
         <UserProvider>
           <SubscriptionProvider>
             <DataProvider>
-              <ChatbotProvider>
-                <FriendlyModeProvider>
-                  <DataPreloader>
-                    <NavigationContainer>
-                      {/* Floating AI Chatbot - only show on main app screens */}
-                      {appState === "main" && (
-                        <FloatingAIChatbot hideOnAIScreen={false} />
-                      )}
-                      <Stack.Navigator
-                        screenOptions={{
-                          headerShown: false,
+              <SelectedMonthProvider>
+                <ChatbotProvider>
+                  <FriendlyModeProvider>
+                    <TourProvider>
+                      <DataPreloader>
+                        <NavigationContainer>
+                          <Stack.Navigator
+                            screenOptions={{
+                              headerShown: false,
+                            }}
+                          >
+                            <Stack.Screen
+                              name="MainTabs"
+                              component={MainTabNavigator}
+                            />
+                            <Stack.Screen
+                              name="AddTransaction"
+                              component={AddTransactionScreen}
+                            />
+                            <Stack.Screen
+                              name="AddAssetDebt"
+                              component={AddAssetDebtScreen}
+                            />
+                            <Stack.Screen
+                              name="AddGoal"
+                              component={AddGoalScreen}
+                            />
+
+                            <Stack.Screen
+                              name="FinancialRisk"
+                              component={FinancialRiskScreen}
+                            />
+                            <Stack.Screen
+                              name="SharedFinance"
+                              component={SharedFinanceScreen}
+                            />
+
+                            <Stack.Screen
+                              name="SharedGroupDetailFixed"
+                              component={SharedGroupDetailFixed}
+                            />
+
+                            <Stack.Screen
+                              name="GroupDataSharing"
+                              component={GroupDataSharingScreen}
+                              options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                              name="GroupMembers"
+                              component={GroupMembersScreen}
+                              options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                              name="EditProfile"
+                              component={EditProfileScreen}
+                            />
+                            <Stack.Screen
+                              name="NotificationSettings"
+                              component={NotificationSettingsScreen}
+                            />
+                            <Stack.Screen
+                              name="PrivacySecurity"
+                              component={PrivacySecurityScreen}
+                            />
+                            <Stack.Screen
+                              name="About"
+                              component={AboutScreen}
+                            />
+                            <Stack.Screen
+                              name="AIUsageAdmin"
+                              component={AIUsageAdminScreen}
+                            />
+                            <Stack.Screen
+                              name="HelpSupport"
+                              component={HelpSupportScreen}
+                            />
+                            <Stack.Screen
+                              name="Subscription"
+                              component={SubscriptionScreen}
+                            />
+                            <Stack.Screen
+                              name="BankTransactions"
+                              component={BankTransactionsScreen}
+                            />
+                            <Stack.Screen
+                              name="AIFinancialAdvisor"
+                              component={AIFinancialAdvisorScreen}
+                            />
+                            <Stack.Screen
+                              name="FinancialPlans"
+                              component={FinancialPlansScreen}
+                            />
+                            <Stack.Screen
+                              name="PrivacyPolicy"
+                              component={PrivacyPolicyScreen}
+                            />
+                            <Stack.Screen
+                              name="TermsOfService"
+                              component={TermsOfServiceScreen}
+                            />
+                          </Stack.Navigator>
+                        </NavigationContainer>
+                      </DataPreloader>
+
+                      {/* Biometric Authentication Overlay */}
+                      <BiometricAuthOverlay
+                        visible={showBiometricOverlay}
+                        onSuccess={() => {
+                          setShowBiometricOverlay(false);
+                          setBiometricAuthenticated(true);
+                          setAppState("main");
                         }}
-                      >
-                        <Stack.Screen
-                          name="MainTabs"
-                          component={MainTabNavigator}
-                        />
-                        <Stack.Screen
-                          name="AddTransaction"
-                          component={AddTransactionScreen}
-                        />
-                        <Stack.Screen
-                          name="AddAssetDebt"
-                          component={AddAssetDebtScreen}
-                        />
+                        onCancel={async () => {
+                          try {
+                            // Handle Plaid logout cleanup
+                            await plaidService.handleLogout();
 
-                        <Stack.Screen
-                          name="FinancialRisk"
-                          component={FinancialRiskScreen}
-                        />
-                        <Stack.Screen
-                          name="SharedFinance"
-                          component={SharedFinanceScreen}
-                        />
-                        <Stack.Screen
-                          name="EditProfile"
-                          component={EditProfileScreen}
-                        />
-                        <Stack.Screen
-                          name="NotificationSettings"
-                          component={NotificationSettingsScreen}
-                        />
-                        <Stack.Screen
-                          name="PrivacySecurity"
-                          component={PrivacySecurityScreen}
-                        />
-                        <Stack.Screen name="About" component={AboutScreen} />
-                        <Stack.Screen
-                          name="HelpSupport"
-                          component={HelpSupportScreen}
-                        />
-                        <Stack.Screen
-                          name="RecurringTransactions"
-                          component={RecurringTransactionsScreen}
-                        />
-                        <Stack.Screen
-                          name="Subscription"
-                          component={SubscriptionScreen}
-                        />
-                        <Stack.Screen
-                          name="BankTransactions"
-                          component={BankTransactionsScreen}
-                        />
-                        <Stack.Screen
-                          name="AIFinancialAdvisor"
-                          component={AIFinancialAdvisorScreen}
-                        />
-                        <Stack.Screen
-                          name="FinancialPlans"
-                          component={FinancialPlansScreen}
-                        />
-                        <Stack.Screen
-                          name="PrivacyPolicy"
-                          component={PrivacyPolicyScreen}
-                        />
-                        <Stack.Screen
-                          name="TermsOfService"
-                          component={TermsOfServiceScreen}
-                        />
-                      </Stack.Navigator>
-                    </NavigationContainer>
-                  </DataPreloader>
+                            const { signOutUser } = await import(
+                              "../services/auth"
+                            );
+                            await signOutUser();
 
-                  {/* Biometric Authentication Overlay */}
-                  <BiometricAuthOverlay
-                    visible={showBiometricOverlay}
-                    onSuccess={() => {
-                      setShowBiometricOverlay(false);
-                      setBiometricAuthenticated(true);
-                      setAppState("main");
-                    }}
-                    onCancel={() => {
-                      setShowBiometricOverlay(false);
-                      setBiometricAuthenticated(false);
-                      setAppState("login");
-                    }}
-                    onUsePasscode={() => {
-                      // Allow access with device passcode fallback
-                      setShowBiometricOverlay(false);
-                      setBiometricAuthenticated(true);
-                      setAppState("main");
-                    }}
-                    onSignOut={async () => {
-                      try {
-                        // Handle Plaid logout cleanup
-                        await plaidService.handleLogout();
+                            setShowBiometricOverlay(false);
+                            setBiometricAuthenticated(false);
+                            setAppState("login");
+                          } catch (error) {
+                            console.error(
+                              "Error signing out on cancel:",
+                              error
+                            );
+                            // Fallback to login screen even if signout fails
+                            setShowBiometricOverlay(false);
+                            setBiometricAuthenticated(false);
+                            setAppState("login");
+                          }
+                        }}
+                        onUsePasscode={() => {
+                          // Allow access with device passcode fallback
+                          setShowBiometricOverlay(false);
+                          setBiometricAuthenticated(true);
+                          setAppState("main");
+                        }}
+                        onSignOut={async () => {
+                          try {
+                            // Handle Plaid logout cleanup
+                            await plaidService.handleLogout();
 
-                        const { signOutUser } = await import(
-                          "../services/auth"
-                        );
-                        await signOutUser();
+                            const { signOutUser } = await import(
+                              "../services/auth"
+                            );
+                            await signOutUser();
 
-                        setShowBiometricOverlay(false);
-                        setBiometricAuthenticated(false);
-                        setAppState("login");
-                      } catch (error) {
-                        console.error("Error signing out:", error);
-                        // Fallback to login screen even if signout fails
-                        setShowBiometricOverlay(false);
-                        setBiometricAuthenticated(false);
-                        setAppState("login");
-                      }
-                    }}
-                  />
+                            setShowBiometricOverlay(false);
+                            setBiometricAuthenticated(false);
+                            setAppState("login");
+                          } catch (error) {
+                            console.error("Error signing out:", error);
+                            // Fallback to login screen even if signout fails
+                            setShowBiometricOverlay(false);
+                            setBiometricAuthenticated(false);
+                            setAppState("login");
+                          }
+                        }}
+                      />
 
-                  {/* Plaid Update Mode Modal */}
-                  <PlaidUpdateMode
-                    visible={showPlaidUpdateMode}
-                    onClose={() => setShowPlaidUpdateMode(false)}
-                    updateType={plaidUpdateType}
-                    newAccounts={plaidNewAccounts}
-                  />
-                </FriendlyModeProvider>
-              </ChatbotProvider>
+                      {/* Plaid Update Mode Modal */}
+                      <PlaidUpdateMode
+                        visible={showPlaidUpdateMode}
+                        onClose={() => setShowPlaidUpdateMode(false)}
+                        updateType={plaidUpdateType}
+                        newAccounts={plaidNewAccounts}
+                      />
+                    </TourProvider>
+                  </FriendlyModeProvider>
+                </ChatbotProvider>
+              </SelectedMonthProvider>
             </DataProvider>
           </SubscriptionProvider>
         </UserProvider>
@@ -596,46 +669,55 @@ const MainTabNavigator = () => {
   };
 
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarShowLabel: true,
-        tabBarActiveTintColor: colors.tabBarActive,
-        tabBarInactiveTintColor: colors.tabBarInactive,
-        tabBarStyle: {
-          backgroundColor: colors.tabBar,
-          borderTopColor: colors.border,
-        },
-        tabBarIcon: ({ color, size }) => {
-          const map: Record<
-            keyof BottomTabParamList,
-            keyof typeof Ionicons.glyphMap
-          > = {
-            Dashboard: "trending-up",
-            Budget: "wallet",
-            Goals: "flag",
-            "Assets/Debts": "pie-chart",
-            Settings: "settings",
-          };
-          return (
-            <Ionicons
-              name={map[route.name as keyof BottomTabParamList]}
-              color={color}
-              size={size}
-            />
-          );
-        },
-      })}
-    >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Budget" component={BudgetScreen} />
-      <Tab.Screen name="Goals" component={GoalTrackingScreen} />
-      <Tab.Screen name="Assets/Debts" component={AssetsDebtsScreen} />
-      <Tab.Screen name="Settings">
-        {({ navigation }) => (
-          <SettingsScreen onLogout={handleLogout} navigation={navigation} />
-        )}
-      </Tab.Screen>
-    </Tab.Navigator>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          lazy: false, // Pre-mount all tabs to prevent jumpy behavior
+          animation: "fade",
+          tabBarShowLabel: true,
+          tabBarActiveTintColor: colors.tabBarActive,
+          tabBarInactiveTintColor: colors.tabBarInactive,
+          tabBarStyle: {
+            backgroundColor: colors.tabBar,
+            borderTopColor: colors.border,
+          },
+          // Add theme-aware background to prevent white flash
+          cardStyle: {
+            backgroundColor: colors.background,
+          },
+          tabBarIcon: ({ color, size }) => {
+            const map: Record<
+              keyof BottomTabParamList,
+              keyof typeof Ionicons.glyphMap
+            > = {
+              Dashboard: "trending-up",
+              Budget: "wallet",
+              Goals: "flag",
+              "Assets/Debts": "pie-chart",
+              Settings: "settings",
+            };
+            return (
+              <Ionicons
+                name={map[route.name as keyof BottomTabParamList]}
+                color={color}
+                size={size}
+              />
+            );
+          },
+        })}
+        detachInactiveScreens={false} // Keep screens attached to prevent layout shifts
+      >
+        <Tab.Screen name="Dashboard" component={DashboardScreen} />
+        <Tab.Screen name="Budget" component={BudgetStackNavigator} />
+        <Tab.Screen name="Goals" component={GoalTrackingScreen} />
+        <Tab.Screen name="Assets/Debts" component={AssetsDebtsScreen} />
+        <Tab.Screen name="Settings">
+          {({ navigation }) => (
+            <SettingsScreen onLogout={handleLogout} navigation={navigation} />
+          )}
+        </Tab.Screen>
+      </Tab.Navigator>
+    </View>
   );
 };

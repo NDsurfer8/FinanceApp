@@ -32,13 +32,6 @@ export const callBackendAI = async (
   conversationHistory?: Array<{ role: string; content: string }>
 ): Promise<AIResponse> => {
   try {
-    console.log("Calling backend AI with:", {
-      messageLength: message.length,
-      hasFinancialData: !!financialData,
-      userPreferences,
-      conversationHistoryLength: conversationHistory?.length || 0,
-    });
-
     const result = await backendAIChat({
       message,
       financialData,
@@ -47,13 +40,6 @@ export const callBackendAI = async (
     });
 
     const data = result.data as AIResponse;
-
-    console.log("Backend AI response:", {
-      responseLength: data.response.length,
-      tokensUsed: data.tokensUsed,
-      cost: data.cost,
-      isPlanRequest: data.isPlanRequest,
-    });
 
     return data;
   } catch (error) {
@@ -69,19 +55,11 @@ export const sendBackendAIFeedback = async (
   preferences?: any
 ): Promise<void> => {
   try {
-    console.log("Sending feedback to backend:", {
-      messageId,
-      feedback,
-      preferences,
-    });
-
     await backendAIFeedback({
       messageId,
       feedback,
       preferences,
     });
-
-    console.log("Feedback sent successfully");
   } catch (error) {
     console.error("Failed to send feedback to backend:", error);
     throw error;

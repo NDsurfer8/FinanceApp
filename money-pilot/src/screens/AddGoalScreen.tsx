@@ -10,7 +10,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Modal,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
@@ -42,13 +44,14 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
-  const { goals, updateDataOptimistically, refreshInBackground } =
-    useZeroLoading();
+  const { goals, updateDataOptimistically } = useZeroLoading();
   const { canAddGoal, getGoalLimitInfo } = useTransactionLimits();
   const { presentPaywall } = usePaywall();
-  const { editMode, goal } = route.params as RouteParams;
+  const { editMode = false, goal = undefined } =
+    (route.params as RouteParams) || {};
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const goalCategories = [
     {
@@ -82,26 +85,53 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
     low: "#16a34a",
   };
 
+  // Initialize with a default date (1 year from now)
+  const getDefaultDate = () => {
+    const defaultDate = new Date();
+    defaultDate.setFullYear(defaultDate.getFullYear() + 1);
+    return defaultDate;
+  };
+
   const [formData, setFormData] = useState({
-    name: editMode ? goal?.name || "" : "",
-    targetAmount: editMode ? goal?.targetAmount?.toString() || "" : "",
-    currentAmount: editMode ? goal?.currentAmount?.toString() || "" : "",
-    monthlyContribution: editMode
-      ? goal?.monthlyContribution?.toString() || ""
-      : "",
-    targetDate: editMode
-      ? goal?.targetDate ||
-        new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0]
-      : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0],
-    category: editMode ? goal?.category || "savings" : "savings",
-    priority: editMode
-      ? goal?.priority || "medium"
-      : ("medium" as "medium" | "high" | "low"),
+    name: editMode && goal ? goal.name || "" : "",
+    targetAmount: editMode && goal ? goal.targetAmount?.toString() || "" : "",
+    currentAmount: editMode && goal ? goal.currentAmount?.toString() || "" : "",
+    monthlyContribution:
+      editMode && goal ? goal.monthlyContribution?.toString() || "" : "",
+    targetDate:
+      editMode && goal && goal.targetDate
+        ? new Date(goal.targetDate)
+        : getDefaultDate(),
+    category: editMode && goal ? goal.category || "emergency" : "emergency",
+    priority:
+      editMode && goal
+        ? goal.priority || "medium"
+        : ("medium" as "medium" | "high" | "low"),
   });
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      setFormData({
+        ...formData,
+        targetDate: selectedDate,
+      });
+    }
+  };
+
+  const formatDateForDisplay = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const formatDateForStorage = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
   const handleSave = async () => {
     if (
@@ -119,31 +149,10 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
       return;
     }
 
-    // Check goal limits (only for new goals, not edits)
-    // TEMPORARILY DISABLED - Commented out subscription checks for goals
-    /*
-    if (!editMode) {
-      if (!canAddGoal()) {
-        const limitInfo = getGoalLimitInfo();
-        if (!limitInfo.isUnlimited) {
-          Alert.alert(
-            "Goal Limit Reached",
-            `You've reached your limit of ${limitInfo.limit} goals on the free plan.\n\nUpgrade to Premium for unlimited goals!`,
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Upgrade to Premium", onPress: presentPaywall },
-            ]
-          );
-        }
-        return;
-      }
-    }
-    */
-
     try {
       setLoading(true);
 
-      if (editMode && goal) {
+      if (editMode && goal && goal.id) {
         // Update existing goal
         const updatedGoal = {
           ...goal,
@@ -153,7 +162,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
           monthlyContribution: parseFloat(
             removeCommas(formData.monthlyContribution)
           ),
-          targetDate: formData.targetDate,
+          targetDate: formatDateForStorage(formData.targetDate),
           category: formData.category,
           priority: formData.priority,
           updatedAt: Date.now(),
@@ -181,7 +190,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
           monthlyContribution: parseFloat(
             removeCommas(formData.monthlyContribution)
           ),
-          targetDate: formData.targetDate,
+          targetDate: formatDateForStorage(formData.targetDate),
           category: formData.category,
           priority: formData.priority,
           userId: user.uid,
@@ -221,7 +230,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!user || !editMode || !goal) {
+    if (!user || !editMode || !goal || !goal.id) {
       Alert.alert("Error", "Cannot delete goal");
       return;
     }
@@ -292,7 +301,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
 
           {/* Form Fields */}
           {/* Goal Description */}
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 16,
@@ -301,14 +310,14 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Goal Description
+              Goal Description *
             </Text>
             <TextInput
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
+                borderRadius: 12,
+                padding: 16,
                 fontSize: 16,
                 color: colors.text,
                 backgroundColor: colors.card,
@@ -321,13 +330,13 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
           </View>
 
           {/* Category */}
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 16,
                 fontWeight: "600",
                 color: colors.text,
-                marginBottom: 8,
+                marginBottom: 12,
               }}
             >
               Category
@@ -342,20 +351,21 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                   key={category.key}
                   style={{
                     paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    marginRight: 8,
-                    borderRadius: 20,
-                    borderWidth: 1,
+                    paddingVertical: 12,
+                    marginRight: 12,
+                    borderRadius: 12,
+                    borderWidth: 2,
                     borderColor:
                       formData.category === category.key
                         ? category.color
                         : colors.border,
                     backgroundColor:
                       formData.category === category.key
-                        ? category.color
+                        ? category.color + "20"
                         : "transparent",
                     alignItems: "center",
                     flexDirection: "row",
+                    minWidth: 120,
                   }}
                   onPress={() =>
                     setFormData({ ...formData, category: category.key })
@@ -363,20 +373,21 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 >
                   <Ionicons
                     name={category.icon as any}
-                    size={16}
+                    size={18}
                     color={
                       formData.category === category.key
-                        ? "white"
-                        : category.color
+                        ? category.color
+                        : colors.textSecondary
                     }
-                    style={{ marginRight: 4 }}
+                    style={{ marginRight: 8 }}
                   />
                   <Text
                     style={{
                       fontSize: 14,
+                      fontWeight: "600",
                       color:
                         formData.category === category.key
-                          ? "white"
+                          ? category.color
                           : colors.text,
                     }}
                   >
@@ -388,7 +399,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
           </View>
 
           {/* Target Amount */}
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 16,
@@ -397,14 +408,14 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Goal Target Amount
+              Goal Target Amount *
             </Text>
             <TextInput
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
+                borderRadius: 12,
+                padding: 16,
                 fontSize: 16,
                 color: colors.text,
                 backgroundColor: colors.card,
@@ -421,7 +432,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
           </View>
 
           {/* Current Amount */}
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 16,
@@ -430,14 +441,14 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Current Amount Saved for Goal
+              Current Amount Saved *
             </Text>
             <TextInput
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
+                borderRadius: 12,
+                padding: 16,
                 fontSize: 16,
                 color: colors.text,
                 backgroundColor: colors.card,
@@ -454,7 +465,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
           </View>
 
           {/* Monthly Contribution */}
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 16,
@@ -463,14 +474,14 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Planned Monthly Contribution
+              Monthly Contribution *
             </Text>
             <TextInput
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
+                borderRadius: 12,
+                padding: 16,
                 fontSize: 16,
                 color: colors.text,
                 backgroundColor: colors.card,
@@ -487,7 +498,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
           </View>
 
           {/* Target Date */}
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 16,
@@ -498,33 +509,45 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
             >
               Target Achievement Date
             </Text>
-            <TextInput
+            <TouchableOpacity
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
-                fontSize: 16,
-                color: colors.text,
+                borderRadius: 12,
+                padding: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
                 backgroundColor: colors.card,
               }}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.textSecondary}
-              value={formData.targetDate}
-              onChangeText={(text) =>
-                setFormData({ ...formData, targetDate: text })
-              }
-            />
+              onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: colors.text,
+                  flex: 1,
+                }}
+              >
+                {formatDateForDisplay(formData.targetDate)}
+              </Text>
+              <Ionicons
+                name="calendar-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
           </View>
 
           {/* Priority */}
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 32 }}>
             <Text
               style={{
                 fontSize: 16,
                 fontWeight: "600",
                 color: colors.text,
-                marginBottom: 8,
+                marginBottom: 12,
               }}
             >
               Priority
@@ -535,16 +558,16 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                   key={priority}
                   style={{
                     flex: 1,
-                    padding: 12,
-                    borderRadius: 8,
-                    borderWidth: 1,
+                    padding: 16,
+                    borderRadius: 12,
+                    borderWidth: 2,
                     borderColor:
                       formData.priority === priority
                         ? priorityColors[priority]
                         : colors.border,
                     backgroundColor:
                       formData.priority === priority
-                        ? priorityColors[priority]
+                        ? priorityColors[priority] + "20"
                         : "transparent",
                     alignItems: "center",
                   }}
@@ -553,7 +576,9 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                   <Text
                     style={{
                       color:
-                        formData.priority === priority ? "white" : colors.text,
+                        formData.priority === priority
+                          ? priorityColors[priority]
+                          : colors.text,
                       fontSize: 14,
                       fontWeight: "600",
                       textTransform: "capitalize",
@@ -567,16 +592,21 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
           </View>
 
           {/* Action Buttons */}
-          <View style={{ marginTop: 20, gap: 12 }}>
+          <View style={{ marginTop: 20, gap: 16 }}>
             {/* Save Button */}
             <TouchableOpacity
               style={{
                 backgroundColor: colors.primary,
-                padding: 16,
-                borderRadius: 8,
+                padding: 18,
+                borderRadius: 12,
                 alignItems: "center",
                 flexDirection: "row",
                 justifyContent: "center",
+                shadowColor: colors.primary,
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 8,
               }}
               onPress={handleSave}
               disabled={loading}
@@ -592,7 +622,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 style={{
                   color: "white",
                   fontSize: 16,
-                  fontWeight: "600",
+                  fontWeight: "700",
                 }}
               >
                 {editMode ? "Update" : "Save"} Goal
@@ -603,12 +633,14 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
             {editMode && (
               <TouchableOpacity
                 style={{
-                  backgroundColor: colors.error,
-                  padding: 16,
-                  borderRadius: 8,
+                  backgroundColor: colors.error + "20",
+                  padding: 18,
+                  borderRadius: 12,
                   alignItems: "center",
                   flexDirection: "row",
                   justifyContent: "center",
+                  borderWidth: 1,
+                  borderColor: colors.error,
                 }}
                 onPress={handleDelete}
                 disabled={deleteLoading}
@@ -616,15 +648,15 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 {deleteLoading && (
                   <ActivityIndicator
                     size="small"
-                    color="white"
+                    color={colors.error}
                     style={{ marginRight: 8 }}
                   />
                 )}
                 <Text
                   style={{
-                    color: "white",
+                    color: colors.error,
                     fontSize: 16,
-                    fontWeight: "600",
+                    fontWeight: "700",
                   }}
                 >
                   Delete Goal
@@ -634,6 +666,121 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Date Picker Modal */}
+      <Modal
+        visible={showDatePicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          activeOpacity={1}
+          onPress={() => setShowDatePicker(false)}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              width: "90%",
+              maxWidth: 400,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.25,
+              shadowRadius: 20,
+              shadowOffset: { width: 0, height: 10 },
+              elevation: 10,
+            }}
+            onStartShouldSetResponder={() => true}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: colors.text,
+                marginBottom: 20,
+                textAlign: "center",
+              }}
+            >
+              Select Target Date
+            </Text>
+            <View
+              style={{
+                alignItems: "center",
+                marginVertical: 10,
+              }}
+            >
+              <DateTimePicker
+                value={formData.targetDate}
+                mode="date"
+                display="spinner"
+                onChange={handleDateChange}
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 12,
+                  width: "100%",
+                }}
+                textColor={colors.text}
+                minimumDate={new Date()}
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 12,
+                marginTop: 20,
+              }}
+            >
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.border,
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: "center",
+                }}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <Text
+                  style={{
+                    color: colors.text,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.primary,
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: "center",
+                }}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Done
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };

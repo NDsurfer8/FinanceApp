@@ -265,7 +265,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   backButton: {
-    padding: 8,
+    marginRight: 20,
+    padding: 10,
   },
   headerTitle: {
     fontSize: 20,

@@ -8,6 +8,7 @@ import {
   Switch,
   Alert,
   StyleSheet,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { notificationService } from "../services/notifications";
@@ -41,6 +42,9 @@ export const NotificationSettingsScreen: React.FC<
   const [isLoading, setIsLoading] = useState(true);
 
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [balanceThresholds, setBalanceThresholds] = useState<{
+    [accountName: string]: number;
+  }>({});
 
   useEffect(() => {
     checkPermissions();
@@ -49,7 +53,13 @@ export const NotificationSettingsScreen: React.FC<
 
   const loadSavedSettings = async () => {
     try {
-      console.log("Loading saved settings...");
+      // Loading saved settings
+
+      // Load balance thresholds
+      const savedThresholds = await AsyncStorage.getItem("balance_thresholds");
+      if (savedThresholds) {
+        setBalanceThresholds(JSON.parse(savedThresholds));
+      }
 
       // First, check badge indicator preference and update notification handler
       const badgeEnabled = await AsyncStorage.getItem(
@@ -63,7 +73,7 @@ export const NotificationSettingsScreen: React.FC<
             "../services/notifications"
           );
           await notificationService.getBadgeCount();
-          console.log("Badge count initialized");
+          // Badge count initialized
         } catch (error) {
           console.error("Error initializing badge count:", error);
         }
@@ -95,30 +105,6 @@ export const NotificationSettingsScreen: React.FC<
           type: "bills",
         },
         {
-          id: "goal-updates",
-          title: "Goal Progress Updates",
-          description: "Track your financial goals progress",
-          icon: "flag",
-          enabled: false,
-          type: "goals",
-        },
-        // {
-        //   id: "weekly-reports",
-        //   title: "Weekly Reports",
-        //   description: "Receive weekly financial summaries",
-        //   icon: "bar-chart",
-        //   enabled: false,
-        //   type: "weekly",
-        // },
-        // {
-        //   id: "monthly-reports",
-        //   title: "Monthly Reports",
-        //   description: "Get monthly financial reviews",
-        //   icon: "trending-up",
-        //   enabled: false,
-        //   type: "monthly",
-        // },
-        {
           id: "low-balance-alerts",
           title: "Low Balance Alerts",
           description: "Get notified when account balances are low",
@@ -127,12 +113,37 @@ export const NotificationSettingsScreen: React.FC<
           type: "balance",
         },
         {
-          id: "savings-reminders",
-          title: "Savings Reminders",
-          description: "Stay on track with your savings goals",
-          icon: "diamond",
+          id: "goal-reminders",
+          title: "Goal Progress Alerts",
+          description: "Get notified about your financial goal progress",
+          icon: "trophy",
           enabled: false,
-          type: "savings",
+          type: "goals",
+        },
+        {
+          id: "webhook-transactions",
+          title: "New Transaction Alerts",
+          description:
+            "Get notified when new transactions arrive from your bank",
+          icon: "refresh",
+          enabled: false,
+          type: "webhook-transactions",
+        },
+        {
+          id: "webhook-accounts",
+          title: "New Account Alerts",
+          description: "Get notified when new bank accounts are detected",
+          icon: "card",
+          enabled: false,
+          type: "webhook-accounts",
+        },
+        {
+          id: "webhook-connection-issues",
+          title: "Connection Issue Alerts",
+          description: "Get notified about bank connection problems",
+          icon: "alert-circle",
+          enabled: false,
+          type: "webhook-issue",
         },
       ];
 
@@ -142,16 +153,14 @@ export const NotificationSettingsScreen: React.FC<
             `notification_${setting.id}`
           );
           const isEnabled = savedValue === "true";
-          console.log(
-            `Loaded from AsyncStorage: notification_${setting.id} = ${savedValue} (enabled: ${isEnabled})`
-          );
+          // Loaded from AsyncStorage
           return {
             ...setting,
             enabled: isEnabled,
           };
         })
       );
-      console.log("Final saved settings:", savedSettings);
+      // Final saved settings loaded
       setSettings(savedSettings);
 
       // Then check actual notification status
@@ -184,9 +193,7 @@ export const NotificationSettingsScreen: React.FC<
         (notification) => notification.content.data?.type === "budget-reminder"
       );
 
-      console.log(
-        `Found ${scheduledNotifications.length} scheduled notifications, bill reminders: ${hasBillReminders}, budget reminders: ${hasBudgetReminders}`
-      );
+      // Found scheduled notifications
 
       // Check saved state and update if needed for bill reminders
       const savedBillValue = await AsyncStorage.getItem(
@@ -194,21 +201,15 @@ export const NotificationSettingsScreen: React.FC<
       );
       const savedBillEnabled = savedBillValue === "true";
 
-      console.log(
-        `Bill reminder status check - saved: ${savedBillEnabled}, actual: ${hasBillReminders}`
-      );
+      // Bill reminder status check
 
       // Only update if there are actual notifications and they don't match saved state
       // If saved is true but no notifications exist, keep the saved state (user wants them enabled)
       if (savedBillEnabled && !hasBillReminders) {
-        console.log(
-          `Saved state is true but no notifications found - keeping saved state`
-        );
+        // Saved state is true but no notifications found - keeping saved state
         // Don't update - keep the saved state
       } else if (savedBillEnabled !== hasBillReminders) {
-        console.log(
-          `Updating bill reminder state from ${savedBillEnabled} to ${hasBillReminders}`
-        );
+        // Updating bill reminder state
         await AsyncStorage.setItem(
           `notification_bill-reminders`,
           hasBillReminders ? "true" : "false"
@@ -221,7 +222,7 @@ export const NotificationSettingsScreen: React.FC<
           )
         );
       } else {
-        console.log(`Bill reminder state matches, no update needed`);
+        // Bill reminder state matches, no update needed
       }
 
       // Check saved state and update if needed for budget reminders
@@ -230,19 +231,13 @@ export const NotificationSettingsScreen: React.FC<
       );
       const savedBudgetEnabled = savedBudgetValue === "true";
 
-      console.log(
-        `Budget reminder status check - saved: ${savedBudgetEnabled}, actual: ${hasBudgetReminders}`
-      );
+      // Budget reminder status check
 
       if (savedBudgetEnabled && !hasBudgetReminders) {
-        console.log(
-          `Saved budget state is true but no notifications found - keeping saved state`
-        );
+        // Saved budget state is true but no notifications found - keeping saved state
         // Don't update - keep the saved state
       } else if (savedBudgetEnabled !== hasBudgetReminders) {
-        console.log(
-          `Updating budget reminder state from ${savedBudgetEnabled} to ${hasBudgetReminders}`
-        );
+        // Updating budget reminder state
         await AsyncStorage.setItem(
           `notification_budget-reminders`,
           hasBudgetReminders ? "true" : "false"
@@ -255,7 +250,7 @@ export const NotificationSettingsScreen: React.FC<
           )
         );
       } else {
-        console.log(`Budget reminder state matches, no update needed`);
+        // Budget reminder state matches, no update needed
       }
     } catch (error) {
       console.error("Error checking reminder status:", error);
@@ -268,7 +263,7 @@ export const NotificationSettingsScreen: React.FC<
   };
 
   const toggleSetting = async (settingId: string) => {
-    console.log(`Toggling ${settingId} - current settings:`, settings);
+    // Toggling setting
 
     const updatedSettings = settings.map((setting) =>
       setting.id === settingId
@@ -278,13 +273,13 @@ export const NotificationSettingsScreen: React.FC<
     setSettings(updatedSettings);
 
     const setting = updatedSettings.find((s) => s.id === settingId);
-    console.log(`New setting state for ${settingId}:`, setting?.enabled);
+    // New setting state
 
     // Save the setting state to AsyncStorage
     const storageKey = `notification_${settingId}`;
     const storageValue = setting?.enabled ? "true" : "false";
     await AsyncStorage.setItem(storageKey, storageValue);
-    console.log(`Saved to AsyncStorage: ${storageKey} = ${storageValue}`);
+    // Saved to AsyncStorage
 
     if (setting?.enabled) {
       await scheduleNotification(setting);
@@ -302,9 +297,7 @@ export const NotificationSettingsScreen: React.FC<
     try {
       const { notificationService } = await import("../services/notifications");
       await notificationService.updateNotificationHandler(badgeEnabled);
-      console.log(
-        `Updated notification handler - badge enabled: ${badgeEnabled}`
-      );
+      // Updated notification handler
     } catch (error) {
       console.error("Error updating notification handler:", error);
     }
@@ -327,27 +320,30 @@ export const NotificationSettingsScreen: React.FC<
             await billReminderService.scheduleAllBillReminders(user.uid);
           }
           break;
-        case "goals":
-          await notificationService.scheduleGoalReminder(
-            "Emergency Fund",
-            10000,
-            7500
-          );
-          break;
-        case "weekly":
-          await notificationService.scheduleWeeklyReport();
-          break;
-        case "monthly":
-          await notificationService.scheduleMonthlyReport();
-          break;
         case "balance":
           await notificationService.scheduleLowBalanceAlert(
             "Checking Account",
             500
           );
           break;
-        case "savings":
-          await notificationService.scheduleSavingsReminder(5000, 3000);
+        case "goals":
+          // Goal reminders are scheduled when goals are created/updated
+          // This toggle just enables/disables the feature
+          // Goal reminder notifications enabled
+          break;
+        case "webhook-transactions":
+          // Webhook notifications are handled automatically by the system
+          // This toggle just enables/disables the feature
+          // Webhook transaction notifications enabled
+          break;
+        case "webhook-accounts":
+          // Webhook notifications are handled automatically by the system
+          // Webhook account notifications enabled
+          break;
+
+        case "webhook-issue":
+          // Webhook notifications are handled automatically by the system
+          // Webhook connection issue notifications enabled
           break;
       }
     } catch (error) {
@@ -364,6 +360,17 @@ export const NotificationSettingsScreen: React.FC<
       } else if (settingId === "budget-reminders") {
         // Cancel all budget reminders specifically
         await budgetReminderService.cancelAllBudgetReminders();
+      } else if (settingId === "goal-reminders") {
+        // Cancel all goal reminders specifically
+        const scheduledNotifications =
+          await notificationService.getScheduledNotifications();
+        for (const notification of scheduledNotifications) {
+          if (notification.content.data?.type === "goal-reminder") {
+            await notificationService.cancelNotification(
+              notification.identifier
+            );
+          }
+        }
       } else {
         // Cancel all notifications for this setting type
         const scheduledNotifications =
@@ -378,6 +385,33 @@ export const NotificationSettingsScreen: React.FC<
       }
     } catch (error) {
       console.error("Error canceling notification:", error);
+    }
+  };
+
+  const updateBalanceThreshold = async (
+    accountName: string,
+    threshold: number
+  ) => {
+    try {
+      const newThresholds = { ...balanceThresholds, [accountName]: threshold };
+      setBalanceThresholds(newThresholds);
+      await AsyncStorage.setItem(
+        "balance_thresholds",
+        JSON.stringify(newThresholds)
+      );
+
+      // Schedule low balance alert for this account
+      if (threshold > 0) {
+        await notificationService.scheduleLowBalanceAlert(
+          accountName,
+          threshold
+        );
+      }
+
+      // Updated balance threshold
+    } catch (error) {
+      console.error("Error updating balance threshold:", error);
+      Alert.alert("Error", "Failed to update balance threshold");
     }
   };
 
@@ -527,6 +561,142 @@ export const NotificationSettingsScreen: React.FC<
           ))}
         </View>
 
+        {/* Balance Thresholds */}
+        <View style={styles.settingsContainer}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Balance Alert Thresholds
+          </Text>
+          <View
+            style={[styles.thresholdCard, { backgroundColor: colors.surface }]}
+          >
+            <Text
+              style={[
+                styles.thresholdDescription,
+                { color: colors.textSecondary },
+              ]}
+            >
+              Set thresholds to receive alerts when account balances are low or
+              credit is running out
+            </Text>
+
+            {/* Default account thresholds */}
+            <View style={styles.thresholdItem}>
+              <Text style={[styles.accountName, { color: colors.text }]}>
+                Checking Account
+              </Text>
+              <View style={styles.thresholdInput}>
+                <Text
+                  style={[
+                    styles.currencySymbol,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  $
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: colors.background,
+                    },
+                  ]}
+                  value={
+                    balanceThresholds["Checking Account"]?.toString() || "500"
+                  }
+                  onChangeText={(text) => {
+                    const value = parseFloat(text) || 0;
+                    updateBalanceThreshold("Checking Account", value);
+                  }}
+                  keyboardType="numeric"
+                  placeholder="500"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+            </View>
+
+            <View style={styles.thresholdItem}>
+              <Text style={[styles.accountName, { color: colors.text }]}>
+                Savings Account
+              </Text>
+              <View style={styles.thresholdInput}>
+                <Text
+                  style={[
+                    styles.currencySymbol,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  $
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: colors.background,
+                    },
+                  ]}
+                  value={
+                    balanceThresholds["Savings Account"]?.toString() || "1000"
+                  }
+                  onChangeText={(text) => {
+                    const value = parseFloat(text) || 0;
+                    updateBalanceThreshold("Savings Account", value);
+                  }}
+                  keyboardType="numeric"
+                  placeholder="1000"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+            </View>
+
+            <View style={styles.thresholdItem}>
+              <Text style={[styles.accountName, { color: colors.text }]}>
+                Credit Card
+              </Text>
+              <View style={styles.thresholdInput}>
+                <Text
+                  style={[
+                    styles.currencySymbol,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  $
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: colors.background,
+                    },
+                  ]}
+                  value={balanceThresholds["Credit Card"]?.toString() || "500"}
+                  onChangeText={(text) => {
+                    const value = parseFloat(text) || 0;
+                    updateBalanceThreshold("Credit Card", value);
+                  }}
+                  keyboardType="numeric"
+                  placeholder="500"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+            </View>
+
+            {/* Credit Card Threshold Hint */}
+            <View style={styles.thresholdHintContainer}>
+              <Text
+                style={[styles.thresholdHint, { color: colors.textSecondary }]}
+              >
+                💳 Alert when available credit falls below this amount
+              </Text>
+            </View>
+          </View>
+        </View>
+
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -671,5 +841,60 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 12,
+  },
+  thresholdCard: {
+    borderRadius: 16,
+    padding: 20,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  thresholdDescription: {
+    fontSize: 14,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  thresholdItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+  },
+  accountName: {
+    fontSize: 16,
+    fontWeight: "500",
+    flex: 1,
+  },
+  thresholdInput: {
+    flexDirection: "row",
+    alignItems: "center",
+    minWidth: 120,
+  },
+  currencySymbol: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginRight: 8,
+  },
+  input: {
+    fontSize: 16,
+    fontWeight: "600",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minWidth: 80,
+    textAlign: "center",
+  },
+  thresholdHintContainer: {
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  thresholdHint: {
+    fontSize: 12,
+    fontStyle: "italic",
+    lineHeight: 16,
   },
 });

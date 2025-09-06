@@ -1,5 +1,49 @@
 import { ref, set, get, push, update, remove } from "firebase/database";
 import { db, auth } from "./firebase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  removeUserFromGroup,
+  removeGroupSharedData,
+} from "./sharedFinanceDataSync";
+
+/**
+ * Cleans data by removing undefined values before writing to Firebase
+ * Firebase doesn't allow undefined values - they must be null or removed
+ */
+const cleanDataForFirebase = <T>(data: T): T => {
+  if (data === null || data === undefined) {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    return data
+      .map((item) => cleanDataForFirebase(item))
+      .filter((item) => item !== undefined) as T;
+  }
+
+  if (typeof data === "object") {
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        cleaned[key] = cleanDataForFirebase(value);
+      }
+    }
+    return cleaned;
+  }
+
+  return data;
+};
+
+export interface DataSharingSettings {
+  shareNetWorth: boolean;
+  shareMonthlyIncome: boolean;
+  shareMonthlyExpenses: boolean;
+  shareTransactions: boolean;
+  shareRecurringTransactions: boolean;
+  shareAssets: boolean;
+  shareDebts: boolean;
+  shareGoals: boolean;
+}
 
 export interface UserProfile {
   uid: string;
@@ -7,6 +51,7 @@ export interface UserProfile {
   displayName: string;
   createdAt: number;
   updatedAt: number;
+  dataSharingSettings?: DataSharingSettings;
 }
 
 export interface Transaction {
@@ -20,6 +65,8 @@ export interface Transaction {
   recurringTransactionId?: string; // Reference to the recurring transaction that created this
   createdAt?: number;
   updatedAt?: number;
+  // Flag to distinguish actual vs projected transactions
+  isProjected?: boolean;
 }
 
 export interface Asset {
@@ -81,9 +128,16 @@ export interface RecurringTransaction {
   endDate?: number; // Optional end date
   isActive: boolean;
   skippedMonths?: string[]; // Array of "YYYY-MM" strings for skipped months
+  monthOverrides?: {
+    [monthKey: string]: { amount: number; category?: string; name?: string };
+  }; // Month-specific overrides
   userId: string;
   createdAt: number;
   updatedAt: number;
+  // New fields for smart recurring system
+  lastGeneratedDate?: number; // Last time a transaction was generated
+  nextDueDate?: number; // Next expected occurrence
+  totalOccurrences?: number; // Count of times generated
 }
 
 // ===== SHARED FINANCE INTERFACES =====
@@ -170,19 +224,11 @@ export interface NetWorthEntry {
 // Create or update user profile
 export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
   try {
-    console.log("Attempting to save user profile:", profile);
-    console.log("Current auth state:", auth.currentUser?.uid);
-    console.log(
-      "Profile UID matches auth UID:",
-      profile.uid === auth.currentUser?.uid
-    );
-
     const userRef = ref(db, `users/${profile.uid}/profile`);
     await set(userRef, {
       ...profile,
       updatedAt: Date.now(),
     });
-    console.log("User profile saved successfully to database");
   } catch (error) {
     console.error("Error saving user profile:", error);
     throw error;
@@ -228,7 +274,6 @@ export const saveNetWorthEntry = async (
       id: entryId,
     });
 
-    console.log("Net worth entry saved successfully");
     return entryId;
   } catch (error) {
     console.error("Error saving net worth entry:", error);
@@ -271,93 +316,91 @@ const updateNetWorthCallbacks: { [userId: string]: NodeJS.Timeout } = {};
 export const updateNetWorthFromAssetsAndDebts = async (
   userId: string
 ): Promise<void> => {
-  console.log("updateNetWorthFromAssetsAndDebts called for user:", userId);
-
   // Clear any existing timeout for this user
   if (updateNetWorthCallbacks[userId]) {
     clearTimeout(updateNetWorthCallbacks[userId]);
   }
 
-  // Set a new timeout to debounce the call
-  updateNetWorthCallbacks[userId] = setTimeout(async () => {
-    console.log("updateNetWorthFromAssetsAndDebts executing for user:", userId);
-    try {
-      // Get current assets and debts
-      const [assets, debts] = await Promise.all([
-        getUserAssets(userId),
-        getUserDebts(userId),
-      ]);
+  // Return a Promise that resolves when the update is complete
+  return new Promise((resolve, reject) => {
+    updateNetWorthCallbacks[userId] = setTimeout(async () => {
+      try {
+        // Get current assets and debts
+        const [assets, debts] = await Promise.all([
+          getUserAssets(userId),
+          getUserDebts(userId),
+        ]);
 
-      // Calculate totals
-      const totalAssets = assets.reduce(
-        (sum: number, asset: any) => sum + asset.balance,
-        0
-      );
-      const totalDebts = debts.reduce(
-        (sum: number, debt: any) => sum + debt.balance,
-        0
-      );
-      const netWorth = totalAssets - totalDebts;
-
-      // Get existing net worth entries
-      const entries = await getUserNetWorthEntries(userId);
-
-      // Check if there's already an entry for current month
-      const currentDate = new Date();
-      const currentMonthEntry = entries.find((entry) => {
-        const entryDate = new Date(entry.date);
-        return (
-          entryDate.getMonth() === currentDate.getMonth() &&
-          entryDate.getFullYear() === currentDate.getFullYear()
+        // Calculate totals
+        const totalAssets = assets.reduce(
+          (sum: number, asset: any) => sum + asset.balance,
+          0
         );
-      });
-
-      if (currentMonthEntry) {
-        // Update existing entry
-        const { encryptNetWorthEntry } = await import("./encryption");
-        const updatedEntry = {
-          ...currentMonthEntry,
-          netWorth,
-          assets: totalAssets,
-          debts: totalDebts,
-          updatedAt: Date.now(),
-        };
-        const encryptedEntry = await encryptNetWorthEntry(updatedEntry);
-
-        const entryRef = ref(
-          db,
-          `users/${userId}/netWorth/${currentMonthEntry.id}`
+        const totalDebts = debts.reduce(
+          (sum: number, debt: any) => sum + debt.balance,
+          0
         );
-        await set(entryRef, encryptedEntry);
-        console.log("Current month net worth updated successfully");
-      } else {
-        // Create new entry for current month
-        const currentMonth = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          1
-        );
-        console.log("Creating new net worth entry for month:", currentMonth);
-        const newEntry: NetWorthEntry = {
-          userId,
-          netWorth,
-          assets: totalAssets,
-          debts: totalDebts,
-          date: currentMonth.getTime(),
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
-        await saveNetWorthEntry(newEntry);
-        console.log("New net worth entry created for current month");
+        const netWorth = totalAssets - totalDebts;
+
+        // Get existing net worth entries
+        const entries = await getUserNetWorthEntries(userId);
+
+        // Check if there's already an entry for current month
+        const currentDate = new Date();
+        const currentMonthEntry = entries.find((entry) => {
+          const entryDate = new Date(entry.date);
+          return (
+            entryDate.getMonth() === currentDate.getMonth() &&
+            entryDate.getFullYear() === currentDate.getFullYear()
+          );
+        });
+
+        if (currentMonthEntry) {
+          // Update existing entry
+          const { encryptNetWorthEntry } = await import("./encryption");
+          const updatedEntry = {
+            ...currentMonthEntry,
+            netWorth,
+            assets: totalAssets,
+            debts: totalDebts,
+            updatedAt: Date.now(),
+          };
+          const encryptedEntry = await encryptNetWorthEntry(updatedEntry);
+
+          const entryRef = ref(
+            db,
+            `users/${userId}/netWorth/${currentMonthEntry.id}`
+          );
+          await set(entryRef, encryptedEntry);
+        } else {
+          // Create new entry for current month
+          const currentMonth = new Date(
+            currentDate.getFullYear(),
+            currentDate.getMonth(),
+            1
+          );
+          const newEntry: NetWorthEntry = {
+            userId,
+            netWorth,
+            assets: totalAssets,
+            debts: totalDebts,
+            date: currentMonth.getTime(),
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+          await saveNetWorthEntry(newEntry);
+        }
+
+        // Maintain only last 6 entries
+        await maintainNetWorthHistory(userId);
+
+        resolve();
+      } catch (error) {
+        console.error("Error updating net worth from assets and debts:", error);
+        reject(error);
       }
-
-      // Maintain only last 6 entries
-      await maintainNetWorthHistory(userId);
-    } catch (error) {
-      console.error("Error updating net worth from assets and debts:", error);
-      throw error;
-    }
-  }, 100); // 100ms debounce delay
+    }, 100); // 100ms debounce delay
+  });
 };
 
 // Maintain only last 6 net worth entries
@@ -380,7 +423,6 @@ export const maintainNetWorthHistory = async (
           await remove(entryRef);
         }
       }
-      console.log(`Deleted ${entriesToDelete.length} old net worth entries`);
     }
   } catch (error) {
     console.error("Error maintaining net worth history:", error);
@@ -409,8 +451,6 @@ export const saveTransaction = async (
       id: transactionId,
     });
 
-    console.log("Transaction saved successfully");
-
     // Auto-update shared groups
     await updateSharedGroupsForUser(transaction.userId);
 
@@ -418,7 +458,6 @@ export const saveTransaction = async (
     try {
       const { billReminderService } = await import("./billReminders");
       await billReminderService.scheduleAllBillReminders(transaction.userId);
-      console.log("Bill reminders updated after saving transaction");
     } catch (error) {
       console.error("Error updating bill reminders:", error);
     }
@@ -474,8 +513,6 @@ export const saveAsset = async (asset: Asset): Promise<string> => {
       ...encryptedAsset,
       id: assetId,
     });
-
-    console.log("Asset saved successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(asset.userId);
@@ -538,8 +575,6 @@ export const saveDebt = async (debt: Debt): Promise<string> => {
       id: debtId,
     });
 
-    console.log("Debt saved successfully");
-
     // Auto-update shared groups
     await updateSharedGroupsForUser(debt.userId);
 
@@ -588,7 +623,6 @@ export const removeTransaction = async (
       `users/${userId}/transactions/${transactionId}`
     );
     await remove(transactionRef);
-    console.log("Transaction removed successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(userId);
@@ -597,7 +631,6 @@ export const removeTransaction = async (
     try {
       const { billReminderService } = await import("./billReminders");
       await billReminderService.scheduleAllBillReminders(userId);
-      console.log("Bill reminders updated after removing transaction");
     } catch (error) {
       console.error("Error updating bill reminders:", error);
     }
@@ -623,7 +656,6 @@ export const updateTransaction = async (
       ...encryptedTransaction,
       updatedAt: Date.now(),
     });
-    console.log("Transaction updated successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(transaction.userId);
@@ -632,7 +664,6 @@ export const updateTransaction = async (
     try {
       const { billReminderService } = await import("./billReminders");
       await billReminderService.scheduleAllBillReminders(transaction.userId);
-      console.log("Bill reminders updated after updating transaction");
     } catch (error) {
       console.error("Error updating bill reminders:", error);
     }
@@ -650,7 +681,6 @@ export const removeAsset = async (
   try {
     const assetRef = ref(db, `users/${userId}/assets/${assetId}`);
     await remove(assetRef);
-    console.log("Asset removed successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(userId);
@@ -674,7 +704,6 @@ export const updateAsset = async (asset: Asset): Promise<void> => {
       ...encryptedAsset,
       updatedAt: Date.now(),
     });
-    console.log("Asset updated successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(asset.userId);
@@ -695,7 +724,6 @@ export const removeDebt = async (
   try {
     const debtRef = ref(db, `users/${userId}/debts/${debtId}`);
     await remove(debtRef);
-    console.log("Debt removed successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(userId);
@@ -719,7 +747,6 @@ export const updateDebt = async (debt: Debt): Promise<void> => {
       ...encryptedDebt,
       updatedAt: Date.now(),
     });
-    console.log("Debt updated successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(debt.userId);
@@ -754,8 +781,6 @@ export const saveGoal = async (goal: FinancialGoal): Promise<string> => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-
-    console.log("Goal saved successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(goal.userId);
@@ -804,7 +829,6 @@ export const updateGoal = async (goal: FinancialGoal): Promise<void> => {
       ...encryptedGoal,
       updatedAt: Date.now(),
     });
-    console.log("Goal updated successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(goal.userId);
@@ -822,7 +846,6 @@ export const removeGoal = async (
   try {
     const goalRef = ref(db, `users/${userId}/goals/${goalId}`);
     await remove(goalRef);
-    console.log("Goal removed successfully");
 
     // Auto-update shared groups
     await updateSharedGroupsForUser(userId);
@@ -859,7 +882,6 @@ export const saveEmergencyFund = async (
       updatedAt: Date.now(),
     });
 
-    console.log("Emergency fund saved successfully");
     return emergencyFundId;
   } catch (error) {
     console.error("Error saving emergency fund:", error);
@@ -915,7 +937,6 @@ export const updateEmergencyFund = async (
       ...encryptedFund,
       updatedAt: Date.now(),
     });
-    console.log("Emergency fund updated successfully");
   } catch (error) {
     console.error("Error updating emergency fund:", error);
     throw error;
@@ -949,7 +970,6 @@ export const saveBudgetSettings = async (
       updatedAt: Date.now(),
     });
 
-    console.log("Budget settings saved successfully");
     return budgetSettingsId;
   } catch (error) {
     console.error("Error saving budget settings:", error);
@@ -1005,7 +1025,6 @@ export const updateBudgetSettings = async (
       ...encryptedSettings,
       updatedAt: Date.now(),
     });
-    console.log("Budget settings updated successfully");
   } catch (error) {
     console.error("Error updating budget settings:", error);
     throw error;
@@ -1036,7 +1055,6 @@ export const saveFinancialPlan = async (
       updatedAt: plan.updatedAt,
     });
 
-    console.log("Financial plan saved successfully");
     return planId;
   } catch (error) {
     console.error("Error saving financial plan:", error);
@@ -1079,7 +1097,6 @@ export const deleteFinancialPlan = async (
   try {
     const planRef = ref(db, `users/${userId}/financialPlans/${planId}`);
     await remove(planRef);
-    console.log("Financial plan deleted successfully");
   } catch (error) {
     console.error("Error deleting financial plan:", error);
     throw error;
@@ -1108,7 +1125,6 @@ export const createSharedGroup = async (
       updatedAt: Date.now(),
     });
 
-    console.log("Shared group created successfully");
     return groupId;
   } catch (error) {
     console.error("Error creating shared group:", error);
@@ -1171,7 +1187,6 @@ export const updateSharedGroup = async (group: SharedGroup): Promise<void> => {
       ...group,
       updatedAt: Date.now(),
     });
-    console.log("Shared group updated successfully");
   } catch (error) {
     console.error("Error updating shared group:", error);
     throw error;
@@ -1198,7 +1213,6 @@ export const addGroupMember = async (
       members: updatedMembers,
       updatedAt: Date.now(),
     });
-    console.log("Member added to group successfully");
   } catch (error) {
     console.error("Error adding member to group:", error);
     throw error;
@@ -1227,7 +1241,15 @@ export const removeGroupMember = async (
       members: updatedMembers,
       updatedAt: Date.now(),
     });
-    console.log("Member removed from group successfully");
+
+    // Remove the member's shared finance data from the group
+    const sharedFinanceDataRef = ref(
+      db,
+      `sharedFinanceData/${groupId}/members/${memberId}`
+    );
+    await remove(sharedFinanceDataRef);
+
+    // User's shared data is already removed above
   } catch (error) {
     console.error("Error removing member from group:", error);
     throw error;
@@ -1259,17 +1281,93 @@ export const deleteSharedGroup = async (
       throw new Error("Only group owners can delete groups");
     }
 
-    // Delete the group
+    // Delete all shared financial data for this group
+    const sharedFinanceDataRef = ref(db, `sharedFinanceData/${groupId}`);
+    await remove(sharedFinanceDataRef);
+
+    // Delete all invitations for this group
+    const invitationsRef = ref(db, `invitations`);
+    const invitationsSnapshot = await get(invitationsRef);
+    if (invitationsSnapshot.exists()) {
+      const invitations = invitationsSnapshot.val();
+      const invitationsToDelete: string[] = [];
+
+      // Find all invitations for this group
+      Object.keys(invitations).forEach((invitationId) => {
+        if (invitations[invitationId].groupId === groupId) {
+          invitationsToDelete.push(invitationId);
+        }
+      });
+
+      // Delete each invitation
+      for (const invitationId of invitationsToDelete) {
+        const invitationRef = ref(db, `invitations/${invitationId}`);
+        await remove(invitationRef);
+      }
+    }
+
+    // Remove shared data for all members
+    if (group.members) {
+      for (const member of group.members) {
+        try {
+          // Remove user's shared data from the group
+          await removeUserFromGroup(member.userId, groupId);
+        } catch (dataError) {
+          console.error(
+            `Error removing shared data for user ${member.userId}:`,
+            dataError
+          );
+          // Continue even if data cleanup fails
+        }
+      }
+    }
+
+    // Delete the group itself
     await remove(groupRef);
-
-    // Also remove from user's groups list
-    const userGroupsRef = ref(db, `users/${userId}/sharedGroups/${groupId}`);
-    await remove(userGroupsRef);
-
-    console.log("Shared group deleted successfully");
   } catch (error) {
     console.error("Error deleting shared group:", error);
     throw error;
+  }
+};
+
+/**
+ * Clean up orphaned shared finance data for groups that no longer exist
+ * This is a utility function to maintain data integrity
+ */
+export const cleanupOrphanedSharedData = async (): Promise<void> => {
+  try {
+    const sharedFinanceDataRef = ref(db, `sharedFinanceData`);
+    const sharedDataSnapshot = await get(sharedFinanceDataRef);
+
+    if (!sharedDataSnapshot.exists()) {
+      return;
+    }
+
+    const sharedData = sharedDataSnapshot.val();
+    const groupsRef = ref(db, `sharedGroups`);
+    const groupsSnapshot = await get(groupsRef);
+
+    if (!groupsSnapshot.exists()) {
+      await remove(sharedFinanceDataRef);
+      return;
+    }
+
+    const groups = groupsSnapshot.val();
+    let cleanedCount = 0;
+
+    // Check each shared finance data entry
+    for (const groupId of Object.keys(sharedData)) {
+      if (!groups[groupId]) {
+        // Group doesn't exist, clean up this data
+        const orphanedDataRef = ref(db, `sharedFinanceData/${groupId}`);
+        await remove(orphanedDataRef);
+        cleanedCount++;
+      }
+    }
+
+    // Cleanup completed
+  } catch (error) {
+    console.error("❌ Error during cleanup of orphaned shared data:", error);
   }
 };
 
@@ -1293,10 +1391,7 @@ export const createInvitation = async (
       expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
     };
 
-    console.log("Creating invitation with data:", invitationData);
     await set(newInvitationRef, invitationData);
-
-    console.log("Invitation created successfully with ID:", invitationId);
     return invitationId;
   } catch (error) {
     console.error("Error creating invitation:", error);
@@ -1314,20 +1409,16 @@ export const getUserInvitations = async (
 
     if (snapshot.exists()) {
       const invitations: SharedInvitation[] = [];
-      console.log("Searching for invitations for email:", email);
+
       snapshot.forEach((childSnapshot) => {
         const invitation = childSnapshot.val();
-        console.log("Found invitation:", invitation);
-        console.log("Comparing:", invitation.inviteeEmail, "===", email);
         if (
           invitation.inviteeEmail === email &&
           invitation.status === "pending"
         ) {
-          console.log("Match found! Adding invitation");
           invitations.push(invitation);
         }
       });
-      console.log("Total invitations found:", invitations.length);
       return invitations.sort((a, b) => b.createdAt - a.createdAt);
     }
     return [];
@@ -1345,7 +1436,6 @@ export const updateInvitationStatus = async (
   try {
     const invitationRef = ref(db, `invitations/${invitationId}`);
     await update(invitationRef, { status });
-    console.log("Invitation status updated successfully");
   } catch (error) {
     console.error("Error updating invitation status:", error);
     throw error;
@@ -1369,15 +1459,18 @@ export const addUserDataToGroup = async (
     ]);
 
     // Store in group's shared data
-    await set(groupRef, {
+    const userData = {
       assets,
       debts,
       transactions,
       goals,
       lastUpdated: Date.now(),
-    });
+    };
 
-    console.log("User data added to shared group successfully");
+    // Clean the data before writing to Firebase
+    const cleanUserData = cleanDataForFirebase(userData);
+
+    await set(groupRef, cleanUserData);
   } catch (error) {
     console.error("Error adding user data to group:", error);
     throw error;
@@ -1424,16 +1517,19 @@ export const addSelectiveUserDataToGroup = async (
       : allGoals;
 
     // Store filtered data in group's shared data
-    await set(groupRef, {
+    const selectiveUserData = {
       assets: filteredAssets,
       debts: filteredDebts,
       transactions: filteredTransactions,
       goals: filteredGoals,
       lastUpdated: Date.now(),
       syncSettings: selectedData, // Store sync settings for future reference
-    });
+    };
 
-    console.log("Selective user data added to shared group successfully");
+    // Clean the data before writing to Firebase
+    const cleanSelectiveUserData = cleanDataForFirebase(selectiveUserData);
+
+    await set(groupRef, cleanSelectiveUserData);
   } catch (error) {
     console.error("Error adding selective user data to group:", error);
     throw error;
@@ -1513,10 +1609,6 @@ export const updateSharedGroupsForUser = async (
         await addUserDataToGroup(groupId, userId);
       }
     }
-
-    console.log(
-      `Updated shared data for user ${userId} in ${groupIds.length} groups`
-    );
   } catch (error) {
     console.error("Error updating shared groups for user:", error);
     // Don't throw error to avoid breaking the main save operation
@@ -1690,47 +1782,37 @@ export const getGroupAggregatedData = async (
 
 export const deleteUserAccount = async (userId: string): Promise<void> => {
   try {
-    console.log(`Starting account deletion for user: ${userId}`);
-
     // 1. Delete user's transactions
     const transactionsRef = ref(db, `users/${userId}/transactions`);
     await remove(transactionsRef);
-    console.log("Deleted user transactions");
 
     // 2. Delete user's assets
     const assetsRef = ref(db, `users/${userId}/assets`);
     await remove(assetsRef);
-    console.log("Deleted user assets");
 
     // 3. Delete user's debts
     const debtsRef = ref(db, `users/${userId}/debts`);
     await remove(debtsRef);
-    console.log("Deleted user debts");
 
     // 4. Delete user's goals
     const goalsRef = ref(db, `users/${userId}/goals`);
     await remove(goalsRef);
-    console.log("Deleted user goals");
 
     // 5. Delete user's emergency fund
     const emergencyFundRef = ref(db, `users/${userId}/emergencyFund`);
     await remove(emergencyFundRef);
-    console.log("Deleted user emergency fund");
 
     // 6. Delete user's budget settings
     const budgetSettingsRef = ref(db, `users/${userId}/budgetSettings`);
     await remove(budgetSettingsRef);
-    console.log("Deleted user budget settings");
 
     // 7. Delete user's profile
     const profileRef = ref(db, `users/${userId}/profile`);
     await remove(profileRef);
-    console.log("Deleted user profile");
 
     // 8. Delete the entire user node
     const userRef = ref(db, `users/${userId}`);
     await remove(userRef);
-    console.log("Deleted entire user node");
 
     // 9. Handle shared groups - remove user from all groups they're a member of
     try {
@@ -1751,16 +1833,14 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
             if (updatedMembers.length === 0) {
               // If no members left, delete the entire group
               await remove(ref(db, `sharedGroups/${groupId}`));
-              console.log(`Deleted empty shared group: ${groupId}`);
             } else {
               // Update group with remaining members
               await update(ref(db, `sharedGroups/${groupId}`), {
                 members: updatedMembers,
               });
-              console.log(`Removed user from shared group: ${groupId}`);
             }
           } catch (groupError) {
-            console.log(
+            console.error(
               `Could not update shared group ${groupId}:`,
               groupError
             );
@@ -1769,7 +1849,7 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
         }
       }
     } catch (sharedGroupsError) {
-      console.log("Could not access shared groups:", sharedGroupsError);
+      console.error("Could not access shared groups:", sharedGroupsError);
       // Continue with account deletion even if shared groups fail
     }
 
@@ -1787,10 +1867,9 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
             const groupData = sharedData[groupId];
             if (groupData[userId]) {
               await remove(ref(db, `sharedData/${groupId}/${userId}`));
-              console.log(`Deleted shared data for user in group: ${groupId}`);
             }
           } catch (sharedDataError) {
-            console.log(
+            console.error(
               `Could not delete shared data for group ${groupId}:`,
               sharedDataError
             );
@@ -1799,7 +1878,7 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
         }
       }
     } catch (sharedDataError) {
-      console.log("Could not access shared data:", sharedDataError);
+      console.error("Could not access shared data:", sharedDataError);
       // Continue with account deletion
     }
 
@@ -1820,10 +1899,9 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
               invitation.invitedUserId === userId
             ) {
               await remove(ref(db, `invitations/${invitationId}`));
-              console.log(`Deleted invitation: ${invitationId}`);
             }
           } catch (invitationError) {
-            console.log(
+            console.error(
               `Could not delete invitation ${invitationId}:`,
               invitationError
             );
@@ -1832,11 +1910,9 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
         }
       }
     } catch (invitationsError) {
-      console.log("Could not access invitations:", invitationsError);
+      console.error("Could not access invitations:", invitationsError);
       // Continue with account deletion
     }
-
-    console.log(`Account deletion completed for user: ${userId}`);
   } catch (error) {
     console.error("Error deleting user account:", error);
     throw new Error("Failed to delete user account and associated data");
@@ -1847,15 +1923,24 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
 
 export const saveRecurringTransaction = async (
   recurringTransaction: RecurringTransaction
-): Promise<void> => {
+): Promise<string> => {
   try {
     const { encryptRecurringTransaction } = await import("./encryption");
     const encryptedTransaction = await encryptRecurringTransaction(
       recurringTransaction
     );
 
-    const recurringTransactionRef = ref(db, "recurringTransactions");
+    // Save under the user's collection for proper data isolation
+    const recurringTransactionRef = ref(
+      db,
+      `users/${recurringTransaction.userId}/recurringTransactions`
+    );
     const newRecurringTransactionRef = push(recurringTransactionRef);
+    const transactionId = newRecurringTransactionRef.key;
+
+    if (!transactionId) {
+      throw new Error("Failed to generate recurring transaction ID");
+    }
 
     // Remove undefined values before saving to Firebase
     const transactionToSave = { ...encryptedTransaction };
@@ -1865,12 +1950,12 @@ export const saveRecurringTransaction = async (
 
     await set(newRecurringTransactionRef, {
       ...transactionToSave,
-      id: newRecurringTransactionRef.key,
+      id: transactionId,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
 
-    console.log("Recurring transaction saved successfully");
+    return transactionId;
   } catch (error) {
     console.error("Error saving recurring transaction:", error);
     throw new Error("Failed to save recurring transaction");
@@ -1882,13 +1967,17 @@ export const getUserRecurringTransactions = async (
 ): Promise<RecurringTransaction[]> => {
   try {
     const { decryptRecurringTransactions } = await import("./encryption");
-    const recurringTransactionsRef = ref(db, "recurringTransactions");
+    // Get from user's collection for proper data isolation
+    const recurringTransactionsRef = ref(
+      db,
+      `users/${userId}/recurringTransactions`
+    );
     const snapshot = await get(recurringTransactionsRef);
 
     if (snapshot.exists()) {
       const recurringTransactions = snapshot.val();
-      const userTransactions = Object.values(recurringTransactions).filter(
-        (transaction: any) => transaction.userId === userId
+      const userTransactions = Object.values(
+        recurringTransactions
       ) as RecurringTransaction[];
 
       // Decrypt all recurring transactions
@@ -1918,9 +2007,10 @@ export const updateRecurringTransaction = async (
       throw new Error("Recurring transaction ID is required for update");
     }
 
+    // Update under the user's collection for proper data isolation
     const recurringTransactionRef = ref(
       db,
-      `recurringTransactions/${recurringTransaction.id}`
+      `users/${recurringTransaction.userId}/recurringTransactions/${recurringTransaction.id}`
     );
 
     // Remove undefined values before updating Firebase
@@ -1934,7 +2024,9 @@ export const updateRecurringTransaction = async (
       updatedAt: Date.now(),
     });
 
-    console.log("Recurring transaction updated successfully");
+    console.log(
+      "Recurring transaction updated successfully under user collection"
+    );
   } catch (error) {
     console.error("Error updating recurring transaction:", error);
     throw new Error("Failed to update recurring transaction");
@@ -1942,16 +2034,67 @@ export const updateRecurringTransaction = async (
 };
 
 export const deleteRecurringTransaction = async (
-  recurringTransactionId: string
+  recurringTransactionId: string,
+  userId: string
 ): Promise<void> => {
   try {
+    // Delete the recurring transaction from the user's collection
     const recurringTransactionRef = ref(
       db,
-      `recurringTransactions/${recurringTransactionId}`
+      `users/${userId}/recurringTransactions/${recurringTransactionId}`
     );
 
+    // First check if it exists
+    const snapshot = await get(recurringTransactionRef);
+    if (!snapshot.exists()) {
+      throw new Error("Recurring transaction not found");
+    }
+
+    // Delete the recurring transaction
     await remove(recurringTransactionRef);
-    console.log("Recurring transaction deleted successfully");
+    console.log(
+      "Recurring transaction deleted successfully from user collection"
+    );
+
+    // Optionally clean up any actual transactions that reference this recurring transaction
+    // This is optional - you might want to keep historical data
+    try {
+      const transactionsRef = ref(db, `users/${userId}/transactions`);
+      const transactionsSnapshot = await get(transactionsRef);
+
+      if (transactionsSnapshot.exists()) {
+        const transactions = transactionsSnapshot.val();
+        const transactionIdsToUpdate: string[] = [];
+
+        // Find transactions that reference this recurring transaction
+        Object.keys(transactions).forEach((transactionId) => {
+          const transaction = transactions[transactionId];
+          if (transaction.recurringTransactionId === recurringTransactionId) {
+            transactionIdsToUpdate.push(transactionId);
+          }
+        });
+
+        // Remove the recurring transaction reference (but keep the actual transaction)
+        for (const transactionId of transactionIdsToUpdate) {
+          const transactionRef = ref(
+            db,
+            `users/${userId}/transactions/${transactionId}`
+          );
+          await update(transactionRef, {
+            recurringTransactionId: null,
+          });
+        }
+
+        if (transactionIdsToUpdate.length > 0) {
+        }
+      }
+    } catch (cleanupError) {
+      console.warn(
+        "Warning: Could not clean up transaction references:",
+        cleanupError
+      );
+      // Don't fail the main deletion if cleanup fails
+    }
   } catch (error) {
     console.error("Error deleting recurring transaction:", error);
     throw new Error("Failed to delete recurring transaction");
@@ -1960,15 +2103,16 @@ export const deleteRecurringTransaction = async (
 
 export const skipRecurringTransactionForMonth = async (
   recurringTransactionId: string,
-  monthKey: string
+  monthKey: string,
+  userId: string
 ): Promise<void> => {
   try {
+    // Get the recurring transaction from the user's collection
     const recurringTransactionRef = ref(
       db,
-      `recurringTransactions/${recurringTransactionId}`
+      `users/${userId}/recurringTransactions/${recurringTransactionId}`
     );
 
-    // Get the current recurring transaction
     const snapshot = await get(recurringTransactionRef);
     if (!snapshot.exists()) {
       throw new Error("Recurring transaction not found");
@@ -1982,13 +2126,15 @@ export const skipRecurringTransactionForMonth = async (
       skippedMonths.push(monthKey);
     }
 
-    // Update the recurring transaction
+    // Update the recurring transaction in the user's collection
     await update(recurringTransactionRef, {
       skippedMonths,
       updatedAt: Date.now(),
     });
 
-    console.log(`Skipped recurring transaction for month: ${monthKey}`);
+    console.log(
+      `Skipped recurring transaction for month: ${monthKey} in user collection`
+    );
   } catch (error) {
     console.error("Error skipping recurring transaction for month:", error);
     throw new Error("Failed to skip recurring transaction for month");
@@ -2055,9 +2201,6 @@ export const generateRecurringTransactions = async (
           };
 
           await saveTransaction(newTransaction);
-          console.log(
-            `Generated recurring transaction: ${recurringTransaction.name}`
-          );
         }
       }
     }
@@ -2263,5 +2406,248 @@ const getNextOccurrenceDate = (
       );
     default:
       return monthStart;
+  }
+};
+
+// ===== DATA SHARING FUNCTIONS =====
+
+export const updateUserDataSharingSettings = async (
+  userId: string,
+  settings: DataSharingSettings
+): Promise<void> => {
+  try {
+    const userRef = ref(db, `users/${userId}/profile`);
+    const userSnapshot = await get(userRef);
+
+    if (userSnapshot.exists()) {
+      const currentProfile = userSnapshot.val();
+      await update(userRef, {
+        ...currentProfile,
+        dataSharingSettings: settings,
+        updatedAt: Date.now(),
+      });
+    } else {
+      // Create profile if it doesn't exist
+      await set(userRef, {
+        uid: userId,
+        dataSharingSettings: settings,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    }
+  } catch (error) {
+    console.error("Error updating data sharing settings:", error);
+    throw error;
+  }
+};
+
+export const getUserDataSharingSettings = async (
+  userId: string
+): Promise<DataSharingSettings | null> => {
+  try {
+    const userRef = ref(db, `users/${userId}/profile`);
+    const userSnapshot = await get(userRef);
+
+    if (userSnapshot.exists()) {
+      const profile = userSnapshot.val();
+      return profile.dataSharingSettings || null;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting data sharing settings:", error);
+    throw error;
+  }
+};
+
+// Transfer group ownership
+export const transferGroupOwnership = async (
+  groupId: string,
+  currentOwnerId: string,
+  newOwnerId: string
+): Promise<void> => {
+  try {
+    const groupRef = ref(db, `sharedGroups/${groupId}`);
+    const snapshot = await get(groupRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("Group not found");
+    }
+
+    const group = snapshot.val();
+
+    // Check if current user is the owner
+    const isOwner = group.members.some(
+      (member: SharedGroupMember) =>
+        member.id === currentOwnerId && member.role === "owner"
+    );
+
+    if (!isOwner) {
+      throw new Error("Only group owners can transfer ownership");
+    }
+
+    // Check if new owner is a member of the group
+    const newOwnerExists = group.members.some(
+      (member: SharedGroupMember) => member.id === newOwnerId
+    );
+
+    if (!newOwnerExists) {
+      throw new Error("New owner must be a member of the group");
+    }
+
+    // Update member roles
+    const updatedMembers = group.members.map((member: SharedGroupMember) => {
+      if (member.id === currentOwnerId) {
+        return { ...member, role: "member" };
+      }
+      if (member.id === newOwnerId) {
+        return { ...member, role: "owner" };
+      }
+      return member;
+    });
+
+    await update(groupRef, {
+      members: updatedMembers,
+      ownerId: newOwnerId,
+      updatedAt: Date.now(),
+    });
+
+    console.log("Group ownership transferred successfully");
+  } catch (error) {
+    console.error("Error transferring group ownership:", error);
+    throw error;
+  }
+};
+
+// User leaves a group (self-removal)
+export const leaveGroup = async (
+  groupId: string,
+  userId: string
+): Promise<void> => {
+  try {
+    const groupRef = ref(db, `sharedGroups/${groupId}`);
+    const snapshot = await get(groupRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("Group not found");
+    }
+
+    const group = snapshot.val();
+
+    // Check if user is the owner
+    const isOwner = group.members.some(
+      (member: SharedGroupMember) =>
+        member.id === userId && member.role === "owner"
+    );
+
+    if (isOwner) {
+      throw new Error(
+        "Group owners cannot leave their own group. Transfer ownership or delete the group instead."
+      );
+    }
+
+    // Remove user from group members
+    const updatedMembers = group.members.filter(
+      (member: SharedGroupMember) => member.id !== userId
+    );
+
+    await update(groupRef, {
+      members: updatedMembers,
+      updatedAt: Date.now(),
+    });
+
+    // Remove user's shared finance data from the group
+    const sharedFinanceDataRef = ref(
+      db,
+      `sharedFinanceData/${groupId}/members/${userId}`
+    );
+    await remove(sharedFinanceDataRef);
+
+    // User's shared data is already removed above
+    console.log("✅ User's shared finance data cleaned up");
+
+    console.log("✅ User left group successfully");
+    console.log("✅ User's shared finance data cleaned up");
+    console.log("✅ Real-time listeners stopped");
+  } catch (error) {
+    console.error("Error leaving group:", error);
+    throw error;
+  }
+};
+
+// ===== BUDGET CATEGORIES FUNCTIONS =====
+
+export interface BudgetCategory {
+  id: string;
+  name: string;
+  monthlyLimit: number;
+  color: string;
+}
+
+// Save budget categories to AsyncStorage
+export const saveBudgetCategories = async (
+  categories: BudgetCategory[],
+  userId: string
+): Promise<void> => {
+  try {
+    const key = `budgetCategories_${userId}`;
+    await AsyncStorage.setItem(key, JSON.stringify(categories));
+  } catch (error) {
+    console.error("Error saving budget categories:", error);
+    throw error;
+  }
+};
+
+// Get user budget categories from AsyncStorage
+export const getUserBudgetCategories = async (
+  userId: string
+): Promise<BudgetCategory[]> => {
+  try {
+    const key = `budgetCategories_${userId}`;
+    const stored = await AsyncStorage.getItem(key);
+
+    if (stored) {
+      return JSON.parse(stored);
+    }
+
+    // Return default categories if none exist
+    return [
+      { id: "1", name: "Rent", monthlyLimit: 1200, color: "#FF6B6B" },
+      { id: "2", name: "Car Payment", monthlyLimit: 400, color: "#4ECDC4" },
+      { id: "3", name: "Insurance", monthlyLimit: 200, color: "#45B7D1" },
+      { id: "4", name: "Utilities", monthlyLimit: 150, color: "#96CEB4" },
+      { id: "5", name: "Internet", monthlyLimit: 80, color: "#FFEAA7" },
+      { id: "6", name: "Phone", monthlyLimit: 100, color: "#DDA0DD" },
+      { id: "7", name: "Subscriptions", monthlyLimit: 50, color: "#FFB6C1" },
+      { id: "8", name: "Credit Card", monthlyLimit: 300, color: "#98FB98" },
+      { id: "9", name: "Loan Payment", monthlyLimit: 200, color: "#F0E68C" },
+      { id: "10", name: "Food", monthlyLimit: 400, color: "#FFA07A" },
+      { id: "11", name: "Transport", monthlyLimit: 150, color: "#87CEEB" },
+      { id: "12", name: "Health", monthlyLimit: 100, color: "#D8BFD8" },
+      { id: "13", name: "Entertainment", monthlyLimit: 100, color: "#FFD700" },
+      { id: "14", name: "Shopping", monthlyLimit: 200, color: "#FF69B4" },
+      { id: "15", name: "Business", monthlyLimit: 100, color: "#20B2AA" },
+      { id: "16", name: "Other", monthlyLimit: 100, color: "#C0C0C0" },
+    ];
+  } catch (error) {
+    console.error("Error getting budget categories:", error);
+    // Return default categories on error
+    return [
+      { id: "1", name: "Rent", monthlyLimit: 1200, color: "#FF6B6B" },
+      { id: "2", name: "Car Payment", monthlyLimit: 400, color: "#4ECDC4" },
+      { id: "3", name: "Insurance", monthlyLimit: 200, color: "#45B7D1" },
+      { id: "4", name: "Utilities", monthlyLimit: 150, color: "#96CEB4" },
+      { id: "5", name: "Internet", monthlyLimit: 80, color: "#FFEAA7" },
+      { id: "6", name: "Phone", monthlyLimit: 100, color: "#DDA0DD" },
+      { id: "7", name: "Subscriptions", monthlyLimit: 50, color: "#FFB6C1" },
+      { id: "8", name: "Credit Card", monthlyLimit: 300, color: "#98FB98" },
+      { id: "9", name: "Loan Payment", monthlyLimit: 200, color: "#F0E68C" },
+      { id: "10", name: "Food", monthlyLimit: 400, color: "#FFA07A" },
+      { id: "11", name: "Transport", monthlyLimit: 150, color: "#87CEEB" },
+      { id: "12", name: "Health", monthlyLimit: 100, color: "#D8BFD8" },
+      { id: "13", name: "Entertainment", monthlyLimit: 100, color: "#FFD700" },
+      { id: "14", name: "Shopping", monthlyLimit: 200, color: "#FF69B4" },
+      { id: "15", name: "Business", monthlyLimit: 100, color: "#20B2AA" },
+      { id: "16", name: "Other", monthlyLimit: 100, color: "#C0C0C0" },
+    ];
   }
 };

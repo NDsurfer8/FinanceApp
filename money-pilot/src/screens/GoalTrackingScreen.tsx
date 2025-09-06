@@ -9,7 +9,9 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  Animated,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRoute } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
@@ -27,6 +29,9 @@ import {
   FinancialGoal,
 } from "../services/userData";
 import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
+import { formatDateToLocalString, createLocalDate } from "../utils/dateUtils";
+import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
+import { useScrollDetection } from "../hooks/useScrollDetection";
 
 interface GoalTrackingScreenProps {
   navigation: any;
@@ -43,6 +48,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   const { goals, updateDataOptimistically, refreshInBackground } =
     useZeroLoading();
   const { canAddGoal, getGoalLimitInfo } = useTransactionLimits();
+  const { isScrolling, handleScrollBegin, handleScrollEnd } =
+    useScrollDetection();
   const { presentPaywall } = usePaywall();
   const route = useRoute();
   const [loading, setLoading] = useState(false);
@@ -53,19 +60,23 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [newGoal, setNewGoal] = useState({
     name: "",
     targetAmount: "",
     currentAmount: "",
     monthlyContribution: "",
-    targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split("T")[0],
+    targetDate: formatDateToLocalString(
+      new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+    ),
     category: "savings",
     priority: "medium" as "medium" | "high" | "low",
   });
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
+
+  // Animation for glow effect when no goals
+  const glowAnim = React.useRef(new Animated.Value(0)).current;
 
   const goalCategories = [
     {
@@ -99,6 +110,18 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     low: "#16a34a",
   };
 
+  // Date picker handlers
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      const formattedDate = formatDateToLocalString(selectedDate);
+      setNewGoal({ ...newGoal, targetDate: formattedDate });
+    }
+  };
+
+  const openDatePicker = () => {
+    setShowDatePicker(true);
+  };
+
   // Background refresh when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
@@ -124,7 +147,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = createLocalDate(dateString);
     return date.toLocaleDateString();
   };
 
@@ -144,7 +167,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     if (!goal.targetDate) return "No Date";
 
     const now = new Date();
-    const targetDate = new Date(goal.targetDate);
+    const targetDate = createLocalDate(goal.targetDate);
     const timeDiff = targetDate.getTime() - now.getTime();
 
     if (timeDiff <= 0) return "Overdue";
@@ -178,10 +201,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 100) return "#16a34a";
+    if (progress >= 100) return colors.success;
     if (progress >= 75) return "#d97706";
     if (progress >= 50) return "#f59e0b";
-    return "#dc2626";
+    return colors.error;
   };
 
   const getProgressStatus = (progress: number) => {
@@ -206,30 +229,6 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
       Alert.alert("Error", "Please fill in all required fields");
       return;
     }
-
-    // Check goal limits (only for new goals, not edits)
-    // TEMPORARILY DISABLED - Commented out subscription checks for goals
-    /*
-    if (!isEditMode) {
-      if (!canAddGoal()) {
-        const limitInfo = getGoalLimitInfo();
-        // Only show upgrade alert if not unlimited (i.e., not subscribed)
-        if (!limitInfo.isUnlimited) {
-          Alert.alert(
-            "Goal Limit Reached",
-            `You've reached your limit of ${limitInfo.limit} goal${
-              limitInfo.limit !== 1 ? "s" : ""
-            } on the free plan.\n\nUpgrade to Premium for unlimited goals!`,
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Upgrade to Premium", onPress: presentPaywall },
-            ]
-          );
-        }
-        return;
-      }
-    }
-    */
 
     try {
       if (isEditMode && editingGoal) {
@@ -265,9 +264,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           targetAmount: "",
           currentAmount: "",
           monthlyContribution: "",
-          targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0],
+          targetDate: formatDateToLocalString(
+            new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+          ),
           category: "savings",
           priority: "medium",
         });
@@ -309,9 +308,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           targetAmount: "",
           currentAmount: "",
           monthlyContribution: "",
-          targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0],
+          targetDate: formatDateToLocalString(
+            new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+          ),
           category: "savings",
           priority: "medium",
         });
@@ -399,9 +398,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   targetAmount: "",
                   currentAmount: "",
                   monthlyContribution: "",
-                  targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-                    .toISOString()
-                    .split("T")[0],
+                  targetDate: formatDateToLocalString(
+                    new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                  ),
                   category: "savings",
                   priority: "medium",
                 });
@@ -502,11 +501,40 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     setEditingValue("");
   };
 
+  // Animate glow effect when no goals
+  useEffect(() => {
+    if (goals.length === 0) {
+      // Start pulsing glow animation
+      const pulseAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(glowAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+        ])
+      );
+      pulseAnimation.start();
+    } else {
+      // Stop animation and reset
+      glowAnim.setValue(0);
+    }
+  }, [goals.length]);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={handleScrollBegin}
+        onScrollEndDrag={handleScrollEnd}
+        onMomentumScrollBegin={handleScrollBegin}
+        onMomentumScrollEnd={handleScrollEnd}
       >
         {/* Header */}
         <StandardHeader
@@ -515,7 +543,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           showBackButton={false}
           rightComponent={
             <TouchableOpacity
-              onPress={() => setShowAddModal(true)}
+              onPress={() => navigation.navigate("AddGoal")}
               style={{
                 backgroundColor: colors.primary,
                 padding: 12,
@@ -526,49 +554,6 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
             </TouchableOpacity>
           }
         />
-
-        {/* Limit Indicator - Only show if not unlimited */}
-        {/* TEMPORARILY DISABLED - Commented out goal limit display
-        {!getGoalLimitInfo().isUnlimited && (
-          <View
-            style={{
-              backgroundColor: colors.warningLight,
-              borderRadius: 12,
-              padding: 12,
-              marginBottom: 16,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons
-                name="information-circle"
-                size={16}
-                color={colors.warning}
-              />
-              <Text
-                style={{ marginLeft: 8, color: colors.warning, fontSize: 14 }}
-              >
-                {`${getGoalLimitInfo().current}/${
-                  getGoalLimitInfo().limit
-                } ${translate("goals", isFriendlyMode).toLowerCase()} used`}
-              </Text>
-            </View>
-            <TouchableOpacity onPress={presentPaywall}>
-              <Text
-                style={{
-                  color: colors.warning,
-                  fontSize: 12,
-                  fontWeight: "600",
-                }}
-              >
-                Upgrade
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        */}
 
         {/* Goals Summary */}
         {goals.length > 0 && (
@@ -669,17 +654,31 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
 
         {/* Goals List */}
         {goals.length === 0 ? (
-          <View
+          <Animated.View
             style={{
               backgroundColor: colors.surface,
               borderRadius: 20,
               padding: 40,
               alignItems: "center",
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
+              shadowColor: colors.primary,
+              shadowOpacity: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.08, 0.3],
+              }),
+              shadowRadius: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [12, 20],
+              }),
               shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
+              elevation: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [4, 8],
+              }),
+              borderWidth: 2,
+              borderColor: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [colors.primary + "40", colors.primary + "80"],
+              }),
             }}
           >
             <Ionicons
@@ -709,7 +708,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
               Start by adding your first financial goal
             </Text>
             <TouchableOpacity
-              onPress={() => setShowAddModal(true)}
+              onPress={() => navigation.navigate("AddGoal")}
               style={{
                 backgroundColor: colors.primary,
                 paddingHorizontal: 24,
@@ -721,7 +720,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 {translate("addGoal", isFriendlyMode)}
               </Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         ) : (
           goals.map((goal) => {
             const progress = calculateProgress(goal);
@@ -747,18 +746,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   borderColor: `${category?.color}15`,
                 }}
                 onPress={() => {
-                  setEditingGoal(goal);
-                  setIsEditMode(true);
-                  setNewGoal({
-                    name: goal.name,
-                    targetAmount: goal.targetAmount.toString(),
-                    currentAmount: goal.currentAmount.toString(),
-                    monthlyContribution: goal.monthlyContribution.toString(),
-                    targetDate: goal.targetDate,
-                    category: goal.category,
-                    priority: goal.priority,
+                  navigation.navigate("AddGoal", {
+                    editMode: true,
+                    goal: goal,
                   });
-                  setShowAddModal(true);
                 }}
                 activeOpacity={0.7}
               >
@@ -1060,7 +1051,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     }}
                   >
                     {goal.targetDate
-                      ? new Date(goal.targetDate).toLocaleDateString()
+                      ? formatDate(goal.targetDate)
                       : "No date set"}
                   </Text>
                 </View>
@@ -1360,23 +1351,35 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   >
                     Target Achievement Date
                   </Text>
-                  <TextInput
+                  <TouchableOpacity
                     style={{
                       borderWidth: 1,
                       borderColor: colors.border,
                       borderRadius: 8,
                       padding: 12,
-                      fontSize: 16,
                       backgroundColor: colors.surfaceSecondary,
-                      color: colors.text,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                     }}
-                    value={newGoal.targetDate}
-                    onChangeText={(text) =>
-                      setNewGoal({ ...newGoal, targetDate: text })
-                    }
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={colors.textSecondary}
-                  />
+                    onPress={openDatePicker}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        color: newGoal.targetDate
+                          ? colors.text
+                          : colors.textSecondary,
+                      }}
+                    >
+                      {newGoal.targetDate || "Select Date"}
+                    </Text>
+                    <Ionicons
+                      name="calendar"
+                      size={20}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
                 </View>
 
                 {/* Buttons */}
@@ -1399,11 +1402,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         targetAmount: "",
                         currentAmount: "",
                         monthlyContribution: "",
-                        targetDate: new Date(
-                          Date.now() + 365 * 24 * 60 * 60 * 1000
-                        )
-                          .toISOString()
-                          .split("T")[0],
+                        targetDate: formatDateToLocalString(
+                          new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                        ),
                         category: "savings",
                         priority: "medium",
                       });
@@ -1444,9 +1445,14 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                 {isEditMode && (
                   <TouchableOpacity
                     style={{
-                      padding: 12,
-                      borderRadius: 8,
-                      backgroundColor: colors.error,
+                      backgroundColor: colors.error + "20",
+                      padding: 18,
+                      borderRadius: 12,
+                      alignItems: "center",
+                      flexDirection: "row",
+                      justifyContent: "center",
+                      borderWidth: 1,
+                      borderColor: colors.error,
                       marginBottom: 24,
                       opacity: deleteLoading ? 0.6 : 1,
                     }}
@@ -1463,14 +1469,14 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       >
                         <ActivityIndicator
                           size="small"
-                          color={colors.buttonText}
+                          color={colors.error}
                           style={{ marginRight: 8 }}
                         />
                         <Text
                           style={{
                             textAlign: "center",
-                            color: colors.buttonText,
-                            fontWeight: "600",
+                            color: colors.error,
+                            fontWeight: "700",
                           }}
                         >
                           Deleting...
@@ -1480,8 +1486,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       <Text
                         style={{
                           textAlign: "center",
-                          color: colors.buttonText,
-                          fontWeight: "600",
+                          color: colors.error,
+                          fontWeight: "700",
                         }}
                       >
                         Delete Goal
@@ -1490,10 +1496,151 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   </TouchableOpacity>
                 )}
               </ScrollView>
+
+              {/* Date Picker Modal - Inside Goal Modal */}
+              {showDatePicker && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: "rgba(0, 0, 0, 0.5)",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    zIndex: 1000,
+                  }}
+                >
+                  <View
+                    style={{
+                      backgroundColor: colors.surface,
+                      borderRadius: 16,
+                      padding: 20,
+                      width: "90%",
+                      maxWidth: 350,
+                      shadowColor: "#000",
+                      shadowOpacity: 0.15,
+                      shadowRadius: 15,
+                      shadowOffset: { width: 0, height: 5 },
+                      elevation: 8,
+                    }}
+                  >
+                    {/* Header with Close Button */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 16,
+                        paddingBottom: 12,
+                        borderBottomWidth: 1,
+                        borderBottomColor: colors.border,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 18,
+                          fontWeight: "700",
+                          color: colors.text,
+                        }}
+                      >
+                        Select Target Date
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setShowDatePicker(false)}
+                        style={{
+                          padding: 4,
+                        }}
+                      >
+                        <Ionicons
+                          name="close"
+                          size={24}
+                          color={colors.textSecondary}
+                        />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* DatePicker Component */}
+                    <View
+                      style={{
+                        alignItems: "center",
+                        marginVertical: 10,
+                      }}
+                    >
+                      <DateTimePicker
+                        value={createLocalDate(newGoal.targetDate)}
+                        mode="date"
+                        display="spinner"
+                        onChange={handleDateChange}
+                        style={{
+                          backgroundColor: colors.surface,
+                          borderRadius: 8,
+                          width: "100%",
+                        }}
+                        textColor={colors.text}
+                      />
+                    </View>
+
+                    {/* Action Buttons */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        gap: 12,
+                        marginTop: 16,
+                      }}
+                    >
+                      <TouchableOpacity
+                        style={{
+                          flex: 1,
+                          backgroundColor: colors.border,
+                          padding: 14,
+                          borderRadius: 10,
+                          alignItems: "center",
+                        }}
+                        onPress={() => setShowDatePicker(false)}
+                      >
+                        <Text
+                          style={{
+                            color: colors.text,
+                            fontSize: 16,
+                            fontWeight: "600",
+                          }}
+                        >
+                          Cancel
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={{
+                          flex: 1,
+                          backgroundColor: colors.primary,
+                          padding: 14,
+                          borderRadius: 10,
+                          alignItems: "center",
+                        }}
+                        onPress={() => setShowDatePicker(false)}
+                      >
+                        <Text
+                          style={{
+                            color: "white",
+                            fontSize: 16,
+                            fontWeight: "600",
+                          }}
+                        >
+                          Done
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              )}
             </View>
           </View>
         </Modal>
       </ScrollView>
+
+      {/* Floating AI Chatbot - only show on main tab screens */}
+      <FloatingAIChatbot hideOnScroll={true} isScrolling={isScrolling} />
     </SafeAreaView>
   );
 };

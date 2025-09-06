@@ -8,12 +8,15 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { plaidService } from "../services/plaid";
 import { fontFamily } from "../config/fonts";
 import { useAuth } from "../hooks/useAuth";
 import { useSubscription } from "../contexts/SubscriptionContext";
+import { useData } from "../contexts/DataContext";
 import { usePaywall } from "../hooks/usePaywall";
 import { LinkSuccess, LinkExit } from "react-native-plaid-link-sdk";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface PlaidLinkComponentProps {
   onSuccess?: () => void;
@@ -26,13 +29,16 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   onExit,
   onLoadingChange,
 }) => {
+  const { colors } = useTheme();
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [lastTapTime, setLastTapTime] = useState(0);
   const BUTTON_DEBOUNCE_TIME = 1000; // 1 second debounce between button taps
   const { user } = useAuth();
-  const { isFeatureAvailable, PREMIUM_FEATURES } = useSubscription();
+  const { isFeatureAvailable, PREMIUM_FEATURES, hasPremiumAccess } =
+    useSubscription();
+  const { disconnectBankAndClearData } = useData();
   const { presentPaywall } = usePaywall();
 
   useEffect(() => {
@@ -44,11 +50,15 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       // Additional immediate check for existing connection
       const immediateCheck = async () => {
         const connected = await plaidService.isBankConnected();
-        if (connected) {
+        const isPremium = hasPremiumAccess();
+
+        if (connected && isPremium) {
           setIsConnected(true);
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
+        } else {
+          setIsConnected(false);
         }
       };
       immediateCheck();
@@ -67,11 +77,18 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     const clearLoadingIfConnected = async () => {
       if (isLoading) {
         const connected = await plaidService.isBankConnected();
-        if (connected) {
+        const isPremium = hasPremiumAccess();
+
+        if (connected && isPremium) {
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
           setIsConnected(true); // Also set the connected state
+        } else if (!isPremium) {
+          setIsLoading(false);
+          onLoadingChange?.(false);
+          setIsButtonDisabled(false);
+          setIsConnected(false);
         }
       }
     };
@@ -85,11 +102,19 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
     const interval = setInterval(async () => {
       const connected = await plaidService.isBankConnected();
-      if (connected) {
+      const isPremium = hasPremiumAccess();
+
+      if (connected && isPremium) {
         setIsLoading(false);
         onLoadingChange?.(false);
         setIsButtonDisabled(false);
         setIsConnected(true);
+        clearInterval(interval);
+      } else if (!isPremium) {
+        setIsLoading(false);
+        onLoadingChange?.(false);
+        setIsButtonDisabled(false);
+        setIsConnected(false);
         clearInterval(interval);
       }
     }, 2000);
@@ -97,13 +122,34 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     return () => clearInterval(interval);
   }, [isLoading]);
 
+  // Monitor subscription changes and update connection status
+  // This ensures the button shows correctly when subscription expires
+  useEffect(() => {
+    const updateConnectionStatus = async () => {
+      const connected = await plaidService.isBankConnected();
+      const isPremium = hasPremiumAccess();
+
+      if (connected && isPremium) {
+        setIsConnected(true);
+      } else {
+        setIsConnected(false);
+      }
+    };
+
+    updateConnectionStatus();
+  }, [hasPremiumAccess]);
+
   const checkConnectionStatus = async () => {
     try {
       const connected = await plaidService.isBankConnected();
+      const isPremium = hasPremiumAccess();
 
       // If user is not premium, don't show as connected even if bank is connected
-      if (!isFeatureAvailable(PREMIUM_FEATURES.PLAID_BANK_CONNECTION)) {
+      if (!isPremium) {
         setIsConnected(false);
+        setIsLoading(false);
+        onLoadingChange?.(false);
+        setIsButtonDisabled(false);
         return;
       }
 
@@ -138,10 +184,14 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     while (attempts < maxAttempts && isLoading) {
       try {
         const connected = await plaidService.isBankConnected();
+        const isPremium = hasPremiumAccess();
 
         // If user is not premium, don't show as connected even if bank is connected
-        if (!isFeatureAvailable(PREMIUM_FEATURES.PLAID_BANK_CONNECTION)) {
+        if (!isPremium) {
           setIsConnected(false);
+          setIsLoading(false);
+          onLoadingChange?.(false);
+          setIsButtonDisabled(false);
           return;
         }
 
@@ -193,8 +243,11 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     // Update last tap time
     setLastTapTime(now);
 
-    // Check if user has premium access for Plaid bank connection
-    if (!isFeatureAvailable(PREMIUM_FEATURES.PLAID_BANK_CONNECTION)) {
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Check if user has premium access
+    if (!hasPremiumAccess()) {
       Alert.alert(
         "Premium Feature",
         "Bank connection is a premium feature. Upgrade to Premium to connect your bank account and automatically sync transactions!",
@@ -211,7 +264,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     setIsLoading(true);
     onLoadingChange?.(true);
     try {
-      console.log("Starting Plaid Link flow...");
+      // Starting Plaid Link flow
 
       // Use the new modern pattern with better error handling
       await plaidService.startPlaidLinkFlow(
@@ -240,13 +293,21 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       // Immediate check after success processing
       setTimeout(async () => {
         const connected = await plaidService.isBankConnected();
-        if (connected) {
+        const isPremium = hasPremiumAccess();
+
+        if (connected && isPremium) {
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
           setIsConnected(true);
           onSuccess?.();
           return; // Don't start polling if we're already connected
+        } else if (!isPremium) {
+          setIsLoading(false);
+          onLoadingChange?.(false);
+          setIsButtonDisabled(false);
+          setIsConnected(false);
+          return;
         }
       }, 500); // Check after 500ms
 
@@ -265,11 +326,13 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
           // Force set connected state if we're still loading after timeout
           const forceConnected = async () => {
             const connected = await plaidService.isBankConnected();
-            if (connected) {
+            const isPremium = hasPremiumAccess();
+
+            if (connected && isPremium) {
               setIsConnected(true);
             } else {
-              // If still not connected, force it anyway after timeout
-              setIsConnected(true);
+              // If not connected or not premium, show as disconnected
+              setIsConnected(false);
             }
           };
           forceConnected();
@@ -333,12 +396,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
             "There were too many connection attempts in a short time. For security, the bank has temporarily paused new logins. Try again in about an hour.";
           // Log the request IDs for debugging
           if (linkExit.metadata) {
-            console.log(
-              "Plaid request_id:",
-              linkExit.metadata.requestId,
-              "link_session_id:",
-              linkExit.metadata.linkSessionId
-            );
+            // Plaid request metadata available
           }
           // Reset rate limiting counters when we hit a rate limit
           plaidService.resetRateLimiting();
@@ -364,9 +422,6 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
             ) {
               // Don't show error for PRODUCT_NOT_READY during link process
               // This is handled by retry logic in the background
-              console.log(
-                "Product not ready during link - will retry in background"
-              );
               onExit?.();
               return;
             } else if (
@@ -389,6 +444,9 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   };
 
   const handleDisconnectBank = async () => {
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     Alert.alert(
       "Disconnect Bank",
       "Are you sure you want to disconnect your bank account?",
@@ -403,8 +461,11 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
               setIsLoading(false);
               onLoadingChange?.(false);
 
-              await plaidService.disconnectBank();
-              await checkConnectionStatus(); // Refresh connection status
+              // Use the comprehensive disconnect function from DataContext
+              await disconnectBankAndClearData();
+
+              // Update connection status
+              await checkConnectionStatus();
             } catch (error) {
               console.error("Error disconnecting bank:", error);
               Alert.alert("Error", "Failed to disconnect bank account");
@@ -417,78 +478,82 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
   return (
     <View>
-      {isConnected ? (
-        <TouchableOpacity
-          onPress={handleDisconnectBank}
-          style={{
-            backgroundColor: "#16a34a",
-            paddingVertical: 12,
-            paddingHorizontal: 14,
-            borderRadius: 12,
-            alignSelf: "flex-start",
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-        >
+      <TouchableOpacity
+        onPress={isConnected ? handleDisconnectBank : handleConnectBank}
+        disabled={isLoading || isButtonDisabled}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingVertical: 10,
+          paddingHorizontal: 14,
+          backgroundColor: colors.surfaceSecondary,
+          borderRadius: 12,
+          opacity: isLoading || isButtonDisabled ? 0.6 : 1,
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
           <Ionicons
-            name="checkmark-circle"
-            size={16}
-            color="white"
-            style={{ marginRight: 8 }}
+            name={isConnected ? "checkmark-circle" : "link"}
+            size={20}
+            color={colors.textSecondary}
+            style={{ marginRight: 12 }}
           />
-          <Text
-            style={{
-              fontFamily: fontFamily.semiBold,
-              color: "white",
-              fontWeight: "600",
-              fontSize: 14,
-            }}
-          >
-            Bank Connected
-          </Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity
-          onPress={handleConnectBank}
-          disabled={isLoading || isButtonDisabled}
-          style={{
-            backgroundColor: "#111827",
-            paddingVertical: 12,
-            paddingHorizontal: 14,
-            borderRadius: 12,
-            alignSelf: "flex-start",
-            flexDirection: "row",
-            alignItems: "center",
-            opacity: isLoading || isButtonDisabled ? 0.6 : 1,
-          }}
-          activeOpacity={0.7}
-        >
-          {isLoading ? (
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+              }}
+            >
+              {isConnected
+                ? "Connected via Plaid"
+                : hasPremiumAccess()
+                ? "Connect your bank account"
+                : "Upgrade to connect bank"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {isLoading && (
             <ActivityIndicator
               size="small"
-              color="white"
-              style={{ marginRight: 8 }}
-            />
-          ) : (
-            <Ionicons
-              name="link"
-              size={16}
-              color="white"
+              color={colors.primary}
               style={{ marginRight: 8 }}
             />
           )}
           <Text
             style={{
-              fontFamily: fontFamily.semiBold,
-              color: "white",
-              fontWeight: "600",
+              color: colors.textSecondary,
+              marginRight: 8,
               fontSize: 14,
             }}
           >
-            {isLoading ? "Connecting..." : "Connect Bank (Plaid)"}
+            {isConnected ? "Connected" : "Disconnected"}
           </Text>
-        </TouchableOpacity>
-      )}
+          <View
+            style={{
+              width: 44,
+              height: 24,
+              borderRadius: 12,
+              backgroundColor: isConnected ? colors.primary : colors.border,
+              padding: 2,
+            }}
+          >
+            <View
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 10,
+                backgroundColor: "#fff",
+                transform: [{ translateX: isConnected ? 20 : 0 }],
+              }}
+            />
+          </View>
+        </View>
+      </TouchableOpacity>
     </View>
   );
 };

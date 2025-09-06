@@ -41,6 +41,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToAIDisclaimer, setAgreedToAIDisclaimer] = useState(false);
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalModalType, setLegalModalType] = useState<"privacy" | "terms">(
@@ -100,6 +101,14 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
       Alert.alert(
         "Error",
         "Please agree to the Terms of Service and Privacy Policy"
+      );
+      return false;
+    }
+
+    if (!agreedToAIDisclaimer) {
+      Alert.alert(
+        "Error",
+        "Please acknowledge the AI Financial Advice Disclaimer"
       );
       return false;
     }
@@ -325,6 +334,32 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               </View>
             </View>
 
+            {/* AI Financial Advice Disclaimer */}
+            <View style={styles.termsContainer}>
+              <TouchableOpacity
+                style={styles.checkboxContainer}
+                onPress={() => setAgreedToAIDisclaimer(!agreedToAIDisclaimer)}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    styles.checkbox,
+                    agreedToAIDisclaimer && styles.checkboxChecked,
+                  ]}
+                >
+                  {agreedToAIDisclaimer && (
+                    <Ionicons name="checkmark" size={16} color="white" />
+                  )}
+                </View>
+              </TouchableOpacity>
+              <View style={styles.termsTextContainer}>
+                <Text style={styles.termsText} numberOfLines={0}>
+                  I acknowledge that AI financial advice is for informational
+                  purposes only and not personalized financial advice.
+                </Text>
+              </View>
+            </View>
+
             {/* Sign Up Button */}
             <TouchableOpacity
               style={[
@@ -361,6 +396,23 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                   cornerRadius={12}
                   style={styles.appleButton}
                   onPress={async () => {
+                    // Validate that both checkboxes are checked
+                    if (!agreedToTerms) {
+                      Alert.alert(
+                        "Error",
+                        "Please agree to the Terms of Service and Privacy Policy"
+                      );
+                      return;
+                    }
+
+                    if (!agreedToAIDisclaimer) {
+                      Alert.alert(
+                        "Error",
+                        "Please acknowledge the AI Financial Advice Disclaimer"
+                      );
+                      return;
+                    }
+
                     setIsLoading(true);
                     try {
                       await signInWithApple();
@@ -423,9 +475,9 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 <Text style={styles.modalParagraph}>
                   This privacy policy applies to the VectorFi app (hereby
                   referred to as "Application") for mobile devices that was
-                  created by Noah Duran (hereby referred to as "Service
-                  Provider") as a Freemium service. This service is intended for
-                  use "AS IS".
+                  created by VectorFi (hereby referred to as "Service Provider")
+                  as a Freemium service. This service is intended for use "AS
+                  IS".
                 </Text>
 
                 <Text style={styles.modalSectionTitle}>
@@ -433,12 +485,34 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 </Text>
                 <Text style={styles.modalParagraph}>
                   The Application collects information when you download and use
-                  it. This information may include information such as your
-                  device's Internet Protocol address (e.g. IP address), the
-                  pages of the Application that you visit, the time and date of
-                  your visit, the time spent on those pages, the time spent on
-                  the Application, and the operating system you use on your
-                  mobile device.
+                  it. This information may include information such as:
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Your device's Internet Protocol address (e.g. IP address)
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • The pages of the Application that you visit, the time and
+                  date of your visit, the time spent on those pages
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • The time spent on the Application
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • The operating system you use on your mobile device
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Financial data including transactions, assets, debts, and
+                  goals
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Bank account information (when connected via Plaid)
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Biometric authentication preferences (Face ID/Touch ID
+                  settings)
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Push notification preferences and interaction data
                 </Text>
 
                 <Text style={styles.modalParagraph}>
@@ -450,6 +524,114 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                   The Service Provider may use the information you provided to
                   contact you from time to time to provide you with important
                   information, required notices and marketing promotions.
+                </Text>
+
+                <Text style={styles.modalParagraph}>
+                  For a better experience, while using the Application, the
+                  Service Provider may require you to provide us with certain
+                  personally identifiable information, including but not limited
+                  to support@vectorfi.ai. The information that the Service
+                  Provider request will be retained by them and used as
+                  described in this privacy policy.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  AI Services and Data Processing
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Application uses artificial intelligence services to
+                  provide personalized financial advice and analysis. When you
+                  use the AI financial advisor feature, your financial data
+                  (including income, expenses, assets, debts, and goals) may be
+                  processed by AI services to generate personalized
+                  recommendations and financial plans.
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  This financial data is encrypted and transmitted securely to
+                  our AI processing services. The AI analysis helps provide
+                  insights about your spending patterns, savings opportunities,
+                  debt management strategies, and financial goal planning.
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  Your financial data is processed solely for the purpose of
+                  providing you with personalized financial advice and is not
+                  used for any other commercial purposes without your explicit
+                  consent.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Biometric Authentication
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Application may use Face ID or Touch ID for secure
+                  authentication to protect your financial information. When you
+                  enable biometric authentication, the Application stores your
+                  biometric preferences locally on your device.
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  Biometric data (fingerprint or facial recognition data) is
+                  processed by your device's secure enclave and is never
+                  transmitted to our servers or stored in our systems. The
+                  Application only stores your preference to use biometric
+                  authentication, not the actual biometric data itself.
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  You can disable biometric authentication at any time through
+                  the Application's settings, and this will immediately stop the
+                  use of biometric data for authentication.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>Push Notifications</Text>
+                <Text style={styles.modalParagraph}>
+                  The Application sends push notifications for important
+                  financial reminders, including bill due dates, budget alerts,
+                  and financial goal updates. To provide these notifications,
+                  the Application may collect and process:
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Bill due dates and amounts
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Budget spending thresholds
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Financial goal progress updates
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Notification interaction data (opens, dismissals)
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  You can control notification preferences through your device
+                  settings or within the Application's notification settings.
+                  You may opt out of push notifications at any time.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Financial Data Security
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Application processes sensitive financial information and
+                  employs industry-standard security measures to protect your
+                  data:
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • All data is encrypted in transit and at rest
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Bank connections are secured through Plaid's bank-level
+                  security
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Financial data is stored in secure, encrypted databases
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Access to your financial data requires authentication
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  When you connect your bank accounts through Plaid, your
+                  banking credentials are never stored in our systems. Plaid
+                  uses bank-level security protocols to ensure your banking
+                  information remains secure.
                 </Text>
 
                 <Text style={styles.modalSectionTitle}>Third Party Access</Text>
@@ -468,7 +650,6 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                   providers used by the Application:
                 </Text>
 
-                <Text style={styles.modalBulletPoint}>• AdMob</Text>
                 <Text style={styles.modalBulletPoint}>
                   • Google Analytics for Firebase
                 </Text>
@@ -478,6 +659,79 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 <Text style={styles.modalBulletPoint}>• Expo</Text>
                 <Text style={styles.modalBulletPoint}>• RevenueCat</Text>
                 <Text style={styles.modalBulletPoint}>• Plaid</Text>
+                <Text style={styles.modalBulletPoint}>
+                  • OpenAI (for AI financial advice)
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Apple Authentication (Sign in with Apple)
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Expo Notifications (push notifications)
+                </Text>
+
+                <Text style={styles.modalParagraph}>
+                  The Service Provider may disclose User Provided and
+                  Automatically Collected Information:
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • as required by law, such as to comply with a subpoena, or
+                  similar legal process;
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • when they believe in good faith that disclosure is necessary
+                  to protect their rights, protect your safety or the safety of
+                  others, investigate fraud, or respond to a government request;
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • with their trusted services providers who work on their
+                  behalf, do not have an independent use of the information we
+                  disclose to them, and have agreed to adhere to the rules set
+                  forth in this privacy statement.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>Opt-Out Rights</Text>
+                <Text style={styles.modalParagraph}>
+                  You can stop all collection of information by the Application
+                  easily by uninstalling it. You may use the standard uninstall
+                  processes as may be available as part of your mobile device or
+                  via the mobile application marketplace or network.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Data Retention Policy
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Service Provider will retain User Provided data for as
+                  long as you use the Application and for a reasonable time
+                  thereafter. Financial data used for AI analysis is retained
+                  only for the duration of your active session and is not stored
+                  for long-term AI training purposes.
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  If you'd like them to delete User Provided Data that you have
+                  provided via the Application, please contact them at
+                  support@vectorfi.ai and they will respond in a reasonable
+                  time. You may also request deletion of any AI-processed
+                  financial data.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>Children</Text>
+                <Text style={styles.modalParagraph}>
+                  The Service Provider does not use the Application to knowingly
+                  solicit data from or market to children under the age of 13.
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Application does not address anyone under the age of 13.
+                  The Service Provider does not knowingly collect personally
+                  identifiable information from children under 13 years of age.
+                  In the case the Service Provider discover that a child under
+                  13 has provided personal information, the Service Provider
+                  will immediately delete this from their servers. If you are a
+                  parent or guardian and you are aware that your child has
+                  provided us with personal information, please contact the
+                  Service Provider (support@vectorfi.ai) so that they will be
+                  able to take the necessary actions.
+                </Text>
 
                 <Text style={styles.modalSectionTitle}>Security</Text>
                 <Text style={styles.modalParagraph}>
@@ -486,6 +740,13 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                   provides physical, electronic, and procedural safeguards to
                   protect information the Service Provider processes and
                   maintains.
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  All financial data is encrypted using industry-standard
+                  encryption protocols. Bank connections are secured through
+                  Plaid's bank-level security infrastructure. AI processing of
+                  financial data is conducted through secure, encrypted channels
+                  to ensure your financial information remains protected.
                 </Text>
 
                 <Text style={styles.modalSectionTitle}>Changes</Text>
@@ -498,6 +759,13 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                   of all changes.
                 </Text>
 
+                <Text style={styles.modalSectionTitle}>Your Consent</Text>
+                <Text style={styles.modalParagraph}>
+                  By using the Application, you are consenting to the processing
+                  of your information as set forth in this Privacy Policy now
+                  and as amended by us.
+                </Text>
+
                 <Text style={styles.modalSectionTitle}>Contact Us</Text>
                 <Text style={styles.modalParagraph}>
                   If you have any questions regarding privacy while using the
@@ -506,7 +774,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 </Text>
 
                 <Text style={styles.modalEffectiveDate}>
-                  Effective as of 2025-08-24
+                  This privacy policy is effective as of 2025-01-27
                 </Text>
               </View>
             ) : (
@@ -515,8 +783,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 <Text style={styles.modalParagraph}>
                   These terms and conditions apply to the VectorFi app (hereby
                   referred to as "Application") for mobile devices that was
-                  created by Noah Duran (hereby referred to as "Service
-                  Provider") as a Freemium service.
+                  created by VectorFi (hereby referred to as "Service Provider")
+                  as a Freemium service.
                 </Text>
 
                 <Text style={styles.modalParagraph}>
@@ -525,7 +793,10 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                   advised that you thoroughly read and understand these terms
                   prior to using the Application. Unauthorized copying,
                   modification of the Application, any part of the Application,
-                  or our trademarks is strictly prohibited.
+                  or our trademarks is strictly prohibited. All trademarks,
+                  copyrights, database rights, and other intellectual property
+                  rights related to the Application remain the property of the
+                  Service Provider.
                 </Text>
 
                 <Text style={styles.modalSectionTitle}>
@@ -542,6 +813,133 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 </Text>
 
                 <Text style={styles.modalSectionTitle}>
+                  Data Processing and Security
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Application stores and processes personal data that you
+                  have provided to the Service Provider in order to provide the
+                  Service. It is your responsibility to maintain the security of
+                  your phone and access to the Application. The Service Provider
+                  strongly advise against jailbreaking or rooting your phone,
+                  which involves removing software restrictions and limitations
+                  imposed by the official operating system of your device. Such
+                  actions could expose your phone to malware, viruses, malicious
+                  programs, compromise your phone's security features, and may
+                  result in the Application not functioning correctly or at all.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Financial Services and AI Features
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Application provides financial management tools, including
+                  AI-powered financial advice and analysis. By using these
+                  features, you acknowledge that:
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • AI-generated financial advice is for informational purposes
+                  only
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • The Service Provider is not a financial advisor, broker, or
+                  tax advisor
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • You should consult with qualified professionals for
+                  financial decisions
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • AI analysis is based on the data you provide and may not be
+                  complete
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Past performance does not guarantee future results
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Service Provider disclaims all liability for any financial
+                  decisions made based on AI-generated advice or analysis
+                  provided through the Application.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Bank Account Connections
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Application allows you to connect your bank accounts
+                  through Plaid to automatically import financial data. By
+                  connecting your accounts, you:
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Authorize the Application to access your financial data
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Acknowledge that data accuracy depends on your bank's
+                  information
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Understand that connection may be interrupted by your bank
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Agree to maintain accurate and up-to-date account
+                  information
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Service Provider is not responsible for any errors in
+                  financial data provided by your bank or Plaid, or for any
+                  consequences of relying on such data.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Subscription and Payment Terms
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Application offers both free and premium subscription
+                  tiers. Premium features require an active subscription through
+                  RevenueCat:
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Subscriptions automatically renew unless cancelled
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • You may cancel at any time through your device settings
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Refunds are subject to Apple/Google App Store policies
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Price changes will be communicated in advance
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Service Provider reserves the right to modify subscription
+                  terms, features, or pricing with appropriate notice to users.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  User Responsibilities
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  As a user of the Application, you agree to:
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Provide accurate and complete financial information
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Maintain the security of your account credentials
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Not use the Application for illegal or fraudulent purposes
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Not attempt to reverse engineer or hack the Application
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Report any security vulnerabilities or bugs
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Comply with all applicable laws and regulations
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
                   Third Party Services
                 </Text>
                 <Text style={styles.modalParagraph}>
@@ -551,7 +949,6 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                   providers used by the Application:
                 </Text>
 
-                <Text style={styles.modalBulletPoint}>• AdMob</Text>
                 <Text style={styles.modalBulletPoint}>
                   • Google Analytics for Firebase
                 </Text>
@@ -561,16 +958,141 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 <Text style={styles.modalBulletPoint}>• Expo</Text>
                 <Text style={styles.modalBulletPoint}>• RevenueCat</Text>
                 <Text style={styles.modalBulletPoint}>• Plaid</Text>
+                <Text style={styles.modalBulletPoint}>
+                  • OpenAI (AI financial advice)
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Apple Authentication (Sign in with Apple)
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Expo Notifications (push notifications)
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Firebase Realtime Database
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Firebase Cloud Functions
+                </Text>
 
                 <Text style={styles.modalSectionTitle}>
-                  Data Usage and Charges
+                  Internet Connectivity
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  Please be aware that the Service Provider does not assume
+                  responsibility for certain aspects. Some functions of the
+                  Application require an active internet connection, which can
+                  be Wi-Fi or provided by your mobile network provider. The
+                  Service Provider cannot be held responsible if the Application
+                  does not function at full capacity due to lack of access to
+                  Wi-Fi or if you have exhausted your data allowance.
                 </Text>
                 <Text style={styles.modalParagraph}>
                   If you are using the application outside of a Wi-Fi area,
                   please be aware that your mobile network provider's agreement
                   terms still apply. Consequently, you may incur charges from
                   your mobile provider for data usage during the connection to
-                  the application, or other third-party charges.
+                  the application, or other third-party charges. By using the
+                  application, you accept responsibility for any such charges,
+                  including roaming data charges if you use the application
+                  outside of your home territory (i.e., region or country)
+                  without disabling data roaming.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Device Responsibility
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  Similarly, the Service Provider cannot always assume
+                  responsibility for your usage of the application. For
+                  instance, it is your responsibility to ensure that your device
+                  remains charged. If your device runs out of battery and you
+                  are unable to access the Service, the Service Provider cannot
+                  be held responsible.
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  In terms of the Service Provider's responsibility for your use
+                  of the application, it is important to note that while they
+                  strive to ensure that it is updated and accurate at all times,
+                  they do rely on third parties to provide information to them
+                  so that they can make it available to you. The Service
+                  Provider accepts no liability for any loss, direct or
+                  indirect, that you experience as a result of relying entirely
+                  on this functionality of the application.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Limitation of Liability
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  To the maximum extent permitted by law, the Service Provider
+                  shall not be liable for any indirect, incidental, special,
+                  consequential, or punitive damages, including but not limited
+                  to loss of profits, data, use, goodwill, or other intangible
+                  losses resulting from:
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Your use or inability to use the Application
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Any financial decisions made based on Application data
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Unauthorized access to or alteration of your data
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Any other matter relating to the Application
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Service Provider's total liability shall not exceed the
+                  amount you paid for the Application in the 12 months preceding
+                  the claim.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>
+                  Intellectual Property
+                </Text>
+                <Text style={styles.modalParagraph}>
+                  The Application and its original content, features, and
+                  functionality are and will remain the exclusive property of
+                  the Service Provider and its licensors. The Application is
+                  protected by copyright, trademark, and other laws. The Service
+                  Provider's trademarks and trade dress may not be used in
+                  connection with any product or service without the Service
+                  Provider's prior written consent.
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>Disclaimers</Text>
+                <Text style={styles.modalParagraph}>
+                  The Application is provided "as is" and "as available" without
+                  any warranties of any kind, either express or implied. The
+                  Service Provider disclaims all warranties, including but not
+                  limited to:
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Warranties of merchantability and fitness for a particular
+                  purpose
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Warranties that the Application will be uninterrupted or
+                  error-free
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Warranties regarding the accuracy or reliability of
+                  financial data
+                </Text>
+                <Text style={styles.modalBulletPoint}>
+                  • Warranties that defects will be corrected
+                </Text>
+
+                <Text style={styles.modalSectionTitle}>Governing Law</Text>
+                <Text style={styles.modalParagraph}>
+                  These Terms shall be governed by and construed in accordance
+                  with the laws of the jurisdiction in which the Service
+                  Provider operates, without regard to its conflict of law
+                  provisions. Any disputes arising from these Terms or your use
+                  of the Application shall be resolved through binding
+                  arbitration or in the courts of the Service Provider's
+                  jurisdiction.
                 </Text>
 
                 <Text style={styles.modalSectionTitle}>
@@ -582,7 +1104,12 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                   requirements for the operating system (and for any additional
                   systems they decide to extend the availability of the
                   application to) may change, and you will need to download the
-                  updates if you want to continue using the application.
+                  updates if you want to continue using the application. The
+                  Service Provider does not guarantee that it will always update
+                  the application so that it is relevant to you and/or
+                  compatible with the particular operating system version
+                  installed on your device. However, you agree to always accept
+                  updates to the application when offered to you.
                 </Text>
 
                 <Text style={styles.modalSectionTitle}>
@@ -604,7 +1131,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 </Text>
 
                 <Text style={styles.modalEffectiveDate}>
-                  Effective as of 2025-08-24
+                  These terms and conditions are effective as of 2025-01-27
                 </Text>
               </View>
             )}

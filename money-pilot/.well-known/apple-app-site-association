@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "957229887847.com.vectorfi.moneypilot",
+        "paths": [
+          "/plaid-redirect*"
+        ]
+      }
+    ]
+  }
+}

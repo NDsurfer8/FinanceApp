@@ -37,20 +37,29 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
       // Reset failure count when overlay becomes visible
       setFailureCount(0);
       setShowAlternativeOptions(false);
-      // Automatically trigger authentication when overlay becomes visible
-      handleBiometricAuth();
+      // Add a delay before triggering authentication to prevent screen shake
+      const timer = setTimeout(() => {
+        handleBiometricAuth();
+      }, 300);
+
+      return () => clearTimeout(timer);
     }
   }, [visible]);
 
   const handleBiometricAuth = async () => {
+    // Prevent multiple simultaneous authentication attempts
+    if (isAuthenticating) {
+      return;
+    }
+
     setIsAuthenticating(true);
     setShowAlternativeOptions(false);
 
     try {
-      // Add a delay to ensure the overlay is fully visible
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Add a delay to ensure the overlay is fully visible and prevent screen shake
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
-      console.log("Starting biometric authentication with Expo...");
+      // Starting biometric authentication with Expo
 
       // Check if biometric is available first
       const isAvailable = await biometricAuthService.isBiometricAvailable();
@@ -73,14 +82,14 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
         true // Skip enabled check since we know it's enabled
       );
 
-      console.log("Biometric authentication result:", result);
+      // Biometric authentication result
 
       if (result.success) {
-        console.log("Biometric authentication successful");
+        // Biometric authentication successful
         setFailureCount(0);
         onSuccess();
       } else {
-        console.log("Biometric authentication failed:", result.error);
+        // Biometric authentication failed
         const newFailureCount = failureCount + 1;
         setFailureCount(newFailureCount);
 
@@ -112,9 +121,9 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
           // First failure, just retry
           Alert.alert(
             "Authentication Failed",
-            result.error || "Please try again",
+            result.error || "Please try again or sign out",
             [
-              { text: "Cancel", onPress: onCancel },
+              { text: "Sign Out", onPress: onCancel, style: "destructive" },
               { text: "Try Again", onPress: handleBiometricAuth },
             ]
           );
@@ -139,9 +148,9 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
       } else {
         Alert.alert(
           "Authentication Error",
-          "An error occurred during authentication. Please try again.",
+          "An error occurred during authentication. Please try again or sign out.",
           [
-            { text: "Cancel", onPress: onCancel },
+            { text: "Sign Out", onPress: onCancel, style: "destructive" },
             { text: "Try Again", onPress: handleBiometricAuth },
           ]
         );
@@ -182,7 +191,22 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onCancel}
+      onRequestClose={() => {
+        Alert.alert(
+          "Sign Out",
+          "Canceling biometric authentication will sign you out. Are you sure?",
+          [
+            { text: "Stay", style: "cancel" },
+            {
+              text: "Sign Out",
+              style: "destructive",
+              onPress: onCancel,
+            },
+          ]
+        );
+      }}
+      statusBarTranslucent
+      hardwareAccelerated
     >
       <View style={[styles.overlay, { backgroundColor: colors.background }]}>
         <View style={[styles.container, { backgroundColor: colors.card }]}>
@@ -202,7 +226,7 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
               : failureCount > 0
               ? `Authentication failed (${failureCount} attempt${
                   failureCount > 1 ? "s" : ""
-                })`
+                }). You can try again or sign out.`
               : "Please authenticate with Face ID to access your financial data"}
           </Text>
 
@@ -252,11 +276,24 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.button, { backgroundColor: colors.border }]}
-              onPress={onCancel}
+              onPress={() => {
+                Alert.alert(
+                  "Sign Out",
+                  "Canceling biometric authentication will sign you out. Are you sure?",
+                  [
+                    { text: "Stay", style: "cancel" },
+                    {
+                      text: "Sign Out",
+                      style: "destructive",
+                      onPress: onCancel,
+                    },
+                  ]
+                );
+              }}
               disabled={isAuthenticating}
             >
               <Text style={[styles.buttonText, { color: colors.text }]}>
-                Cancel
+                Sign Out
               </Text>
             </TouchableOpacity>
 
@@ -266,7 +303,9 @@ export const BiometricAuthOverlay: React.FC<BiometricAuthOverlayProps> = ({
               disabled={isAuthenticating}
             >
               {isAuthenticating ? (
-                <ActivityIndicator size="small" color={colors.card} />
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color={colors.card} />
+                </View>
               ) : (
                 <Text style={[styles.buttonText, { color: colors.card }]}>
                   {failureCount > 0 ? "Try Again" : "Use Face ID"}
@@ -286,6 +325,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.5)",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   container: {
     padding: 32,
@@ -339,6 +383,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
+    minHeight: 44, // Ensure consistent height
   },
   alternativeButtonText: {
     fontSize: 14,
@@ -350,6 +395,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     width: "100%",
     gap: 12,
+    minHeight: 52, // Ensure consistent container height
   },
   button: {
     flex: 1,
@@ -357,9 +403,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    minHeight: 52, // Ensure consistent height
+    minWidth: 120, // Ensure minimum width
+    maxWidth: 140, // Prevent buttons from getting too wide
   },
   buttonText: {
     fontSize: 16,
     fontWeight: "600",
+    textAlign: "center",
+    minHeight: 20, // Ensure consistent text height
+  },
+  loadingContainer: {
+    minHeight: 20, // Match the text height
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

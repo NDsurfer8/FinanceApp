@@ -34,8 +34,8 @@ export const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({
       backgroundColor: colors.card,
     },
     backButton: {
-      padding: 8,
-      marginRight: 8,
+      marginRight: 20,
+      padding: 10,
     },
     headerTitle: {
       fontSize: 18,
@@ -121,7 +121,7 @@ export const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({
         <View style={styles.section}>
           <Text style={styles.paragraph}>
             This privacy policy applies to the VectorFi app (hereby referred to
-            as "Application") for mobile devices that was created by Noah Duran
+            as "Application") for mobile devices that was created by VectorFi
             (hereby referred to as "Service Provider") as a Freemium service.
             This service is intended for use "AS IS".
           </Text>
@@ -147,6 +147,18 @@ export const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({
             <Text style={styles.bulletPoint}>
               • The operating system you use on your mobile device
             </Text>
+            <Text style={styles.bulletPoint}>
+              • Financial data including transactions, assets, debts, and goals
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Bank account information (when connected via Plaid)
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Biometric authentication preferences (Face ID/Touch ID settings)
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Push notification preferences and interaction data
+            </Text>
           </View>
           <Text style={styles.paragraph}>
             The Application does not gather precise information about the
@@ -168,6 +180,103 @@ export const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.subtitle}>AI Services and Data Processing</Text>
+          <Text style={styles.paragraph}>
+            The Application uses artificial intelligence services to provide
+            personalized financial advice and analysis. When you use the AI
+            financial advisor feature, your financial data (including income,
+            expenses, assets, debts, and goals) may be processed by AI services
+            to generate personalized recommendations and financial plans.
+          </Text>
+          <Text style={styles.paragraph}>
+            This financial data is encrypted and transmitted securely to our AI
+            processing services. The AI analysis helps provide insights about
+            your spending patterns, savings opportunities, debt management
+            strategies, and financial goal planning.
+          </Text>
+          <Text style={styles.paragraph}>
+            Your financial data is processed solely for the purpose of providing
+            you with personalized financial advice and is not used for any other
+            commercial purposes without your explicit consent.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.subtitle}>Biometric Authentication</Text>
+          <Text style={styles.paragraph}>
+            The Application may use Face ID or Touch ID for secure
+            authentication to protect your financial information. When you
+            enable biometric authentication, the Application stores your
+            biometric preferences locally on your device.
+          </Text>
+          <Text style={styles.paragraph}>
+            Biometric data (fingerprint or facial recognition data) is processed
+            by your device's secure enclave and is never transmitted to our
+            servers or stored in our systems. The Application only stores your
+            preference to use biometric authentication, not the actual biometric
+            data itself.
+          </Text>
+          <Text style={styles.paragraph}>
+            You can disable biometric authentication at any time through the
+            Application's settings, and this will immediately stop the use of
+            biometric data for authentication.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.subtitle}>Push Notifications</Text>
+          <Text style={styles.paragraph}>
+            The Application sends push notifications for important financial
+            reminders, including bill due dates, budget alerts, and financial
+            goal updates. To provide these notifications, the Application may
+            collect and process:
+          </Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bulletPoint}>• Bill due dates and amounts</Text>
+            <Text style={styles.bulletPoint}>• Budget spending thresholds</Text>
+            <Text style={styles.bulletPoint}>
+              • Financial goal progress updates
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Notification interaction data (opens, dismissals)
+            </Text>
+          </View>
+          <Text style={styles.paragraph}>
+            You can control notification preferences through your device
+            settings or within the Application's notification settings. You may
+            opt out of push notifications at any time.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.subtitle}>Financial Data Security</Text>
+          <Text style={styles.paragraph}>
+            The Application processes sensitive financial information and
+            employs industry-standard security measures to protect your data:
+          </Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bulletPoint}>
+              • All data is encrypted in transit and at rest
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Bank connections are secured through Plaid's bank-level security
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Financial data is stored in secure, encrypted databases
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Access to your financial data requires authentication
+            </Text>
+          </View>
+          <Text style={styles.paragraph}>
+            When you connect your bank accounts through Plaid, your banking
+            credentials are never stored in our systems. Plaid uses bank-level
+            security protocols to ensure your banking information remains
+            secure.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.subtitle}>Third Party Access</Text>
           <Text style={styles.paragraph}>
             Only aggregated, anonymized data is periodically transmitted to
@@ -183,7 +292,6 @@ export const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({
             used by the Application:
           </Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bulletPoint}>• AdMob</Text>
             <Text style={styles.bulletPoint}>
               • Google Analytics for Firebase
             </Text>
@@ -191,6 +299,15 @@ export const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({
             <Text style={styles.bulletPoint}>• Expo</Text>
             <Text style={styles.bulletPoint}>• RevenueCat</Text>
             <Text style={styles.bulletPoint}>• Plaid</Text>
+            <Text style={styles.bulletPoint}>
+              • OpenAI (for AI financial advice)
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Apple Authentication (Sign in with Apple)
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Expo Notifications (push notifications)
+            </Text>
           </View>
           <Text style={styles.paragraph}>
             The Service Provider may disclose User Provided and Automatically
@@ -229,10 +346,16 @@ export const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({
           <Text style={styles.subtitle}>Data Retention Policy</Text>
           <Text style={styles.paragraph}>
             The Service Provider will retain User Provided data for as long as
-            you use the Application and for a reasonable time thereafter. If
-            you'd like them to delete User Provided Data that you have provided
-            via the Application, please contact them at support@vectorfi.ai and
-            they will respond in a reasonable time.
+            you use the Application and for a reasonable time thereafter.
+            Financial data used for AI analysis is retained only for the
+            duration of your active session and is not stored for long-term AI
+            training purposes.
+          </Text>
+          <Text style={styles.paragraph}>
+            If you'd like them to delete User Provided Data that you have
+            provided via the Application, please contact them at
+            support@vectorfi.ai and they will respond in a reasonable time. You
+            may also request deletion of any AI-processed financial data.
           </Text>
         </View>
 
@@ -262,6 +385,13 @@ export const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({
             confidentiality of your information. The Service Provider provides
             physical, electronic, and procedural safeguards to protect
             information the Service Provider processes and maintains.
+          </Text>
+          <Text style={styles.paragraph}>
+            All financial data is encrypted using industry-standard encryption
+            protocols. Bank connections are secured through Plaid's bank-level
+            security infrastructure. AI processing of financial data is
+            conducted through secure, encrypted channels to ensure your
+            financial information remains protected.
           </Text>
         </View>
 
@@ -294,7 +424,7 @@ export const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({
         </View>
 
         <Text style={styles.dateText}>
-          This privacy policy is effective as of 2025-08-24
+          This privacy policy is effective as of 2025-01-27
         </Text>
       </ScrollView>
     </SafeAreaView>

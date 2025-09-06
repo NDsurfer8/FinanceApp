@@ -183,10 +183,7 @@ class PlaidService {
     if (!this.userId) throw new Error("User ID not set");
     if (!this.auth.currentUser) throw new Error("User not authenticated");
 
-    console.log(
-      `[${new Date().toISOString()}] Initializing Plaid Link for user:`,
-      this.userId
-    );
+    // Initializing Plaid Link for user
 
     // Enhanced rate limiting: prevent rapid successive calls and track attempts
     const now = Date.now();
@@ -254,7 +251,6 @@ class PlaidService {
         throw new Error("createLinkToken did not return link_token");
       }
 
-      console.log("✅ Link token created successfully");
       return linkToken;
     } catch (firebaseError: any) {
       console.error("Firebase function error:", firebaseError);
@@ -310,8 +306,6 @@ class PlaidService {
   // Create Plaid Link session (preloads Link for better performance)
   async createPlaidLinkSession(linkToken: string): Promise<void> {
     try {
-      console.log("Creating Plaid Link session...");
-
       // Destroy any existing session first (Android only)
       try {
         await destroy();
@@ -419,9 +413,7 @@ class PlaidService {
       this.lastLinkFlowCall = now;
       this.linkFlowAttemptCount++;
 
-      console.log(
-        `🔄 Starting Link flow attempt ${this.linkFlowAttemptCount}/${this.MAX_LINK_FLOW_ATTEMPTS}`
-      );
+      // Starting Link flow attempt
 
       // Get link token
       const linkToken = await this.initializePlaidLink();
@@ -723,7 +715,14 @@ class PlaidService {
     } catch (error) {
       console.error("❌ Error getting accounts:", error);
 
-      throw error; // Re-throw the error instead of returning mock data
+      // Check for token errors and attempt to refresh
+      const tokenRefreshed = await this.handleTokenError(error);
+      if (tokenRefreshed) {
+        console.log("🔄 Token refreshed, retrying accounts request");
+        return this._fetchAccounts(); // Retry the request
+      }
+
+      throw error; // Re-throw the error if token refresh failed
     }
   }
 
@@ -814,7 +813,14 @@ class PlaidService {
         );
         console.log(`🔍 Full error object:`, error);
 
-        // Check for rate limit errors first
+        // Check for token errors first and attempt to refresh
+        const tokenRefreshed = await this.handleTokenError(error);
+        if (tokenRefreshed) {
+          console.log("🔄 Token refreshed, retrying request");
+          continue;
+        }
+
+        // Check for rate limit errors
         if (
           errorMessage.includes("RATE_LIMIT") ||
           errorMessage.includes("rate limit")
@@ -898,21 +904,13 @@ class PlaidService {
   ): Promise<PlaidTransaction[]> {
     try {
       const getTransactions = httpsCallable(this.functions, "getTransactions");
-      console.log(
-        `[${new Date().toISOString()}] Plaid API: getTransactions (sync) for user: ${
-          this.userId
-        }`
-      );
-      console.log("📞 Calling Firebase Function: getTransactions (sync)");
 
-      const startTime = Date.now();
       const result = await getTransactions({
         accessToken: this.accessToken,
         cursor: null, // Start with null cursor for initial fetch
         // Note: /transactions/sync doesn't use date parameters
         // It fetches all available transactions and uses cursor-based pagination
       });
-      const duration = Date.now() - startTime;
 
       const { transactions } = result.data as { transactions: any[] };
 
@@ -928,6 +926,7 @@ class PlaidService {
         name: transaction.name,
         merchant_name: transaction.merchant_name,
         category: transaction.category,
+        personal_finance_category: transaction.personal_finance_category,
         pending: transaction.pending,
       }));
     } catch (error) {
@@ -1254,6 +1253,13 @@ class PlaidService {
         throw new Error("User ID not set");
       }
 
+      // Clear any pending status updates
+      if (this.statusUpdateTimer) {
+        clearTimeout(this.statusUpdateTimer);
+        this.statusUpdateTimer = null;
+      }
+      this.pendingStatusUpdates = {};
+
       // Remove from Firebase
       const plaidRef = ref(db, `users/${this.userId}/plaid`);
       await remove(plaidRef);
@@ -1272,12 +1278,62 @@ class PlaidService {
     }
   }
 
+  // Handle token errors and attempt to refresh connection
+  private async handleTokenError(error: any): Promise<boolean> {
+    const errorMessage = error?.message || String(error);
+
+    // Check for common Plaid token errors
+    const isTokenError =
+      errorMessage.includes("INVALID_ACCESS_TOKEN") ||
+      errorMessage.includes("ITEM_LOGIN_REQUIRED") ||
+      errorMessage.includes("ITEM_ERROR") ||
+      errorMessage.includes("access token") ||
+      errorMessage.includes("401") ||
+      errorMessage.includes("403");
+
+    if (isTokenError) {
+      console.warn(
+        "🔑 Plaid token error detected, attempting to refresh connection"
+      );
+
+      try {
+        // Clear invalid token
+        this.accessToken = null;
+        this.itemId = null;
+
+        // Try to reload connection data from Firebase
+        await this.isBankConnected();
+
+        // If we successfully loaded a new token, return true to retry the operation
+        if (this.accessToken) {
+          console.log("✅ Successfully refreshed Plaid connection");
+          return true;
+        } else {
+          console.log("❌ No valid connection found, user needs to reconnect");
+          return false;
+        }
+      } catch (refreshError) {
+        console.error("❌ Failed to refresh Plaid connection:", refreshError);
+        return false;
+      }
+    }
+
+    return false; // Not a token error, don't retry
+  }
+
   // Disconnect bank silently (for logout scenarios)
   async disconnectBankSilently(): Promise<void> {
     try {
       if (!this.userId) {
         return; // No user ID, nothing to disconnect
       }
+
+      // Clear any pending status updates
+      if (this.statusUpdateTimer) {
+        clearTimeout(this.statusUpdateTimer);
+        this.statusUpdateTimer = null;
+      }
+      this.pendingStatusUpdates = {};
 
       // Remove from Firebase
       const plaidRef = ref(db, `users/${this.userId}/plaid`);
@@ -1290,6 +1346,56 @@ class PlaidService {
       console.error("PlaidService: Error silently disconnecting bank:", error);
       // Don't throw for silent disconnection
     }
+  }
+
+  // Update Plaid status in Firebase (for webhook monitoring)
+  async updatePlaidStatus(updates: any): Promise<void> {
+    try {
+      if (!this.userId) {
+        throw new Error("User ID not set");
+      }
+
+      // Only update if we have actual changes
+      if (!updates || Object.keys(updates).length === 0) {
+        console.log(
+          "PlaidService: No updates to apply, skipping Firebase write"
+        );
+        return;
+      }
+
+      const plaidRef = ref(db, `users/${this.userId}/plaid`);
+      await update(plaidRef, updates);
+      console.log("PlaidService: Updated Plaid status:", updates);
+    } catch (error) {
+      console.error("PlaidService: Error updating Plaid status:", error);
+      throw error;
+    }
+  }
+
+  // Batch update Plaid status to reduce Firebase writes
+  private pendingStatusUpdates: any = {};
+  private statusUpdateTimer: NodeJS.Timeout | null = null;
+
+  async queuePlaidStatusUpdate(updates: any): Promise<void> {
+    // Merge updates with pending ones
+    this.pendingStatusUpdates = { ...this.pendingStatusUpdates, ...updates };
+
+    // Clear existing timer
+    if (this.statusUpdateTimer) {
+      clearTimeout(this.statusUpdateTimer);
+    }
+
+    // Set timer to batch update after 1 second
+    this.statusUpdateTimer = setTimeout(async () => {
+      if (Object.keys(this.pendingStatusUpdates).length > 0) {
+        try {
+          await this.updatePlaidStatus(this.pendingStatusUpdates);
+          this.pendingStatusUpdates = {}; // Clear pending updates
+        } catch (error) {
+          console.error("PlaidService: Failed to batch update status:", error);
+        }
+      }
+    }, 1000);
   }
 }
 

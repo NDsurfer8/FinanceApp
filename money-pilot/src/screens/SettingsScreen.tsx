@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
@@ -24,6 +25,11 @@ import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { useChatbot } from "../contexts/ChatbotContext";
 import { useData } from "../contexts/DataContext";
+import { AIUsageAdminScreen } from "./AIUsageAdminScreen";
+import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
+import { useScrollDetection } from "../hooks/useScrollDetection";
+import { useTour } from "../contexts/TourContext";
+import { HelpfulTooltip } from "../components/HelpfulTooltip";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -36,8 +42,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { currentUser, forceRefresh } = useUser();
+  const { isScrolling, handleScrollBegin, handleScrollEnd } =
+    useScrollDetection();
   const [photoKey, setPhotoKey] = useState(Date.now());
   const { presentPaywall } = usePaywall();
+  const {
+    startTour,
+    hasCompletedTour,
+    setHasCompletedTour,
+    showTooltips,
+    setShowTooltips,
+  } = useTour();
 
   const handlePaywallPress = async () => {
     setLoading(true);
@@ -65,6 +80,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [emailVerificationLoading, setEmailVerificationLoading] =
     useState(false);
   const [bankConnectionLoading, setBankConnectionLoading] = useState(false);
+
+  // Haptic feedback wrapper functions
+  const handleToggleTheme = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toggleTheme();
+  };
+
+  const handleToggleChatbot = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toggleChatbot();
+  };
+
+  const handleToggleTooltips = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowTooltips(!showTooltips);
+  };
+
+  // Check if user is admin (you can modify this logic as needed)
+  const isAdmin =
+    user?.email === "noahduran911@gmail.com" ||
+    user?.email === "admin@vectorfi.ai";
 
   // Monitor bank connection status and stop loading when connected or disconnected
   useEffect(() => {
@@ -152,40 +188,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   // Get introductory offer eligibility from RevenueCat
   const introOfferEligible = isEligibleForIntroOffer();
 
-  // Debug logging
-  useEffect(() => {
-    console.log("SettingsScreen: User data updated", {
-      authUserPhotoURL: user?.photoURL,
-      contextUserPhotoURL: currentUser?.photoURL,
-      authUserDisplayName: user?.displayName,
-      contextUserDisplayName: currentUser?.displayName,
-    });
-  }, [user, currentUser]);
-
-  // Debug subscription status
-  useEffect(() => {
-    console.log("SettingsScreen: Subscription status updated", {
-      isPremium: subscriptionStatus?.isPremium,
-      isActive: subscriptionStatus?.isActive,
-      features: subscriptionStatus?.features,
-      expirationDate: subscriptionStatus?.expirationDate,
-      productId: subscriptionStatus?.productId,
-      isEligibleForIntroOffer: introOfferEligible,
-    });
-  }, [subscriptionStatus, introOfferEligible]);
-
   // Check bank connection status
   useEffect(() => {
     const checkBankConnection = async () => {
       try {
         const connected = await plaidService.isBankConnected();
-        console.log("SettingsScreen: Bank connection status:", connected);
+        // Bank connection status
 
         // If bank is connected, stop any loading state
         if (connected && bankConnectionLoading) {
-          console.log(
-            "SettingsScreen: Bank is connected, clearing loading state"
-          );
+          // Bank is connected, clearing loading state
           setBankConnectionLoading(false);
         }
 
@@ -207,7 +219,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   // Force re-render when photo URL changes
   useEffect(() => {
     if (currentUser?.photoURL) {
-      console.log("SettingsScreen: Photo URL changed, updating key");
+      // Photo URL changed, updating key
       setPhotoKey(Date.now()); // Use timestamp for unique key
     }
   }, [currentUser?.photoURL]);
@@ -215,7 +227,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   // Refresh user data when screen comes into focus (optimized)
   useFocusEffect(
     React.useCallback(() => {
-      console.log("SettingsScreen: Screen focused, checking data freshness...");
+      // Screen focused, checking data freshness
 
       // Only refresh user data if it's stale (older than 5 minutes)
       const lastRefresh = (forceRefresh as any).lastCallTime || 0;
@@ -223,11 +235,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       const FIVE_MINUTES = 5 * 60 * 1000;
 
       if (timeSinceLastRefresh > FIVE_MINUTES) {
-        console.log("SettingsScreen: Data is stale, refreshing...");
+        // Data is stale, refreshing
         forceRefresh();
         (forceRefresh as any).lastCallTime = Date.now();
       } else {
-        console.log("SettingsScreen: Data is fresh, skipping refresh");
+        // Data is fresh, skipping refresh
       }
 
       // Check bank connection status only if not already checked recently
@@ -286,7 +298,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 16 }}
+        onScrollBeginDrag={handleScrollBegin}
+        onScrollEndDrag={handleScrollEnd}
+        onMomentumScrollBegin={handleScrollBegin}
+        onMomentumScrollEnd={handleScrollEnd}
+      >
         {/* Enhanced User Profile */}
         <View
           style={{
@@ -373,37 +391,50 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   </>
                 );
               })()}
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: colors.textSecondary,
-                  marginBottom: 8,
-                  fontWeight: "500",
-                }}
-              >
-                {currentUser?.email || "No email"}
-              </Text>
+
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View
                   style={{
-                    backgroundColor: "#dcfce7",
+                    backgroundColor: "#f0fdf4",
                     paddingHorizontal: 8,
                     paddingVertical: 4,
                     borderRadius: 12,
-                    marginRight: 8,
+                    marginRight: 10,
+                    shadowColor: "#16a34a",
+                    shadowOpacity: 0.2,
+                    shadowRadius: 6,
+                    shadowOffset: { width: 0, height: 3 },
+                    elevation: 4,
+                    borderWidth: 1.5,
+                    borderColor: "#bbf7d0",
                   }}
                 >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: "#16a34a",
-                      fontWeight: "600",
-                      textTransform: "uppercase",
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    Active
-                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <View
+                      style={{
+                        width: 4,
+                        height: 4,
+                        borderRadius: 2,
+                        backgroundColor: "#16a34a",
+                        marginRight: 5,
+                        shadowColor: "#16a34a",
+                        shadowOpacity: 0.3,
+                        shadowRadius: 2,
+                        shadowOffset: { width: 0, height: 1 },
+                      }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        color: "#15803d",
+                        fontWeight: "800",
+                        textTransform: "uppercase",
+                        letterSpacing: 1,
+                      }}
+                    >
+                      Active
+                    </Text>
+                  </View>
                 </View>
                 <Text style={{ fontSize: 12, color: colors.textSecondary }}>
                   Member since{" "}
@@ -566,7 +597,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           style={{
             backgroundColor: colors.surface,
             borderRadius: 16,
-            padding: 16,
+            padding: 20,
             shadowColor: colors.shadow,
             shadowOpacity: 0.06,
             shadowRadius: 8,
@@ -579,7 +610,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             style={{
               fontSize: 16,
               fontWeight: "600",
-              marginBottom: 8,
+              marginBottom: 16,
               color: colors.text,
             }}
           >
@@ -587,7 +618,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </Text>
           <PlaidLinkComponent
             onSuccess={async () => {
-              console.log("Bank connected successfully");
+              // Bank connected successfully
 
               // Get the bank information after successful connection
               try {
@@ -595,9 +626,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 setConnectedBankInfo(bankInfo);
 
                 // Refresh bank data to load transactions
-                console.log("Refreshing bank data after connection...");
+                // Refreshing bank data after connection
                 await refreshBankData(true);
-                console.log("Bank data refreshed successfully");
+                // Bank data refreshed successfully
               } catch (error) {
                 console.error(
                   "Failed to get bank info after connection:",
@@ -606,7 +637,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               }
             }}
             onExit={() => {
-              console.log("Plaid link exited");
+              // Plaid link exited
               // Don't stop loading here - let it continue until connection is confirmed
             }}
             onLoadingChange={(loading) => {
@@ -614,14 +645,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             }}
           />
           {isBankConnected ? (
-            <View>
+            <View style={{ marginTop: 12 }}>
               {connectedBankInfo?.accounts &&
                 connectedBankInfo.accounts.length > 0 && (
                   <Text
                     style={{
                       color: colors.textSecondary,
                       fontSize: 12,
-                      marginTop: 8,
                     }}
                   >
                     {connectedBankInfo.accounts.length} account
@@ -631,7 +661,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 )}
             </View>
           ) : (
-            <Text style={{ marginTop: 8, color: colors.textSecondary }}>
+            <Text style={{ marginTop: 12, color: colors.textSecondary }}>
               Or keep it manual—works great from day one.
             </Text>
           )}
@@ -766,7 +796,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               styles.settingItem,
               { borderBottomColor: colors.borderLight },
             ]}
-            onPress={toggleTheme}
+            onPress={handleToggleTheme}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons
@@ -817,7 +847,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               styles.settingItem,
               { borderBottomColor: colors.borderLight },
             ]}
-            onPress={toggleChatbot}
+            onPress={handleToggleChatbot}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons
@@ -863,6 +893,92 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </View>
             </View>
           </TouchableOpacity>
+
+          {/* Tour Controls */}
+          <TouchableOpacity
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
+            onPress={() => startTour(navigation)}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="map"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                Take App Tour
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          <HelpfulTooltip
+            tooltipId="tooltips-setting"
+            title="Helpful Tooltips"
+            description="When enabled, you'll see helpful hints and tips throughout the app to guide you through features. Perfect for new users!"
+            position="bottom"
+            delay={1000}
+          >
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                { borderBottomColor: colors.borderLight },
+              ]}
+              onPress={handleToggleTooltips}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons
+                  name="help-circle"
+                  size={20}
+                  color={colors.textSecondary}
+                  style={{ marginRight: 12 }}
+                />
+                <Text style={[styles.settingText, { color: colors.text }]}>
+                  Show Helpful Tooltips
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    marginRight: 8,
+                    fontSize: 14,
+                  }}
+                >
+                  {showTooltips ? "On" : "Off"}
+                </Text>
+                <View
+                  style={{
+                    width: 44,
+                    height: 24,
+                    borderRadius: 12,
+                    backgroundColor: showTooltips
+                      ? colors.primary
+                      : colors.border,
+                    padding: 2,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: "#fff",
+                      transform: [{ translateX: showTooltips ? 20 : 0 }],
+                    }}
+                  />
+                </View>
+              </View>
+            </TouchableOpacity>
+          </HelpfulTooltip>
 
           <TouchableOpacity
             style={[
@@ -989,6 +1105,34 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             />
           </TouchableOpacity>
 
+          {/* AI Usage Admin - Only visible to admin users */}
+          {isAdmin && (
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                { borderBottomColor: colors.borderLight },
+              ]}
+              onPress={() => navigation?.navigate("AIUsageAdmin")}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons
+                  name="settings"
+                  size={20}
+                  color={colors.textSecondary}
+                  style={{ marginRight: 12 }}
+                />
+                <Text style={[styles.settingText, { color: colors.text }]}>
+                  AI Usage Admin
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             style={[
               styles.settingItem,
@@ -1060,6 +1204,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </View>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Floating AI Chatbot - only show on main tab screens */}
+      <FloatingAIChatbot hideOnScroll={true} isScrolling={isScrolling} />
     </SafeAreaView>
   );
 };

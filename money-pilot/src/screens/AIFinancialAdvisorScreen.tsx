@@ -15,12 +15,19 @@ import {
   Clipboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import {
+  useNavigation,
+  useFocusEffect,
+  useRoute,
+} from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useChatbot } from "../contexts/ChatbotContext";
+import { StandardHeader } from "../components/StandardHeader";
+import { useSubscription } from "../contexts/SubscriptionContext";
+import { aiUsageTracker } from "../services/aiUsageTracker";
 import {
   aiFinancialAdvisorService,
   FinancialSnapshot,
@@ -30,29 +37,15 @@ import {
   saveFinancialPlan,
   updateBudgetSettings,
   saveBudgetSettings,
+  getUserBudgetCategories,
+  saveBudgetCategories,
+  BudgetCategory,
 } from "../services/userData";
 import { VectraAvatar } from "../components/VectraAvatar";
 import { sendBackendAIFeedback } from "../services/backendAI";
 
 // Local responses for common app questions (no API call needed)
 const APP_NAVIGATION_RESPONSES = {
-  // Budget screen questions
-  "budget add income": {
-    response:
-      "Perfect! Since you're already on the Budget screen, just tap the 'Add Income' button right there on your screen. You'll see it - it's designed to make adding income super easy! 💰",
-    isLocal: true,
-  },
-  "budget add expense": {
-    response:
-      "Great! You're already on the Budget screen, so just tap the 'Add Expense' button right there. It's that simple! 📝",
-    isLocal: true,
-  },
-  "budget how to": {
-    response:
-      "You're on the Budget screen! Here's what you can do:\n\n• Tap 'Add Income' to add new income\n• Tap 'Add Expense' to add new expenses\n• Use the percentage sliders to adjust savings/debt payoff\n• Check the Budget Summary card for your overview\n\nEverything you need is right there on your screen! 📊",
-    isLocal: true,
-  },
-
   // Dashboard questions
   "dashboard add transaction": {
     response:
@@ -159,19 +152,7 @@ function getLocalResponse(
     }
   }
 
-  // Check for common patterns
-  if (
-    lowerQuestion.includes("budget") &&
-    (lowerQuestion.includes("add") || lowerQuestion.includes("how"))
-  ) {
-    if (lowerQuestion.includes("income")) {
-      return APP_NAVIGATION_RESPONSES["budget add income"];
-    }
-    if (lowerQuestion.includes("expense")) {
-      return APP_NAVIGATION_RESPONSES["budget add expense"];
-    }
-    return APP_NAVIGATION_RESPONSES["budget how to"];
-  }
+  // Check for common patterns (budget questions now go to AI for analysis)
 
   if (lowerQuestion.includes("dashboard") && lowerQuestion.includes("add")) {
     if (lowerQuestion.includes("transaction")) {
@@ -268,8 +249,24 @@ const CHAT_HISTORY_KEY = "ai_financial_advisor_chat_history";
 
 export const AIFinancialAdvisorScreen: React.FC = () => {
   const navigation = useNavigation();
+  const route = useRoute();
   const { user } = useAuth();
+
+  // Get selected month from route params, default to current month
+  const selectedMonth = (route.params as any)?.selectedMonth || new Date();
+
+  // Ensure selectedMonth is a Date object and normalize it to the first day of the month
+  const targetMonth =
+    selectedMonth instanceof Date
+      ? new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1)
+      : new Date(
+          new Date(selectedMonth).getFullYear(),
+          new Date(selectedMonth).getMonth(),
+          1
+        );
+
   const { hideChatbot, showChatbot } = useChatbot();
+  const { hasPremiumAccess } = useSubscription();
   const {
     transactions,
     assets,
@@ -287,6 +284,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const [lastRequestTime, setLastRequestTime] = useState(0);
 
   const [isPlanRequest, setIsPlanRequest] = useState(false);
+  const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>(
+    []
+  );
   const [feedbackStates, setFeedbackStates] = useState<{
     [messageId: string]: { liked?: boolean; disliked?: boolean };
   }>({});
@@ -336,6 +336,18 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     isUser: false,
     timestamp: new Date(),
   });
+
+  // Load budget categories
+  const loadBudgetCategories = async () => {
+    if (user?.uid) {
+      try {
+        const categories = await getUserBudgetCategories(user.uid);
+        setBudgetCategories(categories);
+      } catch (error) {
+        console.error("Error loading budget categories:", error);
+      }
+    }
+  };
 
   // Load chat history from AsyncStorage
   const loadChatHistory = async () => {
@@ -409,29 +421,160 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     }
   };
 
-  // Generate financial snapshot for AI analysis
-  const generateFinancialSnapshot = (): FinancialSnapshot => {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
+  // Check if user is asking about budget-related topics
+  const isBudgetRelatedQuestion = (question: string): boolean => {
+    const budgetKeywords = [
+      "budget",
+      "budgeting",
+      "category",
+      "categories",
+      "limit",
+      "limits",
+      "spending",
+      "overspend",
+      "over budget",
+      "under budget",
+      "budget breakdown",
+      "budget analysis",
+      "budget review",
+      "budget categories",
+      "monthly limit",
+      "spending limit",
+      "budget allocation",
+      "budget management",
+      "budget planning",
+    ];
 
-    // Calculate monthly income and expenses
+    const lowerQuestion = question.toLowerCase();
+    return budgetKeywords.some((keyword) => lowerQuestion.includes(keyword));
+  };
+
+  // Generate financial snapshot for AI analysis
+  const generateFinancialSnapshot = (
+    userQuestion?: string
+  ): FinancialSnapshot => {
+    const targetMonthNum = targetMonth.getMonth();
+    const targetYear = targetMonth.getFullYear();
+
+    // Calculate monthly income and expenses from actual transactions for the selected month
     const monthlyTransactions = transactions.filter((transaction) => {
       const transactionDate = new Date(transaction.date);
       return (
-        transactionDate.getMonth() === currentMonth &&
-        transactionDate.getFullYear() === currentYear
+        transactionDate.getMonth() === targetMonthNum &&
+        transactionDate.getFullYear() === targetYear
       );
     });
 
-    const monthlyIncome = monthlyTransactions
+    const actualMonthlyIncome = monthlyTransactions
       .filter((t) => t.type === "income")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const monthlyExpenses = monthlyTransactions
+    const actualMonthlyExpenses = monthlyTransactions
       .filter((t) => t.type === "expense")
       .reduce((sum, t) => sum + t.amount, 0);
 
+    // Calculate recurring monthly income and expenses - only those active during the selected month
+    const activeRecurringIncome = recurringTransactions.filter((t) => {
+      if (t.type !== "income" || !t.isActive) return false;
+
+      // Check if the recurring transaction was active during the selected month
+      const startDate = t.startDate ? new Date(t.startDate) : null;
+      const endDate = t.endDate ? new Date(t.endDate) : null;
+
+      // If no start date, assume it was always active (backward compatibility)
+      if (!startDate) return true;
+
+      // Check if the selected month is after or on the start date
+      const selectedMonthStart = new Date(targetYear, targetMonthNum, 1);
+      const selectedMonthEnd = new Date(targetYear, targetMonthNum + 1, 0); // Last day of month
+
+      // Transaction must have started by the end of the selected month
+      if (startDate > selectedMonthEnd) return false;
+
+      // If there's an end date, transaction must not have ended before the start of the selected month
+      if (endDate && endDate < selectedMonthStart) return false;
+
+      return true;
+    });
+
+    const activeRecurringExpenses = recurringTransactions.filter((t) => {
+      if (t.type !== "expense" || !t.isActive) return false;
+
+      // Check if the recurring transaction was active during the selected month
+      const startDate = t.startDate ? new Date(t.startDate) : null;
+      const endDate = t.endDate ? new Date(t.endDate) : null;
+
+      // If no start date, assume it was always active (backward compatibility)
+      if (!startDate) return true;
+
+      // Check if the selected month is after or on the start date
+      const selectedMonthStart = new Date(targetYear, targetMonthNum, 1);
+      const selectedMonthEnd = new Date(targetYear, targetMonthNum + 1, 0); // Last day of month
+
+      // Transaction must have started by the end of the selected month
+      if (startDate > selectedMonthEnd) return false;
+
+      // If there's an end date, transaction must not have ended before the start of the selected month
+      if (endDate && endDate < selectedMonthStart) return false;
+
+      return true;
+    });
+
+    // Debug: Log recurring transactions
+    console.log(
+      "🔍 AI Debug - Active recurring income:",
+      activeRecurringIncome.length
+    );
+    console.log(
+      "🔍 AI Debug - Active recurring expenses:",
+      activeRecurringExpenses.length
+    );
+    console.log(
+      "🔍 AI Debug - Recurring expenses details:",
+      activeRecurringExpenses.map((rt) => ({
+        id: rt.id,
+        description: rt.description,
+        amount: rt.amount,
+        frequency: rt.frequency,
+        isActive: rt.isActive,
+        startDate: rt.startDate
+          ? new Date(rt.startDate).toLocaleDateString()
+          : "No start date",
+        endDate: rt.endDate
+          ? new Date(rt.endDate).toLocaleDateString()
+          : "No end date",
+      }))
+    );
+
+    const recurringMonthlyIncome = activeRecurringIncome.reduce((sum, rt) => {
+      let monthlyAmount = rt.amount;
+      if (rt.frequency === "weekly") {
+        monthlyAmount = rt.amount * 4; // 4 weeks in a month
+      } else if (rt.frequency === "biweekly") {
+        monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
+      }
+      return sum + monthlyAmount;
+    }, 0);
+
+    const recurringMonthlyExpenses = activeRecurringExpenses.reduce(
+      (sum, rt) => {
+        let monthlyAmount = rt.amount;
+        if (rt.frequency === "weekly") {
+          monthlyAmount = rt.amount * 4; // 4 weeks in a month
+        } else if (rt.frequency === "biweekly") {
+          monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
+        }
+        return sum + monthlyAmount;
+      },
+      0
+    );
+
+    // Total monthly amounts including recurring
+    const monthlyIncome = actualMonthlyIncome + recurringMonthlyIncome;
+    const monthlyExpenses = actualMonthlyExpenses + recurringMonthlyExpenses;
     const netIncome = monthlyIncome - monthlyExpenses;
+
+    // Debug logging to verify calculations
 
     // Calculate totals
     const totalDebt = debts.reduce((sum, debt) => sum + debt.balance, 0);
@@ -445,10 +588,96 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     const savingsRate = budgetSettings?.savingsPercentage || 20;
     const debtPayoffRate = budgetSettings?.debtPayoffPercentage || 5;
 
-    // Get recurring expenses
-    const recurringExpenses = recurringTransactions.filter(
-      (t) => t.type === "expense" && t.isActive
+    // Calculate monthly savings and debt payoff amounts
+    const monthlySavingsAmount = (monthlyIncome * savingsRate) / 100;
+    const monthlyDebtPayoffAmount = (monthlyIncome * debtPayoffRate) / 100;
+
+    // Calculate total monthly goal contributions
+    const totalMonthlyGoalContributions = goals.reduce(
+      (sum, goal) => sum + goal.monthlyContribution,
+      0
     );
+
+    // Get recurring expenses - only those active during the selected month
+    const recurringExpenses = recurringTransactions.filter((t) => {
+      if (t.type !== "expense" || !t.isActive) return false;
+
+      // Check if the recurring transaction was active during the selected month
+      const startDate = t.startDate ? new Date(t.startDate) : null;
+      const endDate = t.endDate ? new Date(t.endDate) : null;
+
+      // If no start date, assume it was always active (backward compatibility)
+      if (!startDate) return true;
+
+      // Check if the selected month is after or on the start date
+      const selectedMonthStart = new Date(targetYear, targetMonthNum, 1);
+      const selectedMonthEnd = new Date(targetYear, targetMonthNum + 1, 0); // Last day of month
+
+      // Transaction must have started by the end of the selected month
+      if (startDate > selectedMonthEnd) return false;
+
+      // If there's an end date, transaction must not have ended before the start of the selected month
+      if (endDate && endDate < selectedMonthStart) return false;
+
+      return true;
+    });
+
+    // Get all recurring transactions for comprehensive analysis - only those active during the selected month
+    const allRecurringTransactions = recurringTransactions.filter((t) => {
+      if (!t.isActive) return false;
+
+      // Check if the recurring transaction was active during the selected month
+      const startDate = t.startDate ? new Date(t.startDate) : null;
+      const endDate = t.endDate ? new Date(t.endDate) : null;
+
+      // If no start date, assume it was always active (backward compatibility)
+      if (!startDate) return true;
+
+      // Check if the selected month is after or on the start date
+      const selectedMonthStart = new Date(targetYear, targetMonthNum, 1);
+      const selectedMonthEnd = new Date(targetYear, targetMonthNum + 1, 0); // Last day of month
+
+      // Transaction must have started by the end of the selected month
+      if (startDate > selectedMonthEnd) return false;
+
+      // If there's an end date, transaction must not have ended before the start of the selected month
+      if (endDate && endDate < selectedMonthStart) return false;
+
+      return true;
+    });
+
+    // Calculate budget categories with spending analysis - only if budget-related question
+    const shouldIncludeBudgetCategories = userQuestion
+      ? isBudgetRelatedQuestion(userQuestion)
+      : false;
+    const budgetCategoriesWithSpending = shouldIncludeBudgetCategories
+      ? budgetCategories.map((category) => {
+          // Calculate actual spending for this category in the selected month
+          const categoryTransactions = monthlyTransactions.filter((t) => {
+            return t.category === category.name && t.type === "expense";
+          });
+
+          const actualSpending = categoryTransactions.reduce(
+            (sum, t) => sum + t.amount,
+            0
+          );
+          const remaining = Math.max(0, category.monthlyLimit - actualSpending);
+          const isOverBudget = actualSpending > category.monthlyLimit;
+          const percentageUsed =
+            category.monthlyLimit > 0
+              ? (actualSpending / category.monthlyLimit) * 100
+              : 0;
+
+          return {
+            ...category,
+            actualSpending,
+            remaining,
+            isOverBudget,
+            percentageUsed: Math.round(percentageUsed),
+            transactionCount: categoryTransactions.length,
+          };
+        })
+      : [];
 
     return {
       monthlyIncome,
@@ -456,6 +685,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       netIncome,
       savingsRate,
       debtPayoffRate,
+      monthlySavingsAmount,
+      monthlyDebtPayoffAmount,
+      totalMonthlyGoalContributions,
       totalDebt,
       totalAssets,
       totalSavings,
@@ -464,7 +696,10 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       recurringExpenses,
       assets,
       debts,
-      transactions,
+      transactions: monthlyTransactions, // Only selected month transactions
+      allTransactions: transactions, // Keep all transactions for reference
+      recurringTransactions: allRecurringTransactions,
+      budgetCategories: budgetCategoriesWithSpending,
     };
   };
 
@@ -481,6 +716,20 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       return;
     }
     setLastRequestTime(now);
+
+    // Check AI usage limits
+    if (user?.uid) {
+      const isPremium = hasPremiumAccess();
+      const usageCheck = await aiUsageTracker.checkAIUsage(user.uid, isPremium);
+
+      if (!usageCheck.canUse) {
+        Alert.alert(
+          "AI Usage Limit Reached",
+          `You've used all ${usageCheck.limit} AI questions for this period. Go to Settings to upgrade to premium for unlimited AI access!`
+        );
+        return;
+      }
+    }
 
     // Clear input immediately
     const currentInputText = inputText.trim();
@@ -506,7 +755,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     setMessages(newMessages);
 
     try {
-      const snapshot = generateFinancialSnapshot();
+      const snapshot = generateFinancialSnapshot(userMessage.text);
 
       // Check if user is requesting a financial plan
       const isPlanRequest = aiFinancialAdvisorService.isPlanRequest(
@@ -519,7 +768,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       // Check cache for common questions (cache for 1 hour) - user-specific
       const cacheKey = `${user?.uid || "anonymous"}_${userMessage.text
         .toLowerCase()
-        .trim()}_${snapshot.netIncome}_${snapshot.totalDebt}`;
+        .trim()}_${snapshot.netIncome}_${snapshot.monthlySavingsAmount}_${
+        snapshot.totalMonthlyGoalContributions
+      }`;
       const cachedResponse = responseCache[cacheKey];
       const cacheAge = Date.now() - (cachedResponse?.timestamp || 0);
       const isCacheValid = cachedResponse && cacheAge < 3600000; // 1 hour
@@ -538,13 +789,10 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       // Check for local responses first (no API call needed)
       const localResponse = getLocalResponse(userMessage.text);
       if (localResponse) {
-        console.log(
-          "Using local response (no API call) for:",
-          userMessage.text
-        );
+        // Using local response (no API call)
         aiResponse = localResponse.response;
       } else if (isCacheValid && !isPlanRequest) {
-        console.log("Using cached response for:", userMessage.text);
+        // Using cached response
         aiResponse = cachedResponse.response;
       } else if (isPlanRequest && user) {
         // Generate a comprehensive financial plan
@@ -586,9 +834,9 @@ Requirements:
           aiResponse = await aiFinancialAdvisorService.generateAIResponse(
             optimizedPlanPrompt,
             snapshot,
-            true, // isPlanRequest
             userPreferences,
-            conversationHistory
+            conversationHistory,
+            targetMonth
           );
           aiResponse += `\n\n💾 Would you like to save this plan to your account?`;
         } catch (planError) {
@@ -596,9 +844,9 @@ Requirements:
           aiResponse = await aiFinancialAdvisorService.generateAIResponse(
             userMessage.text,
             snapshot,
-            false, // isPlanRequest
             userPreferences,
-            conversationHistory
+            conversationHistory,
+            targetMonth
           );
         }
       } else {
@@ -609,9 +857,9 @@ Requirements:
         aiResponse = await aiFinancialAdvisorService.generateAIResponse(
           optimizedPrompt,
           snapshot,
-          false, // isPlanRequest
           userPreferences,
-          conversationHistory
+          conversationHistory,
+          targetMonth
         );
 
         // Clean up markdown formatting from AI responses
@@ -650,6 +898,11 @@ Requirements:
       );
       setMessages(updatedMessages);
       saveChatHistory(updatedMessages);
+
+      // Record AI usage if not a local response
+      if (user?.uid && !localResponse) {
+        await aiUsageTracker.recordAIUsage(user.uid);
+      }
     } catch (error) {
       console.error("Error generating AI response:", error);
       const errorMessages = newMessages.map((msg) =>
@@ -672,6 +925,7 @@ Requirements:
   useEffect(() => {
     loadChatHistory();
     loadFeedbackStates();
+    loadBudgetCategories();
   }, []);
 
   // Load feedback states from AsyncStorage
@@ -833,8 +1087,6 @@ Requirements:
     savingsPercentage?: number;
     debtPayoffPercentage?: number;
   } => {
-    console.log("LOG AI Response text:", text);
-
     const suggestions: {
       savingsPercentage?: number;
       debtPayoffPercentage?: number;
@@ -869,7 +1121,6 @@ Requirements:
       const pattern = savingsPatterns[i];
       const matches = text.match(pattern);
       if (matches) {
-        console.log(`Savings pattern ${i} matched:`, matches[0]);
         const percentage = parseInt(matches[0].match(/\d+/)?.[0] || "20");
         if (percentage > 0 && percentage <= 100) {
           // Higher priority for earlier patterns (lower index)
@@ -877,9 +1128,7 @@ Requirements:
           if (priority > bestSavingsPriority) {
             bestSavingsMatch = percentage;
             bestSavingsPriority = priority;
-            console.log(
-              `New best savings match: ${percentage}% (priority: ${priority})`
-            );
+            // New best savings match
           }
         }
       }
@@ -887,7 +1136,6 @@ Requirements:
 
     if (bestSavingsMatch) {
       suggestions.savingsPercentage = bestSavingsMatch;
-      console.log("Final savings percentage detected:", bestSavingsMatch);
     }
 
     // Look for debt payoff percentage suggestions (more comprehensive patterns)
@@ -916,7 +1164,6 @@ Requirements:
       const pattern = debtPatterns[i];
       const matches = text.match(pattern);
       if (matches) {
-        console.log(`Debt pattern ${i} matched:`, matches[0]);
         const percentage = parseInt(matches[0].match(/\d+/)?.[0] || "5");
         if (percentage > 0 && percentage <= 100) {
           // Higher priority for earlier patterns (lower index)
@@ -924,9 +1171,7 @@ Requirements:
           if (priority > bestDebtPriority) {
             bestDebtMatch = percentage;
             bestDebtPriority = priority;
-            console.log(
-              `New best debt match: ${percentage}% (priority: ${priority})`
-            );
+            // New best debt match
           }
         }
       }
@@ -934,7 +1179,6 @@ Requirements:
 
     if (bestDebtMatch) {
       suggestions.debtPayoffPercentage = bestDebtMatch;
-      console.log("Final debt percentage detected:", bestDebtMatch);
     }
 
     // Look for dollar amount suggestions for debt payoff and calculate percentage
@@ -949,7 +1193,6 @@ Requirements:
     for (const pattern of debtDollarPatterns) {
       const matches = text.match(pattern);
       if (matches && netIncome > 0) {
-        console.log("Debt dollar amount pattern matched:", matches[0]);
         const dollarAmount = parseFloat(matches[0].replace(/[$,]/g, ""));
         if (dollarAmount > 0 && dollarAmount <= netIncome) {
           const calculatedPercentage = Math.round(
@@ -957,9 +1200,7 @@ Requirements:
           );
           if (calculatedPercentage >= 1 && calculatedPercentage <= 50) {
             suggestions.debtPayoffPercentage = calculatedPercentage;
-            console.log(
-              `Debt dollar amount detected: $${dollarAmount}, calculated percentage: ${calculatedPercentage}%`
-            );
+            // Debt dollar amount detected
             break;
           }
         }
@@ -978,7 +1219,6 @@ Requirements:
     for (const pattern of savingsDollarPatterns) {
       const matches = text.match(pattern);
       if (matches && netIncome > 0) {
-        console.log("Savings dollar amount pattern matched:", matches[0]);
         const dollarAmount = parseFloat(matches[0].replace(/[$,]/g, ""));
         if (dollarAmount > 0 && dollarAmount <= netIncome) {
           const calculatedPercentage = Math.round(
@@ -986,9 +1226,6 @@ Requirements:
           );
           if (calculatedPercentage >= 1 && calculatedPercentage <= 50) {
             suggestions.savingsPercentage = calculatedPercentage;
-            console.log(
-              `Savings dollar amount detected: $${dollarAmount}, calculated percentage: ${calculatedPercentage}%`
-            );
             break;
           }
         }
@@ -997,11 +1234,9 @@ Requirements:
 
     // First, try to extract any percentage mentioned in the context of savings/financial advice
     const allPercentages = text.match(/(\d+)%/g);
-    console.log("All percentages found in text:", allPercentages);
 
     if (allPercentages) {
       const percentages = allPercentages.map((p) => parseInt(p));
-      console.log("Parsed percentages:", percentages);
 
       // If there's only one percentage and it's in a financial context, determine if it's savings or debt
       if (
@@ -1036,16 +1271,8 @@ Requirements:
               !context.includes("interest") &&
               !context.includes("rate"))
           ) {
-            console.log(
-              "Single percentage in debt payoff context detected:",
-              percentages[0]
-            );
             return { debtPayoffPercentage: percentages[0] };
           } else {
-            console.log(
-              "Single percentage in financial context detected as savings:",
-              percentages[0]
-            );
             return { savingsPercentage: percentages[0] };
           }
         }
@@ -1079,31 +1306,77 @@ Requirements:
         if (isSavingsRecommendation && isDebtPayoffRecommendation) {
           // Sort percentages: higher one is likely savings, lower one is debt
           const sorted = [...percentages].sort((a, b) => b - a);
-          console.log(
-            "Two percentages detected - assigning higher to savings, lower to debt:",
-            sorted
-          );
           return {
             savingsPercentage: sorted[0],
             debtPayoffPercentage: sorted[1],
           };
         }
-
         // If only debt payoff is mentioned, don't assign the higher percentage to savings
         if (isDebtPayoffRecommendation && !isSavingsRecommendation) {
-          console.log(
-            "Only debt payoff context detected - not assigning percentages automatically"
-          );
+          // Only debt payoff context detected - not assigning percentages automatically
           return suggestions; // Return existing suggestions without auto-assignment
         }
       }
     }
 
-    console.log(
-      "LOG AI Response percentage suggestions detected:",
-      suggestions
-    );
+    // AI Response percentage suggestions detected
     return suggestions;
+  };
+
+  // Detect budget category update suggestions in AI responses
+  // Helper function to find category from context
+  const findCategoryFromContext = (text: string, match: string): string => {
+    const matchIndex = text.indexOf(match);
+    const lines = text.substring(0, matchIndex).split("\n");
+    const lastFewLines = lines.slice(-3).join(" ").toLowerCase();
+
+    console.log("🔍 Budget Detection - Context lines:", lastFewLines);
+
+    // Look for category names in the context
+    const categoryKeywords = [
+      "food",
+      "groceries",
+      "dining",
+      "meals",
+      "transportation",
+      "transport",
+      "gas",
+      "fuel",
+      "car",
+      "entertainment",
+      "fun",
+      "leisure",
+      "rent",
+      "housing",
+      "mortgage",
+      "utilities",
+      "electric",
+      "water",
+      "internet",
+      "phone",
+      "health",
+      "healthcare",
+      "medical",
+      "shopping",
+      "clothes",
+      "clothing",
+      "insurance",
+      "subscriptions",
+      "business",
+      "work",
+      "savings",
+      "emergency",
+    ];
+
+    for (const keyword of categoryKeywords) {
+      if (lastFewLines.includes(keyword)) {
+        console.log("🔍 Budget Detection - Found keyword in context:", keyword);
+        return keyword;
+      }
+    }
+
+    console.log("🔍 Budget Detection - No keyword found in context");
+    return "unknown";
   };
 
   // Generate optimized prompt based on user preferences
@@ -1184,18 +1457,12 @@ Original Request: ${basePrompt}
       // Send feedback to backend AI
       try {
         await sendBackendAIFeedback(messageId, type, userPreferences);
-        console.log("✅ Feedback sent to backend AI");
+        // Feedback sent to backend AI
       } catch (error) {
         console.error("❌ Failed to send feedback to backend:", error);
       }
 
       // Debug logging
-      console.log("🧠 Feedback processed:", {
-        characteristics: feedbackData.characteristics,
-        feedback: feedbackData.feedback,
-        messageId: feedbackData.messageId,
-        newPreferences: userPreferences,
-      });
     }
 
     setFeedbackStates((prev) => ({
@@ -1408,8 +1675,8 @@ Original Request: ${basePrompt}
           backgroundColor: colors.background,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
-          paddingVertical: 12,
-          paddingHorizontal: 16,
+          paddingVertical: 16,
+          paddingHorizontal: 20,
           opacity: headerOpacity,
         }}
       >
@@ -1417,19 +1684,24 @@ Original Request: ${basePrompt}
           style={{
             flexDirection: "row",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: "center",
+            position: "relative",
+            minHeight: 40,
           }}
         >
+          {/* Back Button - Positioned absolutely on the left */}
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={{
-              padding: 8,
-              borderRadius: 6,
+              position: "absolute",
+              left: 0,
+              padding: 4,
             }}
           >
-            <Ionicons name="arrow-back" size={20} color={colors.text} />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
 
+          {/* Vectra Section - Centered */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <VectraAvatar size={20} />
             <Text
@@ -1443,6 +1715,7 @@ Original Request: ${basePrompt}
             </Text>
           </View>
 
+          {/* Clear Button - Positioned absolutely on the right */}
           <TouchableOpacity
             onPress={() => {
               Alert.alert(
@@ -1459,6 +1732,8 @@ Original Request: ${basePrompt}
               );
             }}
             style={{
+              position: "absolute",
+              right: 0,
               padding: 8,
               borderRadius: 6,
             }}
@@ -1595,6 +1870,7 @@ Original Request: ${basePrompt}
                           >
                             {message.text}
                           </Text>
+
                           {index === messages.length - 1 && !message.isUser && (
                             <View
                               style={{

@@ -96,7 +96,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
 
   const uploadImageToStorage = async (uri: string): Promise<string> => {
     try {
-      console.log("Starting image upload...");
+      // Starting image upload
 
       // Fetch the image and convert to blob
       const response = await fetch(uri);
@@ -105,13 +105,13 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
       }
 
       const blob = await response.blob();
-      console.log("Image blob created, size:", blob.size);
+      // Image blob created
 
       // Create unique filename
       const filename = `profile-photos/${user?.uid}-${Date.now()}.jpg`;
       const storageRef = ref(storage, filename);
 
-      console.log("Uploading to Firebase Storage:", filename);
+      // Uploading to Firebase Storage
 
       // Upload the blob
       const uploadResult = await uploadBytes(storageRef, blob, {
@@ -119,11 +119,11 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
         cacheControl: "public, max-age=31536000",
       });
 
-      console.log("Upload successful, getting download URL...");
+      // Upload successful, getting download URL
 
       // Get the download URL
       const downloadURL = await getDownloadURL(storageRef);
-      console.log("Download URL obtained:", downloadURL);
+      // Download URL obtained
 
       return downloadURL;
     } catch (error: any) {
@@ -155,10 +155,10 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
 
       // Upload new photo if selected
       if (tempPhotoURL) {
-        console.log("Uploading new profile photo...");
+        // Uploading new profile photo
         try {
           newPhotoURL = await uploadImageToStorage(tempPhotoURL);
-          console.log("Photo upload completed");
+          // Photo upload completed
         } catch (uploadError) {
           console.error("Photo upload failed:", uploadError);
 
@@ -198,13 +198,13 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
       }
 
       // Update profile
-      console.log("Updating Firebase Auth profile...");
+      // Updating Firebase Auth profile
       await updateProfile(user, {
         displayName: displayName.trim(),
         photoURL: newPhotoURL,
       });
 
-      console.log("Profile update successful");
+      // Profile update successful
 
       // Immediately update the user context with the new data
       if (user) {
@@ -213,14 +213,14 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
           displayName: displayName.trim(),
           photoURL: newPhotoURL,
         };
-        console.log("EditProfileScreen: Immediately updating user context");
+        // Immediately updating user context
         updateUserImmediately(userWithUpdates);
       }
 
       // Also force refresh to ensure everything is in sync
-      console.log("EditProfileScreen: Refreshing user data...");
+      // Refreshing user data
       await forceRefresh();
-      console.log("EditProfileScreen: User data refresh completed");
+      // User data refresh completed
 
       Alert.alert("Success", "Profile updated successfully!", [
         {

@@ -34,8 +34,8 @@ export const TermsOfServiceScreen: React.FC<TermsOfServiceScreenProps> = ({
       backgroundColor: colors.card,
     },
     backButton: {
-      padding: 8,
-      marginRight: 8,
+      marginRight: 20,
+      padding: 10,
     },
     headerTitle: {
       fontSize: 18,
@@ -122,7 +122,7 @@ export const TermsOfServiceScreen: React.FC<TermsOfServiceScreenProps> = ({
           <Text style={styles.paragraph}>
             These terms and conditions apply to the VectorFi app (hereby
             referred to as "Application") for mobile devices that was created by
-            Noah Duran (hereby referred to as "Service Provider") as a Freemium
+            VectorFi (hereby referred to as "Service Provider") as a Freemium
             service.
           </Text>
           <Text style={styles.paragraph}>
@@ -169,6 +169,152 @@ export const TermsOfServiceScreen: React.FC<TermsOfServiceScreenProps> = ({
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.subtitle}>
+            Financial Services and AI Features
+          </Text>
+          <Text style={styles.paragraph}>
+            The Application provides financial management tools, including
+            AI-powered financial advice and analysis. By using these features,
+            you acknowledge that:
+          </Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bulletPoint}>
+              • AI-generated financial advice is for informational purposes only
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • The Service Provider is not a financial advisor, broker, or tax
+              advisor
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • You should consult with qualified professionals for financial
+              decisions
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • AI analysis is based on the data you provide and may not be
+              complete
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Past performance does not guarantee future results
+            </Text>
+          </View>
+          <Text style={styles.paragraph}>
+            The Service Provider disclaims all liability for any financial
+            decisions made based on AI-generated advice or analysis provided
+            through the Application.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.subtitle}>Bank Account Connections</Text>
+          <Text style={styles.paragraph}>
+            The Application allows you to connect your bank accounts through
+            Plaid to automatically import financial data. By connecting your
+            accounts, you:
+          </Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bulletPoint}>
+              • Authorize the Application to access your financial data
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Acknowledge that data accuracy depends on your bank's
+              information
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Understand that connection may be interrupted by your bank
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Agree to maintain accurate and up-to-date account information
+            </Text>
+          </View>
+          <Text style={styles.paragraph}>
+            The Service Provider is not responsible for any errors in financial
+            data provided by your bank or Plaid, or for any consequences of
+            relying on such data.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.subtitle}>Subscription and Payment Terms</Text>
+          <Text style={styles.paragraph}>
+            The Application offers both free and premium subscription tiers.
+            Premium features require an active subscription through RevenueCat:
+          </Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bulletPoint}>
+              • Subscriptions automatically renew unless cancelled
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • You may cancel at any time through your device settings
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Refunds are subject to Apple/Google App Store policies
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Price changes will be communicated in advance
+            </Text>
+          </View>
+          <Text style={styles.paragraph}>
+            The Service Provider reserves the right to modify subscription
+            terms, features, or pricing with appropriate notice to users.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.subtitle}>User Responsibilities</Text>
+          <Text style={styles.paragraph}>
+            As a user of the Application, you agree to:
+          </Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bulletPoint}>
+              • Provide accurate and complete financial information
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Maintain the security of your account credentials
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Not use the Application for illegal or fraudulent purposes
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Not attempt to reverse engineer or hack the Application
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Report any security vulnerabilities or bugs
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Comply with all applicable laws and regulations
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.subtitle}>Limitation of Liability</Text>
+          <Text style={styles.paragraph}>
+            To the maximum extent permitted by law, the Service Provider shall
+            not be liable for any indirect, incidental, special, consequential,
+            or punitive damages, including but not limited to loss of profits,
+            data, use, goodwill, or other intangible losses resulting from:
+          </Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bulletPoint}>
+              • Your use or inability to use the Application
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Any financial decisions made based on Application data
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Unauthorized access to or alteration of your data
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Any other matter relating to the Application
+            </Text>
+          </View>
+          <Text style={styles.paragraph}>
+            The Service Provider's total liability shall not exceed the amount
+            you paid for the Application in the 12 months preceding the claim.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.subtitle}>Third-Party Services</Text>
           <Text style={styles.paragraph}>
             Please note that the Application utilizes third-party services that
@@ -177,7 +323,6 @@ export const TermsOfServiceScreen: React.FC<TermsOfServiceScreenProps> = ({
             the Application:
           </Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bulletPoint}>• AdMob</Text>
             <Text style={styles.bulletPoint}>
               • Google Analytics for Firebase
             </Text>
@@ -185,6 +330,17 @@ export const TermsOfServiceScreen: React.FC<TermsOfServiceScreenProps> = ({
             <Text style={styles.bulletPoint}>• Expo</Text>
             <Text style={styles.bulletPoint}>• RevenueCat</Text>
             <Text style={styles.bulletPoint}>• Plaid</Text>
+            <Text style={styles.bulletPoint}>
+              • OpenAI (AI financial advice)
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Apple Authentication (Sign in with Apple)
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Expo Notifications (push notifications)
+            </Text>
+            <Text style={styles.bulletPoint}>• Firebase Realtime Database</Text>
+            <Text style={styles.bulletPoint}>• Firebase Cloud Functions</Text>
           </View>
         </View>
 
@@ -259,6 +415,57 @@ export const TermsOfServiceScreen: React.FC<TermsOfServiceScreenProps> = ({
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.subtitle}>Intellectual Property</Text>
+          <Text style={styles.paragraph}>
+            The Application and its original content, features, and
+            functionality are and will remain the exclusive property of the
+            Service Provider and its licensors. The Application is protected by
+            copyright, trademark, and other laws. The Service Provider's
+            trademarks and trade dress may not be used in connection with any
+            product or service without the Service Provider's prior written
+            consent.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.subtitle}>Disclaimers</Text>
+          <Text style={styles.paragraph}>
+            The Application is provided "as is" and "as available" without any
+            warranties of any kind, either express or implied. The Service
+            Provider disclaims all warranties, including but not limited to:
+          </Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bulletPoint}>
+              • Warranties of merchantability and fitness for a particular
+              purpose
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Warranties that the Application will be uninterrupted or
+              error-free
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Warranties regarding the accuracy or reliability of financial
+              data
+            </Text>
+            <Text style={styles.bulletPoint}>
+              • Warranties that defects will be corrected
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.subtitle}>Governing Law</Text>
+          <Text style={styles.paragraph}>
+            These Terms shall be governed by and construed in accordance with
+            the laws of the jurisdiction in which the Service Provider operates,
+            without regard to its conflict of law provisions. Any disputes
+            arising from these Terms or your use of the Application shall be
+            resolved through binding arbitration or in the courts of the Service
+            Provider's jurisdiction.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.subtitle}>
             Changes to These Terms and Conditions
           </Text>
@@ -279,7 +486,7 @@ export const TermsOfServiceScreen: React.FC<TermsOfServiceScreenProps> = ({
         </View>
 
         <Text style={styles.dateText}>
-          These terms and conditions are effective as of 2025-08-24
+          These terms and conditions are effective as of 2025-01-27
         </Text>
       </ScrollView>
     </SafeAreaView>

@@ -13,7 +13,31 @@
       "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run lint"]
     }
   ],
+  "database": {
+    "rules": "firebase-database-rules.json"
+  },
   "storage": {
     "rules": "firebase-storage-rules.rules"
+  },
+  "hosting": {
+    "public": "public",
+    "ignore": ["firebase.json", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/plaid-redirect",
+        "destination": "/plaid-redirect.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "/.well-known/apple-app-site-association",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      }
+    ]
   }
 }

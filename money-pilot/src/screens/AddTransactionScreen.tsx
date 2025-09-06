@@ -10,7 +10,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Modal,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
@@ -28,6 +30,10 @@ import { billReminderService } from "../services/billReminders";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
 import { formatNumberWithCommas, removeCommas } from "../utils/formatNumber";
+import { timestampToDateString } from "../utils/dateUtils";
+import { useTransactionActions } from "../hooks/useTransactionActions";
+import { TransactionBusinessService } from "../services/TransactionBusinessService";
+import { TransactionActionsService } from "../services/TransactionActionsService";
 
 interface AddTransactionScreenProps {
   navigation: any;
@@ -58,6 +64,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const { refreshRecurringTransactions, refreshTransactions } = useData();
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [stopFutureLoading, setStopFutureLoading] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const {
     type: initialType,
     selectedMonth,
@@ -75,17 +84,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   // Use selectedMonth if provided, otherwise use today's date
   const getInitialDate = () => {
     if (selectedMonth) {
-      const date = new Date(selectedMonth);
-      return date.toISOString().split("T")[0];
+      return new Date(selectedMonth).getTime();
     }
-    return new Date().toISOString().split("T")[0];
-  };
-
-  // Helper function to get tomorrow's date
-  const getTomorrowDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split("T")[0];
+    return Date.now();
   };
 
   const [formData, setFormData] = useState({
@@ -95,14 +96,48 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     type: editMode
       ? transaction?.type || initialType || "expense"
       : initialType || "expense",
-    date: editMode ? transaction?.date || getInitialDate() : getInitialDate(),
+    date: editMode
+      ? typeof transaction?.date === "number"
+        ? transaction.date
+        : new Date(transaction?.date || Date.now()).getTime()
+      : new Date(getInitialDate()).getTime(),
     isRecurring: editMode
       ? transaction?.isRecurring || transaction?.recurringTransactionId || false
       : false,
     frequency: editMode
       ? transaction?.frequency || "monthly"
       : ("monthly" as "weekly" | "biweekly" | "monthly"),
-    endDate: editMode ? transaction?.endDate || "" : "",
+    endDate: editMode
+      ? transaction?.endDate && typeof transaction.endDate === "number"
+        ? transaction.endDate
+        : transaction?.endDate
+        ? new Date(transaction.endDate).getTime()
+        : undefined
+      : undefined,
+  });
+
+  // Store original recurring transaction data for comparison
+  const [originalRecurringData, setOriginalRecurringData] = useState<{
+    amount: number;
+    category: string;
+    name: string;
+  } | null>(null);
+
+  // Use the custom hook for transaction actions
+  const {
+    actions,
+    isFutureMonth,
+    monthKey,
+    isModified,
+    canShowDeleteButton,
+    canShowStopFutureButton,
+    canShowModificationIndicator,
+    deleteButtonText,
+    stopFutureButtonText,
+  } = useTransactionActions({
+    transaction,
+    originalRecurringData,
+    isEditMode: editMode || false,
   });
 
   // Handle route params for bank suggestions
@@ -117,7 +152,11 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         type: route.params.type || prev.type,
         isRecurring: route.params.isRecurring || prev.isRecurring,
         frequency: route.params.frequency || prev.frequency,
-        date: route.params.date || prev.date, // Use the date from bank transaction
+        date: route.params.date
+          ? typeof route.params.date === "number"
+            ? route.params.date
+            : new Date(route.params.date).getTime()
+          : prev.date, // Use the date from bank transaction
       }));
 
       // Note: Bank suggestions may have biweekly/weekly frequencies, but we'll convert to monthly
@@ -135,6 +174,80 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     }
   }, [editMode, transaction?.recurringTransactionId]);
 
+  // Fetch associated recurring transaction data when editing
+  React.useEffect(() => {
+    const fetchRecurringTransactionData = async () => {
+      if (editMode && transaction?.recurringTransactionId && user) {
+        try {
+          const { getUserRecurringTransactions } = await import(
+            "../services/userData"
+          );
+          const recurringTransactions = await getUserRecurringTransactions(
+            user.uid
+          );
+          const associatedRecurringTransaction = recurringTransactions.find(
+            (rt) => rt.id === transaction.recurringTransactionId
+          );
+
+          if (associatedRecurringTransaction) {
+            // Found associated recurring transaction
+            setFormData((prev) => ({
+              ...prev,
+              frequency: associatedRecurringTransaction.frequency,
+              endDate: associatedRecurringTransaction.endDate || undefined,
+            }));
+
+            // Store original data for comparison
+            setOriginalRecurringData({
+              amount: associatedRecurringTransaction.amount,
+              category: associatedRecurringTransaction.category,
+              name: associatedRecurringTransaction.name,
+            });
+          }
+        } catch (error) {
+          console.error(
+            "Error fetching associated recurring transaction:",
+            error
+          );
+        }
+      }
+    };
+
+    fetchRecurringTransactionData();
+  }, [editMode, transaction?.recurringTransactionId, user]);
+
+  // Date picker handlers
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      const timestamp = selectedDate.getTime(); // Save as timestamp
+      setFormData({ ...formData, date: timestamp });
+    }
+  };
+
+  const handleEndDateChange = (event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      const timestamp = selectedDate.getTime(); // Save as timestamp
+      setFormData({ ...formData, endDate: timestamp });
+    }
+  };
+
+  const handleDatePickerDone = () => {
+    setShowDatePicker(false);
+  };
+
+  const handleEndDatePickerDone = () => {
+    setShowEndDatePicker(false);
+  };
+
+  const openDatePicker = () => {
+    setShowDatePicker(true);
+  };
+
+  const openEndDatePicker = () => {
+    setShowEndDatePicker(true);
+  };
+
+  // Map Plaid's new 16 primary categories to our budget categories (only for imported transactions)
   const getCategories = (type: string) => {
     if (type === "income") {
       return [
@@ -165,35 +278,21 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         "Credit Card",
         "Loan Payment",
         "Food",
-        "Transport",
+        "Transportation",
         "Health",
         "Entertainment",
         "Shopping",
         "Business",
-        "Other",
+        "Other Expenses",
       ];
     }
   };
 
   const categories = getCategories(formData.type);
 
-  // Calculate monthly equivalent amount based on frequency
-  const calculateMonthlyAmount = (
-    amount: string,
-    frequency: string
-  ): number => {
-    const numAmount = parseFloat(amount) || 0;
-    switch (frequency) {
-      case "weekly":
-        return numAmount * 4; // 4 weeks in a month
-      case "biweekly":
-        return numAmount * 2; // 2 bi-weekly periods in a month
-      case "monthly":
-        return numAmount; // No multiplication needed
-      default:
-        return numAmount;
-    }
-  };
+  // Use the service for calculating monthly amounts
+  const calculateMonthlyAmount =
+    TransactionActionsService.calculateMonthlyAmount;
 
   // Get the monthly equivalent amount for display
   const monthlyEquivalentAmount =
@@ -264,213 +363,161 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           !transaction.isRecurring &&
           !transaction.recurringTransactionId
         ) {
-          // Create recurring transaction and delete the original
-          const { createRecurringTransaction } = await import(
-            "../services/transactionService"
+          // Use business service to convert to recurring
+          const template = TransactionActionsService.createRecurringTemplate(
+            {
+              description: formData.description,
+              amount: formData.amount,
+              category: formData.category,
+              type: formData.type,
+              frequency: formData.frequency,
+              date: formData.date,
+              endDate: formData.endDate,
+            },
+            user.uid
           );
 
-          // Calculate the monthly equivalent amount for recurring transactions
-          const monthlyAmount = calculateMonthlyAmount(
-            formData.amount,
-            formData.frequency
-          );
-
-          const recurringTransaction = {
-            name: formData.description,
-            amount: monthlyAmount, // Save the monthly equivalent amount
-            type: formData.type as "income" | "expense",
-            category: formData.category,
-            frequency: formData.frequency,
-            startDate: new Date(formData.date).getTime(),
-            endDate:
-              formData.endDate && formData.endDate.trim() !== ""
-                ? new Date(formData.endDate).getTime()
-                : undefined,
-            isActive: true,
-            userId: user.uid,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          };
-
-          // Remove the original transaction from UI
-          const updatedTransactions = transactions.filter(
-            (t) => t.id !== transaction.id
-          );
-          updateDataOptimistically({ transactions: updatedTransactions });
-
-          // Delete original transaction and create recurring one
-          await removeTransaction(user.uid, transaction.id);
-          // Pass the selected month to create a transaction for that month
           const selectedMonthDate = selectedMonth
             ? new Date(selectedMonth)
             : undefined;
-          await createRecurringTransaction(
-            recurringTransaction,
+          const result = await TransactionBusinessService.convertToRecurring(
+            transaction,
+            template,
+            user.uid,
             selectedMonthDate
           );
 
-          // Refresh DataContext to update other screens and ensure consistency
-          await Promise.all([
-            refreshTransactions(),
-            refreshRecurringTransactions(),
-          ]);
+          if (result.success) {
+            // Remove the original transaction from UI
+            const updatedTransactions = transactions.filter(
+              (t) => t.id !== transaction.id
+            );
+            updateDataOptimistically({ transactions: updatedTransactions });
 
-          Alert.alert(
-            "Success",
-            "Transaction converted to recurring successfully!",
-            [{ text: "OK", onPress: () => navigation.goBack() }]
-          );
+            // Refresh DataContext to update other screens and ensure consistency
+            await Promise.all([
+              refreshTransactions(),
+              refreshRecurringTransactions(),
+            ]);
+
+            Alert.alert("Success", result.message, [
+              { text: "OK", onPress: () => navigation.goBack() },
+            ]);
+          } else {
+            Alert.alert("Error", result.message);
+          }
         } else if (
           !formData.isRecurring &&
           (transaction.isRecurring || transaction.recurringTransactionId)
         ) {
-          // Convert recurring transaction to regular transaction
-          const newTransaction = {
-            id: Date.now().toString(),
-            description: formData.description,
-            amount: parseFloat(removeCommas(formData.amount)),
-            category: formData.category,
-            type: formData.type as "income" | "expense",
-            date: new Date(formData.date).getTime(),
-            userId: user.uid,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          };
-
-          // Remove the recurring transaction from UI
-          const updatedTransactions = transactions.filter(
-            (t) => t.id !== transaction.id
-          );
-          updateDataOptimistically({ transactions: updatedTransactions });
-
-          console.log("Converted recurring to regular - removed from UI");
-
-          // Delete recurring transaction and create regular one
-          const { deleteRecurringTransaction } = await import(
-            "../services/transactionService"
+          // Use business service to convert to regular
+          const result = await TransactionBusinessService.convertToRegular(
+            transaction,
+            {
+              description: formData.description,
+              amount: formData.amount,
+              category: formData.category,
+              type: formData.type,
+              date: formData.date,
+            },
+            user.uid
           );
 
-          // Use recurringTransactionId if available, otherwise use transaction.id
-          const recurringTransactionId =
-            transaction.recurringTransactionId || transaction.id;
-          await deleteRecurringTransaction(recurringTransactionId);
-          const savedTransaction = await saveTransaction(newTransaction);
+          if (result.success) {
+            // Remove the recurring transaction from UI
+            const updatedTransactions = transactions.filter(
+              (t) => t.id !== transaction.id
+            );
+            updateDataOptimistically({ transactions: updatedTransactions });
 
-          console.log(
-            "Converted recurring to regular - created new transaction with ID:",
-            savedTransaction
-          );
+            // Add the new transaction to UI
+            const finalTransactions = [
+              ...updatedTransactions,
+              {
+                id: result.data.newTransactionId,
+                description: formData.description,
+                amount: parseFloat(removeCommas(formData.amount)),
+                category: formData.category,
+                type: formData.type,
+                date: formData.date,
+                userId: user.uid,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+              },
+            ];
+            updateDataOptimistically({ transactions: finalTransactions });
 
-          // Add the new transaction to UI
-          const finalTransactions = [
-            ...updatedTransactions,
-            { ...newTransaction, id: savedTransaction },
-          ];
-          updateDataOptimistically({ transactions: finalTransactions });
+            // Only refresh recurring transactions to update limits, preserve optimistic transaction updates
+            await refreshRecurringTransactions();
 
-          console.log(
-            "Converted recurring to regular - added new transaction to UI"
-          );
-
-          // Only refresh recurring transactions to update limits, preserve optimistic transaction updates
-          await refreshRecurringTransactions();
-
-          console.log(
-            "Converted recurring to regular - refreshed recurring transactions only"
-          );
-
-          Alert.alert(
-            "Success",
-            "Recurring transaction converted to regular transaction!",
-            [{ text: "OK", onPress: () => navigation.goBack() }]
-          );
+            Alert.alert("Success", result.message, [
+              { text: "OK", onPress: () => navigation.goBack() },
+            ]);
+          } else {
+            Alert.alert("Error", result.message);
+          }
         } else if (
           formData.isRecurring &&
           (transaction.isRecurring || transaction.recurringTransactionId)
         ) {
-          // Update existing recurring transaction
-          const { updateRecurringTransaction } = await import(
-            "../services/transactionService"
-          );
-
-          // Get the recurring transaction ID
-          const recurringTransactionId =
-            transaction.recurringTransactionId || transaction.id;
-
-          // Get the current recurring transaction to update it
-          const { getUserRecurringTransactions } = await import(
-            "../services/userData"
-          );
-          const recurringTransactions = await getUserRecurringTransactions(
-            user.uid
-          );
-          const currentRecurringTransaction = recurringTransactions.find(
-            (rt) => rt.id === recurringTransactionId
-          );
-
-          if (!currentRecurringTransaction) {
-            Alert.alert("Error", "Recurring transaction not found");
-            return;
-          }
-
-          // Calculate the monthly equivalent amount for recurring transactions
-          const monthlyAmount = calculateMonthlyAmount(
-            formData.amount,
-            formData.frequency
-          );
-
-          // For bank suggestions, always save as monthly frequency to ensure consistent display
+          // Use business service to update recurring transaction
           const finalFrequency = route.params?.fromBankSuggestion
             ? "monthly"
             : formData.frequency;
 
-          // Update the recurring transaction
-          const updatedRecurringTransaction = {
-            ...currentRecurringTransaction,
-            name: formData.description,
-            amount: monthlyAmount, // Save the monthly equivalent amount
-            type: formData.type as "income" | "expense",
-            category: formData.category,
-            frequency: finalFrequency, // Use monthly for bank suggestions
-            startDate: new Date(formData.date).getTime(),
-            endDate:
-              formData.endDate && formData.endDate.trim() !== ""
-                ? new Date(formData.endDate).getTime()
-                : undefined,
-            updatedAt: Date.now(),
-          };
-
-          await updateRecurringTransaction(updatedRecurringTransaction);
-
-          // Optimistic update - update the transaction to reflect the new recurring transaction ID
-          const updatedTransactions = transactions.map((t) => {
-            if (t.id === transaction.id) {
-              return {
-                ...t,
+          const result =
+            await TransactionBusinessService.updateRecurringTransaction(
+              transaction,
+              {
                 description: formData.description,
-                amount: monthlyAmount, // Show the monthly equivalent amount
+                amount: formData.amount,
                 category: formData.category,
-                type: formData.type as "income" | "expense",
-                date: new Date(formData.date).getTime(),
-                recurringTransactionId: recurringTransactionId, // Keep the recurring transaction ID
-                updatedAt: Date.now(),
-              };
-            }
-            return t;
-          });
-          updateDataOptimistically({ transactions: updatedTransactions });
+                type: formData.type,
+                frequency: finalFrequency,
+                date: formData.date,
+                endDate: formData.endDate,
+              },
+              user.uid,
+              isFutureMonth,
+              monthKey || ""
+            );
 
-          // Refresh DataContext to update both transactions and recurring transactions
-          await Promise.all([
-            refreshTransactions(),
-            refreshRecurringTransactions(),
-          ]);
+          if (result.success) {
+            // Optimistic update - update the transaction to reflect the new recurring transaction ID
+            const monthlyAmount = calculateMonthlyAmount(
+              formData.amount,
+              finalFrequency
+            );
+            const updatedTransactions = transactions.map((t) => {
+              if (t.id === transaction.id) {
+                return {
+                  ...t,
+                  description: formData.description,
+                  amount: monthlyAmount,
+                  category: formData.category,
+                  type: formData.type,
+                  date: new Date(formData.date).getTime(),
+                  recurringTransactionId:
+                    transaction.recurringTransactionId || transaction.id,
+                  updatedAt: Date.now(),
+                };
+              }
+              return t;
+            });
+            updateDataOptimistically({ transactions: updatedTransactions });
 
-          Alert.alert(
-            "Success",
-            "Recurring transaction updated successfully!",
-            [{ text: "OK", onPress: () => navigation.goBack() }]
-          );
+            // Refresh DataContext to update both transactions and recurring transactions
+            await Promise.all([
+              refreshTransactions(),
+              refreshRecurringTransactions(),
+            ]);
+
+            Alert.alert("Success", result.message, [
+              { text: "OK", onPress: () => navigation.goBack() },
+            ]);
+          } else {
+            Alert.alert("Error", result.message);
+          }
         } else {
           // Regular update (no change in recurring status)
           const updatedTransaction = {
@@ -497,60 +544,42 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           ]);
         }
       } else if (formData.isRecurring) {
-        // Create recurring transaction
-        const { createRecurringTransaction } = await import(
-          "../services/transactionService"
-        );
-
-        // Calculate the monthly equivalent amount for recurring transactions
-        const monthlyAmount = calculateMonthlyAmount(
-          formData.amount,
-          formData.frequency
-        );
-
-        // For bank suggestions, always save as monthly frequency to ensure consistent display
+        // Use business service to create new recurring transaction
         const finalFrequency = route.params?.fromBankSuggestion
           ? "monthly"
           : formData.frequency;
 
-        const recurringTransaction = {
-          name: formData.description,
-          amount: monthlyAmount, // Save the monthly equivalent amount
-          type: formData.type as "income" | "expense",
-          category: formData.category,
-          frequency: finalFrequency, // Use monthly for bank suggestions
-          startDate: new Date(formData.date).getTime(),
-          endDate:
-            formData.endDate && formData.endDate.trim() !== ""
-              ? new Date(formData.endDate).getTime()
-              : undefined,
-          isActive: true,
-          userId: user.uid,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
-
-        // Pass the selected month to create a transaction for that month
-        const selectedMonthDate = selectedMonth
-          ? new Date(selectedMonth)
-          : undefined;
-        await createRecurringTransaction(
-          recurringTransaction,
-          selectedMonthDate
+        const template = TransactionActionsService.createRecurringTemplate(
+          {
+            description: formData.description,
+            amount: formData.amount,
+            category: formData.category,
+            type: formData.type,
+            frequency: finalFrequency,
+            date: formData.date,
+            endDate: formData.endDate,
+          },
+          user.uid
         );
 
-        // Refresh both to ensure the newly created transaction appears
-        await Promise.all([
-          refreshTransactions(),
-          refreshRecurringTransactions(),
-        ]);
+        const result =
+          await TransactionBusinessService.createNewRecurringTransaction(
+            template
+          );
 
-        console.log("Recurring transaction created, refreshing DataContext...");
-        console.log("Refreshed transactions and recurring transactions");
+        if (result.success) {
+          // Refresh both to ensure the newly created transaction appears
+          await Promise.all([
+            refreshTransactions(),
+            refreshRecurringTransactions(),
+          ]);
 
-        Alert.alert("Success", "Recurring transaction created successfully!", [
-          { text: "OK", onPress: () => navigation.goBack() },
-        ]);
+          Alert.alert("Success", result.message, [
+            { text: "OK", onPress: () => navigation.goBack() },
+          ]);
+        } else {
+          Alert.alert("Error", result.message);
+        }
       } else {
         // Create regular transaction
         const newTransaction = {
@@ -604,6 +633,66 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     }
   };
 
+  const handleStopFutureRecurring = async () => {
+    if (!user || !editMode || !transaction) {
+      Alert.alert("Error", "Cannot stop future recurring");
+      return;
+    }
+
+    // Check if this is a recurring transaction
+    const isRecurringTransaction =
+      transaction.isRecurring || transaction.recurringTransactionId;
+    if (!isRecurringTransaction) {
+      Alert.alert("Error", "This is not a recurring transaction");
+      return;
+    }
+
+    // Show confirmation
+    Alert.alert(
+      "Stop Future Recurring",
+      "Stop creating future recurring transactions?\n\nYour custom amounts for other months will be preserved.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Stop Future Recurring",
+          style: "destructive",
+          onPress: async () => {
+            setStopFutureLoading(true);
+            try {
+              const result =
+                await TransactionBusinessService.stopFutureRecurring(
+                  transaction,
+                  user.uid
+                );
+
+              if (result.success) {
+                // Refresh data
+                await Promise.all([
+                  refreshTransactions(),
+                  refreshRecurringTransactions(),
+                ]);
+
+                Alert.alert("Success", result.message, [
+                  { text: "OK", onPress: () => navigation.goBack() },
+                ]);
+              } else {
+                Alert.alert("Error", result.message);
+              }
+            } catch (error) {
+              console.error("Error stopping future recurring:", error);
+              Alert.alert(
+                "Error",
+                "Failed to stop future recurring. Please try again."
+              );
+            } finally {
+              setStopFutureLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleDelete = async () => {
     if (!user || !editMode || !transaction) {
       Alert.alert("Error", "Cannot delete transaction");
@@ -618,10 +707,16 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         transaction.isRecurring || transaction.recurringTransactionId;
 
       if (isRecurringTransaction) {
+        // Use hook values for future month and month key
+        const futureMonth = isFutureMonth;
+        const monthKeyValue = monthKey;
+
         // Show confirmation for deleting recurring transaction
         Alert.alert(
           "Delete Recurring Transaction",
-          "This will delete the recurring transaction and all future occurrences. This action cannot be undone.",
+          futureMonth
+            ? `Delete this month's custom amount?\n\nThis month will use the standard recurring amount instead.`
+            : "Delete this recurring transaction?\n\nThis will delete this transaction and all future projections.",
           [
             {
               text: "Cancel",
@@ -631,8 +726,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               },
             },
             {
-              text: "Delete Recurring & All Future",
-              style: "destructive",
+              text: deleteButtonText,
+              style: "destructive" as const,
               onPress: async () => {
                 try {
                   // Optimistic update - remove all related transactions
@@ -647,23 +742,28 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     transactions: updatedTransactions,
                   });
 
-                  // Delete the recurring transaction and all its generated transactions
-                  const { deleteRecurringTransaction } = await import(
-                    "../services/transactionService"
-                  );
-                  await deleteRecurringTransaction(recurringTransactionId);
+                  // Use business service to delete recurring transaction
+                  const result =
+                    await TransactionBusinessService.deleteRecurringTransaction(
+                      transaction,
+                      user.uid,
+                      futureMonth,
+                      monthKeyValue || ""
+                    );
 
-                  // Refresh DataContext to update transaction limits and ensure consistency
-                  await Promise.all([
-                    refreshTransactions(),
-                    refreshRecurringTransactions(),
-                  ]);
+                  if (result.success) {
+                    // Refresh DataContext to update transaction limits and ensure consistency
+                    await Promise.all([
+                      refreshTransactions(),
+                      refreshRecurringTransactions(),
+                    ]);
 
-                  Alert.alert(
-                    "Success",
-                    "Recurring transaction and all future occurrences deleted!",
-                    [{ text: "OK", onPress: () => navigation.goBack() }]
-                  );
+                    Alert.alert("Success", result.message, [
+                      { text: "OK", onPress: () => navigation.goBack() },
+                    ]);
+                  } else {
+                    Alert.alert("Error", result.message);
+                  }
                 } catch (error) {
                   console.error("Error deleting recurring transaction:", error);
                   Alert.alert(
@@ -924,7 +1024,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           </View>
 
           {/* Description */}
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 16,
@@ -939,8 +1039,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
+                borderRadius: 12,
+                padding: 16,
                 fontSize: 16,
                 color: colors.text,
                 backgroundColor: colors.card,
@@ -955,7 +1055,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           </View>
 
           {/* Amount */}
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text
               style={{
                 fontSize: 16,
@@ -970,8 +1070,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                borderRadius: 8,
-                padding: 12,
+                borderRadius: 12,
+                padding: 16,
                 fontSize: 16,
                 color: colors.text,
                 backgroundColor: colors.card,
@@ -1101,21 +1201,35 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             >
               Date
             </Text>
-            <TextInput
+            <TouchableOpacity
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
                 borderRadius: 8,
                 padding: 12,
-                fontSize: 16,
-                color: colors.text,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
                 backgroundColor: colors.card,
               }}
-              value={formData.date}
-              onChangeText={(text) => setFormData({ ...formData, date: text })}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.textSecondary}
-            />
+              onPress={openDatePicker}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: formData.date ? colors.text : colors.textSecondary,
+                }}
+              >
+                {formData.date
+                  ? timestampToDateString(formData.date)
+                  : "Select Date"}
+              </Text>
+              <Ionicons
+                name="calendar-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
           </View>
 
           {/* Recurring Transaction Toggle */}
@@ -1246,23 +1360,37 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 >
                   End Date (Optional)
                 </Text>
-                <TextInput
+                <TouchableOpacity
                   style={{
                     borderWidth: 1,
                     borderColor: colors.border,
                     borderRadius: 8,
                     padding: 12,
-                    fontSize: 16,
-                    color: colors.text,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                     backgroundColor: colors.card,
                   }}
-                  value={formData.endDate}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, endDate: text })
-                  }
-                  placeholder="YYYY-MM-DD (leave empty for no end date)"
-                  placeholderTextColor={colors.textSecondary}
-                />
+                  onPress={openEndDatePicker}
+                >
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: formData.endDate
+                        ? colors.text
+                        : colors.textSecondary,
+                    }}
+                  >
+                    {formData.endDate
+                      ? new Date(formData.endDate).toISOString().split("T")[0]
+                      : "Select End Date (Optional)"}
+                  </Text>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
               </View>
             </>
           )}
@@ -1273,11 +1401,16 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             <TouchableOpacity
               style={{
                 backgroundColor: colors.primary,
-                padding: 16,
-                borderRadius: 8,
+                padding: 18,
+                borderRadius: 12,
                 alignItems: "center",
                 flexDirection: "row",
                 justifyContent: "center",
+                shadowColor: colors.primary,
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 8,
               }}
               onPress={handleSave}
               disabled={loading}
@@ -1293,23 +1426,90 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 style={{
                   color: "white",
                   fontSize: 16,
-                  fontWeight: "600",
+                  fontWeight: "700",
                 }}
               >
                 {editMode ? "Update" : "Save"} Transaction
               </Text>
             </TouchableOpacity>
 
-            {/* Delete Button (only in edit mode) */}
-            {editMode && (
+            {/* Show modification indicator for recurring transactions */}
+            {canShowModificationIndicator && (
+              <View style={{ marginBottom: 16, alignItems: "center" }}>
+                {isModified ? (
+                  <Text
+                    style={{
+                      color: colors.warning,
+                      fontSize: 14,
+                      textAlign: "center",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    This transaction has been modified from the original
+                    recurring amount
+                  </Text>
+                ) : (
+                  <Text
+                    style={{
+                      color: colors.textSecondary,
+                      fontSize: 14,
+                      textAlign: "center",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    This is the original recurring transaction amount
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Stop Future Recurring Button (always show for recurring transactions in edit mode) */}
+            {canShowStopFutureButton && (
               <TouchableOpacity
                 style={{
-                  backgroundColor: colors.error,
-                  padding: 16,
-                  borderRadius: 8,
+                  backgroundColor: colors.warning + "20",
+                  padding: 18,
+                  borderRadius: 12,
                   alignItems: "center",
                   flexDirection: "row",
                   justifyContent: "center",
+                  borderWidth: 1,
+                  borderColor: colors.warning,
+                }}
+                onPress={handleStopFutureRecurring}
+                disabled={stopFutureLoading}
+              >
+                {stopFutureLoading && (
+                  <ActivityIndicator
+                    size="small"
+                    color={colors.warning}
+                    style={{ marginRight: 8 }}
+                  />
+                )}
+                <Text
+                  style={{
+                    color: colors.warning,
+                    fontSize: 16,
+                    fontWeight: "700",
+                  }}
+                >
+                  Stop Future Recurring
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Delete Button (always show in edit mode) */}
+            {canShowDeleteButton && (
+              <TouchableOpacity
+                style={{
+                  backgroundColor: colors.error + "20",
+                  padding: 18,
+                  borderRadius: 12,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  borderWidth: 1,
+                  borderColor: colors.error,
                 }}
                 onPress={handleDelete}
                 disabled={deleteLoading}
@@ -1317,10 +1517,124 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 {deleteLoading && (
                   <ActivityIndicator
                     size="small"
-                    color="white"
+                    color={colors.error}
                     style={{ marginRight: 8 }}
                   />
                 )}
+                <Text
+                  style={{
+                    color: colors.error,
+                    fontSize: 16,
+                    fontWeight: "700",
+                  }}
+                >
+                  {deleteButtonText}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* Date Picker Modal */}
+      <Modal
+        visible={showDatePicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          activeOpacity={1}
+          onPress={() => setShowDatePicker(false)}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              width: "90%",
+              maxWidth: 400,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.25,
+              shadowRadius: 20,
+              shadowOffset: { width: 0, height: 10 },
+              elevation: 10,
+            }}
+            onStartShouldSetResponder={() => true}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 20,
+                textAlign: "center",
+              }}
+            >
+              Select Date
+            </Text>
+            <View
+              style={{
+                alignItems: "center",
+                marginVertical: 10,
+              }}
+            >
+              <DateTimePicker
+                value={new Date(formData.date)}
+                mode="date"
+                display="spinner"
+                onChange={handleDateChange}
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 12,
+                  width: "100%",
+                }}
+                textColor={colors.text}
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 12,
+                marginTop: 20,
+              }}
+            >
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.border,
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: "center",
+                }}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <Text
+                  style={{
+                    color: colors.text,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.primary,
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: "center",
+                }}
+                onPress={handleDatePickerDone}
+              >
                 <Text
                   style={{
                     color: "white",
@@ -1328,13 +1642,129 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     fontWeight: "600",
                   }}
                 >
-                  Delete Transaction
+                  Done
                 </Text>
               </TouchableOpacity>
-            )}
+            </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* End Date Picker Modal */}
+      <Modal
+        visible={showEndDatePicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowEndDatePicker(false)}
+      >
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          activeOpacity={1}
+          onPress={() => setShowEndDatePicker(false)}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              width: "90%",
+              maxWidth: 400,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.25,
+              shadowRadius: 20,
+              shadowOffset: { width: 0, height: 10 },
+              elevation: 10,
+            }}
+            onStartShouldSetResponder={() => true}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "600",
+                color: colors.text,
+                marginBottom: 20,
+                textAlign: "center",
+              }}
+            >
+              Select End Date
+            </Text>
+            <View
+              style={{
+                alignItems: "center",
+                marginVertical: 10,
+              }}
+            >
+              <DateTimePicker
+                value={
+                  formData.endDate ? new Date(formData.endDate) : new Date()
+                }
+                mode="date"
+                display="spinner"
+                onChange={handleEndDateChange}
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 12,
+                  width: "100%",
+                }}
+                textColor={colors.text}
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 12,
+                marginTop: 20,
+              }}
+            >
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.border,
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: "center",
+                }}
+                onPress={() => setShowEndDatePicker(false)}
+              >
+                <Text
+                  style={{
+                    color: colors.text,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.primary,
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: "center",
+                }}
+                onPress={handleEndDatePickerDone}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  Done
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };

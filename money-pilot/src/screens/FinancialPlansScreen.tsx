@@ -8,6 +8,7 @@ import {
   Alert,
   Share,
   ActivityIndicator,
+  SafeAreaView,
 } from "react-native";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
@@ -17,6 +18,7 @@ import {
   FinancialPlan,
 } from "../services/userData";
 import { Ionicons } from "@expo/vector-icons";
+import { StandardHeader } from "../components/StandardHeader";
 
 export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
   navigation,
@@ -157,21 +159,18 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.card }]}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Financial Plans
-        </Text>
-        <View style={styles.headerSpacer} />
-      </View>
-
-      <ScrollView style={styles.content}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <StandardHeader
+          title="Financial Plans"
+          subtitle="View and export financial plans"
+          onBack={() => navigation.goBack()}
+          showBackButton={true}
+        />
         {plans.length === 0 ? (
           <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
             <Ionicons
@@ -266,14 +265,18 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
                       <TouchableOpacity
                         style={[
                           styles.deleteButton,
-                          { backgroundColor: colors.error },
+                          {
+                            backgroundColor: colors.error + "20",
+                            borderWidth: 1,
+                            borderColor: colors.error,
+                          },
                         ]}
                         onPress={() => deletePlan(plan.id!)}
                       >
                         <Ionicons
                           name="trash-outline"
                           size={20}
-                          color="white"
+                          color={colors.error}
                         />
                       </TouchableOpacity>
                     </View>
@@ -351,7 +354,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
           </>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -378,7 +381,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(0,0,0,0.1)",
   },
   backButton: {
-    padding: 8,
+    marginRight: 20,
+    padding: 10,
   },
   headerTitle: {
     fontSize: 20,
@@ -489,8 +493,8 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   deleteButton: {
-    padding: 8,
-    borderRadius: 6,
+    padding: 12,
+    borderRadius: 8,
   },
   planSummary: {
     flexDirection: "row",

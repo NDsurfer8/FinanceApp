@@ -19,11 +19,7 @@ export const app = getApps().length
   ? getApps()[0]!
   : initializeApp(firebaseConfig);
 
-console.log("Firebase initialized with config:", {
-  projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain,
-  hasApiKey: !!firebaseConfig.apiKey,
-});
+// Firebase initialized successfully
 
 export const db = getDatabase(app);
 
