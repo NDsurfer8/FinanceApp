@@ -38,7 +38,10 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
   const { isFriendlyMode } = useFriendlyMode();
   const { user } = useAuth();
   const route = useRoute();
-  const selectedMonth = (route.params as any)?.selectedMonth || new Date();
+  const selectedMonthParam = (route.params as any)?.selectedMonth;
+  const selectedMonth = selectedMonthParam
+    ? new Date(selectedMonthParam)
+    : new Date();
   const {
     transactions,
     recurringTransactions,

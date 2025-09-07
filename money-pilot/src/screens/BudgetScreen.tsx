@@ -977,7 +977,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
               newSeenCategories.set(monthKey, monthSeenCategories);
               setSeenOverBudgetCategories(newSeenCategories);
-              navigation.navigate("BudgetCategories", { selectedMonth });
+              navigation.navigate("BudgetCategories", {
+                selectedMonth: selectedMonth.toISOString(),
+              });
             }}
             onPressIncome={handleAddIncome}
             onPressExpense={handleAddExpense}
