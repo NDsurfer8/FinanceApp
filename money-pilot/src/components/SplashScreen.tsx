@@ -16,9 +16,7 @@ interface SplashScreenProps {
 
 const { width, height } = Dimensions.get("window");
 
-export const SplashScreen: React.FC<SplashScreenProps> = ({
-  message = "Loading VectorFi...",
-}) => {
+export const SplashScreen: React.FC<SplashScreenProps> = ({ message = "" }) => {
   const bounceAnim1 = useRef(new Animated.Value(0)).current;
   const bounceAnim2 = useRef(new Animated.Value(0)).current;
   const bounceAnim3 = useRef(new Animated.Value(0)).current;
