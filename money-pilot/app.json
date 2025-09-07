@@ -2,7 +2,7 @@
   "expo": {
     "name": "VectorFi",
     "slug": "money-pilot",
-    "version": "1.0.10",
+    "version": "1.0.11",
     "orientation": "portrait",
     "icon": "./assets/ios/icon-1024.png",
     "userInterfaceStyle": "automatic",
