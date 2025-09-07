@@ -375,15 +375,24 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               {getAssetTypeLabel(asset.type)}
             </Text>
           </View>
-          <View style={{ alignItems: "flex-end" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "flex-end",
+            }}
+          >
             <Text
               style={{
                 fontSize: 18,
                 fontWeight: "700",
                 color: colors.success,
                 fontFamily: fontFamily.bold,
-                marginBottom: 2,
+                marginRight: 4,
               }}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
             >
               ${asset.balance.toLocaleString()}
             </Text>
@@ -481,15 +490,24 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               </Text>
             </View>
           </View>
-          <View style={{ alignItems: "flex-end" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "flex-end",
+            }}
+          >
             <Text
               style={{
                 fontSize: 18,
                 fontWeight: "700",
                 color: colors.error,
                 fontFamily: fontFamily.bold,
-                marginBottom: 2,
+                marginRight: 4,
               }}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
             >
               ${debt.balance.toLocaleString()}
             </Text>
