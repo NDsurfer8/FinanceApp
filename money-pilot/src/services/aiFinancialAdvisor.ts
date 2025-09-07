@@ -66,8 +66,15 @@ class AIFinancialAdvisorService {
     snapshot: FinancialSnapshot,
     userPreferences?: any,
     conversationHistory?: Array<{ role: string; content: string }>,
-    selectedMonth?: Date
-  ): Promise<string> {
+    selectedMonth?: Date,
+    includeAudio?: boolean,
+    voice?: string
+  ): Promise<{
+    response: string;
+    audioBuffer?: any;
+    hasAudio?: boolean;
+    voiceUsed?: string;
+  }> {
     try {
       // Prepare financial data for backend - optimized for token usage
       const financialData = {
@@ -422,12 +429,23 @@ class AIFinancialAdvisorService {
         userQuestion,
         financialData,
         userPreferences,
-        conversationHistory
+        conversationHistory,
+        includeAudio,
+        voice
       );
-      return result.response;
+      return {
+        response: result.response,
+        audioBuffer: result.audioBuffer,
+        hasAudio: result.hasAudio,
+        voiceUsed: result.voiceUsed,
+      };
     } catch (error) {
       console.error("Backend AI failed:", error);
-      return "I'm having trouble analyzing your finances right now. Please try again in a moment.";
+      return {
+        response:
+          "I'm having trouble analyzing your finances right now. Please try again in a moment.",
+        hasAudio: false,
+      };
     }
   }
 }

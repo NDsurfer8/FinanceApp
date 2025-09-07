@@ -15,6 +15,9 @@ export interface AIResponse {
   tokensUsed: number;
   cost: number;
   isPlanRequest: boolean;
+  audioBuffer?: any; // Base64 encoded audio data
+  hasAudio?: boolean;
+  voiceUsed?: string;
 }
 
 // Interface for AI feedback
@@ -29,7 +32,9 @@ export const callBackendAI = async (
   message: string,
   financialData?: any,
   userPreferences?: any,
-  conversationHistory?: Array<{ role: string; content: string }>
+  conversationHistory?: Array<{ role: string; content: string }>,
+  includeAudio?: boolean,
+  voice?: string
 ): Promise<AIResponse> => {
   try {
     const result = await backendAIChat({
@@ -37,6 +42,8 @@ export const callBackendAI = async (
       financialData,
       userPreferences,
       conversationHistory,
+      includeAudio: includeAudio || false,
+      voice: voice || "alloy",
     });
 
     const data = result.data as AIResponse;

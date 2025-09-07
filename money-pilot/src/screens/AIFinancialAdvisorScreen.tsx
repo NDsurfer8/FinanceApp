@@ -43,6 +43,17 @@ import {
 } from "../services/userData";
 import { VectraAvatar } from "../components/VectraAvatar";
 import { sendBackendAIFeedback } from "../services/backendAI";
+import { Audio } from "expo-av";
+
+// Voice options for TTS
+const VOICE_OPTIONS = [
+  { id: "alloy", name: "Alloy (Neutral)" },
+  { id: "echo", name: "Echo (Male)" },
+  { id: "fable", name: "Fable (British)" },
+  { id: "onyx", name: "Onyx (Deep)" },
+  { id: "nova", name: "Nova (Female)" },
+  { id: "shimmer", name: "Shimmer (Soft)" },
+];
 
 // Local responses for common app questions (no API call needed)
 const APP_NAVIGATION_RESPONSES = {
@@ -290,6 +301,13 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const [feedbackStates, setFeedbackStates] = useState<{
     [messageId: string]: { liked?: boolean; disliked?: boolean };
   }>({});
+  // TTS State Variables
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState("alloy");
+  const [currentAudioBuffer, setCurrentAudioBuffer] = useState<any>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const soundRef = useRef<any>(null);
+
   const [userPreferences, setUserPreferences] = useState<{
     preferredStyle: "detailed" | "concise" | "balanced";
     preferredTone: "professional" | "casual" | "friendly";
@@ -328,6 +346,53 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const scrollViewRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const headerOpacity = useRef(new Animated.Value(1)).current;
+
+  // Audio playback functions
+  const playAudio = async (audioBuffer: any) => {
+    try {
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+      }
+
+      // Convert base64 to URI
+      const audioUri = `data:audio/mp3;base64,${audioBuffer}`;
+
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioUri },
+        { shouldPlay: true }
+      );
+
+      soundRef.current = sound;
+      setIsPlaying(true);
+
+      sound.setOnPlaybackStatusUpdate((status: any) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setIsPlaying(false);
+        }
+      });
+    } catch (error) {
+      console.error("Error playing audio:", error);
+      Alert.alert("Audio Error", "Could not play audio response");
+    }
+  };
+
+  const stopAudio = async () => {
+    if (soundRef.current) {
+      await soundRef.current.stopAsync();
+      setIsPlaying(false);
+    }
+  };
+
+  const selectVoice = () => {
+    Alert.alert(
+      "Select Voice",
+      "Choose your preferred voice for Vectra",
+      VOICE_OPTIONS.map((voice) => ({
+        text: voice.name,
+        onPress: () => setSelectedVoice(voice.id),
+      }))
+    );
+  };
 
   // Get welcome message
   const getWelcomeMessage = (): Message => ({
@@ -831,36 +896,62 @@ Requirements:
 
           // Use optimized prompt for plan generation
           const optimizedPlanPrompt = generateOptimizedPrompt(planPrompt);
-          aiResponse = await aiFinancialAdvisorService.generateAIResponse(
+          const result = await aiFinancialAdvisorService.generateAIResponse(
             optimizedPlanPrompt,
             snapshot,
             userPreferences,
             conversationHistory,
-            targetMonth
+            targetMonth,
+            audioEnabled,
+            selectedVoice
           );
+          aiResponse = result.response;
+
+          // Handle audio if available
+          if (result.hasAudio && result.audioBuffer) {
+            setCurrentAudioBuffer(result.audioBuffer);
+          }
           aiResponse += `\n\n💾 Would you like to save this plan to your account?`;
         } catch (planError) {
           console.error("Error creating financial plan:", planError);
-          aiResponse = await aiFinancialAdvisorService.generateAIResponse(
-            userMessage.text,
-            snapshot,
-            userPreferences,
-            conversationHistory,
-            targetMonth
-          );
+          const errorResult =
+            await aiFinancialAdvisorService.generateAIResponse(
+              userMessage.text,
+              snapshot,
+              userPreferences,
+              conversationHistory,
+              targetMonth,
+              audioEnabled,
+              selectedVoice
+            );
+          aiResponse = errorResult.response;
+
+          // Handle audio if available
+          if (errorResult.hasAudio && errorResult.audioBuffer) {
+            setCurrentAudioBuffer(errorResult.audioBuffer);
+          }
         }
       } else {
         // Generate optimized prompt based on user preferences
         const optimizedPrompt = generateOptimizedPrompt(userMessage.text);
 
         // Regular AI response with optimized prompt
-        aiResponse = await aiFinancialAdvisorService.generateAIResponse(
-          optimizedPrompt,
-          snapshot,
-          userPreferences,
-          conversationHistory,
-          targetMonth
-        );
+        const regularResult =
+          await aiFinancialAdvisorService.generateAIResponse(
+            optimizedPrompt,
+            snapshot,
+            userPreferences,
+            conversationHistory,
+            targetMonth,
+            audioEnabled,
+            selectedVoice
+          );
+        aiResponse = regularResult.response;
+
+        // Handle audio if available
+        if (regularResult.hasAudio && regularResult.audioBuffer) {
+          setCurrentAudioBuffer(regularResult.audioBuffer);
+        }
 
         // Clean up markdown formatting from AI responses
         aiResponse = aiResponse
@@ -2017,10 +2108,108 @@ Original Request: ${basePrompt}
           borderTopColor: colors.border,
         }}
       >
+        {/* TTS Controls */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: 8,
+            gap: 8,
+          }}
+        >
+          {/* Audio Toggle */}
+          <TouchableOpacity
+            onPress={() => setAudioEnabled(!audioEnabled)}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: audioEnabled ? colors.primary : colors.surface,
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: audioEnabled ? colors.primary : colors.border,
+            }}
+          >
+            <Ionicons
+              name={audioEnabled ? "volume-high" : "volume-mute"}
+              size={16}
+              color={audioEnabled ? "white" : colors.textSecondary}
+            />
+            <Text
+              style={{
+                color: audioEnabled ? "white" : colors.textSecondary,
+                marginLeft: 4,
+                fontSize: 12,
+                fontWeight: "600",
+              }}
+            >
+              {audioEnabled ? "Audio On" : "Audio Off"}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Voice Selection */}
+          {audioEnabled && (
+            <TouchableOpacity
+              onPress={selectVoice}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: colors.surface,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Ionicons
+                name="person-outline"
+                size={16}
+                color={colors.textSecondary}
+              />
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  marginLeft: 4,
+                  fontSize: 12,
+                  fontWeight: "500",
+                }}
+              >
+                {VOICE_OPTIONS.find((v) => v.id === selectedVoice)?.name ||
+                  "Alloy"}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Play/Stop Button */}
+          {audioEnabled && currentAudioBuffer && (
+            <TouchableOpacity
+              onPress={
+                isPlaying ? stopAudio : () => playAudio(currentAudioBuffer)
+              }
+              style={{
+                backgroundColor: isPlaying ? colors.error : colors.success,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 16,
+              }}
+            >
+              <Ionicons
+                name={isPlaying ? "stop" : "play"}
+                size={16}
+                color="white"
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+
         <View
           style={{
             paddingHorizontal: 16,
-            paddingVertical: 16,
+            paddingVertical: 8,
             paddingBottom: Platform.OS === "ios" ? 34 : 16, // Account for home indicator
           }}
         >
