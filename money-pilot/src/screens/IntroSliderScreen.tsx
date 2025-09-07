@@ -17,7 +17,7 @@ interface IntroSlide {
 const WelcomeGraphic = () => (
   <Image
     source={require("../../assets/ios/slide1.png")}
-    style={{ width: 320, height: 220 }}
+    style={{ width: 350, height: 250 }}
     resizeMode="contain"
   />
 );
@@ -25,7 +25,7 @@ const WelcomeGraphic = () => (
 const PlaidGraphic = () => (
   <Image
     source={require("../../assets/ios/slide2.png")}
-    style={{ width: 320, height: 220 }}
+    style={{ width: 350, height: 250 }}
     resizeMode="contain"
   />
 );
@@ -33,7 +33,7 @@ const PlaidGraphic = () => (
 const SpendingGraphic = () => (
   <Image
     source={require("../../assets/ios/slide3.png")}
-    style={{ width: 320, height: 220 }}
+    style={{ width: 350, height: 250 }}
     resizeMode="contain"
   />
 );
@@ -41,7 +41,7 @@ const SpendingGraphic = () => (
 const SavingsGraphic = () => (
   <Image
     source={require("../../assets/ios/slide4.png")}
-    style={{ width: 320, height: 220 }}
+    style={{ width: 350, height: 250 }}
     resizeMode="contain"
   />
 );
@@ -49,7 +49,7 @@ const SavingsGraphic = () => (
 const ForecastGraphic = () => (
   <Image
     source={require("../../assets/ios/slide5.png")}
-    style={{ width: 320, height: 220 }}
+    style={{ width: 350, height: 250 }}
     resizeMode="contain"
   />
 );
@@ -57,7 +57,7 @@ const ForecastGraphic = () => (
 const SecurityGraphic = () => (
   <Image
     source={require("../../assets/ios/slide6.png")}
-    style={{ width: 320, height: 220 }}
+    style={{ width: 350, height: 250 }}
     resizeMode="contain"
   />
 );
@@ -66,7 +66,7 @@ const slides: IntroSlide[] = [
   {
     key: "1",
     title: "Welcome to VectorFi",
-    text: "Meet to Vectra, your AI financial coach. Once connected, Vectra securely understands your finances and translates them into practical advice—helping you save more, spend wisely, and stay on track toward your goals",
+    text: "Meet Vectra, your personal AI financial coach. Once connected, Vectra securely understands your finances and translates them into practical advice—helping you save more, spend wisely, and stay on track toward your goals.",
     icon: "chatbubble-ellipses",
     backgroundColor: "#ffffff",
   },
@@ -207,20 +207,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#1f2937",
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#111827",
     textAlign: "center",
-    marginBottom: 8,
-    letterSpacing: -0.3,
+    marginBottom: 16,
+    letterSpacing: -0.5,
+    lineHeight: 38,
   },
   text: {
-    fontSize: 16,
-    color: "#6b7280",
+    fontSize: 18,
+    color: "#374151",
     textAlign: "center",
-    lineHeight: 24,
-    fontWeight: "400",
-    marginBottom: 20,
+    lineHeight: 28,
+    fontWeight: "500",
+    marginBottom: 24,
+    letterSpacing: 0.2,
+    paddingHorizontal: 8,
   },
   buttonCircle: {
     width: 56,
