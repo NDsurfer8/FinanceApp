@@ -308,14 +308,162 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const soundRef = useRef<any>(null);
 
+  // Typing indicator animation
+  const typingAnimation = useRef(new Animated.Value(0)).current;
+
+  // Load voice preferences on component mount
+  useEffect(() => {
+    loadVoicePreferences();
+  }, []);
+
+  const loadVoicePreferences = async () => {
+    try {
+      const savedVoice = await AsyncStorage.getItem("vectra_voice_preference");
+      const savedAudioEnabled = await AsyncStorage.getItem(
+        "vectra_audio_enabled"
+      );
+
+      if (savedVoice) {
+        setSelectedVoice(savedVoice);
+        setUserPreferences((prev) => ({ ...prev, voice: savedVoice }));
+      }
+      if (savedAudioEnabled !== null) {
+        setAudioEnabled(savedAudioEnabled === "true");
+      }
+    } catch (error) {
+      console.log("Error loading voice preferences:", error);
+    }
+  };
+
+  const saveVoicePreference = async (voice: string) => {
+    try {
+      await AsyncStorage.setItem("vectra_voice_preference", voice);
+    } catch (error) {
+      console.log("Error saving voice preference:", error);
+    }
+  };
+
+  const saveAudioEnabledPreference = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem("vectra_audio_enabled", enabled.toString());
+    } catch (error) {
+      console.log("Error saving audio preference:", error);
+    }
+  };
+
+  // Typing indicator animation
+  useEffect(() => {
+    const startTypingAnimation = () => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(typingAnimation, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(typingAnimation, {
+            toValue: 0,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    };
+
+    const stopTypingAnimation = () => {
+      typingAnimation.stopAnimation();
+      typingAnimation.setValue(0);
+    };
+
+    // Start animation when loading, stop when not
+    if (isLoading) {
+      startTypingAnimation();
+    } else {
+      stopTypingAnimation();
+    }
+
+    return () => {
+      stopTypingAnimation();
+    };
+  }, [isLoading, typingAnimation]);
+
+  // Typing indicator component
+  const TypingIndicator = () => {
+    const dot1Opacity = typingAnimation.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [0.3, 1, 0.3],
+    });
+
+    const dot2Opacity = typingAnimation.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [0.3, 1, 0.3],
+      extrapolate: "clamp",
+    });
+
+    const dot3Opacity = typingAnimation.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [0.3, 1, 0.3],
+      extrapolate: "clamp",
+    });
+
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <Text
+          style={{
+            color: colors.textSecondary,
+            fontSize: 14,
+            marginRight: 8,
+            fontStyle: "italic",
+          }}
+        >
+          Vectra is typing
+        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Animated.View
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: colors.textSecondary,
+              marginHorizontal: 2,
+              opacity: dot1Opacity,
+            }}
+          />
+          <Animated.View
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: colors.textSecondary,
+              marginHorizontal: 2,
+              opacity: dot2Opacity,
+            }}
+          />
+          <Animated.View
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: colors.textSecondary,
+              marginHorizontal: 2,
+              opacity: dot3Opacity,
+            }}
+          />
+        </View>
+      </View>
+    );
+  };
+
   const [userPreferences, setUserPreferences] = useState<{
     preferredStyle: "detailed" | "concise" | "balanced";
     preferredTone: "professional" | "casual" | "friendly";
     preferredFocus: "actionable" | "educational" | "analytical";
+    voice?: string; // User's preferred voice for TTS
   }>({
     preferredStyle: "balanced",
     preferredTone: "friendly",
     preferredFocus: "actionable",
+    voice: "alloy", // Default voice
   });
 
   // Cache for common questions to reduce API calls - user-specific
@@ -389,7 +537,11 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       "Choose your preferred voice for Vectra",
       VOICE_OPTIONS.map((voice) => ({
         text: voice.name,
-        onPress: () => setSelectedVoice(voice.id),
+        onPress: () => {
+          setSelectedVoice(voice.id);
+          setUserPreferences((prev) => ({ ...prev, voice: voice.id }));
+          saveVoicePreference(voice.id);
+        },
       }))
     );
   };
@@ -1899,20 +2051,7 @@ Original Request: ${basePrompt}
                     </View>
                     <View style={{ flex: 1, paddingRight: 16 }}>
                       {message.isLoading ? (
-                        <View
-                          style={{ flexDirection: "row", alignItems: "center" }}
-                        >
-                          <ActivityIndicator size="small" color={colors.text} />
-                          <Text
-                            style={{
-                              marginLeft: 8,
-                              color: colors.text,
-                              fontSize: 16,
-                            }}
-                          >
-                            Analyzing your finances...
-                          </Text>
-                        </View>
+                        <TypingIndicator />
                       ) : (
                         <Text
                           style={{
@@ -1935,20 +2074,7 @@ Original Request: ${basePrompt}
                     </View>
                     <View style={{ flex: 1, paddingRight: 16 }}>
                       {message.isLoading ? (
-                        <View
-                          style={{ flexDirection: "row", alignItems: "center" }}
-                        >
-                          <ActivityIndicator size="small" color={colors.text} />
-                          <Text
-                            style={{
-                              marginLeft: 8,
-                              color: colors.text,
-                              fontSize: 16,
-                            }}
-                          >
-                            Analyzing your finances...
-                          </Text>
-                        </View>
+                        <TypingIndicator />
                       ) : (
                         <View>
                           <Text
@@ -2121,7 +2247,11 @@ Original Request: ${basePrompt}
         >
           {/* Audio Toggle */}
           <TouchableOpacity
-            onPress={() => setAudioEnabled(!audioEnabled)}
+            onPress={() => {
+              const newAudioEnabled = !audioEnabled;
+              setAudioEnabled(newAudioEnabled);
+              saveAudioEnabledPreference(newAudioEnabled);
+            }}
             style={{
               flexDirection: "row",
               alignItems: "center",

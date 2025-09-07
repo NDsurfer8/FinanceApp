@@ -873,7 +873,7 @@ function selectOptimalModel(message, isPlanRequest) {
     );
     return {
       model: "gpt-4o",
-      maxTokens: 1500,
+      maxTokens: 800, // Reduced from 1500 for faster responses
       temperature: 0.7,
       reason: "Complex planning request",
     };
@@ -886,19 +886,15 @@ function selectOptimalModel(message, isPlanRequest) {
     );
     return {
       model: "gpt-4o-mini",
-      maxTokens: 1000,
+      maxTokens: 500, // Reduced from 1000 for faster responses
       temperature: 0.7,
       reason: "Simple request",
     };
   }
 
-  // For longer messages without clear indicators, use GPT-4o-mini by default
-  console.log(
-    `Using GPT-4o-mini for default request: ${message.substring(0, 50)}...`
-  );
   return {
     model: "gpt-4o-mini",
-    maxTokens: 1000,
+    maxTokens: 500, // Reduced from 1000 for faster responses
     temperature: 0.7,
     reason: "Default to mini for cost efficiency",
   };
@@ -1010,6 +1006,7 @@ exports.aiChat = onCall(async (data, context) => {
           model: "tts-1", // Use tts-1 for faster generation, tts-1-hd for higher quality
           voice: voice,
           input: aiResponse,
+          speed: 1.1, // Slightly faster speech for quicker playback
         });
 
         // Convert the audio stream to buffer
