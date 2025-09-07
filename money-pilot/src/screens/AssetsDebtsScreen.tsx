@@ -771,7 +771,9 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   )
                 ) : (
                   <>
-                    {assets.map((asset, i) => renderAssetItem(asset, i))}
+                    {assets.map((asset, i) => (
+                      <View key={asset.id}>{renderAssetItem(asset, i)}</View>
+                    ))}
                     <View
                       style={{
                         height: 1,
@@ -895,7 +897,9 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   )
                 ) : (
                   <>
-                    {debts.map((debt, i) => renderDebtItem(debt, i))}
+                    {debts.map((debt, i) => (
+                      <View key={debt.id}>{renderDebtItem(debt, i)}</View>
+                    ))}
                     <View
                       style={{
                         height: 1,
