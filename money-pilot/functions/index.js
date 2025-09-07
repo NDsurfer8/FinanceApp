@@ -271,7 +271,7 @@ exports.getAccounts = onCall(
       return {
         accounts: [
           {
-            id: "test_account_1",
+            account_id: "test_account_1",
             name: "Test Checking Account",
             mask: "1234",
             type: "depository",
@@ -282,7 +282,7 @@ exports.getAccounts = onCall(
             },
           },
           {
-            id: "test_account_2",
+            account_id: "test_account_2",
             name: "Test Savings Account",
             mask: "5678",
             type: "depository",
@@ -293,7 +293,7 @@ exports.getAccounts = onCall(
             },
           },
           {
-            id: "test_account_3",
+            account_id: "test_account_3",
             name: "Test Credit Card",
             mask: "9876",
             type: "credit",
@@ -304,7 +304,7 @@ exports.getAccounts = onCall(
             },
           },
           {
-            id: "test_account_4",
+            account_id: "test_account_4",
             name: "Test Loan",
             mask: "5432",
             type: "loan",
@@ -315,7 +315,7 @@ exports.getAccounts = onCall(
             },
           },
           {
-            id: "test_account_5",
+            account_id: "test_account_5",
             name: "Test Investment",
             mask: "1234",
             type: "investment",
