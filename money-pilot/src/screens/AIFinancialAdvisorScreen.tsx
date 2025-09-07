@@ -13,6 +13,7 @@ import {
   Animated,
   Keyboard,
   Clipboard,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -311,6 +312,12 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   // Typing indicator animation
   const typingAnimation = useRef(new Animated.Value(0)).current;
 
+  // Audio playing animation
+  const audioPlayingAnimation = useRef(new Animated.Value(1)).current;
+
+  // Voice selection modal state
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
+
   // Load voice preferences on component mount
   useEffect(() => {
     loadVoicePreferences();
@@ -386,6 +393,29 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       stopTypingAnimation();
     };
   }, [isLoading, typingAnimation]);
+
+  // Audio playing animation
+  useEffect(() => {
+    if (isPlaying) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(audioPlayingAnimation, {
+            toValue: 1.1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(audioPlayingAnimation, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      audioPlayingAnimation.stopAnimation();
+      audioPlayingAnimation.setValue(1);
+    }
+  }, [isPlaying, audioPlayingAnimation]);
 
   // Typing indicator component
   const TypingIndicator = () => {
@@ -532,18 +562,14 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   };
 
   const selectVoice = () => {
-    Alert.alert(
-      "Select Voice",
-      "Choose your preferred voice for Vectra",
-      VOICE_OPTIONS.map((voice) => ({
-        text: voice.name,
-        onPress: () => {
-          setSelectedVoice(voice.id);
-          setUserPreferences((prev) => ({ ...prev, voice: voice.id }));
-          saveVoicePreference(voice.id);
-        },
-      }))
-    );
+    setShowVoiceModal(true);
+  };
+
+  const handleVoiceSelection = (voiceId: string) => {
+    setSelectedVoice(voiceId);
+    setUserPreferences((prev) => ({ ...prev, voice: voiceId }));
+    saveVoicePreference(voiceId);
+    setShowVoiceModal(false);
   };
 
   // Get welcome message
@@ -2253,12 +2279,10 @@ Original Request: ${basePrompt}
               saveAudioEnabledPreference(newAudioEnabled);
             }}
             style={{
-              flexDirection: "row",
-              alignItems: "center",
               backgroundColor: audioEnabled ? colors.primary : colors.surface,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 16,
+              paddingHorizontal: 10,
+              paddingVertical: 8,
+              borderRadius: 12,
               borderWidth: 1,
               borderColor: audioEnabled ? colors.primary : colors.border,
             }}
@@ -2268,16 +2292,6 @@ Original Request: ${basePrompt}
               size={16}
               color={audioEnabled ? "white" : colors.textSecondary}
             />
-            <Text
-              style={{
-                color: audioEnabled ? "white" : colors.textSecondary,
-                marginLeft: 4,
-                fontSize: 12,
-                fontWeight: "600",
-              }}
-            >
-              {audioEnabled ? "Audio On" : "Audio Off"}
-            </Text>
           </TouchableOpacity>
 
           {/* Voice Selection */}
@@ -2285,54 +2299,46 @@ Original Request: ${basePrompt}
             <TouchableOpacity
               onPress={selectVoice}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
                 backgroundColor: colors.surface,
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 16,
+                paddingHorizontal: 10,
+                paddingVertical: 8,
+                borderRadius: 12,
                 borderWidth: 1,
                 borderColor: colors.border,
               }}
             >
-              <Ionicons
-                name="person-outline"
-                size={16}
-                color={colors.textSecondary}
-              />
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  marginLeft: 4,
-                  fontSize: 12,
-                  fontWeight: "500",
-                }}
-              >
-                {VOICE_OPTIONS.find((v) => v.id === selectedVoice)?.name ||
-                  "Alloy"}
-              </Text>
+              <Ionicons name="mic" size={16} color={colors.primary} />
             </TouchableOpacity>
           )}
 
           {/* Play/Stop Button */}
           {audioEnabled && currentAudioBuffer && (
-            <TouchableOpacity
-              onPress={
-                isPlaying ? stopAudio : () => playAudio(currentAudioBuffer)
-              }
+            <Animated.View
               style={{
-                backgroundColor: isPlaying ? colors.error : colors.success,
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 16,
+                transform: [{ scale: audioPlayingAnimation }],
               }}
             >
-              <Ionicons
-                name={isPlaying ? "stop" : "play"}
-                size={16}
-                color="white"
-              />
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={
+                  isPlaying ? stopAudio : () => playAudio(currentAudioBuffer)
+                }
+                style={{
+                  backgroundColor: isPlaying ? colors.error : colors.success,
+                  paddingHorizontal: 10,
+                  paddingVertical: 8,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: isPlaying ? colors.error : colors.success,
+                }}
+              >
+                <Ionicons
+                  name={isPlaying ? "stop" : "play"}
+                  size={16}
+                  color="white"
+                  style={{ marginLeft: isPlaying ? 0 : 1 }}
+                />
+              </TouchableOpacity>
+            </Animated.View>
           )}
         </View>
 
@@ -2403,6 +2409,192 @@ Original Request: ${basePrompt}
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Voice Selection Modal */}
+      <Modal
+        visible={showVoiceModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowVoiceModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 20,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              width: "100%",
+              maxWidth: 400,
+              maxHeight: "80%",
+            }}
+          >
+            {/* Header */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 24,
+              }}
+            >
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: colors.primary + "15",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 16,
+                }}
+              >
+                <Ionicons name="mic" size={24} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: colors.text,
+                    marginBottom: 4,
+                  }}
+                >
+                  Select Voice
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                  }}
+                >
+                  Choose your preferred voice for Vectra
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowVoiceModal(false)}
+                style={{
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Voice Options */}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {VOICE_OPTIONS.map((voice) => (
+                <TouchableOpacity
+                  key={voice.id}
+                  onPress={() => handleVoiceSelection(voice.id)}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 16,
+                    paddingHorizontal: 16,
+                    borderRadius: 12,
+                    backgroundColor:
+                      selectedVoice === voice.id
+                        ? colors.primary + "15"
+                        : "transparent",
+                    borderWidth: 1,
+                    borderColor:
+                      selectedVoice === voice.id
+                        ? colors.primary
+                        : colors.border,
+                    marginBottom: 8,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      backgroundColor:
+                        selectedVoice === voice.id
+                          ? colors.primary
+                          : colors.surfaceSecondary,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 12,
+                    }}
+                  >
+                    <Ionicons
+                      name="person"
+                      size={20}
+                      color={
+                        selectedVoice === voice.id
+                          ? "white"
+                          : colors.textSecondary
+                      }
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        color: colors.text,
+                        marginBottom: 2,
+                      }}
+                    >
+                      {voice.name}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                      }}
+                    >
+                      {voice.id === "alloy" && "Neutral, balanced tone"}
+                      {voice.id === "echo" && "Clear, professional voice"}
+                      {voice.id === "fable" && "Warm, storytelling voice"}
+                      {voice.id === "onyx" && "Deep, authoritative tone"}
+                      {voice.id === "nova" && "Bright, energetic voice"}
+                      {voice.id === "shimmer" && "Soft, gentle tone"}
+                    </Text>
+                  </View>
+                  {selectedVoice === voice.id && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={24}
+                      color={colors.primary}
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Close Button */}
+            <TouchableOpacity
+              onPress={() => setShowVoiceModal(false)}
+              style={{
+                backgroundColor: colors.surfaceSecondary,
+                borderRadius: 12,
+                paddingVertical: 14,
+                alignItems: "center",
+                marginTop: 16,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: colors.text,
+                }}
+              >
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
