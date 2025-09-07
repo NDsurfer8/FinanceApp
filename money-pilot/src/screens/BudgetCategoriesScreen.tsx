@@ -250,86 +250,107 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
             );
           }
 
-          // Always ensure all default categories are present
-          const defaultCategories = [
-            { id: "1", name: "Rent", monthlyLimit: 0, color: "#FF6B6B" },
-            {
-              id: "2",
-              name: "Car Payment",
-              monthlyLimit: 0,
-              color: "#4ECDC4",
-            },
-            { id: "3", name: "Insurance", monthlyLimit: 0, color: "#45B7D1" },
-            { id: "4", name: "Utilities", monthlyLimit: 0, color: "#96CEB4" },
-            { id: "5", name: "Internet", monthlyLimit: 0, color: "#FFEAA7" },
-            { id: "6", name: "Phone", monthlyLimit: 0, color: "#DDA0DD" },
-            {
-              id: "7",
-              name: "Subscriptions",
-              monthlyLimit: 0,
-              color: "#98D8C8",
-            },
-            {
-              id: "8",
-              name: "Credit Card",
-              monthlyLimit: 0,
-              color: "#F7DC6F",
-            },
-            {
-              id: "9",
-              name: "Loan Payment",
-              monthlyLimit: 0,
-              color: "#BB8FCE",
-            },
-            { id: "10", name: "Food", monthlyLimit: 0, color: "#85C1E9" },
-            {
-              id: "11",
-              name: "Transportation",
-              monthlyLimit: 0,
-              color: "#F8C471",
-            },
-            { id: "12", name: "Health", monthlyLimit: 0, color: "#82E0AA" },
-            {
-              id: "13",
-              name: "Entertainment",
-              monthlyLimit: 0,
-              color: "#F1948A",
-            },
-            { id: "14", name: "Shopping", monthlyLimit: 0, color: "#85C1E9" },
-            { id: "15", name: "Business", monthlyLimit: 0, color: "#D7BDE2" },
-            {
-              id: "16",
-              name: "Other Expenses",
-              monthlyLimit: 0,
-              color: "#A9CCE3",
-            },
-          ];
+          // Only add missing default categories for new users (when no custom categories exist)
+          const hasCustomCategories = uniqueCategories.some(
+            (cat) =>
+              ![
+                "Rent",
+                "Car Payment",
+                "Insurance",
+                "Utilities",
+                "Internet",
+                "Phone",
+                "Subscriptions",
+                "Credit Card",
+                "Loan Payment",
+                "Food",
+                "Transportation",
+                "Health",
+                "Entertainment",
+                "Shopping",
+                "Business",
+                "Other Expenses",
+              ].includes(cat.name)
+          );
 
-          // Merge saved categories with default categories
-          const mergedCategories = defaultCategories.map((defaultCat) => {
-            const savedCat = uniqueCategories.find(
-              (cat) => cat.name === defaultCat.name
-            );
-            if (savedCat) {
-              return {
-                ...defaultCat,
-                monthlyLimit: savedCat.monthlyLimit,
-                color: savedCat.color || defaultCat.color,
-              };
+          if (!hasCustomCategories && uniqueCategories.length <= 16) {
+            // Only add missing default categories for new users
+            const defaultCategories = [
+              { id: "1", name: "Rent", monthlyLimit: 0, color: "#FF6B6B" },
+              {
+                id: "2",
+                name: "Car Payment",
+                monthlyLimit: 0,
+                color: "#4ECDC4",
+              },
+              { id: "3", name: "Insurance", monthlyLimit: 0, color: "#45B7D1" },
+              { id: "4", name: "Utilities", monthlyLimit: 0, color: "#96CEB4" },
+              { id: "5", name: "Internet", monthlyLimit: 0, color: "#FFEAA7" },
+              { id: "6", name: "Phone", monthlyLimit: 0, color: "#DDA0DD" },
+              {
+                id: "7",
+                name: "Subscriptions",
+                monthlyLimit: 0,
+                color: "#98D8C8",
+              },
+              {
+                id: "8",
+                name: "Credit Card",
+                monthlyLimit: 0,
+                color: "#F7DC6F",
+              },
+              {
+                id: "9",
+                name: "Loan Payment",
+                monthlyLimit: 0,
+                color: "#BB8FCE",
+              },
+              { id: "10", name: "Food", monthlyLimit: 0, color: "#85C1E9" },
+              {
+                id: "11",
+                name: "Transportation",
+                monthlyLimit: 0,
+                color: "#F8C471",
+              },
+              { id: "12", name: "Health", monthlyLimit: 0, color: "#82E0AA" },
+              {
+                id: "13",
+                name: "Entertainment",
+                monthlyLimit: 0,
+                color: "#F1948A",
+              },
+              { id: "14", name: "Shopping", monthlyLimit: 0, color: "#85C1E9" },
+              { id: "15", name: "Business", monthlyLimit: 0, color: "#D7BDE2" },
+              {
+                id: "16",
+                name: "Other Expenses",
+                monthlyLimit: 0,
+                color: "#A9CCE3",
+              },
+            ];
+
+            // Add only missing default categories
+            const mergedCategories = [...uniqueCategories];
+            defaultCategories.forEach((defaultCat) => {
+              const exists = mergedCategories.find(
+                (cat) => cat.name === defaultCat.name
+              );
+              if (!exists) {
+                mergedCategories.push(defaultCat);
+              }
+            });
+
+            // Save merged categories if new ones were added
+            if (mergedCategories.length > uniqueCategories.length) {
+              await saveBudgetCategories(mergedCategories, user.uid);
+              console.log("Added missing default categories");
             }
-            return defaultCat;
-          });
 
-          // Save merged categories if they're different from saved ones
-          if (
-            JSON.stringify(uniqueCategories) !==
-            JSON.stringify(mergedCategories)
-          ) {
-            await saveBudgetCategories(mergedCategories, user.uid);
-            console.log("Updated categories with defaults");
+            setCategories(mergedCategories);
+          } else {
+            // User has custom categories, preserve them
+            setCategories(uniqueCategories);
           }
-
-          setCategories(mergedCategories);
         } catch (error) {
           console.error("Error loading budget categories:", error);
         }
