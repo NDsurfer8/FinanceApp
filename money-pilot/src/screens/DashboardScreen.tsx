@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -61,6 +62,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [hasCheckedForTour, setHasCheckedForTour] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<number>(0);
   const [isNewUserState, setIsNewUserState] = useState<boolean>(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [modalContent, setModalContent] = useState<{
+    title: string;
+    content: string;
+    icon: string;
+    color: string;
+  } | null>(null);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
@@ -75,6 +83,16 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     return isNewUserState
       ? `Welcome, ${userName}`
       : `Welcome Back, ${userName}`;
+  };
+
+  const showInfoModalHandler = (
+    title: string,
+    content: string,
+    icon: string,
+    color: string
+  ) => {
+    setModalContent({ title, content, icon, color });
+    setShowInfoModal(true);
   };
 
   // Function to fetch pending invitations
@@ -809,10 +827,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     </Text>
                     <TouchableOpacity
                       onPress={() => {
-                        Alert.alert(
+                        showInfoModalHandler(
                           "Income Breakdown",
                           "Income includes both actual transactions this month and recurring income (salary, rent, etc.) that automatically occurs each month.",
-                          [{ text: "Got it" }]
+                          "trending-up",
+                          colors.success
                         );
                       }}
                       style={{ marginLeft: 8 }}
@@ -891,10 +910,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     </Text>
                     <TouchableOpacity
                       onPress={() => {
-                        Alert.alert(
+                        showInfoModalHandler(
                           "Expenses Breakdown",
                           "Expenses include both actual transactions this month and recurring expenses (mortgage, utilities, etc.) that automatically occur each month.",
-                          [{ text: "Got it" }]
+                          "trending-down",
+                          colors.error
                         );
                       }}
                       style={{ marginLeft: 8 }}
@@ -975,15 +995,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     </Text>
                     <TouchableOpacity
                       onPress={() => {
-                        Alert.alert(
+                        showInfoModalHandler(
                           "Available Amount Calculation",
-                          `Formula:\nNet Income - Savings (${savingsPercent}%) - Goal Contributions - Debt Payoff (${debtPayoffPercent}%)\n\nBreakdown:\n\nGross Income:     ${formatCurrency(
+                          `FORMULA\nNet Income - Savings (${savingsPercent}%) - Goal Contributions - Debt Payoff (${debtPayoffPercent}%)\n\nINCOME & EXPENSES\nGross Income:     ${formatCurrency(
                             monthlyIncome
                           )}\nExpenses:         ${formatCurrency(
                             monthlyExpenses
                           )}\n─────────────────────────\nNet Income:       ${formatCurrency(
                             netIncome
-                          )}\n\nSavings:          ${formatCurrency(
+                          )}\n\nALLOCATIONS\nSavings:          ${formatCurrency(
                             savingsAmount
                           )}\nGoal Contrib:     ${formatCurrency(
                             totalGoalContributions
@@ -992,7 +1012,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                           )}\n─────────────────────────\nAvailable:        ${formatCurrency(
                             availableAmount
                           )}`,
-                          [{ text: "Got it", style: "default" }]
+                          "calculator",
+                          availableAmount >= 0 ? colors.warning : colors.error
                         );
                       }}
                       style={{ marginLeft: 8 }}
@@ -1295,6 +1316,144 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           }}
         />
       </TourGuide>
+
+      {/* Info Modal */}
+      <Modal
+        visible={showInfoModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowInfoModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              width: "100%",
+              maxWidth: 400,
+              shadowColor: colors.shadow,
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.25,
+              shadowRadius: 20,
+              elevation: 10,
+            }}
+          >
+            {/* Header */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+            >
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: modalContent?.color + "15",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 16,
+                }}
+              >
+                <Ionicons
+                  name={modalContent?.icon as any}
+                  size={24}
+                  color={modalContent?.color}
+                />
+              </View>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: colors.text,
+                  flex: 1,
+                }}
+              >
+                {modalContent?.title}
+              </Text>
+            </View>
+
+            {/* Content */}
+            <View style={{ marginBottom: 24 }}>
+              {modalContent?.content.split("\n").map((line, index) => {
+                // Check if line is a section header (all caps)
+                const isSectionHeader =
+                  line === line.toUpperCase() &&
+                  line.length > 0 &&
+                  !line.includes("─");
+                // Check if line is a separator
+                const isSeparator = line.includes("─");
+                // Check if line is a formula
+                const isFormula =
+                  line.includes("Net Income -") || line.includes("FORMULA");
+
+                return (
+                  <Text
+                    key={index}
+                    style={{
+                      fontSize: isSectionHeader ? 14 : isFormula ? 13 : 15,
+                      color: isSectionHeader
+                        ? colors.primary
+                        : isFormula
+                        ? colors.textSecondary
+                        : colors.text,
+                      lineHeight: isSectionHeader ? 20 : 22,
+                      marginBottom: isSectionHeader ? 8 : isSeparator ? 4 : 2,
+                      fontWeight: isSectionHeader
+                        ? "700"
+                        : isFormula
+                        ? "500"
+                        : "400",
+                      fontFamily: isFormula ? "monospace" : undefined,
+                      textAlign: isSeparator ? "center" : "left",
+                    }}
+                  >
+                    {line}
+                  </Text>
+                );
+              })}
+            </View>
+
+            {/* Close Button */}
+            <TouchableOpacity
+              onPress={() => setShowInfoModal(false)}
+              style={{
+                backgroundColor: colors.primary,
+                borderRadius: 12,
+                paddingVertical: 14,
+                alignItems: "center",
+                shadowColor: colors.shadow,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: "white",
+                }}
+              >
+                Got it
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
