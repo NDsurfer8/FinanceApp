@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -38,7 +38,10 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
   const { isFriendlyMode } = useFriendlyMode();
   const { user } = useAuth();
   const route = useRoute();
-  const selectedMonth = (route.params as any)?.selectedMonth || new Date();
+  const selectedMonthParam = (route.params as any)?.selectedMonth;
+  const selectedMonth = selectedMonthParam
+    ? new Date(selectedMonthParam)
+    : new Date();
   const {
     transactions,
     recurringTransactions,
@@ -247,86 +250,107 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
             );
           }
 
-          // Always ensure all default categories are present
-          const defaultCategories = [
-            { id: "1", name: "Rent", monthlyLimit: 0, color: "#FF6B6B" },
-            {
-              id: "2",
-              name: "Car Payment",
-              monthlyLimit: 0,
-              color: "#4ECDC4",
-            },
-            { id: "3", name: "Insurance", monthlyLimit: 0, color: "#45B7D1" },
-            { id: "4", name: "Utilities", monthlyLimit: 0, color: "#96CEB4" },
-            { id: "5", name: "Internet", monthlyLimit: 0, color: "#FFEAA7" },
-            { id: "6", name: "Phone", monthlyLimit: 0, color: "#DDA0DD" },
-            {
-              id: "7",
-              name: "Subscriptions",
-              monthlyLimit: 0,
-              color: "#98D8C8",
-            },
-            {
-              id: "8",
-              name: "Credit Card",
-              monthlyLimit: 0,
-              color: "#F7DC6F",
-            },
-            {
-              id: "9",
-              name: "Loan Payment",
-              monthlyLimit: 0,
-              color: "#BB8FCE",
-            },
-            { id: "10", name: "Food", monthlyLimit: 0, color: "#85C1E9" },
-            {
-              id: "11",
-              name: "Transportation",
-              monthlyLimit: 0,
-              color: "#F8C471",
-            },
-            { id: "12", name: "Health", monthlyLimit: 0, color: "#82E0AA" },
-            {
-              id: "13",
-              name: "Entertainment",
-              monthlyLimit: 0,
-              color: "#F1948A",
-            },
-            { id: "14", name: "Shopping", monthlyLimit: 0, color: "#85C1E9" },
-            { id: "15", name: "Business", monthlyLimit: 0, color: "#D7BDE2" },
-            {
-              id: "16",
-              name: "Other Expenses",
-              monthlyLimit: 0,
-              color: "#A9CCE3",
-            },
-          ];
+          // Only add missing default categories for new users (when no custom categories exist)
+          const hasCustomCategories = uniqueCategories.some(
+            (cat) =>
+              ![
+                "Rent",
+                "Car Payment",
+                "Insurance",
+                "Utilities",
+                "Internet",
+                "Phone",
+                "Subscriptions",
+                "Credit Card",
+                "Loan Payment",
+                "Food",
+                "Transportation",
+                "Health",
+                "Entertainment",
+                "Shopping",
+                "Business",
+                "Other Expenses",
+              ].includes(cat.name)
+          );
 
-          // Merge saved categories with default categories
-          const mergedCategories = defaultCategories.map((defaultCat) => {
-            const savedCat = uniqueCategories.find(
-              (cat) => cat.name === defaultCat.name
-            );
-            if (savedCat) {
-              return {
-                ...defaultCat,
-                monthlyLimit: savedCat.monthlyLimit,
-                color: savedCat.color || defaultCat.color,
-              };
+          if (!hasCustomCategories && uniqueCategories.length <= 16) {
+            // Only add missing default categories for new users
+            const defaultCategories = [
+              { id: "1", name: "Rent", monthlyLimit: 0, color: "#FF6B6B" },
+              {
+                id: "2",
+                name: "Car Payment",
+                monthlyLimit: 0,
+                color: "#4ECDC4",
+              },
+              { id: "3", name: "Insurance", monthlyLimit: 0, color: "#45B7D1" },
+              { id: "4", name: "Utilities", monthlyLimit: 0, color: "#96CEB4" },
+              { id: "5", name: "Internet", monthlyLimit: 0, color: "#FFEAA7" },
+              { id: "6", name: "Phone", monthlyLimit: 0, color: "#DDA0DD" },
+              {
+                id: "7",
+                name: "Subscriptions",
+                monthlyLimit: 0,
+                color: "#98D8C8",
+              },
+              {
+                id: "8",
+                name: "Credit Card",
+                monthlyLimit: 0,
+                color: "#F7DC6F",
+              },
+              {
+                id: "9",
+                name: "Loan Payment",
+                monthlyLimit: 0,
+                color: "#BB8FCE",
+              },
+              { id: "10", name: "Food", monthlyLimit: 0, color: "#85C1E9" },
+              {
+                id: "11",
+                name: "Transportation",
+                monthlyLimit: 0,
+                color: "#F8C471",
+              },
+              { id: "12", name: "Health", monthlyLimit: 0, color: "#82E0AA" },
+              {
+                id: "13",
+                name: "Entertainment",
+                monthlyLimit: 0,
+                color: "#F1948A",
+              },
+              { id: "14", name: "Shopping", monthlyLimit: 0, color: "#85C1E9" },
+              { id: "15", name: "Business", monthlyLimit: 0, color: "#D7BDE2" },
+              {
+                id: "16",
+                name: "Other Expenses",
+                monthlyLimit: 0,
+                color: "#A9CCE3",
+              },
+            ];
+
+            // Add only missing default categories
+            const mergedCategories = [...uniqueCategories];
+            defaultCategories.forEach((defaultCat) => {
+              const exists = mergedCategories.find(
+                (cat) => cat.name === defaultCat.name
+              );
+              if (!exists) {
+                mergedCategories.push(defaultCat);
+              }
+            });
+
+            // Save merged categories if new ones were added
+            if (mergedCategories.length > uniqueCategories.length) {
+              await saveBudgetCategories(mergedCategories, user.uid);
+              console.log("Added missing default categories");
             }
-            return defaultCat;
-          });
 
-          // Save merged categories if they're different from saved ones
-          if (
-            JSON.stringify(uniqueCategories) !==
-            JSON.stringify(mergedCategories)
-          ) {
-            await saveBudgetCategories(mergedCategories, user.uid);
-            console.log("Updated categories with defaults");
+            setCategories(mergedCategories);
+          } else {
+            // User has custom categories, preserve them
+            setCategories(uniqueCategories);
           }
-
-          setCategories(mergedCategories);
         } catch (error) {
           console.error("Error loading budget categories:", error);
         }
@@ -481,6 +505,26 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     (includeSavings ? savingsAmount : 0) -
     (includeDebtPayoff ? debtPayoffAmount : 0) -
     (includeGoalContributions ? monthlyGoalsContribution : 0);
+
+  // Calculate available amount for allocation
+  const availableAmount = useMemo(() => {
+    return (
+      totalBudget -
+      (editingCategory
+        ? categories
+            .filter((cat) => cat.id !== editingCategory.id)
+            .reduce((sum, cat) => sum + cat.monthlyLimit, 0) +
+          (parseFloat(tempCategoryLimit) || 0)
+        : categories.reduce((sum, cat) => sum + cat.monthlyLimit, 0) +
+          (parseFloat(newCategoryLimit) || 0))
+    );
+  }, [
+    totalBudget,
+    editingCategory,
+    categories,
+    tempCategoryLimit,
+    newCategoryLimit,
+  ]);
 
   const getCategorySpending = (categoryName: string) => {
     // Get actual spending from transactions in this category
@@ -1578,41 +1622,17 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     alignItems: "center",
                     paddingVertical: 12,
                     paddingHorizontal: 16,
-                    backgroundColor: (() => {
-                      const available =
-                        totalBudget -
-                        (editingCategory
-                          ? categories
-                              .filter((cat) => cat.id !== editingCategory.id)
-                              .reduce((sum, cat) => sum + cat.monthlyLimit, 0) +
-                            (parseFloat(tempCategoryLimit) || 0)
-                          : categories.reduce(
-                              (sum, cat) => sum + cat.monthlyLimit,
-                              0
-                            ));
-                      return available < 0
+                    backgroundColor:
+                      availableAmount < 0
                         ? colors.error + "15"
-                        : colors.success + "15";
-                    })(),
+                        : colors.success + "15",
                     borderRadius: 12,
                     marginBottom: 20,
                     borderWidth: 1,
-                    borderColor: (() => {
-                      const available =
-                        totalBudget -
-                        (editingCategory
-                          ? categories
-                              .filter((cat) => cat.id !== editingCategory.id)
-                              .reduce((sum, cat) => sum + cat.monthlyLimit, 0) +
-                            (parseFloat(tempCategoryLimit) || 0)
-                          : categories.reduce(
-                              (sum, cat) => sum + cat.monthlyLimit,
-                              0
-                            ));
-                      return available < 0
+                    borderColor:
+                      availableAmount < 0
                         ? colors.error + "30"
-                        : colors.success + "30";
-                    })(),
+                        : colors.success + "30",
                   }}
                 >
                   <Text
@@ -1622,58 +1642,19 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       color: colors.text,
                     }}
                   >
-                    {(() => {
-                      const available =
-                        totalBudget -
-                        (editingCategory
-                          ? categories
-                              .filter((cat) => cat.id !== editingCategory.id)
-                              .reduce((sum, cat) => sum + cat.monthlyLimit, 0) +
-                            (parseFloat(tempCategoryLimit) || 0)
-                          : categories.reduce(
-                              (sum, cat) => sum + cat.monthlyLimit,
-                              0
-                            ));
-                      return available < 0
-                        ? "Over Budget"
-                        : "Available to Allocate";
-                    })()}
+                    {availableAmount < 0
+                      ? "Over Budget"
+                      : "Available to Allocate"}
                   </Text>
                   <Text
                     style={{
                       fontSize: 16,
                       fontWeight: "700",
-                      color: (() => {
-                        const available =
-                          totalBudget -
-                          (editingCategory
-                            ? categories
-                                .filter((cat) => cat.id !== editingCategory.id)
-                                .reduce(
-                                  (sum, cat) => sum + cat.monthlyLimit,
-                                  0
-                                ) + (parseFloat(tempCategoryLimit) || 0)
-                            : categories.reduce(
-                                (sum, cat) => sum + cat.monthlyLimit,
-                                0
-                              ));
-                        return available < 0 ? colors.error : colors.success;
-                      })(),
+                      color:
+                        availableAmount < 0 ? colors.error : colors.success,
                     }}
                   >
-                    $
-                    {(
-                      totalBudget -
-                      (editingCategory
-                        ? categories
-                            .filter((cat) => cat.id !== editingCategory.id)
-                            .reduce((sum, cat) => sum + cat.monthlyLimit, 0) +
-                          (parseFloat(tempCategoryLimit) || 0)
-                        : categories.reduce(
-                            (sum, cat) => sum + cat.monthlyLimit,
-                            0
-                          ))
-                    ).toLocaleString()}
+                    ${availableAmount.toLocaleString()}
                   </Text>
                 </View>
 

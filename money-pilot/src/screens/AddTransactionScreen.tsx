@@ -25,6 +25,8 @@ import {
   saveTransaction,
   updateTransaction,
   removeTransaction,
+  getUserBudgetCategories,
+  BudgetCategory,
 } from "../services/userData";
 import { billReminderService } from "../services/billReminders";
 import { useTransactionLimits } from "../hooks/useTransactionLimits";
@@ -67,6 +69,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const [stopFutureLoading, setStopFutureLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>(
+    []
+  );
   const {
     type: initialType,
     selectedMonth,
@@ -216,6 +221,22 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     fetchRecurringTransactionData();
   }, [editMode, transaction?.recurringTransactionId, user]);
 
+  // Load budget categories for expense categories
+  React.useEffect(() => {
+    const loadBudgetCategories = async () => {
+      if (user?.uid) {
+        try {
+          const categories = await getUserBudgetCategories(user.uid);
+          setBudgetCategories(categories);
+        } catch (error) {
+          console.error("Error loading budget categories:", error);
+        }
+      }
+    };
+
+    loadBudgetCategories();
+  }, [user?.uid]);
+
   // Date picker handlers
   const handleDateChange = (event: any, selectedDate?: Date) => {
     if (selectedDate) {
@@ -247,7 +268,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     setShowEndDatePicker(true);
   };
 
-  // Map Plaid's new 16 primary categories to our budget categories (only for imported transactions)
+  // Get categories based on transaction type
   const getCategories = (type: string) => {
     if (type === "income") {
       return [
@@ -267,24 +288,30 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         "Other Income",
       ];
     } else {
-      return [
-        "Rent",
-        "Car Payment",
-        "Insurance",
-        "Utilities",
-        "Internet",
-        "Phone",
-        "Subscriptions",
-        "Credit Card",
-        "Loan Payment",
-        "Food",
-        "Transportation",
-        "Health",
-        "Entertainment",
-        "Shopping",
-        "Business",
-        "Other Expenses",
-      ];
+      // Use budget categories for expenses, fallback to defaults if not loaded yet
+      if (budgetCategories.length > 0) {
+        return budgetCategories.map((cat) => cat.name);
+      } else {
+        // Fallback to default categories while budget categories are loading
+        return [
+          "Rent",
+          "Car Payment",
+          "Insurance",
+          "Utilities",
+          "Internet",
+          "Phone",
+          "Subscriptions",
+          "Credit Card",
+          "Loan Payment",
+          "Food",
+          "Transportation",
+          "Health",
+          "Entertainment",
+          "Shopping",
+          "Business",
+          "Other Expenses",
+        ];
+      }
     }
   };
 

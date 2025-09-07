@@ -677,7 +677,7 @@ export default function SharedFinanceScreen({
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 Your Groups ({groups.length})
               </Text>
-              {groups.map(renderGroupCard)}
+              {groups.map((group) => renderGroupCard(group))}
             </View>
           )}
         </TourGuide>

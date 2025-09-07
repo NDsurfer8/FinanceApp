@@ -87,7 +87,7 @@ type AppScreenState =
 export const MainApp: React.FC = () => {
   const [appState, setAppState] = useState<AppScreenState>("splash");
   const [isLoading, setIsLoading] = useState(true);
-  const [loadingMessage, setLoadingMessage] = useState("Initializing...");
+  const [loadingMessage, setLoadingMessage] = useState("");
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const {
     isBiometricEnabled,
@@ -171,10 +171,7 @@ export const MainApp: React.FC = () => {
 
   const initializeApp = async () => {
     try {
-      setLoadingMessage("Loading fonts...");
       await Font.loadAsync(fontsToLoad);
-
-      setLoadingMessage("Checking authentication...");
 
       // Wait for auth to finish loading with timeout
       let authWaitTime = 0;
@@ -189,13 +186,10 @@ export const MainApp: React.FC = () => {
         // Auth loading timeout, proceeding anyway
       }
 
-      setLoadingMessage("Loading app settings...");
       await checkFirstLaunch();
 
-      setLoadingMessage("Setting up notifications...");
       await setupNotifications();
 
-      setLoadingMessage("Checking authentication...");
       try {
         await revenueCatService.initialize();
       } catch (error) {
@@ -649,7 +643,7 @@ export const MainApp: React.FC = () => {
   }
 
   // If we reach here, something went wrong - show splash screen with better message
-  return <SplashScreen message="Preparing your financial dashboard..." />;
+  return <SplashScreen />;
 };
 
 const MainTabNavigator = () => {

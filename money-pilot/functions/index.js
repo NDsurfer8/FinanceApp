@@ -271,7 +271,7 @@ exports.getAccounts = onCall(
       return {
         accounts: [
           {
-            id: "test_account_1",
+            account_id: "test_account_1",
             name: "Test Checking Account",
             mask: "1234",
             type: "depository",
@@ -282,7 +282,7 @@ exports.getAccounts = onCall(
             },
           },
           {
-            id: "test_account_2",
+            account_id: "test_account_2",
             name: "Test Savings Account",
             mask: "5678",
             type: "depository",
@@ -290,6 +290,39 @@ exports.getAccounts = onCall(
             balances: {
               available: 15000,
               current: 15000,
+            },
+          },
+          {
+            account_id: "test_account_3",
+            name: "Test Credit Card",
+            mask: "9876",
+            type: "credit",
+            subtype: "credit_card",
+            balances: {
+              available: 2500,
+              current: 2500,
+            },
+          },
+          {
+            account_id: "test_account_4",
+            name: "Test Loan",
+            mask: "5432",
+            type: "loan",
+            subtype: "loan",
+            balances: {
+              available: 1000,
+              current: 1000,
+            },
+          },
+          {
+            account_id: "test_account_5",
+            name: "Test Investment",
+            mask: "1234",
+            type: "investment",
+            subtype: "investment",
+            balances: {
+              available: 10000,
+              current: 10000,
             },
           },
         ],
@@ -345,38 +378,115 @@ exports.getTransactions = onCall(
     if (accessToken === "test_access_token_12345") {
       return {
         transactions: [
+          // September 2025 - Early month
           {
             transaction_id: "test_transaction_1",
-            account_id: "test_account_1",
-            amount: -50.0,
-            date: "2024-01-15",
-            name: "Test Grocery Store",
-            merchant_name: "Test Grocery Store",
-            category: ["Food and Drink", "Restaurants"],
+            account_id: "test_account_2",
+            amount: -3500.0,
+            date: "2025-09-01",
+            name: "Salary Deposit",
+            merchant_name: "Tech Corp Inc",
+            category: ["Transfer", "Deposit"],
             pending: false,
           },
           {
             transaction_id: "test_transaction_2",
             account_id: "test_account_1",
-            amount: -25.0,
-            date: "2024-01-20",
-            name: "Test Gas Station",
-            merchant_name: "Test Gas Station",
-            category: ["Transportation", "Gas"],
+            amount: 1800.0,
+            date: "2025-09-01",
+            name: "Rent Payment",
+            merchant_name: "Downtown Apartments",
+            category: ["Rent", "Housing"],
             pending: false,
           },
           {
             transaction_id: "test_transaction_3",
+            account_id: "test_account_1",
+            amount: 65.0,
+            date: "2025-09-02",
+            name: "Whole Foods",
+            merchant_name: "Whole Foods Market",
+            category: ["Food and Drink", "Groceries"],
+            pending: false,
+          },
+
+          // September 2025 - Mid month
+          {
+            transaction_id: "test_transaction_4",
+            account_id: "test_account_1",
+            amount: 45.0,
+            date: "2025-09-15",
+            name: "Shell Gas Station",
+            merchant_name: "Shell",
+            category: ["Transportation", "Gas"],
+            pending: false,
+          },
+          {
+            transaction_id: "test_transaction_5",
+            account_id: "test_account_1",
+            amount: 120.0,
+            date: "2025-09-20",
+            name: "Electric Bill",
+            merchant_name: "Pacific Gas & Electric",
+            category: ["Utilities", "Electric"],
+            pending: false,
+          },
+
+          // October 2025
+          {
+            transaction_id: "test_transaction_6",
             account_id: "test_account_2",
-            amount: 2000.0,
-            date: "2024-01-01",
-            name: "Test Salary Deposit",
-            merchant_name: "Test Employer",
+            amount: -3500.0,
+            date: "2025-10-01",
+            name: "Salary Deposit",
+            merchant_name: "Tech Corp Inc",
             category: ["Transfer", "Deposit"],
             pending: false,
           },
+          {
+            transaction_id: "test_transaction_7",
+            account_id: "test_account_1",
+            amount: 1800.0,
+            date: "2025-10-01",
+            name: "Rent Payment",
+            merchant_name: "Downtown Apartments",
+            category: ["Rent", "Housing"],
+            pending: false,
+          },
+          {
+            transaction_id: "test_transaction_8",
+            account_id: "test_account_1",
+            amount: 89.0,
+            date: "2025-10-10",
+            name: "Target",
+            merchant_name: "Target",
+            category: ["Shopping", "General"],
+            pending: false,
+          },
+
+          // November 2025
+          {
+            transaction_id: "test_transaction_9",
+            account_id: "test_account_2",
+            amount: -3500.0,
+            date: "2025-11-01",
+            name: "Salary Deposit",
+            merchant_name: "Tech Corp Inc",
+            category: ["Transfer", "Deposit"],
+            pending: false,
+          },
+          {
+            transaction_id: "test_transaction_10",
+            account_id: "test_account_1",
+            amount: 1800.0,
+            date: "2025-11-01",
+            name: "Rent Payment",
+            merchant_name: "Downtown Apartments",
+            category: ["Rent", "Housing"],
+            pending: false,
+          },
         ],
-        total_transactions: 3,
+        total_transactions: 10,
       };
     }
 

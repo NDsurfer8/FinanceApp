@@ -56,5 +56,5 @@ export type RootStackParamList = {
   FinancialPlans: undefined;
   PrivacyPolicy: undefined;
   TermsOfService: undefined;
-  BudgetCategories: { selectedMonth?: Date };
+  BudgetCategories: { selectedMonth?: string };
 };
