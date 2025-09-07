@@ -292,6 +292,83 @@ exports.getAccounts = onCall(
               current: 15000,
             },
           },
+          {
+            id: "test_account_3",
+            name: "Test Credit Card",
+            mask: "9876",
+            type: "credit",
+            subtype: "credit_card",
+            balances: {
+              available: 2500,
+              current: 2500,
+            },
+          },
+          {
+            id: "test_account_4",
+            name: "Test Loan",
+            mask: "5432",
+            type: "loan",
+            subtype: "loan",
+            balances: {
+              available: 1000,
+              current: 1000,
+            },
+          },
+          {
+            id: "test_account_5",
+            name: "Test Investment",
+            mask: "1234",
+            type: "investment",
+            subtype: "investment",
+            balances: {
+              available: 10000,
+              current: 10000,
+            },
+          },
+          {
+            id: "test_account_6",
+            name: "Test Mortgage",
+            mask: "5678",
+            type: "mortgage",
+            subtype: "mortgage",
+            balances: {
+              available: 5000,
+              current: 5000,
+            },
+          },
+          {
+            id: "test_account_7",
+            name: "Test Other",
+            mask: "9876",
+            type: "other",
+            subtype: "other",
+            balances: {
+              available: 10000,
+              current: 10000,
+            },
+          },
+          {
+            id: "test_account_8",
+            name: "Test Other",
+            mask: "5432",
+            type: "other",
+            subtype: "other",
+            balances: {
+              available: 10000,
+              current: 10000,
+            },
+          },
+          {
+            id: "test_account_9",
+            name: "Test Other",
+            mask: "1234",
+            type: "other",
+            subtype: "other",
+            balances: {
+              available: 10000,
+              current: 10000,
+            },
+          },
         ],
       };
     }
