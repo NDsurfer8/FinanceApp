@@ -229,13 +229,13 @@ const styles = StyleSheet.create({
   },
   versionContainer: {
     position: "absolute",
-    bottom: 40,
+    bottom: -200,
     alignItems: "center",
   },
   versionText: {
     fontFamily: fontFamily.regular,
     fontSize: 14,
-    color: "#6b7280",
+    color: "black",
     opacity: 0.8,
   },
 });
