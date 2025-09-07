@@ -318,6 +318,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   // Voice selection modal state
   const [showVoiceModal, setShowVoiceModal] = useState(false);
 
+  // Audio tooltip state
+  const [showAudioTooltip, setShowAudioTooltip] = useState(false);
+
   // Load voice preferences on component mount
   useEffect(() => {
     loadVoicePreferences();
@@ -329,6 +332,9 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       const savedAudioEnabled = await AsyncStorage.getItem(
         "vectra_audio_enabled"
       );
+      const hasSeenAudioTooltip = await AsyncStorage.getItem(
+        "vectra_audio_tooltip_seen"
+      );
 
       if (savedVoice) {
         setSelectedVoice(savedVoice);
@@ -336,6 +342,13 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       }
       if (savedAudioEnabled !== null) {
         setAudioEnabled(savedAudioEnabled === "true");
+      }
+
+      // Show tooltip for first-time users
+      if (!hasSeenAudioTooltip) {
+        setTimeout(() => {
+          setShowAudioTooltip(true);
+        }, 2000); // Show after 2 seconds
       }
     } catch (error) {
       console.log("Error loading voice preferences:", error);
@@ -570,6 +583,15 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     setUserPreferences((prev) => ({ ...prev, voice: voiceId }));
     saveVoicePreference(voiceId);
     setShowVoiceModal(false);
+  };
+
+  const dismissAudioTooltip = async () => {
+    setShowAudioTooltip(false);
+    try {
+      await AsyncStorage.setItem("vectra_audio_tooltip_seen", "true");
+    } catch (error) {
+      console.log("Error saving tooltip state:", error);
+    }
   };
 
   // Get welcome message
@@ -2271,12 +2293,105 @@ Original Request: ${basePrompt}
             gap: 8,
           }}
         >
+          {/* Audio Tooltip */}
+          {showAudioTooltip && (
+            <View
+              style={{
+                position: "absolute",
+                bottom: 50,
+                left: -80,
+                right: 0,
+                alignItems: "center",
+                zIndex: 1000,
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: colors.primary,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  maxWidth: 280,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 14,
+                    fontWeight: "600",
+                    textAlign: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  Turn on audio to hear Vectra's voice!
+                </Text>
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 12,
+                    textAlign: "center",
+                    opacity: 0.9,
+                    marginBottom: 12,
+                  }}
+                >
+                  Tap the speaker icon below to enable voice responses
+                </Text>
+                <TouchableOpacity
+                  onPress={dismissAudioTooltip}
+                  style={{
+                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 8,
+                    alignSelf: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 12,
+                      fontWeight: "600",
+                    }}
+                  >
+                    Got it!
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {/* Tooltip arrow pointing down - positioned on left side */}
+              <View
+                style={{
+                  width: 0,
+                  height: 0,
+                  borderLeftWidth: 8,
+                  borderRightWidth: 8,
+                  borderTopWidth: 8,
+                  borderLeftColor: "transparent",
+                  borderRightColor: "transparent",
+                  borderTopColor: colors.primary,
+                  marginTop: -1,
+                  alignSelf: "center",
+                  marginLeft: -240, // Center the arrow
+                }}
+              />
+            </View>
+          )}
+
           {/* Audio Toggle */}
           <TouchableOpacity
             onPress={() => {
               const newAudioEnabled = !audioEnabled;
               setAudioEnabled(newAudioEnabled);
               saveAudioEnabledPreference(newAudioEnabled);
+
+              // Auto-dismiss tooltip when audio is enabled
+              if (newAudioEnabled && showAudioTooltip) {
+                dismissAudioTooltip();
+              }
             }}
             style={{
               backgroundColor: audioEnabled ? colors.primary : colors.surface,
