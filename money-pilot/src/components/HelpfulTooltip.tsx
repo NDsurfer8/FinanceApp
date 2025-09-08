@@ -32,7 +32,7 @@ export const HelpfulTooltip: React.FC<HelpfulTooltipProps> = ({
   description,
   position = "top",
   showOnce = true,
-  delay = 1000,
+  delay = 500,
 }) => {
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -49,7 +49,13 @@ export const HelpfulTooltip: React.FC<HelpfulTooltipProps> = ({
     try {
       const saved = await AsyncStorage.getItem(`show_tooltips_${user.uid}`);
       if (saved !== null) {
-        setShowTooltips(saved === "true");
+        const newShowTooltips = saved === "true";
+        setShowTooltips(newShowTooltips);
+
+        // If tooltips are being turned on, reset hasShown to allow them to show again
+        if (newShowTooltips && !showTooltips) {
+          setHasShown(false);
+        }
       } else {
         // Default to false for new users (no tooltips)
         setShowTooltips(false);
@@ -95,8 +101,13 @@ export const HelpfulTooltip: React.FC<HelpfulTooltipProps> = ({
       }, delay);
 
       return () => clearTimeout(timer);
+    } else if (!showTooltips && isVisible) {
+      // Hide tooltip immediately when tooltips are turned off
+      setIsVisible(false);
+      fadeAnim.setValue(0);
+      scaleAnim.setValue(0.8);
     }
-  }, [showTooltips, hasShown, delay]);
+  }, [showTooltips, hasShown, delay, isVisible]);
 
   const handleDismiss = () => {
     Animated.parallel([

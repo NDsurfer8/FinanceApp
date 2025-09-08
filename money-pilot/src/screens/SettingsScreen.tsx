@@ -29,7 +29,6 @@ import { AIUsageAdminScreen } from "./AIUsageAdminScreen";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 import { useScrollDetection } from "../hooks/useScrollDetection";
 import { HelpfulTooltip } from "../components/HelpfulTooltip";
-import { useSetup } from "../contexts/SetupContext";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -47,7 +46,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [photoKey, setPhotoKey] = useState(Date.now());
   const { presentPaywall } = usePaywall();
   const [showTooltips, setShowTooltips] = useState(false);
-  const { completeSetup, resetSetup } = useSetup();
 
   // Load tooltips setting from AsyncStorage
   useEffect(() => {
@@ -125,24 +123,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         console.error("Error saving tooltips setting:", error);
       }
     }
-  };
-
-  // Debug function to mark setup as completed
-  const handleMarkSetupCompleted = () => {
-    Alert.alert(
-      "Debug: Mark Setup Completed",
-      "This will mark the setup as completed and prevent the SetupWizard from showing.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Mark Completed",
-          onPress: () => {
-            completeSetup();
-            Alert.alert("Success", "Setup marked as completed!");
-          },
-        },
-      ]
-    );
   };
 
   // Check if user is admin (you can modify this logic as needed)
@@ -1012,32 +992,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </View>
             </TouchableOpacity>
           </HelpfulTooltip>
-
-          {/* Debug: Mark Setup Completed Button */}
-          <TouchableOpacity
-            style={[
-              styles.settingItem,
-              { borderBottomColor: colors.borderLight },
-            ]}
-            onPress={handleMarkSetupCompleted}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons
-                name="bug"
-                size={20}
-                color={colors.textSecondary}
-                style={{ marginRight: 12 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text }]}>
-                Debug: Mark Setup Completed
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
 
           <TouchableOpacity
             style={[

@@ -55,6 +55,8 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
 
   // Animation for glow effect when no assets
   const assetsGlowAnim = React.useRef(new Animated.Value(0)).current;
+  // Animation for glow effect when no debts
+  const debtsGlowAnim = React.useRef(new Animated.Value(0)).current;
 
   // Background refresh when screen comes into focus
   useFocusEffect(
@@ -89,6 +91,31 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
       assetsGlowAnim.setValue(0);
     }
   }, [assets.length]);
+
+  // Animate glow effect when no debts
+  useEffect(() => {
+    if (debts.length === 0) {
+      // Start pulsing glow animation
+      const pulseAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(debtsGlowAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+          Animated.timing(debtsGlowAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+        ])
+      );
+      pulseAnimation.start();
+    } else {
+      // Stop animation and reset
+      debtsGlowAnim.setValue(0);
+    }
+  }, [debts.length]);
 
   const assetTotal = assets.reduce((sum, asset) => sum + asset.balance, 0);
   const totalDebt = debts.reduce((sum, debt) => sum + debt.balance, 0);
@@ -243,15 +270,34 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
       );
     }
 
-    // For debts, use regular View without glow
+    // For debts, use Animated.View with glow effect
     return (
-      <View
+      <Animated.View
         style={{
           alignItems: "center",
           padding: 32,
           backgroundColor: colors.surfaceSecondary,
           borderRadius: 16,
           marginVertical: 8,
+          shadowColor: colors.error,
+          shadowOpacity: debtsGlowAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.08, 0.3],
+          }),
+          shadowRadius: debtsGlowAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [12, 20],
+          }),
+          shadowOffset: { width: 0, height: 4 },
+          elevation: debtsGlowAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [4, 8],
+          }),
+          borderWidth: 2,
+          borderColor: debtsGlowAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [colors.error + "40", colors.error + "80"],
+          }),
         }}
       >
         <View
@@ -305,7 +351,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             Add Your First Debt
           </Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     );
   };
 
@@ -1126,67 +1172,104 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               </TouchableOpacity>
 
               {/* Add Debt Option */}
-              <TouchableOpacity
-                onPress={() => {
-                  setShowAddModal(false);
-                  handleQuickAction("debt");
-                }}
+              <Animated.View
                 style={{
-                  backgroundColor: colors.error + "15",
-                  borderRadius: 12,
-                  padding: 16,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  borderWidth: 1,
-                  borderColor: colors.error + "30",
+                  shadowColor:
+                    debts.length === 0 ? colors.error : "transparent",
+                  shadowOpacity:
+                    debts.length === 0
+                      ? debtsGlowAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 0.4],
+                        })
+                      : 0,
+                  shadowRadius:
+                    debts.length === 0
+                      ? debtsGlowAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 15],
+                        })
+                      : 0,
+                  shadowOffset: { width: 0, height: 0 },
+                  elevation:
+                    debts.length === 0
+                      ? debtsGlowAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 6],
+                        })
+                      : 0,
+                  // Add a subtle background glow for better visibility
+                  backgroundColor:
+                    debts.length === 0
+                      ? debtsGlowAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ["transparent", colors.error + "10"],
+                        })
+                      : "transparent",
                 }}
-                activeOpacity={0.7}
               >
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: colors.error + "20",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: 16,
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowAddModal(false);
+                    handleQuickAction("debt");
                   }}
+                  style={{
+                    backgroundColor: colors.error + "15",
+                    borderRadius: 12,
+                    padding: 16,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    borderWidth: 1,
+                    borderColor: colors.error + "30",
+                  }}
+                  activeOpacity={0.7}
                 >
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      backgroundColor: colors.error + "20",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 16,
+                    }}
+                  >
+                    <Ionicons
+                      name="trending-down"
+                      size={20}
+                      color={colors.error}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        color: colors.text,
+                        fontFamily: fontFamily.semiBold,
+                        marginBottom: 2,
+                      }}
+                    >
+                      Add Debt
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        color: colors.textSecondary,
+                        fontFamily: fontFamily.regular,
+                      }}
+                    >
+                      Track your loans, credit cards, and other debts
+                    </Text>
+                  </View>
                   <Ionicons
-                    name="trending-down"
-                    size={20}
-                    color={colors.error}
+                    name="chevron-forward"
+                    size={16}
+                    color={colors.textTertiary}
                   />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "600",
-                      color: colors.text,
-                      fontFamily: fontFamily.semiBold,
-                      marginBottom: 2,
-                    }}
-                  >
-                    Add Debt
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color: colors.textSecondary,
-                      fontFamily: fontFamily.regular,
-                    }}
-                  >
-                    Track your loans, credit cards, and other debts
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={colors.textTertiary}
-                />
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </Animated.View>
             </View>
 
             {/* Cancel Button */}
