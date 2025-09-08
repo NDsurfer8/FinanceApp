@@ -4,7 +4,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
-import { TourGuide } from "./TourGuide";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface BudgetOverviewCardProps {
@@ -495,81 +494,79 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
           </Text>
         </TouchableOpacity>
 
-        <TourGuide zone={2} screen="Budget">
-          <Animated.View
+        <Animated.View
+          style={{
+            shadowColor: showSettingsGlow ? colors.primary : "transparent",
+            shadowOpacity: showSettingsGlow
+              ? settingsGlowAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.4],
+                })
+              : 0,
+            shadowRadius: showSettingsGlow
+              ? settingsGlowAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 15],
+                })
+              : 0,
+            shadowOffset: { width: 0, height: 0 },
+            elevation: showSettingsGlow
+              ? settingsGlowAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 6],
+                })
+              : 0,
+          }}
+        >
+          <TouchableOpacity
+            onPress={handleSettingsPress}
             style={{
-              shadowColor: showSettingsGlow ? colors.primary : "transparent",
-              shadowOpacity: showSettingsGlow
-                ? settingsGlowAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 0.4],
-                  })
-                : 0,
-              shadowRadius: showSettingsGlow
-                ? settingsGlowAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 15],
-                  })
-                : 0,
-              shadowOffset: { width: 0, height: 0 },
-              elevation: showSettingsGlow
-                ? settingsGlowAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 6],
-                  })
-                : 0,
+              backgroundColor: colors.surfaceSecondary,
+              padding: 12,
+              borderRadius: 12,
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: 60,
+              position: "relative",
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderStyle: "dashed",
             }}
           >
-            <TouchableOpacity
-              onPress={handleSettingsPress}
-              style={{
-                backgroundColor: colors.surfaceSecondary,
-                padding: 12,
-                borderRadius: 12,
-                alignItems: "center",
-                justifyContent: "center",
-                minWidth: 60,
-                position: "relative",
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderStyle: "dashed",
-              }}
-            >
-              <Ionicons
-                name="settings-outline"
-                size={20}
-                color={colors.buttonPrimary}
-              />
-              {props.hasOverBudgetItems && (
-                <View
+            <Ionicons
+              name="settings-outline"
+              size={20}
+              color={colors.buttonPrimary}
+            />
+            {props.hasOverBudgetItems && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -4,
+                  right: -4,
+                  backgroundColor: colors.error,
+                  borderRadius: 8,
+                  width: 16,
+                  height: 16,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 2,
+                  borderColor: colors.surface,
+                }}
+              >
+                <Text
                   style={{
-                    position: "absolute",
-                    top: -4,
-                    right: -4,
-                    backgroundColor: colors.error,
-                    borderRadius: 8,
-                    width: 16,
-                    height: 16,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderWidth: 2,
-                    borderColor: colors.surface,
+                    color: colors.buttonText,
+                    fontSize: 10,
+                    fontWeight: "700",
                   }}
                 >
-                  <Text
-                    style={{
-                      color: colors.buttonText,
-                      fontSize: 10,
-                      fontWeight: "700",
-                    }}
-                  >
-                    !
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
-        </TourGuide>
+                  !
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     </Animated.View>
   );

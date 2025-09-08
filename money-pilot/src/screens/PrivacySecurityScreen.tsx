@@ -415,19 +415,24 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
   const clearAllAsyncStorage = async () => {
     try {
-      // Preserve onboarding status when clearing data
+      // Preserve important user preferences when clearing data
       const hasSeenIntro = await AsyncStorage.getItem("hasSeenIntro");
+      const setupProgress = await AsyncStorage.getItem("user_setup_progress");
 
       // Clear all AsyncStorage data
       await AsyncStorage.clear();
 
-      // Restore onboarding status so user doesn't see intro again
+      // Restore important preferences so user doesn't see intro/setup again
       if (hasSeenIntro) {
         await AsyncStorage.setItem("hasSeenIntro", hasSeenIntro);
       }
 
+      if (setupProgress) {
+        await AsyncStorage.setItem("user_setup_progress", setupProgress);
+      }
+
       console.log(
-        "AsyncStorage cleared successfully (preserved onboarding status)"
+        "AsyncStorage cleared successfully (preserved onboarding and setup status)"
       );
     } catch (error) {
       console.error("Error clearing AsyncStorage:", error);

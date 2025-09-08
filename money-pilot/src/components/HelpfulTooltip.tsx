@@ -9,7 +9,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
-import { useTour } from "../contexts/TourContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "../hooks/useAuth";
+import { useFocusEffect } from "@react-navigation/native";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -33,11 +35,42 @@ export const HelpfulTooltip: React.FC<HelpfulTooltipProps> = ({
   delay = 1000,
 }) => {
   const { colors } = useTheme();
-  const { showTooltips } = useTour();
+  const { user } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
   const [hasShown, setHasShown] = useState(false);
+  const [showTooltips, setShowTooltips] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
+
+  // Function to load tooltips setting from AsyncStorage
+  const loadTooltipsSetting = async () => {
+    if (!user) return;
+
+    try {
+      const saved = await AsyncStorage.getItem(`show_tooltips_${user.uid}`);
+      if (saved !== null) {
+        setShowTooltips(saved === "true");
+      } else {
+        // Default to false for new users (no tooltips)
+        setShowTooltips(false);
+      }
+    } catch (error) {
+      console.error("Error loading tooltips setting:", error);
+      setShowTooltips(false);
+    }
+  };
+
+  // Load tooltips setting on mount
+  useEffect(() => {
+    loadTooltipsSetting();
+  }, [user]);
+
+  // Reload tooltips setting when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadTooltipsSetting();
+    }, [user])
+  );
 
   useEffect(() => {
     if (showTooltips && !hasShown) {

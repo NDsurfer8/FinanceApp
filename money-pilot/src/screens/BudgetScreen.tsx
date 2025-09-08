@@ -24,7 +24,6 @@ import { AutoBudgetImporter } from "../components/AutoBudgetImporter";
 import { BudgetOverviewCard } from "../components/BudgetOverviewCard";
 import { TransactionListCard } from "../components/TransactionListCard";
 import { BudgetSettingsModal } from "../components/BudgetSettingsModal";
-import { TourGuide } from "../components/TourGuide";
 import { HelpfulTooltip } from "../components/HelpfulTooltip";
 import {
   saveBudgetSettings,
@@ -919,184 +918,179 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         )}
 
         {/* Budget Overview Card */}
-        <TourGuide zone={1} screen="Budget">
-          <BudgetOverviewCard
-            netIncome={netIncome}
-            totalIncome={totalIncome}
-            totalExpenses={totalExpenses}
-            savingsAmount={savingsAmount}
-            savingsPercentage={parseFloat(savingsPercentage)}
-            discretionaryIncome={discretionaryIncome}
-            remainingBalance={remainingBalance}
-            onPressDetails={() => setShowBudgetSettingsModal(true)}
-            onPressSettings={() => {
-              // Mark all current over-budget categories as seen for the selected month
-              const targetMonth = selectedMonth.getMonth();
-              const targetYear = selectedMonth.getFullYear();
-              const monthKey = `${targetMonth}-${targetYear}`;
+        <BudgetOverviewCard
+          netIncome={netIncome}
+          totalIncome={totalIncome}
+          totalExpenses={totalExpenses}
+          savingsAmount={savingsAmount}
+          savingsPercentage={parseFloat(savingsPercentage)}
+          discretionaryIncome={discretionaryIncome}
+          remainingBalance={remainingBalance}
+          onPressDetails={() => setShowBudgetSettingsModal(true)}
+          onPressSettings={() => {
+            // Mark all current over-budget categories as seen for the selected month
+            const targetMonth = selectedMonth.getMonth();
+            const targetYear = selectedMonth.getFullYear();
+            const monthKey = `${targetMonth}-${targetYear}`;
 
-              const newSeenCategories = new Map(seenOverBudgetCategories);
-              const monthSeenCategories = new Set(
-                newSeenCategories.get(monthKey) || []
-              );
+            const newSeenCategories = new Map(seenOverBudgetCategories);
+            const monthSeenCategories = new Set(
+              newSeenCategories.get(monthKey) || []
+            );
 
-              budgetCategories.forEach((category) => {
-                const categoryTransactions = transactions.filter((t) => {
-                  const transactionDate = new Date(t.date);
-                  return (
-                    transactionDate.getMonth() === targetMonth &&
-                    transactionDate.getFullYear() === targetYear &&
-                    t.type === "expense" &&
-                    t.category === category.name
-                  );
-                });
-
-                const categoryRecurring = recurringTransactions.filter((rt) => {
-                  return (
-                    rt.type === "expense" &&
-                    rt.isActive &&
-                    rt.category === category.name
-                  );
-                });
-
-                const actualSpending =
-                  categoryTransactions.reduce((sum, t) => sum + t.amount, 0) +
-                  categoryRecurring.reduce((sum, rt) => {
-                    let monthlyAmount = rt.amount;
-                    if (rt.frequency === "weekly")
-                      monthlyAmount = rt.amount * 4;
-                    else if (rt.frequency === "biweekly")
-                      monthlyAmount = rt.amount * 2;
-                    return sum + monthlyAmount;
-                  }, 0);
-
-                if (actualSpending > category.monthlyLimit) {
-                  monthSeenCategories.add(category.name);
-                }
+            budgetCategories.forEach((category) => {
+              const categoryTransactions = transactions.filter((t) => {
+                const transactionDate = new Date(t.date);
+                return (
+                  transactionDate.getMonth() === targetMonth &&
+                  transactionDate.getFullYear() === targetYear &&
+                  t.type === "expense" &&
+                  t.category === category.name
+                );
               });
 
-              newSeenCategories.set(monthKey, monthSeenCategories);
-              setSeenOverBudgetCategories(newSeenCategories);
-              navigation.navigate("BudgetCategories", {
-                selectedMonth: selectedMonth.toISOString(),
+              const categoryRecurring = recurringTransactions.filter((rt) => {
+                return (
+                  rt.type === "expense" &&
+                  rt.isActive &&
+                  rt.category === category.name
+                );
               });
-            }}
-            onPressIncome={handleAddIncome}
-            onPressExpense={handleAddExpense}
-            onPressImport={() => setShowAutoImporter(true)}
-            isBankConnected={isBankConnected}
-            availableTransactionsCount={getAvailableTransactionsCount()}
-            hasOverBudgetItems={hasOverBudgetItems()}
-          />
-        </TourGuide>
+
+              const actualSpending =
+                categoryTransactions.reduce((sum, t) => sum + t.amount, 0) +
+                categoryRecurring.reduce((sum, rt) => {
+                  let monthlyAmount = rt.amount;
+                  if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
+                  else if (rt.frequency === "biweekly")
+                    monthlyAmount = rt.amount * 2;
+                  return sum + monthlyAmount;
+                }, 0);
+
+              if (actualSpending > category.monthlyLimit) {
+                monthSeenCategories.add(category.name);
+              }
+            });
+
+            newSeenCategories.set(monthKey, monthSeenCategories);
+            setSeenOverBudgetCategories(newSeenCategories);
+            navigation.navigate("BudgetCategories", {
+              selectedMonth: selectedMonth.toISOString(),
+            });
+          }}
+          onPressIncome={handleAddIncome}
+          onPressExpense={handleAddExpense}
+          onPressImport={() => setShowAutoImporter(true)}
+          isBankConnected={isBankConnected}
+          availableTransactionsCount={getAvailableTransactionsCount()}
+          hasOverBudgetItems={hasOverBudgetItems()}
+        />
 
         {/* Smart Insights - Only show if there are insights */}
         {insights.length > 0 && (
-          <TourGuide zone={3} screen="Budget">
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              marginBottom: 20,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            }}
+          >
             <View
               style={{
-                backgroundColor: colors.surface,
-                borderRadius: 20,
-                padding: 24,
-                marginBottom: 20,
-                shadowColor: colors.shadow,
-                shadowOpacity: 0.08,
-                shadowRadius: 12,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 4,
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 16,
               }}
             >
               <View
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 16,
+                  backgroundColor: colors.warningLight,
+                  padding: 8,
+                  borderRadius: 10,
+                  marginRight: 12,
                 }}
+              >
+                <Ionicons name="bulb" size={20} color={colors.warning} />
+              </View>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
+                {translate("smartInsights", isFriendlyMode)}
+              </Text>
+            </View>
+
+            {insights.map((insight, index) => (
+              <View
+                key={`insight-${insight.id}-${index}`}
+                style={{ marginBottom: 12 }}
               >
                 <View
                   style={{
-                    backgroundColor: colors.warningLight,
-                    padding: 8,
-                    borderRadius: 10,
-                    marginRight: 12,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 4,
                   }}
                 >
-                  <Ionicons name="bulb" size={20} color={colors.warning} />
-                </View>
-                <Text
-                  style={{
-                    fontSize: 20,
-                    fontWeight: "700",
-                    color: colors.text,
-                  }}
-                >
-                  {translate("smartInsights", isFriendlyMode)}
-                </Text>
-              </View>
-
-              {insights.map((insight, index) => (
-                <View
-                  key={`insight-${insight.id}-${index}`}
-                  style={{ marginBottom: 12 }}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 4,
-                    }}
-                  >
-                    <Ionicons
-                      name={insight.icon as any}
-                      size={16}
-                      color={
-                        insight.type === "success"
-                          ? colors.success
-                          : insight.type === "warning"
-                          ? colors.error
-                          : colors.primary
-                      }
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        fontWeight: "600",
-                        color: colors.text,
-                        flex: 1,
-                      }}
-                    >
-                      {insight.title}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => handleDismissInsight(insight.id)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      style={{
-                        padding: 4,
-                        borderRadius: 12,
-                        backgroundColor: colors.surfaceSecondary,
-                      }}
-                    >
-                      <Ionicons
-                        name="close"
-                        size={14}
-                        color={colors.textSecondary}
-                      />
-                    </TouchableOpacity>
-                  </View>
+                  <Ionicons
+                    name={insight.icon as any}
+                    size={16}
+                    color={
+                      insight.type === "success"
+                        ? colors.success
+                        : insight.type === "warning"
+                        ? colors.error
+                        : colors.primary
+                    }
+                    style={{ marginRight: 8 }}
+                  />
                   <Text
                     style={{
                       fontSize: 14,
-                      color: colors.textSecondary,
-                      marginLeft: 24,
+                      fontWeight: "600",
+                      color: colors.text,
+                      flex: 1,
                     }}
                   >
-                    {insight.message}
+                    {insight.title}
                   </Text>
+                  <TouchableOpacity
+                    onPress={() => handleDismissInsight(insight.id)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={{
+                      padding: 4,
+                      borderRadius: 12,
+                      backgroundColor: colors.surfaceSecondary,
+                    }}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={14}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
                 </View>
-              ))}
-            </View>
-          </TourGuide>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                    marginLeft: 24,
+                  }}
+                >
+                  {insight.message}
+                </Text>
+              </View>
+            ))}
+          </View>
         )}
 
         {/* Income Section */}

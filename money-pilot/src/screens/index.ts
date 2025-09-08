@@ -8,6 +8,7 @@ export { LoginScreen } from "./LoginScreen";
 export { SignUpScreen } from "./SignUpScreen";
 export { ForgotPasswordScreen } from "./ForgotPasswordScreen";
 export { IntroSliderScreen } from "./IntroSliderScreen";
+export { SetupScreen } from "./SetupScreen";
 export { AddTransactionScreen } from "./AddTransactionScreen";
 export { AddAssetDebtScreen } from "./AddAssetDebtScreen";
 export { FinancialRiskScreen } from "./FinancialRiskScreen";

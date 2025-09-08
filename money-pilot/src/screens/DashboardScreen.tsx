@@ -13,7 +13,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useScrollDetection } from "../hooks/useScrollDetection";
-import { useTour } from "../contexts/TourContext";
+import { isNewUser } from "../services/userData";
 
 import { useData } from "../contexts/DataContext";
 import {
@@ -28,8 +28,9 @@ import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
 import { CustomTrendChart } from "../components/CustomTrendChart";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
-import { TourGuide } from "../components/TourGuide";
 import { HelpfulTooltip } from "../components/HelpfulTooltip";
+import { DashboardPrompts } from "../components/DashboardPrompts";
+import { useSetup } from "../contexts/SetupContext";
 
 interface DashboardScreenProps {
   navigation: any;
@@ -47,19 +48,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     refreshInBackground,
   } = useZeroLoading();
   const { goals, budgetSettings, refreshAssetsDebts } = useData();
+  const { setupProgress, updateSetupProgress } = useSetup();
   console.log("goals", goals);
   console.log("budgetSettings", budgetSettings);
   const { isScrolling, handleScrollBegin, handleScrollEnd } =
     useScrollDetection();
-  const { startTour, hasCompletedTour, isTourStatusLoaded, isNewUser } =
-    useTour();
 
   const [loading, setLoading] = useState(false);
   const [trendData, setTrendData] = useState<any[]>([]);
   const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(
     new Set()
   );
-  const [hasCheckedForTour, setHasCheckedForTour] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<number>(0);
   const [isNewUserState, setIsNewUserState] = useState<boolean>(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -132,49 +131,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     };
 
     checkIfNewUser();
-  }, [user, isNewUser]);
-
-  // Auto-start tour for new users (Firebase-based detection)
-  React.useEffect(() => {
-    const checkAndShowTour = async () => {
-      // Only proceed if user is authenticated and has a valid UID
-      if (
-        user &&
-        user.uid &&
-        !hasCheckedForTour &&
-        isTourStatusLoaded &&
-        !hasCompletedTour
-      ) {
-        const isNew = await isNewUser(user);
-
-        if (isNew) {
-          setHasCheckedForTour(true);
-
-          // Wait for dashboard to fully render
-          const timer = setTimeout(() => {
-            startTour(navigation);
-          }, 1000);
-
-          return () => clearTimeout(timer);
-        } else {
-          setHasCheckedForTour(true);
-        }
-      } else if (!user) {
-        // Reset tour check when user logs out
-        setHasCheckedForTour(false);
-      }
-    };
-
-    checkAndShowTour();
-  }, [
-    user,
-    hasCheckedForTour,
-    isTourStatusLoaded,
-    hasCompletedTour,
-    startTour,
-    navigation,
-    isNewUser,
-  ]);
+  }, [user]);
 
   // Background refresh when screen comes into focus
   useFocusEffect(
@@ -728,412 +685,397 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         />
 
         {/* Monthly Overview - Large Card */}
-        <TourGuide zone={1} screen="Dashboard">
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          }}
+        >
           <View
             style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 24,
+              flexDirection: "row",
+              alignItems: "center",
               marginBottom: 20,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
             }}
           >
             <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 20,
+                backgroundColor: colors.surfaceSecondary,
+                padding: 12,
+                borderRadius: 14,
+                marginRight: 16,
               }}
             >
+              <Ionicons name="calendar" size={22} color={colors.primary} />
+            </View>
+            <View>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: colors.text,
+                  letterSpacing: -0.3,
+                }}
+              >
+                Budget Snapshot
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginTop: 2,
+                  fontWeight: "500",
+                }}
+              >
+                {new Date().toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ gap: 20 }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
                   backgroundColor: colors.surfaceSecondary,
                   padding: 12,
-                  borderRadius: 14,
+                  borderRadius: 12,
                   marginRight: 16,
+                  width: 50,
+                  height: 50,
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}
               >
-                <Ionicons name="calendar" size={22} color={colors.primary} />
+                <Ionicons name="trending-up" size={20} color={colors.primary} />
               </View>
-              <View>
+              <View style={{ flex: 1 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 4,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      fontWeight: "600",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {translate("income", isFriendlyMode)}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      showInfoModalHandler(
+                        "Income Breakdown",
+                        "Income includes both actual transactions this month and recurring income (salary, rent, etc.) that automatically occurs each month.",
+                        "trending-up",
+                        colors.success
+                      );
+                    }}
+                    style={{ marginLeft: 8 }}
+                  >
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
                 <Text
                   style={{
                     fontSize: 20,
                     fontWeight: "700",
-                    color: colors.text,
+                    color: colors.success,
                     letterSpacing: -0.3,
                   }}
                 >
-                  Budget Snapshot
+                  {formatCurrency(monthlyIncome)}
                 </Text>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    marginTop: 2,
-                    fontWeight: "500",
-                  }}
-                >
-                  {new Date().toLocaleDateString("en-US", {
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </Text>
+                {/* Show breakdown of actual vs recurring income */}
+                {recurringMonthlyIncome > 0 && (
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {formatCurrency(monthlyIncome - recurringMonthlyIncome)}{" "}
+                    recorded + {formatCurrency(recurringMonthlyIncome)}{" "}
+                    recurring
+                  </Text>
+                )}
               </View>
             </View>
 
-            <View style={{ gap: 20 }}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View
-                  style={{
-                    backgroundColor: colors.surfaceSecondary,
-                    padding: 12,
-                    borderRadius: 12,
-                    marginRight: 16,
-                    width: 50,
-                    height: 50,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Ionicons
-                    name="trending-up"
-                    size={20}
-                    color={colors.primary}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 4,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      {translate("income", isFriendlyMode)}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        showInfoModalHandler(
-                          "Income Breakdown",
-                          "Income includes both actual transactions this month and recurring income (salary, rent, etc.) that automatically occurs each month.",
-                          "trending-up",
-                          colors.success
-                        );
-                      }}
-                      style={{ marginLeft: 8 }}
-                    >
-                      <Ionicons
-                        name="information-circle-outline"
-                        size={16}
-                        color={colors.textSecondary}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      fontWeight: "700",
-                      color: colors.success,
-                      letterSpacing: -0.3,
-                    }}
-                  >
-                    {formatCurrency(monthlyIncome)}
-                  </Text>
-                  {/* Show breakdown of actual vs recurring income */}
-                  {recurringMonthlyIncome > 0 && (
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                        marginTop: 2,
-                      }}
-                    >
-                      {formatCurrency(monthlyIncome - recurringMonthlyIncome)}{" "}
-                      recorded + {formatCurrency(recurringMonthlyIncome)}{" "}
-                      recurring
-                    </Text>
-                  )}
-                </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  backgroundColor: colors.surfaceSecondary,
+                  padding: 12,
+                  borderRadius: 12,
+                  marginRight: 16,
+                  width: 50,
+                  height: 50,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Ionicons name="trending-down" size={20} color={colors.error} />
               </View>
-
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={{ flex: 1 }}>
                 <View
                   style={{
-                    backgroundColor: colors.surfaceSecondary,
-                    padding: 12,
-                    borderRadius: 12,
-                    marginRight: 16,
-                    width: 50,
-                    height: 50,
-                    justifyContent: "center",
+                    flexDirection: "row",
                     alignItems: "center",
+                    marginBottom: 4,
                   }}
                 >
-                  <Ionicons
-                    name="trending-down"
-                    size={20}
-                    color={colors.error}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 4,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      {translate("expenses", isFriendlyMode)}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        showInfoModalHandler(
-                          "Expenses Breakdown",
-                          "Expenses include both actual transactions this month and recurring expenses (mortgage, utilities, etc.) that automatically occur each month.",
-                          "trending-down",
-                          colors.error
-                        );
-                      }}
-                      style={{ marginLeft: 8 }}
-                    >
-                      <Ionicons
-                        name="information-circle-outline"
-                        size={16}
-                        color={colors.textSecondary}
-                      />
-                    </TouchableOpacity>
-                  </View>
                   <Text
                     style={{
-                      fontSize: 20,
-                      fontWeight: "700",
-                      color: colors.error,
-                      letterSpacing: -0.3,
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      fontWeight: "600",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
                     }}
                   >
-                    {formatCurrency(monthlyExpenses)}
+                    {translate("expenses", isFriendlyMode)}
                   </Text>
-                  {/* Show breakdown of actual vs recurring expenses */}
-                  {recurringMonthlyExpenses > 0 && (
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                        marginTop: 2,
-                      }}
-                    >
-                      {formatCurrency(
-                        monthlyExpenses - recurringMonthlyExpenses
-                      )}{" "}
-                      recorded + {formatCurrency(recurringMonthlyExpenses)}{" "}
-                      recurring
-                    </Text>
-                  )}
+                  <TouchableOpacity
+                    onPress={() => {
+                      showInfoModalHandler(
+                        "Expenses Breakdown",
+                        "Expenses include both actual transactions this month and recurring expenses (mortgage, utilities, etc.) that automatically occur each month.",
+                        "trending-down",
+                        colors.error
+                      );
+                    }}
+                    style={{ marginLeft: 8 }}
+                  >
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
                 </View>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: colors.error,
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  {formatCurrency(monthlyExpenses)}
+                </Text>
+                {/* Show breakdown of actual vs recurring expenses */}
+                {recurringMonthlyExpenses > 0 && (
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {formatCurrency(monthlyExpenses - recurringMonthlyExpenses)}{" "}
+                    recorded + {formatCurrency(recurringMonthlyExpenses)}{" "}
+                    recurring
+                  </Text>
+                )}
               </View>
+            </View>
 
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  backgroundColor: colors.surfaceSecondary,
+                  padding: 12,
+                  borderRadius: 12,
+                  marginRight: 16,
+                  width: 50,
+                  height: 50,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Ionicons
+                  name={availableAmount >= 0 ? "wallet" : "alert-circle"}
+                  size={20}
+                  color={colors.primary}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
                 <View
                   style={{
-                    backgroundColor: colors.surfaceSecondary,
-                    padding: 12,
-                    borderRadius: 12,
-                    marginRight: 16,
-                    width: 50,
-                    height: 50,
-                    justifyContent: "center",
+                    flexDirection: "row",
                     alignItems: "center",
+                    marginBottom: 4,
                   }}
                 >
-                  <Ionicons
-                    name={availableAmount >= 0 ? "wallet" : "alert-circle"}
-                    size={20}
-                    color={colors.primary}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 4,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      {translate("availableAmount", isFriendlyMode)}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        showInfoModalHandler(
-                          "Available Amount Calculation",
-                          `FORMULA\nNet Income - Savings (${savingsPercent}%) - Goal Contributions - Debt Payoff (${debtPayoffPercent}%)\n\nINCOME & EXPENSES\nGross Income:     ${formatCurrency(
-                            monthlyIncome
-                          )}\nExpenses:         ${formatCurrency(
-                            monthlyExpenses
-                          )}\n─────────────────────────\nNet Income:       ${formatCurrency(
-                            netIncome
-                          )}\n\nALLOCATIONS\nSavings:          ${formatCurrency(
-                            savingsAmount
-                          )}\nGoal Contrib:     ${formatCurrency(
-                            totalGoalContributions
-                          )}\nDebt Payoff:      ${formatCurrency(
-                            debtPayoffAmount
-                          )}\n─────────────────────────\nAvailable:        ${formatCurrency(
-                            availableAmount
-                          )}`,
-                          "calculator",
-                          availableAmount >= 0 ? colors.warning : colors.error
-                        );
-                      }}
-                      style={{ marginLeft: 8 }}
-                    >
-                      <Ionicons
-                        name="information-circle-outline"
-                        size={16}
-                        color={colors.textSecondary}
-                      />
-                    </TouchableOpacity>
-                  </View>
                   <Text
                     style={{
-                      fontSize: 20,
-                      fontWeight: "700",
-                      color:
-                        availableAmount >= 0 ? colors.warning : colors.error,
-                      letterSpacing: -0.3,
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      fontWeight: "600",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
                     }}
                   >
-                    {formatCurrency(availableAmount)}
+                    {translate("availableAmount", isFriendlyMode)}
                   </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      showInfoModalHandler(
+                        "Available Amount Calculation",
+                        `FORMULA\nNet Income - Savings (${savingsPercent}%) - Goal Contributions - Debt Payoff (${debtPayoffPercent}%)\n\nINCOME & EXPENSES\nGross Income:     ${formatCurrency(
+                          monthlyIncome
+                        )}\nExpenses:         ${formatCurrency(
+                          monthlyExpenses
+                        )}\n─────────────────────────\nNet Income:       ${formatCurrency(
+                          netIncome
+                        )}\n\nALLOCATIONS\nSavings:          ${formatCurrency(
+                          savingsAmount
+                        )}\nGoal Contrib:     ${formatCurrency(
+                          totalGoalContributions
+                        )}\nDebt Payoff:      ${formatCurrency(
+                          debtPayoffAmount
+                        )}\n─────────────────────────\nAvailable:        ${formatCurrency(
+                          availableAmount
+                        )}`,
+                        "calculator",
+                        availableAmount >= 0 ? colors.warning : colors.error
+                      );
+                    }}
+                    style={{ marginLeft: 8 }}
+                  >
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
                 </View>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: availableAmount >= 0 ? colors.warning : colors.error,
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  {formatCurrency(availableAmount)}
+                </Text>
               </View>
             </View>
           </View>
-        </TourGuide>
+        </View>
 
         {/* Balance Sheet Card */}
 
-        <TourGuide zone={2} screen="Dashboard">
-          <View
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          }}
+        >
+          <Text
             style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 24,
+              fontSize: 20,
+              fontWeight: "700",
               marginBottom: 20,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
+              color: colors.text,
             }}
           >
+            Balance Sheet Snapshot
+          </Text>
+
+          <View style={{ alignItems: "center", marginBottom: 24 }}>
             <Text
               style={{
-                fontSize: 20,
-                fontWeight: "700",
-                marginBottom: 20,
-                color: colors.text,
+                fontSize: 36,
+                fontWeight: "800",
+                color: netWorth >= 0 ? colors.success : colors.error,
+                marginBottom: 8,
               }}
             >
-              Balance Sheet Snapshot
+              {formatCurrency(netWorth)}
             </Text>
+            <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+              {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
+            </Text>
+          </View>
 
-            <View style={{ alignItems: "center", marginBottom: 24 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+            }}
+          >
+            <View style={{ alignItems: "center", flex: 1 }}>
               <Text
                 style={{
-                  fontSize: 36,
-                  fontWeight: "800",
-                  color: netWorth >= 0 ? colors.success : colors.error,
-                  marginBottom: 8,
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 4,
                 }}
               >
-                {formatCurrency(netWorth)}
+                Total {translate("assets", isFriendlyMode)}
               </Text>
-              <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.success,
+                }}
+              >
+                {formatCurrency(totalAssets)}
               </Text>
             </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
-            >
-              <View style={{ alignItems: "center", flex: 1 }}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    marginBottom: 4,
-                  }}
-                >
-                  Total {translate("assets", isFriendlyMode)}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "700",
-                    color: colors.success,
-                  }}
-                >
-                  {formatCurrency(totalAssets)}
-                </Text>
-              </View>
-              <View style={{ alignItems: "center", flex: 1 }}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    marginBottom: 4,
-                  }}
-                >
-                  Total {translate("liabilities", isFriendlyMode)}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "700",
-                    color: colors.error,
-                  }}
-                >
-                  {formatCurrency(totalDebts)}
-                </Text>
-              </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 4,
+                }}
+              >
+                Total {translate("liabilities", isFriendlyMode)}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.error,
+                }}
+              >
+                {formatCurrency(totalDebts)}
+              </Text>
             </View>
           </View>
-        </TourGuide>
+        </View>
 
         {/* Smart Insights - Only show if there are insights */}
         {insights.length > 0 && (
@@ -1305,17 +1247,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </HelpfulTooltip>
       </ScrollView>
       <FloatingAIChatbot hideOnScroll={true} isScrolling={isScrolling} />
-      <TourGuide zone={3} screen="Dashboard">
-        <View
-          style={{
-            position: "absolute",
-            width: 56,
-            height: 56,
-            right: 20,
-            bottom: 120,
-          }}
-        />
-      </TourGuide>
 
       {/* Info Modal */}
       <Modal

@@ -14,6 +14,7 @@ export type SharedFinanceStackParamList = {
 
 export type RootStackParamList = {
   // Main app screens
+  Setup: undefined;
   MainTabs: undefined;
   Dashboard: undefined;
   Budget: undefined;

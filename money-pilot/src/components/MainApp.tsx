@@ -18,8 +18,8 @@ import { SubscriptionProvider } from "../contexts/SubscriptionContext";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { ChatbotProvider } from "../contexts/ChatbotContext";
 import { FriendlyModeProvider } from "../contexts/FriendlyModeContext";
-import { TourProvider } from "../contexts/TourContext";
 import { SelectedMonthProvider } from "../contexts/SelectedMonthContext";
+import { SetupProvider } from "../contexts/SetupContext";
 import { DataPreloader } from "./DataPreloader";
 import { SplashScreen } from "./SplashScreen";
 import revenueCatService from "../services/revenueCat";
@@ -28,6 +28,7 @@ import { useBiometricAuth } from "../hooks/useBiometricAuth";
 import { BiometricAuthOverlay } from "./BiometricAuthOverlay";
 import { FloatingAIChatbot } from "./FloatingAIChatbot";
 import { PlaidUpdateMode } from "./PlaidUpdateMode";
+import { SetupWrapper } from "./SetupWrapper";
 import {
   DashboardScreen,
   BudgetScreen,
@@ -48,6 +49,7 @@ import {
   NotificationSettingsScreen,
   PrivacySecurityScreen,
   AboutScreen,
+  SetupScreen,
   HelpSupportScreen,
   ForgotPasswordScreen,
   SubscriptionScreen,
@@ -462,17 +464,22 @@ export const MainApp: React.FC = () => {
               <SelectedMonthProvider>
                 <ChatbotProvider>
                   <FriendlyModeProvider>
-                    <TourProvider>
+                    <SetupProvider>
                       <DataPreloader>
                         <NavigationContainer>
                           <Stack.Navigator
+                            initialRouteName="MainTabs"
                             screenOptions={{
                               headerShown: false,
                             }}
                           >
                             <Stack.Screen
+                              name="Setup"
+                              component={SetupScreen}
+                            />
+                            <Stack.Screen
                               name="MainTabs"
-                              component={MainTabNavigator}
+                              component={MainTabsWithSetupWrapper}
                             />
                             <Stack.Screen
                               name="AddTransaction"
@@ -631,7 +638,7 @@ export const MainApp: React.FC = () => {
                         updateType={plaidUpdateType}
                         newAccounts={plaidNewAccounts}
                       />
-                    </TourProvider>
+                    </SetupProvider>
                   </FriendlyModeProvider>
                 </ChatbotProvider>
               </SelectedMonthProvider>
@@ -646,7 +653,9 @@ export const MainApp: React.FC = () => {
   return <SplashScreen />;
 };
 
-const MainTabNavigator = () => {
+const MainTabNavigator = ({
+  initialRoute,
+}: { initialRoute?: keyof BottomTabParamList } = {}) => {
   const { colors } = useTheme();
 
   const handleLogout = async () => {
@@ -665,6 +674,7 @@ const MainTabNavigator = () => {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Tab.Navigator
+        initialRouteName={initialRoute || "Dashboard"}
         screenOptions={({ route }) => ({
           headerShown: false,
           lazy: false, // Pre-mount all tabs to prevent jumpy behavior
@@ -713,5 +723,25 @@ const MainTabNavigator = () => {
         </Tab.Screen>
       </Tab.Navigator>
     </View>
+  );
+};
+
+// Create a proper component for the MainTabs screen to avoid inline function warning
+const MainTabsWithSetupWrapper = () => {
+  const [initialRoute, setInitialRoute] = React.useState<
+    keyof BottomTabParamList | undefined
+  >(undefined);
+
+  return (
+    <SetupWrapper
+      onSetupCompleted={() => {
+        setInitialRoute("Budget");
+      }}
+    >
+      <MainTabNavigator
+        key={initialRoute || "default"}
+        initialRoute={initialRoute}
+      />
+    </SetupWrapper>
   );
 };

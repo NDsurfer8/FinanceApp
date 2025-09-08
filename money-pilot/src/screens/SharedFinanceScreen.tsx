@@ -30,7 +30,6 @@ import {
   SharedInvitation,
   cleanupOrphanedSharedData,
 } from "../services/userData";
-import { TourGuide } from "../components/TourGuide";
 import { StandardHeader } from "../components/StandardHeader";
 
 interface SharedFinanceScreenProps {
@@ -546,43 +545,41 @@ export default function SharedFinanceScreen({
           title="Shared Finances"
           onBack={() => navigation.goBack()}
           rightComponent={
-            <TourGuide zone={2} screen="SharedFinance">
-              <TouchableOpacity
-                onPress={() => setShowCreateModal(true)}
-                style={{
-                  backgroundColor: colors.primary,
-                  padding: 12,
-                  borderRadius: 12,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  shadowColor: colors.shadow,
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  shadowOffset: { width: 0, height: 2 },
-                  elevation: 2,
-                }}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="add" size={20} color={colors.buttonText} />
-                {!hasPremiumAccess() && (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: -2,
-                      right: -2,
-                      backgroundColor: colors.warning,
-                      borderRadius: 8,
-                      width: 16,
-                      height: 16,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name="star" size={10} color={colors.buttonText} />
-                  </View>
-                )}
-              </TouchableOpacity>
-            </TourGuide>
+            <TouchableOpacity
+              onPress={() => setShowCreateModal(true)}
+              style={{
+                backgroundColor: colors.primary,
+                padding: 12,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                shadowOffset: { width: 0, height: 2 },
+                elevation: 2,
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={20} color={colors.buttonText} />
+              {!hasPremiumAccess() && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -2,
+                    right: -2,
+                    backgroundColor: colors.warning,
+                    borderRadius: 8,
+                    width: 16,
+                    height: 16,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="star" size={10} color={colors.buttonText} />
+                </View>
+              )}
+            </TouchableOpacity>
           }
         />
         {/* Invitations Section */}
@@ -669,18 +666,16 @@ export default function SharedFinanceScreen({
         )}
 
         {/* Groups Section */}
-        <TourGuide zone={3} screen="SharedFinance">
-          {groups.length === 0 ? (
-            renderEmptyState()
-          ) : (
-            <View style={styles.groupsContainer}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Your Groups ({groups.length})
-              </Text>
-              {groups.map((group) => renderGroupCard(group))}
-            </View>
-          )}
-        </TourGuide>
+        {groups.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <View style={styles.groupsContainer}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Your Groups ({groups.length})
+            </Text>
+            {groups.map((group) => renderGroupCard(group))}
+          </View>
+        )}
       </ScrollView>
 
       {/* Create Group Modal */}

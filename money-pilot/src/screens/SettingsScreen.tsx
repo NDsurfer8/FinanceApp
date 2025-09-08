@@ -28,8 +28,8 @@ import { useData } from "../contexts/DataContext";
 import { AIUsageAdminScreen } from "./AIUsageAdminScreen";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 import { useScrollDetection } from "../hooks/useScrollDetection";
-import { useTour } from "../contexts/TourContext";
 import { HelpfulTooltip } from "../components/HelpfulTooltip";
+import { useSetup } from "../contexts/SetupContext";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -46,13 +46,30 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     useScrollDetection();
   const [photoKey, setPhotoKey] = useState(Date.now());
   const { presentPaywall } = usePaywall();
-  const {
-    startTour,
-    hasCompletedTour,
-    setHasCompletedTour,
-    showTooltips,
-    setShowTooltips,
-  } = useTour();
+  const [showTooltips, setShowTooltips] = useState(false);
+  const { completeSetup, resetSetup } = useSetup();
+
+  // Load tooltips setting from AsyncStorage
+  useEffect(() => {
+    const loadTooltipsSetting = async () => {
+      if (!user) return;
+
+      try {
+        const saved = await AsyncStorage.getItem(`show_tooltips_${user.uid}`);
+        if (saved !== null) {
+          setShowTooltips(saved === "true");
+        } else {
+          // Default to false for new users (no tooltips)
+          setShowTooltips(false);
+        }
+      } catch (error) {
+        console.error("Error loading tooltips setting:", error);
+        setShowTooltips(false);
+      }
+    };
+
+    loadTooltipsSetting();
+  }, [user]);
 
   const handlePaywallPress = async () => {
     setLoading(true);
@@ -92,9 +109,40 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     toggleChatbot();
   };
 
-  const handleToggleTooltips = () => {
+  const handleToggleTooltips = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setShowTooltips(!showTooltips);
+    const newValue = !showTooltips;
+    setShowTooltips(newValue);
+
+    // Save to AsyncStorage
+    if (user) {
+      try {
+        await AsyncStorage.setItem(
+          `show_tooltips_${user.uid}`,
+          newValue.toString()
+        );
+      } catch (error) {
+        console.error("Error saving tooltips setting:", error);
+      }
+    }
+  };
+
+  // Debug function to mark setup as completed
+  const handleMarkSetupCompleted = () => {
+    Alert.alert(
+      "Debug: Mark Setup Completed",
+      "This will mark the setup as completed and prevent the SetupWizard from showing.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Mark Completed",
+          onPress: () => {
+            completeSetup();
+            Alert.alert("Success", "Setup marked as completed!");
+          },
+        },
+      ]
+    );
   };
 
   // Check if user is admin (you can modify this logic as needed)
@@ -905,32 +953,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </View>
           </TouchableOpacity>
 
-          {/* Tour Controls */}
-          <TouchableOpacity
-            style={[
-              styles.settingItem,
-              { borderBottomColor: colors.borderLight },
-            ]}
-            onPress={() => startTour(navigation)}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons
-                name="map"
-                size={20}
-                color={colors.textSecondary}
-                style={{ marginRight: 12 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text }]}>
-                Take App Tour
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={16}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-
           <HelpfulTooltip
             tooltipId="tooltips-setting"
             title="Helpful Tooltips"
@@ -990,6 +1012,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </View>
             </TouchableOpacity>
           </HelpfulTooltip>
+
+          {/* Debug: Mark Setup Completed Button */}
+          <TouchableOpacity
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
+            onPress={handleMarkSetupCompleted}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="bug"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                Debug: Mark Setup Completed
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={[

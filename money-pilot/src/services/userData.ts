@@ -2643,6 +2643,35 @@ export const leaveGroup = async (
   }
 };
 
+// ===== USER UTILITIES =====
+
+// Check if user is new (created within last 5 minutes)
+export const isNewUser = async (user: any): Promise<boolean> => {
+  if (!user || !user.uid) return false;
+
+  try {
+    const userRef = ref(db, `users/${user.uid}/profile`);
+    const snapshot = await get(userRef);
+
+    if (!snapshot.exists()) return false;
+
+    const userData = snapshot.val();
+    const createdAt = userData.createdAt;
+    if (!createdAt) return false;
+
+    // Convert timestamp to Date object
+    const createdAtDate = new Date(createdAt);
+    // User is "new" if created within last 5 minutes
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const isNew = createdAtDate > fiveMinutesAgo;
+
+    return isNew;
+  } catch (error) {
+    console.error("Error checking if user is new:", error);
+    return false;
+  }
+};
+
 // ===== BUDGET CATEGORIES FUNCTIONS =====
 
 export interface BudgetCategory {
