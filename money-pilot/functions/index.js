@@ -780,9 +780,124 @@ function generateContextInstructions(questionType) {
 }
 
 // Helper function to calculate cost
-function calculateCost(usage) {
-  const costPer1kTokens = 0.00015; // gpt-4o-mini pricing
-  return (usage.total_tokens / 1000) * costPer1kTokens;
+function calculateCost(usage, model = "gpt-4o-mini") {
+  // Pricing per 1K tokens (Chat Completions API)
+  const pricingPer1K = {
+    "gpt-4o-mini": {
+      input: 0.00015, // $0.15 per 1M input tokens
+      output: 0.0006, // $0.60 per 1M output tokens
+    },
+    "gpt-4o": {
+      input: 0.0025, // $2.50 per 1M input tokens
+      output: 0.01, // $10.00 per 1M output tokens
+    },
+  };
+
+  const modelPricing = pricingPer1K[model] || pricingPer1K["gpt-4o-mini"];
+  const inputCost = (usage.prompt_tokens / 1000) * modelPricing.input;
+  const outputCost = (usage.completion_tokens / 1000) * modelPricing.output;
+
+  return inputCost + outputCost;
+}
+
+// Smart model selection based on request complexity
+function selectOptimalModel(message, isPlanRequest) {
+  // Keywords that indicate complex planning requests (more specific)
+  const complexPlanningKeywords = [
+    "create a plan",
+    "financial strategy",
+    "debt payoff plan",
+    "investment strategy",
+    "retirement plan",
+    "mortgage plan",
+    "loan strategy",
+    "budget plan",
+    "financial plan",
+    "what if scenario",
+    "projection analysis",
+    "forecast analysis",
+    "compare options",
+    "optimize budget",
+    "maximize savings",
+    "minimize debt",
+    "trade-off analysis",
+    "long-term plan",
+    "multi-year plan",
+    "comprehensive plan",
+  ];
+
+  // Keywords that indicate simple requests
+  const simpleRequestKeywords = [
+    "what is",
+    "explain",
+    "how much",
+    "show me",
+    "list",
+    "categorize",
+    "quick",
+    "simple",
+    "brief",
+    "summary",
+    "overview",
+    "can i afford",
+    "check my budget",
+    "what's my spending",
+    "how much left",
+    "current balance",
+    "monthly expenses",
+    "income breakdown",
+    "spending summary",
+    "budget status",
+    "available amount",
+  ];
+
+  const messageLower = message.toLowerCase();
+
+  // Check for complex planning indicators
+  const hasComplexKeywords = complexPlanningKeywords.some((keyword) =>
+    messageLower.includes(keyword)
+  );
+
+  // Check for simple request indicators
+  const hasSimpleKeywords = simpleRequestKeywords.some((keyword) =>
+    messageLower.includes(keyword)
+  );
+
+  // Check message length (longer messages often need more reasoning)
+  const isLongMessage = message.length > 100;
+
+  // Check if it's explicitly a plan request or has complex keywords
+  if (isPlanRequest || hasComplexKeywords) {
+    console.log(
+      `Using GPT-4o for complex request: ${message.substring(0, 50)}...`
+    );
+    return {
+      model: "gpt-4o",
+      maxTokens: 800, // Reduced from 1500 for faster responses
+      temperature: 0.7,
+      reason: "Complex planning request",
+    };
+  }
+
+  // Use GPT-4o-mini for simple requests or when simple keywords are detected
+  if (hasSimpleKeywords || !isLongMessage) {
+    console.log(
+      `Using GPT-4o-mini for simple request: ${message.substring(0, 50)}...`
+    );
+    return {
+      model: "gpt-4o-mini",
+      maxTokens: 500, // Reduced from 1000 for faster responses
+      temperature: 0.7,
+      reason: "Simple request",
+    };
+  }
+
+  return {
+    model: "gpt-4o-mini",
+    maxTokens: 500, // Reduced from 1000 for faster responses
+    temperature: 0.7,
+    reason: "Default to mini for cost efficiency",
+  };
 }
 
 // AI Chat endpoint
@@ -805,6 +920,8 @@ exports.aiChat = onCall(async (data, context) => {
     financialData,
     userPreferences = {},
     conversationHistory = [],
+    includeAudio = false, // User choice to include audio
+    voice = "alloy", // Voice selection (alloy, echo, fable, onyx, nova, shimmer)
   } = actualData;
 
   if (!message) {
@@ -859,22 +976,75 @@ exports.aiChat = onCall(async (data, context) => {
     // Add current user message
     messages.push({ role: "user", content: userMessage });
 
+    // Select optimal model based on request complexity
+    const modelConfig = selectOptimalModel(message, isPlanRequestFlag);
+
+    console.log(
+      `Selected model: ${modelConfig.model} - Reason: ${modelConfig.reason}`
+    );
+
     const response = await openaiClient.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: modelConfig.model,
       messages: messages,
-      max_tokens: 1000,
-      temperature: 0.7,
+      max_tokens: modelConfig.maxTokens,
+      temperature: modelConfig.temperature,
     });
 
     const aiResponse = response.choices[0].message.content;
     const tokensUsed = response.usage.total_tokens;
-    const cost = calculateCost(response.usage);
+    const cost = calculateCost(response.usage, modelConfig.model);
+
+    // Generate audio if requested by user
+    let audioBuffer = null;
+    let audioCost = 0;
+
+    if (includeAudio && aiResponse) {
+      try {
+        console.log(`Generating audio for response with voice: ${voice}`);
+
+        const audioResponse = await openaiClient.audio.speech.create({
+          model: "tts-1", // Use tts-1 for faster generation, tts-1-hd for higher quality
+          voice: voice,
+          input: aiResponse,
+          speed: 1.1, // Slightly faster speech for quicker playback
+        });
+
+        // Convert the audio stream to buffer
+        const chunks = [];
+        for await (const chunk of audioResponse.body) {
+          chunks.push(chunk);
+        }
+        const audioBufferRaw = Buffer.concat(chunks);
+
+        // Convert to base64 for frontend
+        audioBuffer = audioBufferRaw.toString("base64");
+
+        // Calculate TTS cost (tts-1: $0.015 per 1K characters)
+        audioCost = (aiResponse.length / 1000) * 0.015;
+
+        console.log(
+          `Audio generated successfully. Length: ${
+            audioBuffer.length
+          } bytes, Cost: $${audioCost.toFixed(4)}`
+        );
+      } catch (audioError) {
+        console.error("TTS generation error:", audioError);
+        // Don't fail the entire request if TTS fails
+        audioBuffer = null;
+        audioCost = 0;
+      }
+    }
 
     return {
       response: aiResponse,
       tokensUsed,
-      cost,
+      cost: cost + audioCost, // Include TTS cost in total
       isPlanRequest: isPlanRequestFlag,
+      modelUsed: modelConfig.model,
+      modelReason: modelConfig.reason,
+      audioBuffer: audioBuffer, // Base64 encoded audio data
+      hasAudio: !!audioBuffer,
+      voiceUsed: includeAudio ? voice : null,
     };
   } catch (error) {
     console.error("AI Chat error:", error);

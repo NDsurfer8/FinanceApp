@@ -13,6 +13,7 @@ import {
   Animated,
   Keyboard,
   Clipboard,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -43,6 +44,17 @@ import {
 } from "../services/userData";
 import { VectraAvatar } from "../components/VectraAvatar";
 import { sendBackendAIFeedback } from "../services/backendAI";
+import { Audio } from "expo-av";
+
+// Voice options for TTS
+const VOICE_OPTIONS = [
+  { id: "alloy", name: "Alloy (Neutral)" },
+  { id: "echo", name: "Echo (Male)" },
+  { id: "fable", name: "Fable (British)" },
+  { id: "onyx", name: "Onyx (Deep)" },
+  { id: "nova", name: "Nova (Female)" },
+  { id: "shimmer", name: "Shimmer (Soft)" },
+];
 
 // Local responses for common app questions (no API call needed)
 const APP_NAVIGATION_RESPONSES = {
@@ -290,14 +302,211 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const [feedbackStates, setFeedbackStates] = useState<{
     [messageId: string]: { liked?: boolean; disliked?: boolean };
   }>({});
+  // TTS State Variables
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState("alloy");
+  const [currentAudioBuffer, setCurrentAudioBuffer] = useState<any>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const soundRef = useRef<any>(null);
+
+  // Typing indicator animation
+  const typingAnimation = useRef(new Animated.Value(0)).current;
+
+  // Audio playing animation
+  const audioPlayingAnimation = useRef(new Animated.Value(1)).current;
+
+  // Voice selection modal state
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
+
+  // Audio tooltip state
+  const [showAudioTooltip, setShowAudioTooltip] = useState(false);
+
+  // Load voice preferences on component mount
+  useEffect(() => {
+    loadVoicePreferences();
+  }, []);
+
+  const loadVoicePreferences = async () => {
+    try {
+      const savedVoice = await AsyncStorage.getItem("vectra_voice_preference");
+      const savedAudioEnabled = await AsyncStorage.getItem(
+        "vectra_audio_enabled"
+      );
+      const hasSeenAudioTooltip = await AsyncStorage.getItem(
+        "vectra_audio_tooltip_seen"
+      );
+
+      if (savedVoice) {
+        setSelectedVoice(savedVoice);
+        setUserPreferences((prev) => ({ ...prev, voice: savedVoice }));
+      }
+      if (savedAudioEnabled !== null) {
+        setAudioEnabled(savedAudioEnabled === "true");
+      }
+
+      // Show tooltip for first-time users
+      if (!hasSeenAudioTooltip) {
+        setTimeout(() => {
+          setShowAudioTooltip(true);
+        }, 2000); // Show after 2 seconds
+      }
+    } catch (error) {
+      console.log("Error loading voice preferences:", error);
+    }
+  };
+
+  const saveVoicePreference = async (voice: string) => {
+    try {
+      await AsyncStorage.setItem("vectra_voice_preference", voice);
+    } catch (error) {
+      console.log("Error saving voice preference:", error);
+    }
+  };
+
+  const saveAudioEnabledPreference = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem("vectra_audio_enabled", enabled.toString());
+    } catch (error) {
+      console.log("Error saving audio preference:", error);
+    }
+  };
+
+  // Typing indicator animation
+  useEffect(() => {
+    const startTypingAnimation = () => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(typingAnimation, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(typingAnimation, {
+            toValue: 0,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    };
+
+    const stopTypingAnimation = () => {
+      typingAnimation.stopAnimation();
+      typingAnimation.setValue(0);
+    };
+
+    // Start animation when loading, stop when not
+    if (isLoading) {
+      startTypingAnimation();
+    } else {
+      stopTypingAnimation();
+    }
+
+    return () => {
+      stopTypingAnimation();
+    };
+  }, [isLoading, typingAnimation]);
+
+  // Audio playing animation
+  useEffect(() => {
+    if (isPlaying) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(audioPlayingAnimation, {
+            toValue: 1.1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(audioPlayingAnimation, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      audioPlayingAnimation.stopAnimation();
+      audioPlayingAnimation.setValue(1);
+    }
+  }, [isPlaying, audioPlayingAnimation]);
+
+  // Typing indicator component
+  const TypingIndicator = () => {
+    const dot1Opacity = typingAnimation.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [0.3, 1, 0.3],
+    });
+
+    const dot2Opacity = typingAnimation.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [0.3, 1, 0.3],
+      extrapolate: "clamp",
+    });
+
+    const dot3Opacity = typingAnimation.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [0.3, 1, 0.3],
+      extrapolate: "clamp",
+    });
+
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <Text
+          style={{
+            color: colors.textSecondary,
+            fontSize: 14,
+            marginRight: 8,
+            fontStyle: "italic",
+          }}
+        >
+          Vectra is typing
+        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Animated.View
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: colors.textSecondary,
+              marginHorizontal: 2,
+              opacity: dot1Opacity,
+            }}
+          />
+          <Animated.View
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: colors.textSecondary,
+              marginHorizontal: 2,
+              opacity: dot2Opacity,
+            }}
+          />
+          <Animated.View
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: colors.textSecondary,
+              marginHorizontal: 2,
+              opacity: dot3Opacity,
+            }}
+          />
+        </View>
+      </View>
+    );
+  };
+
   const [userPreferences, setUserPreferences] = useState<{
     preferredStyle: "detailed" | "concise" | "balanced";
     preferredTone: "professional" | "casual" | "friendly";
     preferredFocus: "actionable" | "educational" | "analytical";
+    voice?: string; // User's preferred voice for TTS
   }>({
     preferredStyle: "balanced",
     preferredTone: "friendly",
     preferredFocus: "actionable",
+    voice: "alloy", // Default voice
   });
 
   // Cache for common questions to reduce API calls - user-specific
@@ -328,6 +537,62 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const scrollViewRef = useRef<ScrollView>(null);
   const { colors } = useTheme();
   const headerOpacity = useRef(new Animated.Value(1)).current;
+
+  // Audio playback functions
+  const playAudio = async (audioBuffer: any) => {
+    try {
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+      }
+
+      // Convert base64 to URI
+      const audioUri = `data:audio/mp3;base64,${audioBuffer}`;
+
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioUri },
+        { shouldPlay: true }
+      );
+
+      soundRef.current = sound;
+      setIsPlaying(true);
+
+      sound.setOnPlaybackStatusUpdate((status: any) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setIsPlaying(false);
+        }
+      });
+    } catch (error) {
+      console.error("Error playing audio:", error);
+      Alert.alert("Audio Error", "Could not play audio response");
+    }
+  };
+
+  const stopAudio = async () => {
+    if (soundRef.current) {
+      await soundRef.current.stopAsync();
+      setIsPlaying(false);
+    }
+  };
+
+  const selectVoice = () => {
+    setShowVoiceModal(true);
+  };
+
+  const handleVoiceSelection = (voiceId: string) => {
+    setSelectedVoice(voiceId);
+    setUserPreferences((prev) => ({ ...prev, voice: voiceId }));
+    saveVoicePreference(voiceId);
+    setShowVoiceModal(false);
+  };
+
+  const dismissAudioTooltip = async () => {
+    setShowAudioTooltip(false);
+    try {
+      await AsyncStorage.setItem("vectra_audio_tooltip_seen", "true");
+    } catch (error) {
+      console.log("Error saving tooltip state:", error);
+    }
+  };
 
   // Get welcome message
   const getWelcomeMessage = (): Message => ({
@@ -831,36 +1096,62 @@ Requirements:
 
           // Use optimized prompt for plan generation
           const optimizedPlanPrompt = generateOptimizedPrompt(planPrompt);
-          aiResponse = await aiFinancialAdvisorService.generateAIResponse(
+          const result = await aiFinancialAdvisorService.generateAIResponse(
             optimizedPlanPrompt,
             snapshot,
             userPreferences,
             conversationHistory,
-            targetMonth
+            targetMonth,
+            audioEnabled,
+            selectedVoice
           );
+          aiResponse = result.response;
+
+          // Handle audio if available
+          if (result.hasAudio && result.audioBuffer) {
+            setCurrentAudioBuffer(result.audioBuffer);
+          }
           aiResponse += `\n\n💾 Would you like to save this plan to your account?`;
         } catch (planError) {
           console.error("Error creating financial plan:", planError);
-          aiResponse = await aiFinancialAdvisorService.generateAIResponse(
-            userMessage.text,
-            snapshot,
-            userPreferences,
-            conversationHistory,
-            targetMonth
-          );
+          const errorResult =
+            await aiFinancialAdvisorService.generateAIResponse(
+              userMessage.text,
+              snapshot,
+              userPreferences,
+              conversationHistory,
+              targetMonth,
+              audioEnabled,
+              selectedVoice
+            );
+          aiResponse = errorResult.response;
+
+          // Handle audio if available
+          if (errorResult.hasAudio && errorResult.audioBuffer) {
+            setCurrentAudioBuffer(errorResult.audioBuffer);
+          }
         }
       } else {
         // Generate optimized prompt based on user preferences
         const optimizedPrompt = generateOptimizedPrompt(userMessage.text);
 
         // Regular AI response with optimized prompt
-        aiResponse = await aiFinancialAdvisorService.generateAIResponse(
-          optimizedPrompt,
-          snapshot,
-          userPreferences,
-          conversationHistory,
-          targetMonth
-        );
+        const regularResult =
+          await aiFinancialAdvisorService.generateAIResponse(
+            optimizedPrompt,
+            snapshot,
+            userPreferences,
+            conversationHistory,
+            targetMonth,
+            audioEnabled,
+            selectedVoice
+          );
+        aiResponse = regularResult.response;
+
+        // Handle audio if available
+        if (regularResult.hasAudio && regularResult.audioBuffer) {
+          setCurrentAudioBuffer(regularResult.audioBuffer);
+        }
 
         // Clean up markdown formatting from AI responses
         aiResponse = aiResponse
@@ -1808,20 +2099,7 @@ Original Request: ${basePrompt}
                     </View>
                     <View style={{ flex: 1, paddingRight: 16 }}>
                       {message.isLoading ? (
-                        <View
-                          style={{ flexDirection: "row", alignItems: "center" }}
-                        >
-                          <ActivityIndicator size="small" color={colors.text} />
-                          <Text
-                            style={{
-                              marginLeft: 8,
-                              color: colors.text,
-                              fontSize: 16,
-                            }}
-                          >
-                            Analyzing your finances...
-                          </Text>
-                        </View>
+                        <TypingIndicator />
                       ) : (
                         <Text
                           style={{
@@ -1844,20 +2122,7 @@ Original Request: ${basePrompt}
                     </View>
                     <View style={{ flex: 1, paddingRight: 16 }}>
                       {message.isLoading ? (
-                        <View
-                          style={{ flexDirection: "row", alignItems: "center" }}
-                        >
-                          <ActivityIndicator size="small" color={colors.text} />
-                          <Text
-                            style={{
-                              marginLeft: 8,
-                              color: colors.text,
-                              fontSize: 16,
-                            }}
-                          >
-                            Analyzing your finances...
-                          </Text>
-                        </View>
+                        <TypingIndicator />
                       ) : (
                         <View>
                           <Text
@@ -2017,10 +2282,185 @@ Original Request: ${basePrompt}
           borderTopColor: colors.border,
         }}
       >
+        {/* TTS Controls */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: 8,
+            gap: 8,
+          }}
+        >
+          {/* Audio Tooltip */}
+          {showAudioTooltip && (
+            <View
+              style={{
+                position: "absolute",
+                bottom: 50,
+                left: -80,
+                right: 0,
+                alignItems: "center",
+                zIndex: 1000,
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: colors.primary,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  maxWidth: 280,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 14,
+                    fontWeight: "600",
+                    textAlign: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  Turn on audio to hear Vectra's voice!
+                </Text>
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 12,
+                    textAlign: "center",
+                    opacity: 0.9,
+                    marginBottom: 12,
+                  }}
+                >
+                  Tap the speaker icon below to enable voice responses
+                </Text>
+                <TouchableOpacity
+                  onPress={dismissAudioTooltip}
+                  style={{
+                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 8,
+                    alignSelf: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 12,
+                      fontWeight: "600",
+                    }}
+                  >
+                    Got it!
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {/* Tooltip arrow pointing down - positioned on left side */}
+              <View
+                style={{
+                  width: 0,
+                  height: 0,
+                  borderLeftWidth: 8,
+                  borderRightWidth: 8,
+                  borderTopWidth: 8,
+                  borderLeftColor: "transparent",
+                  borderRightColor: "transparent",
+                  borderTopColor: colors.primary,
+                  marginTop: -1,
+                  alignSelf: "center",
+                  marginLeft: -240, // Center the arrow
+                }}
+              />
+            </View>
+          )}
+
+          {/* Audio Toggle */}
+          <TouchableOpacity
+            onPress={() => {
+              const newAudioEnabled = !audioEnabled;
+              setAudioEnabled(newAudioEnabled);
+              saveAudioEnabledPreference(newAudioEnabled);
+
+              // Auto-dismiss tooltip when audio is enabled
+              if (newAudioEnabled && showAudioTooltip) {
+                dismissAudioTooltip();
+              }
+            }}
+            style={{
+              backgroundColor: audioEnabled ? colors.primary : colors.surface,
+              paddingHorizontal: 10,
+              paddingVertical: 8,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: audioEnabled ? colors.primary : colors.border,
+            }}
+          >
+            <Ionicons
+              name={audioEnabled ? "volume-high" : "volume-mute"}
+              size={16}
+              color={audioEnabled ? "white" : colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          {/* Voice Selection */}
+          {audioEnabled && (
+            <TouchableOpacity
+              onPress={selectVoice}
+              style={{
+                backgroundColor: colors.surface,
+                paddingHorizontal: 10,
+                paddingVertical: 8,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Ionicons name="mic" size={16} color={colors.primary} />
+            </TouchableOpacity>
+          )}
+
+          {/* Play/Stop Button */}
+          {audioEnabled && currentAudioBuffer && (
+            <Animated.View
+              style={{
+                transform: [{ scale: audioPlayingAnimation }],
+              }}
+            >
+              <TouchableOpacity
+                onPress={
+                  isPlaying ? stopAudio : () => playAudio(currentAudioBuffer)
+                }
+                style={{
+                  backgroundColor: isPlaying ? colors.error : colors.success,
+                  paddingHorizontal: 10,
+                  paddingVertical: 8,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: isPlaying ? colors.error : colors.success,
+                }}
+              >
+                <Ionicons
+                  name={isPlaying ? "stop" : "play"}
+                  size={16}
+                  color="white"
+                  style={{ marginLeft: isPlaying ? 0 : 1 }}
+                />
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+        </View>
+
         <View
           style={{
             paddingHorizontal: 16,
-            paddingVertical: 16,
+            paddingVertical: 8,
             paddingBottom: Platform.OS === "ios" ? 34 : 16, // Account for home indicator
           }}
         >
@@ -2084,6 +2524,192 @@ Original Request: ${basePrompt}
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Voice Selection Modal */}
+      <Modal
+        visible={showVoiceModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowVoiceModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 20,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              width: "100%",
+              maxWidth: 400,
+              maxHeight: "80%",
+            }}
+          >
+            {/* Header */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 24,
+              }}
+            >
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: colors.primary + "15",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 16,
+                }}
+              >
+                <Ionicons name="mic" size={24} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: colors.text,
+                    marginBottom: 4,
+                  }}
+                >
+                  Select Voice
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                  }}
+                >
+                  Choose your preferred voice for Vectra
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowVoiceModal(false)}
+                style={{
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Voice Options */}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {VOICE_OPTIONS.map((voice) => (
+                <TouchableOpacity
+                  key={voice.id}
+                  onPress={() => handleVoiceSelection(voice.id)}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 16,
+                    paddingHorizontal: 16,
+                    borderRadius: 12,
+                    backgroundColor:
+                      selectedVoice === voice.id
+                        ? colors.primary + "15"
+                        : "transparent",
+                    borderWidth: 1,
+                    borderColor:
+                      selectedVoice === voice.id
+                        ? colors.primary
+                        : colors.border,
+                    marginBottom: 8,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      backgroundColor:
+                        selectedVoice === voice.id
+                          ? colors.primary
+                          : colors.surfaceSecondary,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 12,
+                    }}
+                  >
+                    <Ionicons
+                      name="person"
+                      size={20}
+                      color={
+                        selectedVoice === voice.id
+                          ? "white"
+                          : colors.textSecondary
+                      }
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        color: colors.text,
+                        marginBottom: 2,
+                      }}
+                    >
+                      {voice.name}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                      }}
+                    >
+                      {voice.id === "alloy" && "Neutral, balanced tone"}
+                      {voice.id === "echo" && "Clear, professional voice"}
+                      {voice.id === "fable" && "Warm, storytelling voice"}
+                      {voice.id === "onyx" && "Deep, authoritative tone"}
+                      {voice.id === "nova" && "Bright, energetic voice"}
+                      {voice.id === "shimmer" && "Soft, gentle tone"}
+                    </Text>
+                  </View>
+                  {selectedVoice === voice.id && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={24}
+                      color={colors.primary}
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Close Button */}
+            <TouchableOpacity
+              onPress={() => setShowVoiceModal(false)}
+              style={{
+                backgroundColor: colors.surfaceSecondary,
+                borderRadius: 12,
+                paddingVertical: 14,
+                alignItems: "center",
+                marginTop: 16,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: colors.text,
+                }}
+              >
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };

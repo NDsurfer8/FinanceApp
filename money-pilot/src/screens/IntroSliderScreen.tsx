@@ -2,7 +2,6 @@ import React from "react";
 import { View, Text, StyleSheet, Dimensions, Image } from "react-native";
 import AppIntroSlider from "react-native-app-intro-slider";
 import { Ionicons } from "@expo/vector-icons";
-import { VectraAvatar } from "../components/VectraAvatar";
 
 const { width, height } = Dimensions.get("window");
 
@@ -14,48 +13,97 @@ interface IntroSlide {
   backgroundColor: string;
 }
 
+// Custom Graphics Components
+const WelcomeGraphic = () => (
+  <Image
+    source={require("../../assets/ios/slide1.png")}
+    style={{ width: 350, height: 250 }}
+    resizeMode="contain"
+  />
+);
+
+const PlaidGraphic = () => (
+  <Image
+    source={require("../../assets/ios/slide2.png")}
+    style={{ width: 350, height: 250 }}
+    resizeMode="contain"
+  />
+);
+
+const SpendingGraphic = () => (
+  <Image
+    source={require("../../assets/ios/slide3.png")}
+    style={{ width: 350, height: 250 }}
+    resizeMode="contain"
+  />
+);
+
+const SavingsGraphic = () => (
+  <Image
+    source={require("../../assets/ios/slide4.png")}
+    style={{ width: 350, height: 250 }}
+    resizeMode="contain"
+  />
+);
+
+const ForecastGraphic = () => (
+  <Image
+    source={require("../../assets/ios/slide5.png")}
+    style={{ width: 350, height: 250 }}
+    resizeMode="contain"
+  />
+);
+
+const SecurityGraphic = () => (
+  <Image
+    source={require("../../assets/ios/slide6.png")}
+    style={{ width: 350, height: 250 }}
+    resizeMode="contain"
+  />
+);
+
 const slides: IntroSlide[] = [
   {
     key: "1",
-    title: "🤖 Meet Vectra AI",
-    text: "Your personal financial advisor powered by AI. Get personalized advice, create financial plans, and make smarter money decisions with Vectra by your side.",
+    title: "Welcome to VectorFi",
+    text: "Meet Vectra, your personal AI financial coach. Once connected, Vectra securely understands your finances and translates them into practical advice—helping you save more, spend wisely, and stay on track toward your goals.",
     icon: "chatbubble-ellipses",
-    backgroundColor: "#06b6d4",
+    backgroundColor: "#ffffff",
   },
   {
     key: "2",
-    title: "💰 Master Your Money",
-    text: "Transform your financial life with powerful tracking tools. See your wealth grow in real-time!",
-    icon: "rocket",
-    backgroundColor: "#6366f1",
+    title: "Connect Securely with Plaid",
+    text: "Link your bank accounts in seconds with Plaid technology trusted by leading finance apps.",
+    icon: "shield-checkmark",
+    backgroundColor: "#ffffff",
   },
   {
     key: "3",
-    title: "📊 Smart Analytics",
-    text: "Unlock the secrets of your spending with AI-powered insights and stunning visualizations",
+    title: "Your Spending, Explained",
+    text: "Vectra turns your transactions into clear, actionable insights - not just data, but smart insights you can use today.",
     icon: "analytics",
-    backgroundColor: "#10b981",
+    backgroundColor: "#ffffff",
   },
   {
     key: "4",
-    title: "🎯 Crush Your Goals",
-    text: "Set ambitious financial goals and watch your dreams become reality with progress tracking",
+    title: "Save for What Matters",
+    text: "Set goals and watch your progress update automatically as your spending changes.",
     icon: "trophy",
-    backgroundColor: "#f59e0b",
+    backgroundColor: "#ffffff",
   },
   {
     key: "5",
-    title: "🔒 Bank-Level Security",
-    text: "Sleep soundly knowing your financial data is protected with military-grade encryption",
-    icon: "lock-closed",
-    backgroundColor: "#ef4444",
+    title: "Forecast Your Finances",
+    text: "Understand how today's choices affect tomorrow with real-time projections and 'safe to spend' insights.",
+    icon: "trending-up",
+    backgroundColor: "#ffffff",
   },
   {
     key: "6",
-    title: "🚀 Team Up & Win",
-    text: "Join forces with your partner, family, or friends to build wealth together and achieve financial freedom",
-    icon: "people-circle",
-    backgroundColor: "#8b5cf6",
+    title: "Your Security Comes First",
+    text: "Biometric login + bank-grade encryption keep your data safe at all times.",
+    icon: "lock-closed",
+    backgroundColor: "#ffffff",
   },
 ];
 
@@ -67,15 +115,28 @@ export const IntroSliderScreen: React.FC<IntroSliderScreenProps> = ({
   onDone,
 }) => {
   const renderItem = ({ item }: { item: IntroSlide }) => {
+    const renderCustomGraphic = () => {
+      switch (item.key) {
+        case "1":
+          return <WelcomeGraphic />;
+        case "2":
+          return <PlaidGraphic />;
+        case "3":
+          return <SpendingGraphic />;
+        case "4":
+          return <SavingsGraphic />;
+        case "5":
+          return <ForecastGraphic />;
+        case "6":
+          return <SecurityGraphic />;
+        default:
+          return <Ionicons name={item.icon} size={120} color="white" />;
+      }
+    };
+
     return (
       <View style={[styles.slide, { backgroundColor: item.backgroundColor }]}>
-        <View style={styles.iconContainer}>
-          {item.key === "1" ? (
-            <VectraAvatar size={120} />
-          ) : (
-            <Ionicons name={item.icon} size={120} color="white" />
-          )}
-        </View>
+        <View style={styles.graphicContainer}>{renderCustomGraphic()}</View>
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.text}>{item.text}</Text>
 
@@ -95,11 +156,7 @@ export const IntroSliderScreen: React.FC<IntroSliderScreenProps> = ({
   const renderNextButton = () => {
     return (
       <View style={styles.buttonCircle}>
-        <Ionicons
-          name="arrow-forward"
-          color="rgba(255, 255, 255, .9)"
-          size={24}
-        />
+        <Ionicons name="arrow-forward" color="white" size={24} />
       </View>
     );
   };
@@ -107,7 +164,7 @@ export const IntroSliderScreen: React.FC<IntroSliderScreenProps> = ({
   const renderDoneButton = () => {
     return (
       <View style={styles.buttonCircle}>
-        <Ionicons name="checkmark" color="rgba(255, 255, 255, .9)" size={24} />
+        <Ionicons name="checkmark" color="white" size={24} />
       </View>
     );
   };
@@ -142,71 +199,58 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 40,
+    backgroundColor: "#ffffff",
   },
-  iconContainer: {
-    marginBottom: 50,
+  graphicContainer: {
+    marginBottom: 40,
     alignItems: "center",
     justifyContent: "center",
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
   },
   title: {
     fontSize: 32,
     fontWeight: "800",
-    color: "white",
+    color: "#111827",
     textAlign: "center",
-    marginBottom: 24,
-    textShadowColor: "rgba(0, 0, 0, 0.3)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    marginBottom: 16,
     letterSpacing: -0.5,
+    lineHeight: 38,
   },
   text: {
     fontSize: 18,
-    color: "rgba(255, 255, 255, 0.9)",
+    color: "#374151",
     textAlign: "center",
     lineHeight: 28,
     fontWeight: "500",
-    textShadowColor: "rgba(0, 0, 0, 0.2)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    marginBottom: 24,
+    letterSpacing: 0.2,
+    paddingHorizontal: 8,
   },
   buttonCircle: {
     width: 56,
     height: 56,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "#3b82f6",
     borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
   skipButton: {
     paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
     borderRadius: 20,
   },
   skipText: {
-    color: "rgba(255, 255, 255, 0.9)",
+    color: "#6b7280",
     fontSize: 16,
-    fontWeight: "700",
-    textShadowColor: "rgba(0, 0, 0, 0.2)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    fontWeight: "600",
   },
   dot: {
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    backgroundColor: "#d1d5db",
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -216,7 +260,7 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   activeDot: {
-    backgroundColor: "white",
+    backgroundColor: "#1f2937",
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -229,14 +273,14 @@ const styles = StyleSheet.create({
     marginTop: 24,
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: "#f3f4f6",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderColor: "#e5e7eb",
   },
   disclaimerText: {
     fontSize: 12,
-    color: "rgba(255, 255, 255, 0.8)",
+    color: "#6b7280",
     textAlign: "center",
     lineHeight: 16,
     fontWeight: "500",

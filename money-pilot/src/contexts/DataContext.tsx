@@ -469,10 +469,45 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           return;
         }
 
-        const [transactions, accounts] = await Promise.all([
-          plaidService.getTransactions(startDate, endDate),
-          plaidService.getAccounts(),
-        ]);
+        // Retry logic for when Plaid data isn't ready yet
+        let retryCount = 0;
+        const maxRetries = 3;
+        const retryDelay = 2000; // 2 seconds between retries
+
+        let transactions: any[] = [];
+        let accounts: any[] = [];
+
+        while (retryCount < maxRetries) {
+          try {
+            [transactions, accounts] = await Promise.all([
+              plaidService.getTransactions(startDate, endDate),
+              plaidService.getAccounts(),
+            ]);
+            break; // Success, exit retry loop
+          } catch (error: any) {
+            const errorMessage = error.message || String(error);
+
+            // Check if it's a "no data yet" error that we should retry
+            const isRetryableError =
+              errorMessage.includes("no transactions") ||
+              errorMessage.includes("no data") ||
+              errorMessage.includes("empty") ||
+              errorMessage.includes("not available") ||
+              errorMessage.includes("processing");
+
+            if (isRetryableError && retryCount < maxRetries - 1) {
+              retryCount++;
+              console.log(
+                `🔄 Plaid data not ready yet, retrying in ${retryDelay}ms (attempt ${retryCount}/${maxRetries})`
+              );
+              await new Promise((resolve) => setTimeout(resolve, retryDelay));
+              continue;
+            } else {
+              // Not a retryable error or max retries reached, throw the error
+              throw error;
+            }
+          }
+        }
 
         setBankAccounts(accounts);
 
