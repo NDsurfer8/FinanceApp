@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   removeUserFromGroup,
   removeGroupSharedData,
-} from "./sharedFinanceDataSync";
+} from "./sharedFinanceUtils";
 
 export interface UserProfile {
   uid: string;
@@ -2664,6 +2664,15 @@ export const isNewUser = async (user: any): Promise<boolean> => {
     // User is "new" if created within last 5 minutes
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     const isNew = createdAtDate > fiveMinutesAgo;
+
+    console.log("🔍 isNewUser Debug:", {
+      userId: user.uid,
+      createdAt,
+      createdAtDate: createdAtDate.toISOString(),
+      fiveMinutesAgo: fiveMinutesAgo.toISOString(),
+      isNew,
+      timeDiff: Date.now() - createdAtDate.getTime(),
+    });
 
     return isNew;
   } catch (error) {

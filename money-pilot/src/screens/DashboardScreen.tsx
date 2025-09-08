@@ -71,11 +71,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
-  // TODO: use this function
-  const shouldWrapName = (name: string) => {
-    return name.length > 15;
-  };
-
   // Generate personalized welcome message
   const getWelcomeMessage = () => {
     const userName = user?.displayName || "User";

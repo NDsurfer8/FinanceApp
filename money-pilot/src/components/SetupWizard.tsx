@@ -19,14 +19,14 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
     {
       title: "Track your spending",
       description:
-        "Add income and expenses manually — or link your bank to auto-import transactions.",
+        "Add income and expenses manually — or link your bank to auto-import transactions and get alerts.",
       icon: "pie-chart-outline" as keyof typeof Ionicons.glyphMap,
       action: "setBudget",
     },
     {
       title: "Build your budget",
       description:
-        "Open Budget, tap the gear icon in the budget overview, set category limits and safe-to-spend.",
+        "In Budget, tap the gear in Overview to set category limits and safe-to-spend.",
       icon: "settings-outline" as keyof typeof Ionicons.glyphMap,
       action: "setBudget",
     },
