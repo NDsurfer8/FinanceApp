@@ -24,10 +24,19 @@ import {
   getUserBudgetStreak,
   calculateMonthlyBudgetResult,
   updateBudgetStreak,
-  getAchievementDetails,
   getUserBudgetCategories,
-  processPreviousMonthAchievements,
 } from "../services/userData";
+import {
+  getAchievementProgress,
+  markAchievementsAsSeen as markAchievementsAsSeenService,
+  getUnseenAchievements,
+  cleanupIrrelevantAchievements,
+  Achievement,
+} from "../services/achievementService";
+import {
+  checkMonthTransitions,
+  initializeMonthTracking,
+} from "../services/monthTransitionService";
 
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
@@ -80,6 +89,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [showAllAchievements, setShowAllAchievements] = useState(false);
   const [hasBudgetCategories, setHasBudgetCategories] = useState(false);
   const [achievementsHidden, setAchievementsHidden] = useState(false);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [unseenAchievements, setUnseenAchievements] = useState<Achievement[]>(
+    []
+  );
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
@@ -157,7 +170,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         // Load budget streak data
         loadBudgetStreakData();
         checkBudgetCategories();
-        loadAchievementsHiddenState();
+        loadAchievements();
       }
     }, [user, refreshInBackground, fetchPendingInvitations])
   );
@@ -555,11 +568,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     }
   };
 
-  // Load achievements hidden state
-  const loadAchievementsHiddenState = async () => {
+  // Load achievements and hidden state
+  const loadAchievements = async () => {
     if (!user?.uid) return;
 
     try {
+      // Clean up irrelevant achievements first
+      await cleanupIrrelevantAchievements(user.uid);
+
+      // Load achievement progress
+      const progress = await getAchievementProgress(user.uid);
+      setAchievements(progress.achievements);
+
+      // Load unseen achievements
+      const unseen = await getUnseenAchievements(user.uid);
+      setUnseenAchievements(unseen);
+
+      // Load hidden state
       const hiddenState = await AsyncStorage.getItem(
         `achievementsHidden_${user.uid}`
       );
@@ -567,7 +592,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         setAchievementsHidden(JSON.parse(hiddenState));
       }
     } catch (error) {
-      console.error("Error loading achievements hidden state:", error);
+      console.error("Error loading achievements:", error);
     }
   };
 
@@ -585,19 +610,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     }
   };
 
-  // Check if achievements should be shown (hidden state + new achievements logic)
+  // Check if achievements should be shown
   const shouldShowAchievements = () => {
-    if (!budgetStreak || !hasBudgetCategories) return false;
+    if (!hasBudgetCategories || achievements.length === 0) return false;
 
-    // Always show if there are new achievements (not seen before)
-    const hasNewAchievements =
-      budgetStreak.achievements &&
-      budgetStreak.achievements.some(
-        (achievementId: string) =>
-          !budgetStreak.seenAchievements?.includes(achievementId)
-      );
-
-    if (hasNewAchievements) return true;
+    // Always show if there are unseen achievements
+    if (unseenAchievements.length > 0) return true;
 
     // Show if not hidden by user
     return !achievementsHidden;
@@ -605,20 +623,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   // Mark achievements as seen
   const markAchievementsAsSeen = async () => {
-    if (!user?.uid || !budgetStreak) return;
+    if (!user?.uid || unseenAchievements.length === 0) return;
 
     try {
-      const updatedStreak = {
-        ...budgetStreak,
-        seenAchievements: budgetStreak.achievements || [],
-      };
+      const achievementIds = unseenAchievements.map((a) => a.id);
+      await markAchievementsAsSeenService(user.uid, achievementIds);
 
-      // Save to AsyncStorage (assuming there's a save function)
-      await AsyncStorage.setItem(
-        `budgetStreak_${user.uid}`,
-        JSON.stringify(updatedStreak)
-      );
-      setBudgetStreak(updatedStreak);
+      // Update local state
+      const unseen = await getUnseenAchievements(user.uid);
+      setUnseenAchievements(unseen);
     } catch (error) {
       console.error("Error marking achievements as seen:", error);
     }
@@ -628,36 +641,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     if (!user?.uid) return;
 
     try {
-      // Check if we need to process previous month achievements
-      const currentDate = new Date();
-      const currentMonthKey = `${currentDate.getFullYear()}-${String(
-        currentDate.getMonth() + 1
-      ).padStart(2, "0")}`;
+      // Check for month transitions and process achievements
+      // This will only process completed months, not the current month
+      await checkMonthTransitions(user.uid);
 
-      // Get the last processed month from AsyncStorage
-      const lastProcessedMonth = await AsyncStorage.getItem(
-        `lastProcessedMonth_${user.uid}`
-      );
-
-      // If this is a new month, process previous month achievements
-      if (lastProcessedMonth && lastProcessedMonth !== currentMonthKey) {
-        console.log(
-          "🔄 New month detected, processing previous month achievements..."
-        );
-        await processPreviousMonthAchievements(user.uid);
-      }
-
-      // Update the last processed month
-      await AsyncStorage.setItem(
-        `lastProcessedMonth_${user.uid}`,
-        currentMonthKey
-      );
+      // Initialize month tracking for new users
+      await initializeMonthTracking(user.uid);
 
       // Get current streak data
       const streak = await getUserBudgetStreak(user.uid);
       setBudgetStreak(streak);
 
       // Calculate current month's budget result
+      const currentDate = new Date();
       const monthlyResult = await calculateMonthlyBudgetResult(
         user.uid,
         currentDate.getFullYear(),
@@ -665,24 +661,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       );
       setMonthlyBudgetResult(monthlyResult);
 
-      // Always update streak to ensure proper calculation
+      // Update streak for current month (no achievements awarded)
       await updateBudgetStreak(user.uid, monthlyResult);
+
       // Reload streak data after update
       const updatedStreak = await getUserBudgetStreak(user.uid);
       setBudgetStreak(updatedStreak);
 
-      // Check if there are new achievements and auto-show the card
-      if (updatedStreak.achievements && updatedStreak.achievements.length > 0) {
-        const hasNewAchievements = updatedStreak.achievements.some(
-          (achievementId: string) =>
-            !updatedStreak.seenAchievements?.includes(achievementId)
-        );
+      // Reload achievements to check for new ones
+      await loadAchievements();
 
-        if (hasNewAchievements && achievementsHidden) {
-          // Auto-show achievements card when new achievements are earned
-          setAchievementsHidden(false);
-          await saveAchievementsHiddenState(false);
-        }
+      // Auto-show achievements card if there are unseen achievements
+      if (unseenAchievements.length > 0 && achievementsHidden) {
+        setAchievementsHidden(false);
+        await saveAchievementsHiddenState(false);
       }
     } catch (error) {
       console.error("Error loading budget streak data:", error);
@@ -964,19 +956,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               </TouchableOpacity>
             </View>
 
-            {budgetStreak.achievements &&
-            budgetStreak.achievements.length > 0 ? (
+            {achievements.length > 0 ? (
               (() => {
                 const achievementsToShow = showAllAchievements
-                  ? budgetStreak.achievements
-                  : budgetStreak.achievements.slice(-3);
+                  ? achievements
+                  : achievements.slice(-3);
 
                 return achievementsToShow.map(
-                  (achievementId: string, index: number) => {
-                    const achievement = getAchievementDetails(achievementId);
+                  (achievement: Achievement, index: number) => {
+                    const isUnseen = unseenAchievements.some(
+                      (u) => u.id === achievement.id
+                    );
                     return (
                       <View
-                        key={achievementId}
+                        key={achievement.id}
                         style={{
                           flexDirection: "row",
                           alignItems: "center",
@@ -984,6 +977,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                           borderBottomWidth:
                             index < achievementsToShow.length - 1 ? 1 : 0,
                           borderBottomColor: colors.border,
+                          backgroundColor: isUnseen
+                            ? colors.primary + "10"
+                            : "transparent",
+                          borderRadius: isUnseen ? 8 : 0,
+                          paddingHorizontal: isUnseen ? 8 : 0,
                         }}
                       >
                         <Text style={{ fontSize: 24, marginRight: 12 }}>
@@ -998,6 +996,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                             }}
                           >
                             {achievement.title}
+                            {isUnseen && (
+                              <Text
+                                style={{ color: colors.primary, fontSize: 12 }}
+                              >
+                                {" "}
+                                NEW
+                              </Text>
+                            )}
                           </Text>
                           <Text
                             style={{
@@ -1029,7 +1035,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             )}
 
             {/* Show All / Show Less Button */}
-            {budgetStreak.achievements.length > 3 && (
+            {achievements.length > 3 && (
               <TouchableOpacity
                 onPress={() => setShowAllAchievements(!showAllAchievements)}
                 style={{
@@ -1048,10 +1054,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   }}
                 >
                   {showAllAchievements
-                    ? `Show Less (${
-                        budgetStreak.achievements.length - 3
-                      } hidden)`
-                    : `Show All (${budgetStreak.achievements.length - 3} more)`}
+                    ? `Show Less (${achievements.length - 3} hidden)`
+                    : `Show All (${achievements.length - 3} more)`}
                 </Text>
               </TouchableOpacity>
             )}
