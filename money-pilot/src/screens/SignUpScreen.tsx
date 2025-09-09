@@ -699,8 +699,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 </Text>
 
                 <Text style={styles.modalEffectiveDate}>
-                  This privacy policy is effective as of{" "}
-                  {new Date().toISOString().split("T")[0]}
+                  This privacy policy is effective as of September 5, 2025
                 </Text>
               </View>
             ) : (
@@ -1057,8 +1056,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 </Text>
 
                 <Text style={styles.modalEffectiveDate}>
-                  These terms and conditions are effective as of{" "}
-                  {new Date().toISOString().split("T")[0]}
+                  These terms and conditions are effective as of September 5,
+                  2025
                 </Text>
               </View>
             )}

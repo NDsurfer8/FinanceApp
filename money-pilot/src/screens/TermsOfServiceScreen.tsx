@@ -486,8 +486,7 @@ export const TermsOfServiceScreen: React.FC<TermsOfServiceScreenProps> = ({
         </View>
 
         <Text style={styles.dateText}>
-          These terms and conditions are effective as of{" "}
-          {new Date().toISOString().split("T")[0]}
+          These terms and conditions are effective as of September 5, 2025
         </Text>
       </ScrollView>
     </SafeAreaView>
