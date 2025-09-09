@@ -346,9 +346,25 @@ const getWeekKey = (date: Date): string => {
 
 // Helper function to get week number
 const getWeekNumber = (date: Date): number => {
-  const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-  const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
-  return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  try {
+    if (isNaN(date.getTime())) {
+      console.error("Invalid date in getWeekNumber");
+      return 1;
+    }
+
+    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    if (isNaN(firstDayOfYear.getTime())) {
+      console.error("Invalid first day of year in getWeekNumber");
+      return 1;
+    }
+
+    const pastDaysOfYear =
+      (date.getTime() - firstDayOfYear.getTime()) / 86400000;
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  } catch (error) {
+    console.error("Error in getWeekNumber:", error);
+    return 1;
+  }
 };
 
 // Helper function to check if weeks are consecutive
@@ -380,8 +396,13 @@ const getUserWeeklyStreak = async (userId: string): Promise<number> => {
     const stored = await AsyncStorage.getItem(key);
 
     if (stored) {
-      const streakData = JSON.parse(stored);
-      return streakData.currentStreak || 0;
+      try {
+        const streakData = JSON.parse(stored);
+        return streakData?.currentStreak || 0;
+      } catch (parseError) {
+        console.error("Error parsing weekly streak JSON:", parseError);
+        return 0;
+      }
     }
 
     return 0;
@@ -398,15 +419,35 @@ export const updateWeeklyStreak = async (userId: string): Promise<void> => {
     const stored = await AsyncStorage.getItem(key);
 
     const now = new Date();
+    if (isNaN(now.getTime())) {
+      console.error("Invalid current date in updateWeeklyStreak");
+      return;
+    }
+
     const currentWeek = getWeekKey(now);
 
-    let streakData = stored
-      ? JSON.parse(stored)
-      : {
+    let streakData;
+    if (stored) {
+      try {
+        streakData = JSON.parse(stored);
+      } catch (parseError) {
+        console.error(
+          "Error parsing weekly streak JSON in updateWeeklyStreak:",
+          parseError
+        );
+        streakData = {
           currentStreak: 0,
           longestStreak: 0,
           lastWeek: "",
         };
+      }
+    } else {
+      streakData = {
+        currentStreak: 0,
+        longestStreak: 0,
+        lastWeek: "",
+      };
+    }
 
     // If this is a new week, update the streak
     if (streakData.lastWeek !== currentWeek) {
@@ -442,11 +483,18 @@ const getUserActiveCategories = async (userId: string): Promise<string[]> => {
     const stored = await AsyncStorage.getItem(key);
 
     if (stored) {
-      const categories = JSON.parse(stored);
-      // Return only category IDs that have a monthly limit set
-      return categories
-        .filter((cat: any) => cat.monthlyLimit > 0)
-        .map((cat: any) => cat.id);
+      try {
+        const categories = JSON.parse(stored);
+        // Return only category IDs that have a monthly limit set
+        return (
+          categories
+            ?.filter((cat: any) => cat?.monthlyLimit > 0)
+            ?.map((cat: any) => cat?.id) || []
+        );
+      } catch (parseError) {
+        console.error("Error parsing categories JSON:", parseError);
+        return [];
+      }
     }
 
     return [];
@@ -470,6 +518,12 @@ const getUserAccountAge = async (userId: string): Promise<number> => {
       const createdDate = new Date(simulatedDate);
       const now = new Date();
 
+      // Validate dates before calculation
+      if (isNaN(createdDate.getTime()) || isNaN(now.getTime())) {
+        console.error("Invalid date detected in getUserAccountAge");
+        return 0;
+      }
+
       // Calculate the difference in milliseconds
       const diffInMs = now.getTime() - createdDate.getTime();
       const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
@@ -488,6 +542,17 @@ const getUserAccountAge = async (userId: string): Promise<number> => {
         const accountCreationDate = new Date(userData.createdAt);
         const currentDate = new Date();
 
+        // Validate dates before calculation
+        if (
+          isNaN(accountCreationDate.getTime()) ||
+          isNaN(currentDate.getTime())
+        ) {
+          console.error(
+            "Invalid date detected in getUserAccountAge from Firebase"
+          );
+          return 0;
+        }
+
         // Calculate the difference in milliseconds
         const diffInMs = currentDate.getTime() - accountCreationDate.getTime();
         const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
@@ -505,11 +570,21 @@ const getUserAccountAge = async (userId: string): Promise<number> => {
 
 // Check if a month is complete (not the current month)
 const isMonthComplete = (month: string): boolean => {
-  const currentDate = new Date();
-  const currentMonth = `${currentDate.getFullYear()}-${String(
-    currentDate.getMonth() + 1
-  ).padStart(2, "0")}`;
-  return month !== currentMonth;
+  try {
+    const currentDate = new Date();
+    if (isNaN(currentDate.getTime())) {
+      console.error("Invalid current date in isMonthComplete");
+      return false;
+    }
+
+    const currentMonth = `${currentDate.getFullYear()}-${String(
+      currentDate.getMonth() + 1
+    ).padStart(2, "0")}`;
+    return month !== currentMonth;
+  } catch (error) {
+    console.error("Error in isMonthComplete:", error);
+    return false;
+  }
 };
 
 // Check if a category was active during a specific month
@@ -538,7 +613,17 @@ export const getAchievementProgress = async (
     const stored = await AsyncStorage.getItem(key);
 
     if (stored) {
-      return JSON.parse(stored);
+      try {
+        return JSON.parse(stored);
+      } catch (parseError) {
+        console.error("Error parsing achievement progress JSON:", parseError);
+        return {
+          userId,
+          lastProcessedMonth: "",
+          achievements: [],
+          seenAchievements: [],
+        };
+      }
     }
 
     // Return default progress
@@ -592,7 +677,7 @@ export const processMonthAchievements = async (
     const newAchievements: Achievement[] = [];
 
     // Check if this month was successful (80%+ success rate)
-    if (monthlyResult.successRate >= 80) {
+    if (monthlyResult?.successRate >= 80) {
       // Calculate current streak using historical data
       const currentStreak = await calculateCurrentStreak(userId, month);
 
@@ -688,60 +773,73 @@ export const processMonthAchievements = async (
 
       // Award category achievements ONLY for categories the user actually budgets for
       // AND only for completed months (not the current month)
-      const categoryResults = Object.values(
-        monthlyResult.categoryResults || {}
-      );
-      for (const result of categoryResults) {
-        const categoryResult = result as any; // Type assertion for category result
-        // Only process achievements for categories the user has set budgets for
-        // AND only if this is a completed month (not current month)
-        if (
-          categoryResult.success &&
-          activeCategories.includes(categoryResult.categoryId)
-        ) {
-          // Double-check that this is a completed month
-          if (!isMonthComplete(month)) {
-            console.log(
-              `⏸️ Skipping category achievement for ${categoryResult.categoryId} - current month not complete`
-            );
-            continue;
-          }
+      if (monthlyResult?.categoryResults) {
+        const categoryResults = Object.values(monthlyResult.categoryResults);
+        for (const result of categoryResults) {
+          const categoryResult = result as any; // Type assertion for category result
+          // Only process achievements for categories the user has set budgets for
+          // AND only if this is a completed month (not current month)
+          if (
+            categoryResult.success &&
+            activeCategories.includes(categoryResult.categoryId)
+          ) {
+            // Double-check that this is a completed month
+            if (!isMonthComplete(month)) {
+              console.log(
+                `⏸️ Skipping category achievement for ${categoryResult.categoryId} - current month not complete`
+              );
+              continue;
+            }
 
-          const categoryStreak = await calculateCategoryStreak(
-            userId,
-            categoryResult.categoryId,
-            month
-          );
+            const categoryStreak = await calculateCategoryStreak(
+              userId,
+              categoryResult.categoryId,
+              month
+            );
 
-          // Award category achievements based on account age
-          if (
-            accountAge >= 1 &&
-            categoryStreak === 1 &&
-            !hasAchievement(progress, `category_${categoryResult.categoryId}_1`)
-          ) {
-            newAchievements.push(
-              createAchievement(`category_${categoryResult.categoryId}_1`)
-            );
-          }
-          if (
-            accountAge >= 2 &&
-            categoryStreak === 2 &&
-            !hasAchievement(progress, `category_${categoryResult.categoryId}_2`)
-          ) {
-            newAchievements.push(
-              createAchievement(`category_${categoryResult.categoryId}_2`)
-            );
-          }
-          if (
-            accountAge >= 3 &&
-            categoryStreak === 3 &&
-            !hasAchievement(progress, `category_${categoryResult.categoryId}_3`)
-          ) {
-            newAchievements.push(
-              createAchievement(`category_${categoryResult.categoryId}_3`)
-            );
+            // Award category achievements based on account age
+            if (
+              accountAge >= 1 &&
+              categoryStreak === 1 &&
+              !hasAchievement(
+                progress,
+                `category_${categoryResult.categoryId}_1`
+              )
+            ) {
+              newAchievements.push(
+                createAchievement(`category_${categoryResult.categoryId}_1`)
+              );
+            }
+            if (
+              accountAge >= 2 &&
+              categoryStreak === 2 &&
+              !hasAchievement(
+                progress,
+                `category_${categoryResult.categoryId}_2`
+              )
+            ) {
+              newAchievements.push(
+                createAchievement(`category_${categoryResult.categoryId}_2`)
+              );
+            }
+            if (
+              accountAge >= 3 &&
+              categoryStreak === 3 &&
+              !hasAchievement(
+                progress,
+                `category_${categoryResult.categoryId}_3`
+              )
+            ) {
+              newAchievements.push(
+                createAchievement(`category_${categoryResult.categoryId}_3`)
+              );
+            }
           }
         }
+      } else {
+        console.log(
+          "No category results found for month, skipping category achievements"
+        );
       }
     }
 

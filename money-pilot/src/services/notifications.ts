@@ -218,7 +218,10 @@ export class NotificationService {
   async scheduleNotification(notification: NotificationData): Promise<string> {
     const hasPermission = await this.requestPermissions();
     if (!hasPermission) {
-      throw new Error("Notification permissions not granted");
+      console.warn(
+        "Notification permissions not granted, skipping notification"
+      );
+      return "";
     }
 
     // For immediate notifications (like webhooks), always send them
