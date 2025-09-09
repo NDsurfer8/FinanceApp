@@ -111,7 +111,7 @@ export class TransactionActionsService {
   }
 
   /**
-   * Generates a month key for overrides (e.g., "2024-12")
+   * Generates a month key for overrides (e.g., "YYYY-MM")
    */
   static generateMonthKey(date: number): string {
     const editDate = new Date(date);

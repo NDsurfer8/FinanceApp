@@ -561,7 +561,7 @@ https://vectorfi.ai/
           style={[styles.copyrightSection, { borderTopColor: colors.border }]}
         >
           <Text style={[styles.copyrightText, { color: colors.textSecondary }]}>
-            © 2025 VectorFi All rights reserved.
+            © {new Date().getFullYear()} VectorFi All rights reserved.
           </Text>
           <Text style={[styles.copyrightText, { color: colors.textSecondary }]}>
             Made with passion for financial empowerment.

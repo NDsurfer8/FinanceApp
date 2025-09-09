@@ -424,7 +424,8 @@ export const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({
         </View>
 
         <Text style={styles.dateText}>
-          This privacy policy is effective as of 2025-01-27
+          This privacy policy is effective as of{" "}
+          {new Date().toISOString().split("T")[0]}
         </Text>
       </ScrollView>
     </SafeAreaView>

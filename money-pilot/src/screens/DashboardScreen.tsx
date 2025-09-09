@@ -8,6 +8,7 @@ import {
   Alert,
   Modal,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
@@ -24,6 +25,8 @@ import {
   calculateMonthlyBudgetResult,
   updateBudgetStreak,
   getAchievementDetails,
+  getUserBudgetCategories,
+  processPreviousMonthAchievements,
 } from "../services/userData";
 
 import { useTheme } from "../contexts/ThemeContext";
@@ -74,6 +77,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   } | null>(null);
   const [budgetStreak, setBudgetStreak] = useState<any>(null);
   const [monthlyBudgetResult, setMonthlyBudgetResult] = useState<any>(null);
+  const [showAllAchievements, setShowAllAchievements] = useState(false);
+  const [hasBudgetCategories, setHasBudgetCategories] = useState(false);
+  const [achievementsHidden, setAchievementsHidden] = useState(false);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
@@ -150,6 +156,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         fetchPendingInvitations();
         // Load budget streak data
         loadBudgetStreakData();
+        checkBudgetCategories();
+        loadAchievementsHiddenState();
       }
     }, [user, refreshInBackground, fetchPendingInvitations])
   );
@@ -531,16 +539,125 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   };
 
   // Load budget streak data
+  // Function to check if user has budget categories with limits
+  const checkBudgetCategories = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const categories = await getUserBudgetCategories(user.uid);
+      const hasCategoriesWithLimits = categories.some(
+        (category: any) => category.monthlyLimit > 0
+      );
+      setHasBudgetCategories(hasCategoriesWithLimits);
+    } catch (error) {
+      console.error("Error checking budget categories:", error);
+      setHasBudgetCategories(false);
+    }
+  };
+
+  // Load achievements hidden state
+  const loadAchievementsHiddenState = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const hiddenState = await AsyncStorage.getItem(
+        `achievementsHidden_${user.uid}`
+      );
+      if (hiddenState !== null) {
+        setAchievementsHidden(JSON.parse(hiddenState));
+      }
+    } catch (error) {
+      console.error("Error loading achievements hidden state:", error);
+    }
+  };
+
+  // Save achievements hidden state
+  const saveAchievementsHiddenState = async (hidden: boolean) => {
+    if (!user?.uid) return;
+
+    try {
+      await AsyncStorage.setItem(
+        `achievementsHidden_${user.uid}`,
+        JSON.stringify(hidden)
+      );
+    } catch (error) {
+      console.error("Error saving achievements hidden state:", error);
+    }
+  };
+
+  // Check if achievements should be shown (hidden state + new achievements logic)
+  const shouldShowAchievements = () => {
+    if (!budgetStreak || !hasBudgetCategories) return false;
+
+    // Always show if there are new achievements (not seen before)
+    const hasNewAchievements =
+      budgetStreak.achievements &&
+      budgetStreak.achievements.some(
+        (achievementId: string) =>
+          !budgetStreak.seenAchievements?.includes(achievementId)
+      );
+
+    if (hasNewAchievements) return true;
+
+    // Show if not hidden by user
+    return !achievementsHidden;
+  };
+
+  // Mark achievements as seen
+  const markAchievementsAsSeen = async () => {
+    if (!user?.uid || !budgetStreak) return;
+
+    try {
+      const updatedStreak = {
+        ...budgetStreak,
+        seenAchievements: budgetStreak.achievements || [],
+      };
+
+      // Save to AsyncStorage (assuming there's a save function)
+      await AsyncStorage.setItem(
+        `budgetStreak_${user.uid}`,
+        JSON.stringify(updatedStreak)
+      );
+      setBudgetStreak(updatedStreak);
+    } catch (error) {
+      console.error("Error marking achievements as seen:", error);
+    }
+  };
+
   const loadBudgetStreakData = async () => {
     if (!user?.uid) return;
 
     try {
+      // Check if we need to process previous month achievements
+      const currentDate = new Date();
+      const currentMonthKey = `${currentDate.getFullYear()}-${String(
+        currentDate.getMonth() + 1
+      ).padStart(2, "0")}`;
+
+      // Get the last processed month from AsyncStorage
+      const lastProcessedMonth = await AsyncStorage.getItem(
+        `lastProcessedMonth_${user.uid}`
+      );
+
+      // If this is a new month, process previous month achievements
+      if (lastProcessedMonth && lastProcessedMonth !== currentMonthKey) {
+        console.log(
+          "🔄 New month detected, processing previous month achievements..."
+        );
+        await processPreviousMonthAchievements(user.uid);
+      }
+
+      // Update the last processed month
+      await AsyncStorage.setItem(
+        `lastProcessedMonth_${user.uid}`,
+        currentMonthKey
+      );
+
       // Get current streak data
       const streak = await getUserBudgetStreak(user.uid);
       setBudgetStreak(streak);
 
       // Calculate current month's budget result
-      const currentDate = new Date();
       const monthlyResult = await calculateMonthlyBudgetResult(
         user.uid,
         currentDate.getFullYear(),
@@ -553,6 +670,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       // Reload streak data after update
       const updatedStreak = await getUserBudgetStreak(user.uid);
       setBudgetStreak(updatedStreak);
+
+      // Check if there are new achievements and auto-show the card
+      if (updatedStreak.achievements && updatedStreak.achievements.length > 0) {
+        const hasNewAchievements = updatedStreak.achievements.some(
+          (achievementId: string) =>
+            !updatedStreak.seenAchievements?.includes(achievementId)
+        );
+
+        if (hasNewAchievements && achievementsHidden) {
+          // Auto-show achievements card when new achievements are earned
+          setAchievementsHidden(false);
+          await saveAchievementsHiddenState(false);
+        }
+      }
     } catch (error) {
       console.error("Error loading budget streak data:", error);
     }
@@ -776,29 +907,29 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         )}
 
         {/* Recent Achievements */}
-        {budgetStreak &&
-          budgetStreak.achievements &&
-          budgetStreak.achievements.length > 0 && (
+        {shouldShowAchievements() && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 20,
+              marginBottom: 20,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.06,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 2 },
+              elevation: 3,
+            }}
+          >
             <View
               style={{
-                backgroundColor: colors.surface,
-                borderRadius: 16,
-                padding: 20,
-                marginBottom: 20,
-                shadowColor: colors.shadow,
-                shadowOpacity: 0.06,
-                shadowRadius: 8,
-                shadowOffset: { width: 0, height: 2 },
-                elevation: 3,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 16,
               }}
             >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 16,
-                }}
-              >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Ionicons
                   name="trophy"
                   size={24}
@@ -816,51 +947,116 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 </Text>
               </View>
 
-              {budgetStreak.achievements
-                .slice(-3)
-                .map((achievementId: string, index: number) => {
-                  const achievement = getAchievementDetails(achievementId);
-                  return (
-                    <View
-                      key={achievementId}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingVertical: 8,
-                        borderBottomWidth:
-                          index < budgetStreak.achievements.slice(-3).length - 1
-                            ? 1
-                            : 0,
-                        borderBottomColor: colors.border,
-                      }}
-                    >
-                      <Text style={{ fontSize: 24, marginRight: 12 }}>
-                        {achievement.icon}
-                      </Text>
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={{
-                            fontSize: 16,
-                            fontWeight: "600",
-                            color: colors.text,
-                          }}
-                        >
-                          {achievement.title}
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            color: colors.textSecondary,
-                          }}
-                        >
-                          {achievement.description}
-                        </Text>
-                      </View>
-                    </View>
-                  );
-                })}
+              <TouchableOpacity
+                onPress={async () => {
+                  setAchievementsHidden(true);
+                  await saveAchievementsHiddenState(true);
+                  await markAchievementsAsSeen();
+                }}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: colors.surfaceSecondary,
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close" size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
             </View>
-          )}
+
+            {budgetStreak.achievements &&
+            budgetStreak.achievements.length > 0 ? (
+              (() => {
+                const achievementsToShow = showAllAchievements
+                  ? budgetStreak.achievements
+                  : budgetStreak.achievements.slice(-3);
+
+                return achievementsToShow.map(
+                  (achievementId: string, index: number) => {
+                    const achievement = getAchievementDetails(achievementId);
+                    return (
+                      <View
+                        key={achievementId}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          paddingVertical: 8,
+                          borderBottomWidth:
+                            index < achievementsToShow.length - 1 ? 1 : 0,
+                          borderBottomColor: colors.border,
+                        }}
+                      >
+                        <Text style={{ fontSize: 24, marginRight: 12 }}>
+                          {achievement.icon}
+                        </Text>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              fontSize: 16,
+                              fontWeight: "600",
+                              color: colors.text,
+                            }}
+                          >
+                            {achievement.title}
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              color: colors.textSecondary,
+                            }}
+                          >
+                            {achievement.description}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  }
+                );
+              })()
+            ) : (
+              <View style={{ paddingVertical: 20, alignItems: "center" }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: colors.textSecondary,
+                    textAlign: "center",
+                  }}
+                >
+                  No achievements yet. Stay on budget to earn your first
+                  achievement! 🎯
+                </Text>
+              </View>
+            )}
+
+            {/* Show All / Show Less Button */}
+            {budgetStreak.achievements.length > 3 && (
+              <TouchableOpacity
+                onPress={() => setShowAllAchievements(!showAllAchievements)}
+                style={{
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  alignItems: "center",
+                  borderTopWidth: 1,
+                  borderTopColor: colors.border,
+                }}
+              >
+                <Text
+                  style={{
+                    color: colors.primary,
+                    fontSize: 14,
+                    fontWeight: "600",
+                  }}
+                >
+                  {showAllAchievements
+                    ? `Show Less (${
+                        budgetStreak.achievements.length - 3
+                      } hidden)`
+                    : `Show All (${budgetStreak.achievements.length - 3} more)`}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         {/* Monthly Overview - Large Card */}
         <View

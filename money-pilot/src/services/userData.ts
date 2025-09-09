@@ -2702,6 +2702,7 @@ export interface BudgetStreak {
   lastSuccessfulMonth: string; // YYYY-MM format
   categoryStreaks: Record<string, number>; // categoryId -> streak count
   achievements: string[]; // Array of achievement IDs
+  seenAchievements?: string[]; // Array of achievement IDs that user has seen
 }
 
 export interface MonthlyBudgetResult {
@@ -2923,6 +2924,7 @@ export const getUserBudgetStreak = async (
       lastSuccessfulMonth: "",
       categoryStreaks: {},
       achievements: [],
+      seenAchievements: [],
     };
   } catch (error) {
     console.error("Error getting budget streak:", error);
@@ -2933,6 +2935,7 @@ export const getUserBudgetStreak = async (
       lastSuccessfulMonth: "",
       categoryStreaks: {},
       achievements: [],
+      seenAchievements: [],
     };
   }
 };
@@ -3093,6 +3096,13 @@ export const updateBudgetStreak = async (
     const currentStreak = await getUserBudgetStreak(userId);
     const isSuccessfulMonth = monthlyResult.successRate >= 80; // 80% success rate threshold
 
+    // Check if this is the current month - don't award achievements for current month
+    const currentDate = new Date();
+    const resultMonth = new Date(monthlyResult.month + "-01");
+    const isCurrentMonth =
+      resultMonth.getFullYear() === currentDate.getFullYear() &&
+      resultMonth.getMonth() === currentDate.getMonth();
+
     let newStreak = { ...currentStreak };
 
     if (isSuccessfulMonth) {
@@ -3121,11 +3131,17 @@ export const updateBudgetStreak = async (
         }
       });
 
-      // Check for new achievements (this also cleans up invalid ones)
-      const newAchievements = await checkForNewAchievements(newStreak, userId);
-      newStreak.achievements = [
-        ...new Set([...newStreak.achievements, ...newAchievements]),
-      ];
+      // Only check for new achievements if this is NOT the current month
+      // Achievements should only be awarded for completed months
+      if (!isCurrentMonth) {
+        const newAchievements = await checkForNewAchievements(
+          newStreak,
+          userId
+        );
+        newStreak.achievements = [
+          ...new Set([...newStreak.achievements, ...newAchievements]),
+        ];
+      }
     } else {
       // Unsuccessful month - reset current streak
       newStreak.currentStreak = 0;
@@ -3143,6 +3159,37 @@ export const updateBudgetStreak = async (
   } catch (error) {
     console.error("Error updating budget streak:", error);
     throw error;
+  }
+};
+
+// Process achievements for the previous month when a new month starts
+export const processPreviousMonthAchievements = async (
+  userId: string
+): Promise<void> => {
+  try {
+    const currentDate = new Date();
+    const previousMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() - 1,
+      1
+    );
+
+    // Calculate the previous month's budget result
+    const monthlyResult = await calculateMonthlyBudgetResult(
+      userId,
+      previousMonth.getFullYear(),
+      previousMonth.getMonth()
+    );
+
+    // Update streak with the previous month's results (this will now award achievements)
+    await updateBudgetStreak(userId, monthlyResult);
+
+    console.log(
+      "✅ Processed previous month achievements for:",
+      previousMonth.toISOString().slice(0, 7)
+    );
+  } catch (error) {
+    console.error("Error processing previous month achievements:", error);
   }
 };
 
@@ -3388,4 +3435,19 @@ export const getAchievementDetails = (
   }
 
   return achievements[achievementId];
+};
+
+// Clear all achievements (for cleanup)
+export const clearAllAchievements = async (userId: string): Promise<void> => {
+  try {
+    const streak = await getUserBudgetStreak(userId);
+    const clearedStreak = {
+      ...streak,
+      achievements: [],
+    };
+    await saveUserBudgetStreak(userId, clearedStreak);
+    console.log("Cleared all achievements for user:", userId);
+  } catch (error) {
+    console.error("Error clearing achievements:", error);
+  }
 };
