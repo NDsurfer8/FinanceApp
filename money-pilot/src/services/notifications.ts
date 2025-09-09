@@ -222,8 +222,16 @@ export class NotificationService {
     }
 
     // For immediate notifications (like webhooks), always send them
-    // For scheduled notifications, respect app state
-    if (notification.trigger && this.isAppActive()) {
+    // For scheduled notifications, only skip if it's an immediate trigger (seconds: 0)
+    if (
+      notification.trigger &&
+      this.isAppActive() &&
+      "type" in notification.trigger &&
+      notification.trigger.type ===
+        Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL &&
+      "seconds" in notification.trigger &&
+      notification.trigger.seconds === 0
+    ) {
       return "";
     }
 
@@ -277,6 +285,128 @@ export class NotificationService {
         date: nextMonth,
       },
     });
+  }
+
+  async scheduleWeeklyBudgetCheck(): Promise<string> {
+    // Check if user has budget reminders enabled
+    const budgetRemindersEnabled = await AsyncStorage.getItem(
+      `notification_budget-reminders`
+    );
+    const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
+
+    if (!isBudgetRemindersEnabled) {
+      console.log(
+        "Budget reminders disabled, not scheduling weekly budget check"
+      );
+      return "";
+    }
+
+    // Check if we already have a weekly budget check scheduled
+    const existingNotifications = await this.getScheduledNotifications();
+    const existingWeeklyCheck = existingNotifications.find(
+      (notification) =>
+        notification.content.data?.type === "weekly-budget-check"
+    );
+
+    if (existingWeeklyCheck) {
+      console.log("Weekly budget check already scheduled");
+      return existingWeeklyCheck.identifier;
+    }
+
+    // Schedule for next Sunday at 10 AM
+    const now = new Date();
+    const nextSunday = new Date(now);
+
+    // Find next Sunday (or today if it's Sunday and before 10 AM)
+    const isTodaySunday = now.getDay() === 0;
+    const isBefore10AM = now.getHours() < 10;
+
+    if (isTodaySunday && isBefore10AM) {
+      // Today is Sunday and it's before 10 AM, schedule for today
+      nextSunday.setHours(10, 0, 0, 0);
+    } else {
+      // Find next Sunday
+      const daysUntilSunday = (7 - now.getDay()) % 7;
+      nextSunday.setDate(
+        now.getDate() + (daysUntilSunday === 0 ? 7 : daysUntilSunday)
+      );
+      nextSunday.setHours(10, 0, 0, 0);
+    }
+
+    const notificationId = await this.scheduleNotification({
+      id: `weekly-budget-check-${Date.now()}`,
+      title: "📊 Weekly Budget Check",
+      body: "Time to review your budget progress! See how you're doing this month.",
+      data: {
+        type: "weekly-budget-check",
+        shouldReschedule: true, // Flag to reschedule after firing
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: nextSunday,
+      },
+    });
+
+    return notificationId;
+  }
+
+  // Reschedule the next weekly budget check (called after notification fires)
+  async rescheduleWeeklyBudgetCheck(): Promise<string> {
+    // Check if user still has budget reminders enabled
+    const budgetRemindersEnabled = await AsyncStorage.getItem(
+      `notification_budget-reminders`
+    );
+    const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
+
+    if (!isBudgetRemindersEnabled) {
+      console.log(
+        "Budget reminders disabled, not rescheduling weekly budget check"
+      );
+      return "";
+    }
+
+    // Cancel existing weekly budget check
+    const existingNotifications = await this.getScheduledNotifications();
+    const existingWeeklyCheck = existingNotifications.find(
+      (notification) =>
+        notification.content.data?.type === "weekly-budget-check"
+    );
+
+    if (existingWeeklyCheck) {
+      await this.cancelNotification(existingWeeklyCheck.identifier);
+    }
+
+    // Schedule the next one (7 days from now)
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    nextWeek.setHours(10, 0, 0, 0);
+
+    return this.scheduleNotification({
+      id: `weekly-budget-check-${Date.now()}`,
+      title: "📊 Weekly Budget Check",
+      body: "Time to review your budget progress! See how you're doing this month.",
+      data: {
+        type: "weekly-budget-check",
+        shouldReschedule: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: nextWeek,
+      },
+    });
+  }
+
+  // Cancel all weekly budget check notifications
+  async cancelWeeklyBudgetCheck(): Promise<void> {
+    const existingNotifications = await this.getScheduledNotifications();
+    const weeklyBudgetChecks = existingNotifications.filter(
+      (notification) =>
+        notification.content.data?.type === "weekly-budget-check"
+    );
+
+    for (const notification of weeklyBudgetChecks) {
+      await this.cancelNotification(notification.identifier);
+    }
   }
 
   async scheduleBillReminder(
@@ -531,6 +661,15 @@ export class NotificationService {
     switch (data?.type) {
       case "budget-reminder":
         // Navigate to budget screen
+        break;
+      case "weekly-budget-check":
+        // Navigate to dashboard to review budget progress
+        // Reschedule the next weekly notification
+        if (data?.shouldReschedule) {
+          this.rescheduleWeeklyBudgetCheck().catch((error) =>
+            console.error("Error rescheduling weekly budget check:", error)
+          );
+        }
         break;
       case "bill-reminder":
         // Navigate to bills/expenses screen

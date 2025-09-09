@@ -74,6 +74,12 @@ const processPreviousMonth = async (
       monthDate.getMonth()
     );
 
+    // Store historical budget data for this month
+    const { storeMonthlyBudgetHistory } = await import(
+      "./historicalBudgetService"
+    );
+    await storeMonthlyBudgetHistory(userId, month, monthlyResult);
+
     // Process achievements for this month
     const newAchievements = await processMonthAchievements(
       userId,

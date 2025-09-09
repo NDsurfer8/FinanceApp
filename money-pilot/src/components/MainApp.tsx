@@ -276,6 +276,32 @@ export const MainApp: React.FC = () => {
       }
     );
 
+    // Schedule weekly budget check notification (only if user has budget categories and enabled notifications)
+    try {
+      // Only schedule if user is logged in and has budget categories
+      if (user?.uid) {
+        // Check if user has budget categories before scheduling
+        const { getUserBudgetCategories } = await import(
+          "../services/userData"
+        );
+        const budgetCategories = await getUserBudgetCategories(user.uid);
+        const hasBudgetCategories =
+          budgetCategories && budgetCategories.length > 0;
+
+        // Check if user has enabled budget reminder notifications
+        const budgetRemindersEnabled = await AsyncStorage.getItem(
+          `notification_budget-reminders`
+        );
+        const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
+
+        if (hasBudgetCategories && isBudgetRemindersEnabled) {
+          await notificationService.scheduleWeeklyBudgetCheck();
+        }
+      }
+    } catch (error) {
+      console.error("Error scheduling weekly budget check:", error);
+    }
+
     return cleanup;
   };
 

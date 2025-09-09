@@ -45,6 +45,33 @@ const ACHIEVEMENT_DEFINITIONS = {
     description: "Stayed on budget for 12 consecutive months!",
     icon: "👑",
   },
+
+  // Weekly transaction entry streak achievements
+  weekly_4: {
+    title: "Monthly Tracker",
+    description: "Entered transactions for 4 consecutive weeks!",
+    icon: "📅",
+  },
+  weekly_8: {
+    title: "Two Month Champion",
+    description: "Entered transactions for 8 consecutive weeks!",
+    icon: "🥇",
+  },
+  weekly_12: {
+    title: "Quarterly Master",
+    description: "Entered transactions for 12 consecutive weeks!",
+    icon: "🏆",
+  },
+  weekly_24: {
+    title: "Half Year Hero",
+    description: "Entered transactions for 24 consecutive weeks!",
+    icon: "🌟",
+  },
+  weekly_52: {
+    title: "Year Long Tracker",
+    description: "Entered transactions for 52 consecutive weeks!",
+    icon: "🎯",
+  },
   // Category achievements
   category_1_1: {
     title: "Rent Starter",
@@ -310,6 +337,104 @@ const ACHIEVEMENT_DEFINITIONS = {
   },
 };
 
+// Helper function to get week key (YYYY-WW format)
+const getWeekKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const week = getWeekNumber(date);
+  return `${year}-W${week.toString().padStart(2, "0")}`;
+};
+
+// Helper function to get week number
+const getWeekNumber = (date: Date): number => {
+  const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+  const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
+  return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+};
+
+// Helper function to check if weeks are consecutive
+const isConsecutiveWeek = (lastWeek: string, currentWeek: string): boolean => {
+  if (!lastWeek) return true; // First week
+
+  const [lastYear, lastWeekNum] = lastWeek.split("-W").map(Number);
+  const [currentYear, currentWeekNum] = currentWeek.split("-W").map(Number);
+
+  // Same year, consecutive weeks
+  if (lastYear === currentYear) {
+    return currentWeekNum === lastWeekNum + 1;
+  }
+
+  // Different year, check if it's week 1 of next year
+  if (currentYear === lastYear + 1 && currentWeekNum === 1) {
+    // Check if last week was the last week of the previous year
+    const lastWeekOfYear = getWeekNumber(new Date(lastYear, 11, 31));
+    return lastWeekNum === lastWeekOfYear;
+  }
+
+  return false;
+};
+
+// Get user's weekly transaction entry streak
+const getUserWeeklyStreak = async (userId: string): Promise<number> => {
+  try {
+    const key = `weeklyStreak_${userId}`;
+    const stored = await AsyncStorage.getItem(key);
+
+    if (stored) {
+      const streakData = JSON.parse(stored);
+      return streakData.currentStreak || 0;
+    }
+
+    return 0;
+  } catch (error) {
+    console.error("Error getting user weekly streak:", error);
+    return 0;
+  }
+};
+
+// Update user's weekly transaction entry streak
+export const updateWeeklyStreak = async (userId: string): Promise<void> => {
+  try {
+    const key = `weeklyStreak_${userId}`;
+    const stored = await AsyncStorage.getItem(key);
+
+    const now = new Date();
+    const currentWeek = getWeekKey(now);
+
+    let streakData = stored
+      ? JSON.parse(stored)
+      : {
+          currentStreak: 0,
+          longestStreak: 0,
+          lastWeek: "",
+        };
+
+    // If this is a new week, update the streak
+    if (streakData.lastWeek !== currentWeek) {
+      const lastWeek = streakData.lastWeek;
+      const isConsecutive = isConsecutiveWeek(lastWeek, currentWeek);
+
+      if (isConsecutive) {
+        streakData.currentStreak += 1;
+      } else {
+        streakData.currentStreak = 1; // Reset streak
+      }
+
+      streakData.longestStreak = Math.max(
+        streakData.longestStreak,
+        streakData.currentStreak
+      );
+      streakData.lastWeek = currentWeek;
+
+      await AsyncStorage.setItem(key, JSON.stringify(streakData));
+      console.log(
+        `📅 Updated weekly streak: ${streakData.currentStreak} weeks`
+      );
+    }
+  } catch (error) {
+    console.error("Error updating weekly streak:", error);
+  }
+};
+
 // Get user's active budget categories (categories with monthlyLimit > 0)
 const getUserActiveCategories = async (userId: string): Promise<string[]> => {
   try {
@@ -334,6 +459,26 @@ const getUserActiveCategories = async (userId: string): Promise<string[]> => {
 // Get user's account creation date
 const getUserAccountAge = async (userId: string): Promise<number> => {
   try {
+    // Check for simulated date first (for testing)
+    const simulatedDate = await AsyncStorage.getItem(
+      `simulated_createdAt_${userId}`
+    );
+    if (simulatedDate) {
+      console.log(
+        `⚠️ Using simulated date: ${simulatedDate} (this should be cleared for production)`
+      );
+      const createdDate = new Date(simulatedDate);
+      const now = new Date();
+
+      // Calculate the difference in milliseconds
+      const diffInMs = now.getTime() - createdDate.getTime();
+      const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+      const diffInMonths = diffInDays / 30; // Approximate months
+
+      return Math.max(0, Math.round(diffInMonths * 10) / 10);
+    }
+
+    // Use real user profile data
     const userRef = ref(db, `users/${userId}/profile`);
     const userSnapshot = await get(userRef);
 
@@ -342,17 +487,19 @@ const getUserAccountAge = async (userId: string): Promise<number> => {
       if (userData.createdAt) {
         const accountCreationDate = new Date(userData.createdAt);
         const currentDate = new Date();
-        const monthsSinceCreation =
-          (currentDate.getFullYear() - accountCreationDate.getFullYear()) * 12 +
-          (currentDate.getMonth() - accountCreationDate.getMonth()) +
-          1;
-        return monthsSinceCreation;
+
+        // Calculate the difference in milliseconds
+        const diffInMs = currentDate.getTime() - accountCreationDate.getTime();
+        const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+        const monthsSinceCreation = diffInDays / 30; // Approximate months
+
+        return Math.max(0, Math.round(monthsSinceCreation * 10) / 10);
       }
     }
-    return 1; // Default to 1 month if no creation date
+    return 0; // Default to 0 months for new users
   } catch (error) {
     console.error("Error getting user account age:", error);
-    return 1;
+    return 0;
   }
 };
 
@@ -441,53 +588,102 @@ export const processMonthAchievements = async (
     const progress = await getAchievementProgress(userId);
     const accountAge = await getUserAccountAge(userId);
     const activeCategories = await getUserActiveCategories(userId);
+    const weeklyStreak = await getUserWeeklyStreak(userId);
     const newAchievements: Achievement[] = [];
-
-    console.log(
-      `🎯 Processing achievements for user with ${activeCategories.length} active categories:`,
-      activeCategories
-    );
 
     // Check if this month was successful (80%+ success rate)
     if (monthlyResult.successRate >= 80) {
-      // Calculate current streak (simplified - you might want to get this from budget streak data)
+      // Calculate current streak using historical data
       const currentStreak = await calculateCurrentStreak(userId, month);
 
+      console.log(
+        `🎯 Processing achievements for user with ${activeCategories.length} active categories and ${weeklyStreak} week streak:`,
+        activeCategories
+      );
+      console.log(
+        `📅 User account age: ${accountAge} months, Current streak: ${currentStreak}`
+      );
+
       // Award streak achievements based on account age
+      // Only award if user has had the app long enough AND has the required streak
       if (
         accountAge >= 1 &&
-        currentStreak === 1 &&
+        currentStreak >= 1 &&
         !hasAchievement(progress, "streak_1")
       ) {
+        console.log(
+          `🎉 Awarding streak_1 achievement: accountAge=${accountAge}, currentStreak=${currentStreak}`
+        );
         newAchievements.push(createAchievement("streak_1"));
+      } else if (currentStreak >= 1) {
+        console.log(
+          `⏸️ Skipping streak_1 achievement: accountAge=${accountAge} < 1 month required`
+        );
       }
       if (
         accountAge >= 2 &&
-        currentStreak === 2 &&
+        currentStreak >= 2 &&
         !hasAchievement(progress, "streak_2")
       ) {
         newAchievements.push(createAchievement("streak_2"));
       }
       if (
         accountAge >= 3 &&
-        currentStreak === 3 &&
+        currentStreak >= 3 &&
         !hasAchievement(progress, "streak_3")
       ) {
         newAchievements.push(createAchievement("streak_3"));
       }
       if (
         accountAge >= 6 &&
-        currentStreak === 6 &&
+        currentStreak >= 6 &&
         !hasAchievement(progress, "streak_6")
       ) {
         newAchievements.push(createAchievement("streak_6"));
       }
       if (
         accountAge >= 12 &&
-        currentStreak === 12 &&
+        currentStreak >= 12 &&
         !hasAchievement(progress, "streak_12")
       ) {
         newAchievements.push(createAchievement("streak_12"));
+      }
+
+      // Award weekly streak achievements based on account age
+      if (
+        accountAge >= 1 &&
+        weeklyStreak >= 4 &&
+        !hasAchievement(progress, "weekly_4")
+      ) {
+        newAchievements.push(createAchievement("weekly_4"));
+      }
+      if (
+        accountAge >= 2 &&
+        weeklyStreak >= 8 &&
+        !hasAchievement(progress, "weekly_8")
+      ) {
+        newAchievements.push(createAchievement("weekly_8"));
+      }
+      if (
+        accountAge >= 3 &&
+        weeklyStreak >= 12 &&
+        !hasAchievement(progress, "weekly_12")
+      ) {
+        newAchievements.push(createAchievement("weekly_12"));
+      }
+      if (
+        accountAge >= 6 &&
+        weeklyStreak >= 24 &&
+        !hasAchievement(progress, "weekly_24")
+      ) {
+        newAchievements.push(createAchievement("weekly_24"));
+      }
+      if (
+        accountAge >= 12 &&
+        weeklyStreak >= 52 &&
+        !hasAchievement(progress, "weekly_52")
+      ) {
+        newAchievements.push(createAchievement("weekly_52"));
       }
 
       // Award category achievements ONLY for categories the user actually budgets for
@@ -596,25 +792,37 @@ const createAchievement = (achievementId: string): Achievement => {
   };
 };
 
-// Calculate current streak (simplified - you might want to get this from existing budget streak data)
+// Calculate current streak using historical data
 const calculateCurrentStreak = async (
   userId: string,
   month: string
 ): Promise<number> => {
-  // This is a simplified version - you might want to integrate with existing streak calculation
-  // For now, return a placeholder
-  return 1;
+  try {
+    const { calculateCurrentStreak: getCurrentStreak } = await import(
+      "./historicalBudgetService"
+    );
+    return await getCurrentStreak(userId);
+  } catch (error) {
+    console.error("Error calculating current streak:", error);
+    return 0;
+  }
 };
 
-// Calculate category streak (simplified)
+// Calculate category streak using historical data
 const calculateCategoryStreak = async (
   userId: string,
   categoryId: string,
   month: string
 ): Promise<number> => {
-  // This is a simplified version - you might want to integrate with existing streak calculation
-  // For now, return a placeholder
-  return 1;
+  try {
+    const { calculateCategoryStreak: getCategoryStreak } = await import(
+      "./historicalBudgetService"
+    );
+    return await getCategoryStreak(userId, categoryId);
+  } catch (error) {
+    console.error("Error calculating category streak:", error);
+    return 0;
+  }
 };
 
 // Mark achievements as seen
@@ -648,6 +856,48 @@ export const getUnseenAchievements = async (
   }
 };
 
+// Get display streak that respects account age (for UI display)
+export const getDisplayStreak = async (
+  userId: string
+): Promise<{
+  currentStreak: number;
+  longestStreak: number;
+  accountAge: number;
+}> => {
+  try {
+    const accountAge = await getUserAccountAge(userId);
+    const { getBudgetStreakData } = await import("./historicalBudgetService");
+    const streakData = await getBudgetStreakData(userId);
+
+    // Only show streaks that the user has had the app long enough to earn
+    const displayCurrentStreak = Math.min(streakData.currentStreak, accountAge);
+    const displayLongestStreak = Math.min(streakData.longestStreak, accountAge);
+
+    return {
+      currentStreak: displayCurrentStreak,
+      longestStreak: displayLongestStreak,
+      accountAge,
+    };
+  } catch (error) {
+    console.error("Error getting display streak:", error);
+    return {
+      currentStreak: 0,
+      longestStreak: 0,
+      accountAge: 0,
+    };
+  }
+};
+
+// Clear any simulated dates (for production cleanup)
+export const clearSimulatedDates = async (userId: string): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(`simulated_createdAt_${userId}`);
+    console.log(`🧹 Cleared simulated date for user ${userId}`);
+  } catch (error) {
+    console.error("Error clearing simulated date:", error);
+  }
+};
+
 // Clean up achievements for categories the user no longer budgets for
 export const cleanupIrrelevantAchievements = async (
   userId: string
@@ -656,10 +906,15 @@ export const cleanupIrrelevantAchievements = async (
     const progress = await getAchievementProgress(userId);
     const activeCategories = await getUserActiveCategories(userId);
 
-    // Keep streak achievements and achievements for active categories only
+    // Keep streak achievements, weekly achievements, and achievements for active categories only
     const relevantAchievements = progress.achievements.filter((achievement) => {
       // Always keep streak achievements
       if (achievement.id.startsWith("streak_")) {
+        return true;
+      }
+
+      // Always keep weekly achievements
+      if (achievement.id.startsWith("weekly_")) {
         return true;
       }
 

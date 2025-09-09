@@ -487,6 +487,14 @@ export const saveTransaction = async (
       console.error("Error updating bill reminders:", error);
     }
 
+    // Track transaction entry for weekly streak
+    try {
+      const { trackTransactionEntry } = await import("./weeklyStreakService");
+      await trackTransactionEntry(transaction.userId);
+    } catch (error) {
+      console.error("Error tracking transaction entry:", error);
+    }
+
     return transactionId;
   } catch (error) {
     console.error("Error saving transaction:", error);
@@ -2800,24 +2808,37 @@ export const getUserBudgetStreak = async (
   userId: string
 ): Promise<BudgetStreak> => {
   try {
+    // Get display streak that respects account age
+    const { getDisplayStreak } = await import("./achievementService");
+    const displayStreak = await getDisplayStreak(userId);
+
+    // Get historical budget data for category streaks
+    const { getBudgetStreakData } = await import("./historicalBudgetService");
+    const historicalData = await getBudgetStreakData(userId);
+
+    // Get existing streak data for achievements
     const key = `budgetStreak_${userId}`;
     const stored = await AsyncStorage.getItem(key);
 
-    if (stored) {
-      const streak = JSON.parse(stored);
-      return streak;
-    }
+    let existingStreak = stored
+      ? JSON.parse(stored)
+      : {
+          achievements: [],
+          seenAchievements: [],
+        };
 
-    // Return default streak data
-    return {
-      currentStreak: 0,
-      longestStreak: 0,
-      totalSuccessfulMonths: 0,
-      lastSuccessfulMonth: "",
-      categoryStreaks: {},
-      achievements: [],
-      seenAchievements: [],
+    // Return combined data with account-age-respecting streak display
+    const result = {
+      currentStreak: displayStreak.currentStreak,
+      longestStreak: displayStreak.longestStreak,
+      totalSuccessfulMonths: displayStreak.currentStreak, // Use display streak as total
+      lastSuccessfulMonth: historicalData.lastProcessedMonth,
+      categoryStreaks: historicalData.categoryStreaks,
+      achievements: existingStreak.achievements || [],
+      seenAchievements: existingStreak.seenAchievements || [],
     };
+
+    return result;
   } catch (error) {
     console.error("Error getting budget streak:", error);
     return {
