@@ -50,6 +50,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     useSubscription();
   const {
     disconnectBankAndClearData,
+    disconnectSpecificBank,
     isBankConnected,
     connectedBanks,
     refreshBankData,
@@ -382,10 +383,8 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
               onLoadingChange?.(false);
 
               if (itemId) {
-                // Disconnect specific bank
-                await plaidService.disconnectBank(itemId);
-                // Refresh bank data to update the UI
-                await refreshBankData(true);
+                // Disconnect specific bank and clear only its data
+                await disconnectSpecificBank(itemId);
               } else {
                 // Disconnect all banks
                 await disconnectBankAndClearData();

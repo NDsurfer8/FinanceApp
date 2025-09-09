@@ -80,6 +80,7 @@ interface DataContextType {
 
   // Bank disconnection
   disconnectBankAndClearData: () => Promise<void>;
+  disconnectSpecificBank: (itemId: string) => Promise<void>;
 
   // Webhook monitoring status
   isWebhookMonitoringActive: boolean;
@@ -161,6 +162,46 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   }`;
   const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours for recurring analysis
   const TRANSACTION_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours for new transactions
+
+  // Disconnect a specific bank and clear only its data
+  const disconnectSpecificBank = useCallback(
+    async (itemId: string) => {
+      try {
+        // 1. Disconnect from Plaid service
+        await plaidService.disconnectBank(itemId);
+
+        // 2. Filter out data from the disconnected bank only
+        setBankTransactions((prev) =>
+          prev.filter((transaction) => transaction.item_id !== itemId)
+        );
+        setBankAccounts((prev) =>
+          prev.filter((account) => account.item_id !== itemId)
+        );
+        setBankRecurringSuggestions((prev) =>
+          prev.filter((suggestion) => suggestion.item_id !== itemId)
+        );
+        setConnectedBanks((prev) =>
+          prev.filter((bank) => bank.itemId !== itemId)
+        );
+
+        // 3. Check if any banks remain connected
+        const remainingBanks = connectedBanks.filter(
+          (bank) => bank.itemId !== itemId
+        );
+        if (remainingBanks.length === 0) {
+          setIsBankConnected(false);
+          setSelectedBankAccount(null);
+        }
+
+        // 4. Refresh bank data to get remaining connected banks
+        await refreshBankData(true);
+      } catch (error) {
+        console.error("DataContext: Error disconnecting specific bank:", error);
+        throw error;
+      }
+    },
+    [connectedBanks]
+  );
 
   // Comprehensive bank disconnection and data clearing
   const disconnectBankAndClearData = useCallback(async () => {
@@ -1117,6 +1158,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setSelectedBankAccount,
     setBankConnectionError,
     disconnectBankAndClearData,
+    disconnectSpecificBank,
     updateTransactionsOptimistically,
     updateBudgetSettingsOptimistically,
     updateGoalsOptimistically,
