@@ -93,7 +93,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [unseenAchievements, setUnseenAchievements] = useState<Achievement[]>(
     []
   );
-  const [streakCardHidden, setStreakCardHidden] = useState(false);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
@@ -611,20 +610,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     }
   };
 
-  // Save streak card hidden state
-  const saveStreakCardHiddenState = async (hidden: boolean) => {
-    if (!user?.uid) return;
-
-    try {
-      await AsyncStorage.setItem(
-        `streakCardHidden_${user.uid}`,
-        JSON.stringify(hidden)
-      );
-    } catch (error) {
-      console.error("Error saving streak card hidden state:", error);
-    }
-  };
-
   // Check if achievements should be shown
   const shouldShowAchievements = () => {
     if (!hasBudgetCategories || achievements.length === 0) return false;
@@ -634,19 +619,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
     // Show if not hidden by user
     return !achievementsHidden;
-  };
-
-  // Check if streak card should be shown
-  const shouldShowStreakCard = () => {
-    if (
-      !hasBudgetCategories ||
-      !budgetStreak ||
-      budgetStreak.currentStreak <= 0
-    )
-      return false;
-
-    // Show if not hidden by user
-    return !streakCardHidden;
   };
 
   // Mark achievements as seen
@@ -698,14 +670,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
       // Reload achievements to check for new ones
       await loadAchievements();
-
-      // Load streak card hidden state
-      const streakCardHiddenState = await AsyncStorage.getItem(
-        `streakCardHidden_${user.uid}`
-      );
-      if (streakCardHiddenState !== null) {
-        setStreakCardHidden(JSON.parse(streakCardHiddenState));
-      }
 
       // Auto-show achievements card if there are unseen achievements
       if (unseenAchievements.length > 0 && achievementsHidden) {
@@ -873,86 +837,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
           }
         />
-
-        {/* Budget Streak Display */}
-        {shouldShowStreakCard() && (
-          <View
-            style={{
-              backgroundColor: colors.success + "15",
-              borderRadius: 16,
-              padding: 20,
-              marginBottom: 20,
-              borderWidth: 2,
-              borderColor: colors.success + "30",
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 12,
-              }}
-            >
-              <View
-                style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
-              >
-                <Ionicons
-                  name="trophy"
-                  size={24}
-                  color={colors.success}
-                  style={{ marginRight: 12 }}
-                />
-                <Text
-                  style={{
-                    fontSize: 20,
-                    fontWeight: "700",
-                    color: colors.success,
-                  }}
-                >
-                  Budget Streak: {budgetStreak.currentStreak} month
-                  {budgetStreak.currentStreak !== 1 ? "s" : ""}!
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                onPress={async () => {
-                  setStreakCardHidden(true);
-                  await saveStreakCardHiddenState(true);
-                }}
-                style={{
-                  padding: 8,
-                  borderRadius: 20,
-                  backgroundColor: colors.surfaceSecondary,
-                }}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="close" size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-            <Text
-              style={{
-                fontSize: 14,
-                color: colors.textSecondary,
-                marginBottom: 8,
-              }}
-            >
-              You've been staying on budget for {budgetStreak.currentStreak}{" "}
-              consecutive month{budgetStreak.currentStreak !== 1 ? "s" : ""}!
-            </Text>
-            {monthlyBudgetResult && (
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: colors.textSecondary,
-                }}
-              >
-                This month: {monthlyBudgetResult.successfulCategories}/
-                {monthlyBudgetResult.totalCategories} categories under budget
-              </Text>
-            )}
-          </View>
-        )}
 
         {/* Recent Achievements */}
         {shouldShowAchievements() && (

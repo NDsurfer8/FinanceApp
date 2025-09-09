@@ -587,23 +587,6 @@ const isMonthComplete = (month: string): boolean => {
   }
 };
 
-// Check if a category was active during a specific month
-const wasCategoryActiveInMonth = async (
-  userId: string,
-  categoryId: string,
-  month: string
-): Promise<boolean> => {
-  try {
-    // For now, we'll use the current active categories
-    // In a more sophisticated system, we'd track category history
-    const activeCategories = await getUserActiveCategories(userId);
-    return activeCategories.includes(categoryId);
-  } catch (error) {
-    console.error("Error checking if category was active in month:", error);
-    return false;
-  }
-};
-
 // Get achievement progress for user
 export const getAchievementProgress = async (
   userId: string
