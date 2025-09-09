@@ -74,6 +74,7 @@ interface DataContextType {
   setGoals: (goals: any[]) => void;
   setRecurringTransactions: (transactions: any[]) => void;
   setBankAccounts: (accounts: any[]) => void;
+  setBankTransactions: (transactions: any[]) => void;
   setSelectedBankAccount: (accountId: string | null) => void;
   setBankConnectionError: (error: string | null) => void;
 
@@ -479,8 +480,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         // Retry logic for when Plaid data isn't ready yet
         let retryCount = 0;
-        const maxRetries = 3;
-        const retryDelay = 2000; // 2 seconds between retries
+        const maxRetries = 5; // Increased from 3 to 5 for better reliability
+        const baseRetryDelay = 2000; // 2 seconds base delay
 
         let transactions: any[] = [];
         let accounts: any[] = [];
@@ -491,6 +492,23 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               plaidService.getTransactions(startDate, endDate),
               plaidService.getAccounts(),
             ]);
+
+            // Check if we got 0 transactions but have connected banks (data still processing)
+            if (transactions.length === 0 && accounts.length > 0) {
+              const isInitialFetch =
+                fetchStrategy === "full" || lastFetch === 0;
+
+              if (isInitialFetch && retryCount < maxRetries - 1) {
+                retryCount++;
+                const retryDelay = baseRetryDelay * Math.pow(2, retryCount - 1);
+                console.log(
+                  `🔄 No transactions received but banks are connected, retrying in ${retryDelay}ms (attempt ${retryCount}/${maxRetries})`
+                );
+                await new Promise((resolve) => setTimeout(resolve, retryDelay));
+                continue; // Continue the retry loop
+              }
+            }
+
             break; // Success, exit retry loop
           } catch (error: any) {
             const errorMessage = error.message || String(error);
@@ -501,10 +519,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               errorMessage.includes("no data") ||
               errorMessage.includes("empty") ||
               errorMessage.includes("not available") ||
-              errorMessage.includes("processing");
+              errorMessage.includes("processing") ||
+              errorMessage.includes("PRODUCT_NOT_READY") ||
+              errorMessage.includes("product not ready") ||
+              errorMessage.includes("not yet ready") ||
+              errorMessage.includes("still being processed") ||
+              errorMessage.includes("RATE_LIMIT") ||
+              errorMessage.includes("rate limit") ||
+              errorMessage.includes("429") ||
+              errorMessage.includes("too many requests");
 
             if (isRetryableError && retryCount < maxRetries - 1) {
               retryCount++;
+              // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+              const retryDelay = baseRetryDelay * Math.pow(2, retryCount - 1);
               console.log(
                 `🔄 Plaid data not ready yet, retrying in ${retryDelay}ms (attempt ${retryCount}/${maxRetries})`
               );
@@ -519,7 +547,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         setBankAccounts(accounts);
 
-        if (fetchStrategy === "incremental" && transactions.length === 0) {
+        // Handle case where we still have 0 transactions after all retries
+        if (transactions.length === 0 && fetchStrategy === "incremental") {
           setIsBankDataLoading(false);
           return;
         }
@@ -1084,6 +1113,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setGoals,
     setRecurringTransactions,
     setBankAccounts,
+    setBankTransactions,
     setSelectedBankAccount,
     setBankConnectionError,
     disconnectBankAndClearData,

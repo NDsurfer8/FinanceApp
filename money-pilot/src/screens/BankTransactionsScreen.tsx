@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   SafeAreaView,
   ScrollView,
@@ -47,6 +48,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     const dataContext = useData();
     const {
       bankAccounts,
+      bankTransactions,
       refreshAssetsDebts,
       refreshBankData,
       isBankConnected,
@@ -54,22 +56,33 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     const { hasPremiumAccess } = useSubscription();
     const { presentPaywall } = usePaywall();
 
+    // Local state for UI
+    const [refreshing, setRefreshing] = useState(false);
+    const [isUsingRealData, setIsUsingRealData] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
+    const [dataRefreshKey, setDataRefreshKey] = useState(0);
+
+    // Use global state directly
+    const displayBankAccounts = bankAccounts || [];
+
     // Safely filter and sanitize account data - handle real API data issues
-    const safeBankAccounts = (bankAccounts || []).map((account: any) => ({
-      ...account,
-      name:
-        typeof account.name === "string"
-          ? account.name.replace(/[^\x20-\x7E]/g, "") // Remove non-ASCII characters
-          : "Unknown Account",
-      mask:
-        typeof account.mask === "string"
-          ? account.mask.replace(/[^\x20-\x7E]/g, "") // Remove non-ASCII characters
-          : "****",
-      subtype:
-        typeof account.subtype === "string"
-          ? account.subtype.replace(/[^\x20-\x7E]/g, "") // Remove non-ASCII characters
-          : "unknown",
-    }));
+    const safeBankAccounts = (displayBankAccounts || []).map(
+      (account: any) => ({
+        ...account,
+        name:
+          typeof account.name === "string"
+            ? account.name.replace(/[^\x20-\x7E]/g, "") // Remove non-ASCII characters
+            : "Unknown Account",
+        mask:
+          typeof account.mask === "string"
+            ? account.mask.replace(/[^\x20-\x7E]/g, "") // Remove non-ASCII characters
+            : "****",
+        subtype:
+          typeof account.subtype === "string"
+            ? account.subtype.replace(/[^\x20-\x7E]/g, "") // Remove non-ASCII characters
+            : "unknown",
+      })
+    );
 
     // Filter accounts to only show checking/savings accounts (not loans)
     const checkingAccounts = safeBankAccounts.filter(
@@ -120,26 +133,60 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
         sum + Math.abs(account.balances?.current || 0),
       0
     );
-    const [isLoading, setIsLoading] = useState(false);
-    const [refreshing, setRefreshing] = useState(false);
-    const [isUsingRealData, setIsUsingRealData] = useState(false);
-    const [isImporting, setIsImporting] = useState(false);
-    const [dataRefreshKey, setDataRefreshKey] = useState(0);
+
+    // Simple refresh function using global state
+    const refreshBankDataLocal = async (forceRefresh = false) => {
+      if (!user?.uid || !isBankConnected) return;
+
+      try {
+        console.log(
+          "🔄 BankTransactionsScreen: Refreshing bank data via DataContext"
+        );
+        await refreshBankData(forceRefresh);
+        console.log(
+          "✅ BankTransactionsScreen: Bank data refreshed successfully"
+        );
+      } catch (error) {
+        console.error(
+          "❌ BankTransactionsScreen: Failed to refresh bank data:",
+          error
+        );
+        Alert.alert("Error", "Failed to refresh bank data. Please try again.");
+      }
+    };
 
     useEffect(() => {
       if (user?.uid) {
         plaidService.setUserId(user.uid);
-        // DataContext already handles bank data loading and caching
-        // No need to make additional API calls here
         setIsUsingRealData(isBankConnected);
+
+        // Refresh bank data when screen loads
+        if (isBankConnected) {
+          console.log(
+            "🔄 BankTransactionsScreen: Refreshing bank data on load"
+          );
+          refreshBankDataLocal();
+        }
       }
     }, [user, isBankConnected]);
+
+    // Refresh bank data when screen comes into focus
+    useFocusEffect(
+      React.useCallback(() => {
+        if (user?.uid && isBankConnected) {
+          console.log(
+            "🔄 BankTransactionsScreen: Screen focused, refreshing bank data"
+          );
+          refreshBankDataLocal();
+        }
+      }, [user?.uid, isBankConnected])
+    );
 
     const onRefresh = async () => {
       setRefreshing(true);
       try {
-        // Use DataContext refresh instead of making direct API calls
-        await refreshBankData(true); // Force refresh
+        // Refresh bank data via DataContext
+        await refreshBankDataLocal(true); // Force refresh
       } catch (error) {
         console.error("Error refreshing bank data:", error);
       } finally {
