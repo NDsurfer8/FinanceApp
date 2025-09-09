@@ -93,6 +93,10 @@ class PlaidService {
   private requestQueue: Array<() => Promise<any>> = [];
   private isProcessingQueue = false;
 
+  // Global rate limiting across all connections
+  private lastGlobalRequestTime = 0;
+  private readonly GLOBAL_RATE_LIMIT_MS = 1000; // 1 second between any requests
+
   // Set user ID for Firebase operations
   setUserId(userId: string) {
     this.userId = userId;
@@ -104,6 +108,35 @@ class PlaidService {
     this.userId = null;
     this.requestCache.clear();
     this.onBankConnectedCallbacks = [];
+  }
+
+  // Memory management for large datasets
+  private optimizeMemoryUsage(): void {
+    // Clear old cache entries to prevent memory buildup
+    const now = Date.now();
+    const maxCacheAge = Math.max(
+      this.CACHE_DURATION,
+      this.ACCOUNTS_CACHE_DURATION,
+      this.TRANSACTIONS_CACHE_DURATION
+    );
+
+    const entries = Array.from(this.requestCache.entries());
+    for (const [key, value] of entries) {
+      if (now - value.timestamp > maxCacheAge) {
+        this.requestCache.delete(key);
+      }
+    }
+
+    // Limit cache size to prevent memory issues
+    const maxCacheSize = 50; // Maximum number of cached requests
+    if (this.requestCache.size > maxCacheSize) {
+      const entries = Array.from(this.requestCache.entries());
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+
+      // Remove oldest entries
+      const toRemove = entries.slice(0, this.requestCache.size - maxCacheSize);
+      toRemove.forEach(([key]) => this.requestCache.delete(key));
+    }
   }
 
   // Clean up callbacks to prevent memory leaks
@@ -150,6 +183,22 @@ class PlaidService {
     )}`;
   }
 
+  // Apply global rate limiting across all connections
+  private async applyGlobalRateLimit(): Promise<void> {
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastGlobalRequestTime;
+
+    if (timeSinceLastRequest < this.GLOBAL_RATE_LIMIT_MS) {
+      const waitTime = this.GLOBAL_RATE_LIMIT_MS - timeSinceLastRequest;
+      console.log(
+        `🕐 Global rate limit: waiting ${waitTime}ms before next request`
+      );
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+    }
+
+    this.lastGlobalRequestTime = Date.now();
+  }
+
   // Queue Plaid API requests to prevent concurrent calls with timeout
   private async queueRequest<T>(
     request: () => Promise<T>,
@@ -162,6 +211,9 @@ class PlaidService {
 
       this.requestQueue.push(async () => {
         try {
+          // Apply global rate limiting
+          await this.applyGlobalRateLimit();
+
           const result = await request();
           clearTimeout(timeoutId);
           resolve(result);
@@ -328,14 +380,11 @@ class PlaidService {
       }
 
       return linkToken;
-    } catch (firebaseError: any) {
-      console.error("Firebase function error:", firebaseError);
+    } catch (error: any) {
+      console.error("Error creating link token:", error);
 
       // Check for Plaid API rate limit errors from Firebase function
-      if (
-        firebaseError.message &&
-        firebaseError.message.includes("RATE_LIMIT")
-      ) {
+      if (error.message && error.message.includes("RATE_LIMIT")) {
         console.warn("⚠️ Plaid API rate limit detected from Firebase function");
         throw new Error(
           "Connection service is busy. Please try again in a moment."
@@ -343,40 +392,31 @@ class PlaidService {
       }
 
       // Check for other Plaid API errors
-      if (
-        firebaseError.message &&
-        firebaseError.message.includes("Plaid API")
-      ) {
+      if (error.message && error.message.includes("Plaid API")) {
         console.warn("⚠️ Plaid API error detected from Firebase function");
         throw new Error(
           "Bank connection service is temporarily unavailable. Please try again."
         );
       }
 
-      // Re-throw the original error
-      throw firebaseError;
-    }
-  }
-  catch(error: any) {
-    console.error("Error creating link token:", error);
+      // Handle Firebase Functions rate limiting errors
+      if (
+        error instanceof Error &&
+        error.message.includes("Plaid API rate limit exceeded")
+      ) {
+        throw new Error(error.message);
+      }
 
-    // Handle Firebase Functions rate limiting errors
-    if (
-      error instanceof Error &&
-      error.message.includes("Plaid API rate limit exceeded")
-    ) {
-      throw new Error(error.message);
-    }
+      // Handle other Firebase function errors
+      if (
+        error instanceof Error &&
+        error.message.includes("Failed to create link token")
+      ) {
+        throw new Error(error.message);
+      }
 
-    // Handle other Firebase function errors
-    if (
-      error instanceof Error &&
-      error.message.includes("Failed to create link token")
-    ) {
-      throw new Error(error.message);
+      throw error;
     }
-
-    throw error;
   }
 
   // Create Plaid Link session (preloads Link for better performance)
@@ -805,6 +845,8 @@ class PlaidService {
   private async _fetchAllAccounts(): Promise<PlaidAccount[]> {
     const connectedBanks = this.getConnectedBanks();
     const allAccounts: PlaidAccount[] = [];
+    const failedBanks: string[] = [];
+    const successfulBanks: string[] = [];
 
     try {
       const getAccounts = httpsCallable(this.functions, "getAccounts");
@@ -836,11 +878,13 @@ class PlaidService {
           }));
 
           allAccounts.push(...bankAccounts);
+          successfulBanks.push(connection.institution.name);
         } catch (error: any) {
           console.error(
             `❌ Error getting accounts from ${connection.institution.name}:`,
             error
           );
+          failedBanks.push(connection.institution.name);
 
           // Check for token errors and attempt to refresh for this specific connection
           const tokenRefreshed = await this.handleTokenErrorForConnection(
@@ -882,6 +926,21 @@ class PlaidService {
           // Continue with other banks even if one fails
         }
       }
+
+      // Log summary of results
+      if (successfulBanks.length > 0) {
+        console.log(
+          `✅ Successfully fetched accounts from: ${successfulBanks.join(", ")}`
+        );
+      }
+      if (failedBanks.length > 0) {
+        console.warn(
+          `⚠️ Failed to fetch accounts from: ${failedBanks.join(", ")}`
+        );
+      }
+
+      // Optimize memory usage after data fetching
+      this.optimizeMemoryUsage();
 
       return allAccounts;
     } catch (error) {
@@ -1380,8 +1439,24 @@ class PlaidService {
         status: connection.status,
         lastUpdated: connection.lastUpdated || Date.now(),
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving connection to Firebase:", error);
+
+      // Check for Firebase database rules violations
+      if (
+        error?.code === "PERMISSION_DENIED" ||
+        error?.message?.includes("Permission denied")
+      ) {
+        throw new Error("Permission denied. Please contact support.");
+      }
+
+      // Check for validation errors
+      if (error?.message?.includes("validation")) {
+        throw new Error(
+          "Invalid data format. Please try reconnecting your bank."
+        );
+      }
+
       throw error;
     }
   }
@@ -1418,13 +1493,14 @@ class PlaidService {
   private lastUpdateCheck = 0;
   private readonly UPDATE_CHECK_COOLDOWN = 5000; // 5 seconds
 
-  // Update mode methods for handling webhook events
+  // Update mode methods for handling webhook events (updated for multiple connections)
   async checkUpdateModeStatus(): Promise<{
     needsReauth: boolean;
     hasNewAccounts: boolean;
     credentialsExpiring: boolean;
     isDisconnecting: boolean;
     lastWebhook?: any;
+    connectionStatuses?: { [itemId: string]: string };
   }> {
     try {
       if (!this.userId) {
@@ -1448,25 +1524,49 @@ class PlaidService {
       }
       this.lastUpdateCheck = now;
 
+      // Load connections from Firebase to check their statuses
+      await this.loadConnectionsFromFirebase();
+      const connections = this.getAllConnections();
+
+      let needsReauth = false;
+      let hasNewAccounts = false;
+      let credentialsExpiring = false;
+      let isDisconnecting = false;
+      const connectionStatuses: { [itemId: string]: string } = {};
+
+      // Check each connection's status
+      for (const connection of connections) {
+        connectionStatuses[connection.itemId] = connection.status;
+
+        if (connection.status === "error") {
+          needsReauth = true;
+        }
+        // Note: For multiple connections, we'd need to implement per-connection
+        // webhook status tracking. For now, we'll use the legacy approach
+        // but this should be enhanced to track status per connection.
+      }
+
+      // Also check legacy webhook data for backward compatibility
       const plaidDataRef = ref(db, `users/${this.userId}/plaid`);
       const snapshot = await get(plaidDataRef);
       const plaidData = snapshot.val();
 
       if (plaidData) {
-        return {
-          needsReauth: plaidData.status === "ITEM_LOGIN_REQUIRED",
-          hasNewAccounts: plaidData.hasNewAccounts === true,
-          credentialsExpiring: plaidData.status === "PENDING_EXPIRATION",
-          isDisconnecting: plaidData.status === "PENDING_DISCONNECT",
-          lastWebhook: plaidData.lastWebhook,
-        };
+        needsReauth = needsReauth || plaidData.status === "ITEM_LOGIN_REQUIRED";
+        hasNewAccounts = hasNewAccounts || plaidData.hasNewAccounts === true;
+        credentialsExpiring =
+          credentialsExpiring || plaidData.status === "PENDING_EXPIRATION";
+        isDisconnecting =
+          isDisconnecting || plaidData.status === "PENDING_DISCONNECT";
       }
 
       return {
-        needsReauth: false,
-        hasNewAccounts: false,
-        credentialsExpiring: false,
-        isDisconnecting: false,
+        needsReauth,
+        hasNewAccounts,
+        credentialsExpiring,
+        isDisconnecting,
+        lastWebhook: plaidData?.lastWebhook,
+        connectionStatuses,
       };
     } catch (error) {
       console.error("PlaidService: Error checking update mode status:", error);
