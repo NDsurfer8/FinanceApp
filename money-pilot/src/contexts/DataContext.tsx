@@ -46,6 +46,7 @@ interface DataContextType {
   bankAccounts: any[];
   selectedBankAccount: string | null;
   isBankConnected: boolean;
+  connectedBanks: any[];
   bankDataLastUpdated: Date | null;
   isBankDataLoading: boolean;
   bankConnectionError: string | null;
@@ -127,6 +128,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     null
   );
   const [isBankConnected, setIsBankConnected] = useState<boolean>(false);
+  const [connectedBanks, setConnectedBanks] = useState<any[]>([]);
   const [bankDataLastUpdated, setBankDataLastUpdated] = useState<Date | null>(
     null
   );
@@ -171,6 +173,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setBankAccounts([]);
       setSelectedBankAccount(null);
       setIsBankConnected(false);
+      setConnectedBanks([]);
       setBankDataLastUpdated(null);
       setBankConnectionError(null);
 
@@ -417,8 +420,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const connected = await plaidService.isBankConnected();
         setIsBankConnected(connected);
 
+        // Load connected banks info
+        const banksInfo = await plaidService.getConnectedBankInfo();
+        setConnectedBanks(banksInfo);
+
         if (!connected) {
           setIsBankConnected(false);
+          setConnectedBanks([]);
           setIsBankDataLoading(false);
           return;
         }
@@ -568,6 +576,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           // and decide whether to reconnect
         } else {
           setIsBankConnected(false);
+          setConnectedBanks([]);
           setBankConnectionError(null);
         }
       } finally {
@@ -706,12 +715,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           // Register callback for when bank is connected
           plaidService.onBankConnected(async () => {
             setIsBankConnected(true);
+            // Load connected banks info
+            const banksInfo = await plaidService.getConnectedBankInfo();
+            setConnectedBanks(banksInfo);
             await refreshBankData(true); // Force refresh when new bank connects
           });
 
           // Check if bank is connected
           const connected = await plaidService.isBankConnected();
           setIsBankConnected(connected);
+
+          // Load connected banks info
+          const banksInfo = await plaidService.getConnectedBankInfo();
+          setConnectedBanks(banksInfo);
 
           // If user is not premium, don't load bank data and disconnect if connected
           // Only disconnect if we have a definitive subscription status (not null/undefined)
@@ -730,6 +746,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
           if (!connected) {
             setIsBankConnected(false);
+            setConnectedBanks([]);
             return;
           }
 
@@ -785,6 +802,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setBankTransactions([]);
       setBankRecurringSuggestions([]);
       setIsBankConnected(false);
+      setConnectedBanks([]);
       setBankDataLastUpdated(null);
     }
   }, [user, loadAllData, loadCachedBankData, subscriptionStatus?.isPremium]);
@@ -1007,6 +1025,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     bankAccounts,
     selectedBankAccount,
     isBankConnected,
+    connectedBanks,
     bankDataLastUpdated,
     isBankDataLoading,
     bankConnectionError,

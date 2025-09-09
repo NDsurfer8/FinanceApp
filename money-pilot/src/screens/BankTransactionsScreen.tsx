@@ -38,25 +38,25 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
   const { presentPaywall } = usePaywall();
 
   // Filter accounts to only show checking/savings accounts (not loans)
-  const checkingAccounts = bankAccounts.filter(
+  const checkingAccounts = (bankAccounts || []).filter(
     (account: any) =>
       account.type === "depository" &&
       ["checking", "savings"].includes(account.subtype)
   );
 
   // Filter loan accounts from Plaid
-  const loanAccounts = bankAccounts.filter(
+  const loanAccounts = (bankAccounts || []).filter(
     (account: any) => account.type === "loan"
   );
 
   // Filter credit card accounts from Plaid
-  const creditCardAccounts = bankAccounts.filter(
+  const creditCardAccounts = (bankAccounts || []).filter(
     (account: any) =>
       account.type === "credit" && account.subtype === "credit card"
   );
 
   // Filter investment accounts from Plaid
-  const investmentAccounts = bankAccounts.filter(
+  const investmentAccounts = (bankAccounts || []).filter(
     (account: any) =>
       account.type === "investment" ||
       ["401k", "ira", "brokerage", "cd", "mutual fund"].includes(
@@ -66,22 +66,24 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
 
   // Calculate total balances by account type
   const totalCheckingBalance = checkingAccounts.reduce(
-    (sum: number, account: any) => sum + account.balances.current,
+    (sum: number, account: any) => sum + (account.balances?.current || 0),
     0
   );
 
   const totalCreditCardBalance = creditCardAccounts.reduce(
-    (sum: number, account: any) => sum + Math.abs(account.balances.current),
+    (sum: number, account: any) =>
+      sum + Math.abs(account.balances?.current || 0),
     0
   );
 
   const totalInvestmentBalance = investmentAccounts.reduce(
-    (sum: number, account: any) => sum + account.balances.current,
+    (sum: number, account: any) => sum + (account.balances?.current || 0),
     0
   );
 
   const totalLoanBalance = loanAccounts.reduce(
-    (sum: number, account: any) => sum + Math.abs(account.balances.current),
+    (sum: number, account: any) =>
+      sum + Math.abs(account.balances?.current || 0),
     0
   );
   const [isLoading, setIsLoading] = useState(false);
@@ -201,7 +203,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
   };
 
   const totalBalance = checkingAccounts.reduce(
-    (sum: number, account: any) => sum + account.balances.current,
+    (sum: number, account: any) => sum + (account.balances?.current || 0),
     0
   );
 

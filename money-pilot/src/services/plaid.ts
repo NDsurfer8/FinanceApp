@@ -33,6 +33,8 @@ export interface PlaidAccount {
     current: number;
     limit?: number;
   };
+  institution?: string; // Bank name
+  itemId?: string; // Plaid item ID
 }
 
 export interface PlaidTransaction {
@@ -44,6 +46,8 @@ export interface PlaidTransaction {
   merchant_name?: string;
   category?: string[];
   pending: boolean;
+  institution?: string; // Bank name
+  itemId?: string; // Plaid item ID
 }
 
 export interface PlaidLinkResult {
@@ -57,9 +61,21 @@ export interface PlaidLinkResult {
   };
 }
 
+export interface PlaidConnection {
+  itemId: string;
+  accessToken: string;
+  institution: {
+    name: string;
+    institution_id: string;
+  };
+  accounts: PlaidAccount[];
+  connectedAt: number;
+  status: "connected" | "disconnected" | "error";
+  lastUpdated?: number;
+}
+
 class PlaidService {
-  private accessToken: string | null = null;
-  private itemId: string | null = null;
+  private connections: Map<string, PlaidConnection> = new Map(); // itemId -> PlaidConnection
   private userId: string | null = null;
   private functions = getFunctions();
   private auth = getAuth();
@@ -84,11 +100,37 @@ class PlaidService {
 
   // Clear all PlaidService state (useful when user logs out or account is deleted)
   clearState() {
-    this.accessToken = null;
-    this.itemId = null;
+    this.connections.clear();
     this.userId = null;
     this.requestCache.clear();
     this.onBankConnectedCallbacks = [];
+  }
+
+  // Get all connected banks
+  getConnectedBanks(): PlaidConnection[] {
+    return Array.from(this.connections.values()).filter(
+      (conn) => conn.status === "connected"
+    );
+  }
+
+  // Get connection by item ID
+  getConnection(itemId: string): PlaidConnection | null {
+    return this.connections.get(itemId) || null;
+  }
+
+  // Get all connections (including disconnected ones)
+  getAllConnections(): PlaidConnection[] {
+    return Array.from(this.connections.values());
+  }
+
+  // Check if any bank is connected
+  hasAnyBankConnected(): boolean {
+    return this.getConnectedBanks().length > 0;
+  }
+
+  // Get total number of connected banks
+  getConnectedBanksCount(): number {
+    return this.getConnectedBanks().length;
   }
 
   // Generate cache key for requests
@@ -625,38 +667,22 @@ class PlaidService {
         throw new Error("Failed to retrieve bank accounts. Please try again.");
       }
 
-      // Store Plaid connection data in Firebase
-      const plaidData = {
-        publicToken,
+      // Create new connection object
+      const connection: PlaidConnection = {
         itemId,
         accessToken,
         institution: metadata.institution || { name: "Unknown Bank" },
         accounts: accounts || [],
         connectedAt: Date.now(),
         status: "connected",
+        lastUpdated: Date.now(),
       };
 
-      // Encrypt sensitive Plaid data before saving to Firebase
-      const fieldsToEncrypt = [
-        "publicToken",
-        "itemId",
-        "accessToken",
-        "institution",
-        "accounts",
-      ];
-
-      const encryptedPlaidData = await encryptFields(
-        plaidData,
-        fieldsToEncrypt
-      );
-
-      // Save encrypted data to Firebase
-      const plaidRef = ref(db, `users/${this.userId}/plaid`);
-      await set(plaidRef, encryptedPlaidData);
+      // Save connection to Firebase
+      await this.saveConnectionToFirebase(connection);
 
       // Store locally for immediate use
-      this.accessToken = accessToken;
-      this.itemId = itemId;
+      this.connections.set(itemId, connection);
 
       // Reset Link session state
       this.isLinkInitialized = false;
@@ -721,14 +747,15 @@ class PlaidService {
     }
   }
 
-  // Get accounts from Plaid
+  // Get accounts from all connected banks
   async getAccounts(): Promise<PlaidAccount[]> {
-    if (!this.accessToken) {
-      throw new Error("No access token available");
+    const connectedBanks = this.getConnectedBanks();
+    if (connectedBanks.length === 0) {
+      throw new Error("No bank connections available");
     }
 
-    const cacheKey = this.getCacheKey("accounts", {
-      accessToken: this.accessToken,
+    const cacheKey = this.getCacheKey("all_accounts", {
+      connectionCount: connectedBanks.length,
     });
 
     // Check cache first with extended duration for accounts
@@ -743,7 +770,7 @@ class PlaidService {
 
     // Create the request promise with queuing
     this.pendingAccountsRequest = this.queueRequest(() =>
-      this._fetchAccounts()
+      this._fetchAllAccounts()
     );
 
     try {
@@ -762,38 +789,125 @@ class PlaidService {
     }
   }
 
-  // Private method to actually fetch accounts
-  private async _fetchAccounts(): Promise<PlaidAccount[]> {
+  // Private method to fetch accounts from all connected banks
+  private async _fetchAllAccounts(): Promise<PlaidAccount[]> {
+    const connectedBanks = this.getConnectedBanks();
+    const allAccounts: PlaidAccount[] = [];
+
     try {
       const getAccounts = httpsCallable(this.functions, "getAccounts");
-      const startTime = Date.now();
-      const result = await getAccounts({ accessToken: this.accessToken });
-      const duration = Date.now() - startTime;
-      const { accounts } = result.data as { accounts: any[] };
 
-      return accounts.map((account) => ({
-        id: account.account_id,
-        name: account.name,
-        mask: account.mask,
-        type: account.type,
-        subtype: account.subtype,
-        balances: {
-          available: account.balances.available || 0,
-          current: account.balances.current || 0,
-          limit: account.balances.limit,
-        },
-      }));
-    } catch (error) {
-      console.error("❌ Error getting accounts:", error);
+      // Fetch accounts from each connected bank
+      for (const connection of connectedBanks) {
+        try {
+          const startTime = Date.now();
+          const result = await getAccounts({
+            accessToken: connection.accessToken,
+          });
+          const duration = Date.now() - startTime;
+          const { accounts } = result.data as { accounts: any[] };
 
-      // Check for token errors and attempt to refresh
-      const tokenRefreshed = await this.handleTokenError(error);
-      if (tokenRefreshed) {
-        console.log("🔄 Token refreshed, retrying accounts request");
-        return this._fetchAccounts(); // Retry the request
+          const bankAccounts = accounts.map((account) => ({
+            id: account.account_id,
+            name: account.name,
+            mask: account.mask,
+            type: account.type,
+            subtype: account.subtype,
+            balances: {
+              available: account.balances.available || 0,
+              current: account.balances.current || 0,
+              limit: account.balances.limit,
+            },
+            // Add bank information to each account
+            institution: connection.institution.name,
+            itemId: connection.itemId,
+          }));
+
+          allAccounts.push(...bankAccounts);
+        } catch (error: any) {
+          console.error(
+            `❌ Error getting accounts from ${connection.institution.name}:`,
+            error
+          );
+
+          // Check for token errors and attempt to refresh for this specific connection
+          const tokenRefreshed = await this.handleTokenErrorForConnection(
+            error,
+            connection
+          );
+          if (tokenRefreshed) {
+            console.log(
+              `🔄 Token refreshed for ${connection.institution.name}, retrying accounts request`
+            );
+            // Retry this specific bank's accounts
+            try {
+              const result = await getAccounts({
+                accessToken: connection.accessToken,
+              });
+              const { accounts } = result.data as { accounts: any[] };
+              const bankAccounts = accounts.map((account) => ({
+                id: account.account_id,
+                name: account.name,
+                mask: account.mask,
+                type: account.type,
+                subtype: account.subtype,
+                balances: {
+                  available: account.balances.available || 0,
+                  current: account.balances.current || 0,
+                  limit: account.balances.limit,
+                },
+                institution: connection.institution.name,
+                itemId: connection.itemId,
+              }));
+              allAccounts.push(...bankAccounts);
+            } catch (retryError) {
+              console.error(
+                `❌ Retry failed for ${connection.institution.name}:`,
+                retryError
+              );
+            }
+          }
+          // Continue with other banks even if one fails
+        }
       }
 
-      throw error; // Re-throw the error if token refresh failed
+      return allAccounts;
+    } catch (error) {
+      console.error("❌ Error fetching all accounts:", error);
+      throw error;
+    }
+  }
+
+  // Handle token error for a specific connection
+  private async handleTokenErrorForConnection(
+    error: any,
+    connection: PlaidConnection
+  ): Promise<boolean> {
+    try {
+      // Check if this is a token-related error
+      if (
+        error?.message?.includes("INVALID_ACCESS_TOKEN") ||
+        error?.message?.includes("access_token_invalid") ||
+        error?.message?.includes("connection expired")
+      ) {
+        console.log(
+          `🔄 Token error detected for ${connection.institution.name}, marking as disconnected`
+        );
+
+        // Mark this connection as disconnected
+        connection.status = "disconnected";
+        await this.saveConnectionToFirebase(connection);
+
+        return false; // Don't retry, connection is invalid
+      }
+
+      return false; // Not a token error
+    } catch (refreshError) {
+      console.error(
+        `Error handling token error for ${connection.institution.name}:`,
+        refreshError
+      );
+      return false;
     }
   }
 
@@ -801,16 +915,21 @@ class PlaidService {
   private readonly MAX_RETRIES = 5; // Reduced from 10 to 5 to prevent rate limiting
   private readonly RETRY_DELAYS = [10000, 30000, 60000, 120000, 300000]; // Longer delays to be more conservative
 
-  // Get transactions from Plaid
+  // Get transactions from all connected banks
   async getTransactions(
     startDate: string,
     endDate: string
   ): Promise<PlaidTransaction[]> {
-    if (!this.accessToken) {
-      throw new Error("No access token available");
+    const connectedBanks = this.getConnectedBanks();
+    if (connectedBanks.length === 0) {
+      throw new Error("No bank connections available");
     }
 
-    const cacheKey = this.getCacheKey("transactions", { startDate, endDate });
+    const cacheKey = this.getCacheKey("all_transactions", {
+      startDate,
+      endDate,
+      connectionCount: connectedBanks.length,
+    });
 
     // Check cache first with extended duration for transactions
     if (this.isCacheValid(cacheKey, this.TRANSACTIONS_CACHE_DURATION)) {
@@ -824,7 +943,7 @@ class PlaidService {
 
     // Create the request promise with retry logic and queuing
     this.pendingTransactionsRequest = this.queueRequest(() =>
-      this._fetchTransactionsWithRetry(startDate, endDate)
+      this._fetchAllTransactionsWithRetry(startDate, endDate)
     );
 
     try {
@@ -843,53 +962,93 @@ class PlaidService {
     }
   }
 
-  // Private method to fetch transactions with retry logic
-  private async _fetchTransactionsWithRetry(
+  // Private method to fetch transactions from all connected banks with retry logic
+  private async _fetchAllTransactionsWithRetry(
+    startDate: string,
+    endDate: string
+  ): Promise<PlaidTransaction[]> {
+    const connectedBanks = this.getConnectedBanks();
+    const allTransactions: PlaidTransaction[] = [];
+
+    // Fetch transactions from each connected bank
+    for (const connection of connectedBanks) {
+      try {
+        const bankTransactions = await this._fetchTransactionsForConnection(
+          connection,
+          startDate,
+          endDate
+        );
+        allTransactions.push(...bankTransactions);
+      } catch (error: any) {
+        console.error(
+          `❌ Error fetching transactions from ${connection.institution.name}:`,
+          error
+        );
+
+        // Check for token errors and attempt to refresh for this specific connection
+        const tokenRefreshed = await this.handleTokenErrorForConnection(
+          error,
+          connection
+        );
+        if (tokenRefreshed) {
+          console.log(
+            `🔄 Token refreshed for ${connection.institution.name}, retrying transactions request`
+          );
+          try {
+            const bankTransactions = await this._fetchTransactionsForConnection(
+              connection,
+              startDate,
+              endDate
+            );
+            allTransactions.push(...bankTransactions);
+          } catch (retryError) {
+            console.error(
+              `❌ Retry failed for ${connection.institution.name}:`,
+              retryError
+            );
+          }
+        }
+        // Continue with other banks even if one fails
+      }
+    }
+
+    // Sort all transactions by date (newest first)
+    return allTransactions.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }
+
+  // Fetch transactions for a specific connection with retry logic
+  private async _fetchTransactionsForConnection(
+    connection: PlaidConnection,
     startDate: string,
     endDate: string
   ): Promise<PlaidTransaction[]> {
     for (let attempt = 0; attempt <= this.MAX_RETRIES; attempt++) {
       try {
-        const transactions = await this._fetchTransactions(startDate, endDate);
+        const transactions = await this._fetchTransactions(
+          connection.accessToken,
+          startDate,
+          endDate
+        );
 
-        // If we got transactions, check if we have enough data for 3 months
-        if (transactions.length > 0) {
-          const transactionDates = transactions.map((t) => new Date(t.date));
-          const earliestDate = new Date(
-            Math.min(...transactionDates.map((d) => d.getTime()))
-          );
-          const latestDate = new Date(
-            Math.max(...transactionDates.map((d) => d.getTime()))
-          );
-          const dateRangeInDays =
-            (latestDate.getTime() - earliestDate.getTime()) /
-            (1000 * 60 * 60 * 24);
+        // Add bank information to each transaction
+        const bankTransactions = transactions.map((transaction) => ({
+          ...transaction,
+          institution: connection.institution.name,
+          itemId: connection.itemId,
+        }));
 
-          // If we have at least 60 days of data or we're not requesting a full 3-month range, return the data
-          if (
-            dateRangeInDays >= 60 ||
-            !this._isRequestingFullRange(startDate, endDate)
-          ) {
-            return transactions;
-          }
-        }
-
-        return transactions;
+        return bankTransactions;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
 
         console.log(
-          `🔄 Retry attempt ${attempt + 1}: Error message: "${errorMessage}"`
+          `🔄 Retry attempt ${attempt + 1} for ${
+            connection.institution.name
+          }: Error message: "${errorMessage}"`
         );
-        console.log(`🔍 Full error object:`, error);
-
-        // Check for token errors first and attempt to refresh
-        const tokenRefreshed = await this.handleTokenError(error);
-        if (tokenRefreshed) {
-          console.log("🔄 Token refreshed, retrying request");
-          continue;
-        }
 
         // Check for rate limit errors
         if (
@@ -897,7 +1056,7 @@ class PlaidService {
           errorMessage.includes("rate limit")
         ) {
           console.log(
-            `🚨 Rate limit detected, implementing exponential backoff`
+            `🚨 Rate limit detected for ${connection.institution.name}, implementing exponential backoff`
           );
           const backoffTime = Math.min(30000 * Math.pow(2, attempt), 300000); // Max 5 minutes
           console.log(
@@ -916,28 +1075,24 @@ class PlaidService {
             errorMessage.includes("not yet ready") ||
             errorMessage.includes("product_not_ready") ||
             errorMessage.includes("Product not ready") ||
-            errorMessage.includes("product not ready") ||
-            errorMessage.includes("PRODUCT_NOT_READY")) &&
+            errorMessage.includes("product not ready")) &&
           attempt < this.MAX_RETRIES
         ) {
           const delay =
             this.RETRY_DELAYS[attempt] ||
             this.RETRY_DELAYS[this.RETRY_DELAYS.length - 1];
           console.log(
-            `🔄 Product not ready, retrying in ${delay}ms (attempt ${
-              attempt + 1
-            }/${this.MAX_RETRIES})`
+            `🔄 Product not ready for ${
+              connection.institution.name
+            }, retrying in ${delay}ms (attempt ${attempt + 1}/${
+              this.MAX_RETRIES
+            })`
           );
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
-        } else {
-          console.log(
-            `❌ Not retrying - error doesn't match retry criteria or max retries reached`
-          );
         }
 
         // Only throw user-facing errors when retries are exhausted
-        // For PRODUCT_NOT_READY after max retries, provide a user-friendly message
         if (
           (errorMessage.includes("400") ||
             errorMessage.includes("PRODUCT_NOT_READY") ||
@@ -948,7 +1103,7 @@ class PlaidService {
           attempt >= this.MAX_RETRIES
         ) {
           throw new Error(
-            "Bank data is still being processed. Please try refreshing in a few minutes."
+            `Bank data for ${connection.institution.name} is still being processed. Please try refreshing in a few minutes.`
           );
         }
 
@@ -957,7 +1112,9 @@ class PlaidService {
       }
     }
 
-    throw new Error("Max retries exceeded for transaction fetch");
+    throw new Error(
+      `Max retries exceeded for transaction fetch from ${connection.institution.name}`
+    );
   }
 
   // Helper method to check if we're requesting a full 3-month range
@@ -970,6 +1127,7 @@ class PlaidService {
 
   // Private method to actually fetch transactions using /transactions/sync
   private async _fetchTransactions(
+    accessToken: string,
     startDate: string,
     endDate: string
   ): Promise<PlaidTransaction[]> {
@@ -977,7 +1135,7 @@ class PlaidService {
       const getTransactions = httpsCallable(this.functions, "getTransactions");
 
       const result = await getTransactions({
-        accessToken: this.accessToken,
+        accessToken: accessToken,
         cursor: null, // Start with null cursor for initial fetch
         // Note: /transactions/sync doesn't use date parameters
         // It fetches all available transactions and uses cursor-based pagination
@@ -1050,46 +1208,13 @@ class PlaidService {
 
       if (!userSnapshot.exists()) {
         // User account has been deleted, clear local state and return false
-        this.accessToken = null;
-        this.itemId = null;
+        this.connections.clear();
         return false;
       }
 
-      // Check Firebase for existing connection
-      const plaidRef = ref(db, `users/${this.userId}/plaid`);
-      const snapshot = await get(plaidRef);
-
-      if (snapshot.exists()) {
-        const encryptedPlaidData = snapshot.val();
-
-        // Decrypt the Plaid data
-        const fieldsToDecrypt = [
-          "publicToken",
-          "itemId",
-          "institution",
-          "accounts",
-          "accessToken",
-        ];
-
-        const plaidData = await decryptFields(
-          encryptedPlaidData,
-          fieldsToDecrypt
-        );
-
-        this.accessToken = plaidData.accessToken || null;
-        this.itemId = plaidData.itemId || null;
-
-        // More flexible connection check - if we have access token and item ID, consider it connected
-        const hasAccessToken = !!plaidData.accessToken;
-        const hasItemId = !!plaidData.itemId;
-        const statusConnected = plaidData.status === "connected";
-
-        const isConnected = statusConnected || (hasAccessToken && hasItemId);
-
-        return isConnected;
-      }
-
-      return false;
+      // Load connections from Firebase
+      await this.loadConnectionsFromFirebase();
+      return this.hasAnyBankConnected();
     } catch (error: any) {
       // Handle permission denied errors (user account deleted)
       if (
@@ -1099,8 +1224,7 @@ class PlaidService {
         console.log(
           "PlaidService: User account no longer exists, clearing bank connection state"
         );
-        this.accessToken = null;
-        this.itemId = null;
+        this.connections.clear();
         return false;
       }
 
@@ -1109,49 +1233,172 @@ class PlaidService {
     }
   }
 
-  // Get connected bank information
-  async getConnectedBankInfo(): Promise<{
-    name: string;
-    accounts: PlaidAccount[];
-  } | null> {
+  // Load all connections from Firebase
+  private async loadConnectionsFromFirebase(): Promise<void> {
     if (!this.userId) {
-      return null;
+      return;
     }
 
     try {
-      // Check Firebase for existing connection
-      const plaidRef = ref(db, `users/${this.userId}/plaid`);
+      // First try new format
+      const plaidRef = ref(db, `users/${this.userId}/plaid_connections`);
       const snapshot = await get(plaidRef);
 
       if (snapshot.exists()) {
-        const encryptedPlaidData = snapshot.val();
+        const connectionsData = snapshot.val();
+        if (connectionsData) {
+          // Decrypt and load all connections
+          for (const [itemId, connectionData] of Object.entries(
+            connectionsData
+          )) {
+            try {
+              const decryptedData = await decryptFields(connectionData as any, [
+                "accessToken",
+                "institution",
+                "accounts",
+              ]);
 
-        // Decrypt the Plaid data
-        const fieldsToDecrypt = [
-          "publicToken",
-          "itemId",
-          "institution",
-          "accounts",
-          "accessToken",
-        ];
+              const connection: PlaidConnection = {
+                itemId,
+                accessToken: decryptedData.accessToken,
+                institution: decryptedData.institution,
+                accounts: decryptedData.accounts || [],
+                connectedAt: (connectionData as any).connectedAt,
+                status: (connectionData as any).status || "connected",
+                lastUpdated: (connectionData as any).lastUpdated,
+              };
 
-        const plaidData = await decryptFields(
-          encryptedPlaidData,
-          fieldsToDecrypt
-        );
-
-        if (plaidData.status === "connected" && plaidData.institution) {
-          return {
-            name: plaidData.institution.name || "Unknown Bank",
-            accounts: plaidData.accounts || [],
-          };
+              this.connections.set(itemId, connection);
+            } catch (decryptError) {
+              console.error(
+                `Error decrypting connection ${itemId}:`,
+                decryptError
+              );
+            }
+          }
+          return;
         }
       }
 
-      return null;
+      // If new format doesn't exist, try to migrate legacy format
+      await this.migrateLegacyConnection();
+    } catch (error) {
+      console.error("Error loading connections from Firebase:", error);
+    }
+  }
+
+  // Migrate legacy single connection to new format
+  private async migrateLegacyConnection(): Promise<void> {
+    if (!this.userId) {
+      return;
+    }
+
+    try {
+      const legacyRef = ref(db, `users/${this.userId}/plaid`);
+      const snapshot = await get(legacyRef);
+
+      if (!snapshot.exists()) {
+        return;
+      }
+
+      const legacyData = snapshot.val();
+      if (!legacyData || !legacyData.accessToken || !legacyData.itemId) {
+        return;
+      }
+
+      // Decrypt legacy data
+      const decryptedData = await decryptFields(legacyData, [
+        "accessToken",
+        "itemId",
+        "institution",
+        "accounts",
+      ]);
+
+      // Create new connection format
+      const connection: PlaidConnection = {
+        itemId: decryptedData.itemId,
+        accessToken: decryptedData.accessToken,
+        institution: decryptedData.institution,
+        accounts: decryptedData.accounts || [],
+        connectedAt: legacyData.connectedAt || Date.now(),
+        status: "connected",
+        lastUpdated: Date.now(),
+      };
+
+      // Save to new format
+      await this.saveConnectionToFirebase(connection);
+
+      // Store in memory
+      this.connections.set(connection.itemId, connection);
+
+      // Remove legacy data
+      await remove(legacyRef);
+
+      console.log("✅ Migrated legacy Plaid connection to new format");
+    } catch (error) {
+      console.error("Error migrating legacy connection:", error);
+    }
+  }
+
+  // Save a single connection to Firebase
+  private async saveConnectionToFirebase(
+    connection: PlaidConnection
+  ): Promise<void> {
+    if (!this.userId) {
+      throw new Error("User ID not set");
+    }
+
+    try {
+      // Encrypt sensitive data
+      const fieldsToEncrypt = ["accessToken", "institution", "accounts"];
+
+      const encryptedConnection = await encryptFields(
+        connection,
+        fieldsToEncrypt
+      );
+
+      // Save to Firebase
+      const connectionRef = ref(
+        db,
+        `users/${this.userId}/plaid_connections/${connection.itemId}`
+      );
+      await set(connectionRef, {
+        ...encryptedConnection,
+        connectedAt: connection.connectedAt,
+        status: connection.status,
+        lastUpdated: connection.lastUpdated || Date.now(),
+      });
+    } catch (error) {
+      console.error("Error saving connection to Firebase:", error);
+      throw error;
+    }
+  }
+
+  // Get all connected bank information
+  async getConnectedBankInfo(): Promise<
+    {
+      name: string;
+      accounts: PlaidAccount[];
+      itemId: string;
+    }[]
+  > {
+    if (!this.userId) {
+      return [];
+    }
+
+    try {
+      // Load connections from Firebase
+      await this.loadConnectionsFromFirebase();
+
+      const connectedBanks = this.getConnectedBanks();
+      return connectedBanks.map((connection) => ({
+        name: connection.institution.name,
+        accounts: connection.accounts,
+        itemId: connection.itemId,
+      }));
     } catch (error) {
       console.error("Error getting connected bank info:", error);
-      return null;
+      return [];
     }
   }
 
@@ -1285,8 +1532,7 @@ class PlaidService {
   async handleLogout(): Promise<void> {
     try {
       // Clear local state
-      this.accessToken = null;
-      this.itemId = null;
+      this.connections.clear();
       this.userId = null;
 
       // Clear debounce timer and rate limiting counters
@@ -1341,8 +1587,8 @@ class PlaidService {
     );
   }
 
-  // Enhanced disconnect with cleanup
-  async disconnectBank(): Promise<void> {
+  // Disconnect a specific bank by item ID
+  async disconnectBank(itemId?: string): Promise<void> {
     try {
       if (!this.userId) {
         throw new Error("User ID not set");
@@ -1355,13 +1601,36 @@ class PlaidService {
       }
       this.pendingStatusUpdates = {};
 
-      // Remove from Firebase
-      const plaidRef = ref(db, `users/${this.userId}/plaid`);
-      await remove(plaidRef);
+      if (itemId) {
+        // Disconnect specific bank
+        const connection = this.connections.get(itemId);
+        if (connection) {
+          // Remove from Firebase
+          const connectionRef = ref(
+            db,
+            `users/${this.userId}/plaid_connections/${itemId}`
+          );
+          await remove(connectionRef);
 
-      // Clear local state
-      this.accessToken = null;
-      this.itemId = null;
+          // Remove from local state
+          this.connections.delete(itemId);
+          console.log(`✅ Disconnected bank: ${connection.institution.name}`);
+        }
+      } else {
+        // Disconnect all banks
+        const connectedBanks = this.getConnectedBanks();
+        for (const connection of connectedBanks) {
+          const connectionRef = ref(
+            db,
+            `users/${this.userId}/plaid_connections/${connection.itemId}`
+          );
+          await remove(connectionRef);
+          console.log(`✅ Disconnected bank: ${connection.institution.name}`);
+        }
+
+        // Clear all local state
+        this.connections.clear();
+      }
 
       // Clear cache and pending requests
       this.requestCache.clear();
@@ -1392,19 +1661,18 @@ class PlaidService {
       );
 
       try {
-        // Clear invalid token
-        this.accessToken = null;
-        this.itemId = null;
+        // Clear invalid connections
+        this.connections.clear();
 
         // Try to reload connection data from Firebase
         await this.isBankConnected();
 
-        // If we successfully loaded a new token, return true to retry the operation
-        if (this.accessToken) {
-          console.log("✅ Successfully refreshed Plaid connection");
+        // If we successfully loaded connections, return true to retry the operation
+        if (this.hasAnyBankConnected()) {
+          console.log("✅ Successfully refreshed Plaid connections");
           return true;
         } else {
-          console.log("❌ No valid connection found, user needs to reconnect");
+          console.log("❌ No valid connections found, user needs to reconnect");
           return false;
         }
       } catch (refreshError) {
@@ -1416,7 +1684,7 @@ class PlaidService {
     return false; // Not a token error, don't retry
   }
 
-  // Disconnect bank silently (for logout scenarios)
+  // Disconnect all banks silently (for logout scenarios)
   async disconnectBankSilently(): Promise<void> {
     try {
       if (!this.userId) {
@@ -1430,15 +1698,21 @@ class PlaidService {
       }
       this.pendingStatusUpdates = {};
 
-      // Remove from Firebase
-      const plaidRef = ref(db, `users/${this.userId}/plaid`);
-      await remove(plaidRef);
+      // Remove all connections from Firebase
+      const plaidConnectionsRef = ref(
+        db,
+        `users/${this.userId}/plaid_connections`
+      );
+      await remove(plaidConnectionsRef);
+
+      // Also remove legacy single connection if it exists
+      const legacyPlaidRef = ref(db, `users/${this.userId}/plaid`);
+      await remove(legacyPlaidRef);
 
       // Clear local state
-      this.accessToken = null;
-      this.itemId = null;
+      this.connections.clear();
     } catch (error) {
-      console.error("PlaidService: Error silently disconnecting bank:", error);
+      console.error("PlaidService: Error silently disconnecting banks:", error);
       // Don't throw for silent disconnection
     }
   }

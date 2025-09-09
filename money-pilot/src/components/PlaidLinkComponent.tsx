@@ -30,7 +30,6 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   onLoadingChange,
 }) => {
   const { colors } = useTheme();
-  const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [lastTapTime, setLastTapTime] = useState(0);
@@ -38,30 +37,18 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   const { user } = useAuth();
   const { isFeatureAvailable, PREMIUM_FEATURES, hasPremiumAccess } =
     useSubscription();
-  const { disconnectBankAndClearData } = useData();
+  const {
+    disconnectBankAndClearData,
+    isBankConnected,
+    connectedBanks,
+    refreshBankData,
+  } = useData();
   const { presentPaywall } = usePaywall();
 
   useEffect(() => {
     // Set user ID for Plaid service
     if (user?.uid) {
       plaidService.setUserId(user.uid);
-      checkConnectionStatus();
-
-      // Additional immediate check for existing connection
-      const immediateCheck = async () => {
-        const connected = await plaidService.isBankConnected();
-        const isPremium = hasPremiumAccess();
-
-        if (connected && isPremium) {
-          setIsConnected(true);
-          setIsLoading(false);
-          onLoadingChange?.(false);
-          setIsButtonDisabled(false);
-        } else {
-          setIsConnected(false);
-        }
-      };
-      immediateCheck();
     }
   }, [user]);
 
@@ -71,106 +58,6 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       onLoadingChange?.(false);
     }
   }, [isLoading, onLoadingChange]);
-
-  // Additional check to clear loading state if bank is already connected
-  useEffect(() => {
-    const clearLoadingIfConnected = async () => {
-      if (isLoading) {
-        const connected = await plaidService.isBankConnected();
-        const isPremium = hasPremiumAccess();
-
-        if (connected && isPremium) {
-          setIsLoading(false);
-          onLoadingChange?.(false);
-          setIsButtonDisabled(false);
-          setIsConnected(true); // Also set the connected state
-        } else if (!isPremium) {
-          setIsLoading(false);
-          onLoadingChange?.(false);
-          setIsButtonDisabled(false);
-          setIsConnected(false);
-        }
-      }
-    };
-
-    clearLoadingIfConnected();
-  }, [isLoading]);
-
-  // More aggressive check - run this every 2 seconds while loading
-  useEffect(() => {
-    if (!isLoading) return;
-
-    const interval = setInterval(async () => {
-      const connected = await plaidService.isBankConnected();
-      const isPremium = hasPremiumAccess();
-
-      if (connected && isPremium) {
-        setIsLoading(false);
-        onLoadingChange?.(false);
-        setIsButtonDisabled(false);
-        setIsConnected(true);
-        clearInterval(interval);
-      } else if (!isPremium) {
-        setIsLoading(false);
-        onLoadingChange?.(false);
-        setIsButtonDisabled(false);
-        setIsConnected(false);
-        clearInterval(interval);
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [isLoading]);
-
-  // Monitor subscription changes and update connection status
-  // This ensures the button shows correctly when subscription expires
-  useEffect(() => {
-    const updateConnectionStatus = async () => {
-      const connected = await plaidService.isBankConnected();
-      const isPremium = hasPremiumAccess();
-
-      if (connected && isPremium) {
-        setIsConnected(true);
-      } else {
-        setIsConnected(false);
-      }
-    };
-
-    updateConnectionStatus();
-  }, [hasPremiumAccess]);
-
-  const checkConnectionStatus = async () => {
-    try {
-      const connected = await plaidService.isBankConnected();
-      const isPremium = hasPremiumAccess();
-
-      // If user is not premium, don't show as connected even if bank is connected
-      if (!isPremium) {
-        setIsConnected(false);
-        setIsLoading(false);
-        onLoadingChange?.(false);
-        setIsButtonDisabled(false);
-        return;
-      }
-
-      setIsConnected(connected);
-
-      // If we were loading and now we're connected, stop the loading
-      if (isLoading && connected) {
-        setIsLoading(false);
-        onLoadingChange?.(false);
-        setIsButtonDisabled(false); // Re-enable button
-      }
-    } catch (error) {
-      console.error("❌ Error checking connection status:", error);
-      // If there's an error checking status, stop loading
-      if (isLoading) {
-        setIsLoading(false);
-        onLoadingChange?.(false);
-        setIsButtonDisabled(false); // Re-enable button
-      }
-    }
-  };
 
   const pollConnectionStatus = async () => {
     let attempts = 0;
@@ -188,14 +75,11 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
         // If user is not premium, don't show as connected even if bank is connected
         if (!isPremium) {
-          setIsConnected(false);
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
           return;
         }
-
-        setIsConnected(connected);
 
         // Stop polling if we're no longer loading (user might have disconnected)
         if (!isLoading) {
@@ -299,14 +183,12 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
-          setIsConnected(true);
           onSuccess?.();
           return; // Don't start polling if we're already connected
         } else if (!isPremium) {
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
-          setIsConnected(false);
           return;
         }
       }, 500); // Check after 500ms
@@ -328,12 +210,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
             const connected = await plaidService.isBankConnected();
             const isPremium = hasPremiumAccess();
 
-            if (connected && isPremium) {
-              setIsConnected(true);
-            } else {
-              // If not connected or not premium, show as disconnected
-              setIsConnected(false);
-            }
+            // Connection status is now managed by DataContext
           };
           forceConnected();
 
@@ -443,13 +320,18 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     onExit?.();
   };
 
-  const handleDisconnectBank = async () => {
+  const handleDisconnectBank = async (itemId?: string) => {
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
+    const bankName = itemId
+      ? connectedBanks.find((bank) => bank.itemId === itemId)?.name ||
+        "this bank"
+      : "all your banks";
+
     Alert.alert(
       "Disconnect Bank",
-      "Are you sure you want to disconnect your bank account?",
+      `Are you sure you want to disconnect ${bankName}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -461,11 +343,15 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
               setIsLoading(false);
               onLoadingChange?.(false);
 
-              // Use the comprehensive disconnect function from DataContext
-              await disconnectBankAndClearData();
-
-              // Update connection status
-              await checkConnectionStatus();
+              if (itemId) {
+                // Disconnect specific bank
+                await plaidService.disconnectBank(itemId);
+                // Refresh bank data to update the UI
+                await refreshBankData();
+              } else {
+                // Disconnect all banks
+                await disconnectBankAndClearData();
+              }
             } catch (error) {
               console.error("Error disconnecting bank:", error);
               Alert.alert("Error", "Failed to disconnect bank account");
@@ -478,82 +364,159 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
   return (
     <View>
+      {/* Connected Banks List */}
+      {isBankConnected && connectedBanks.length > 0 && (
+        <View style={{ marginBottom: 12 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              color: colors.text,
+              marginBottom: 8,
+            }}
+          >
+            Connected Banks ({connectedBanks.length})
+          </Text>
+          {connectedBanks.map((bank, index) => (
+            <View
+              key={bank.itemId || index}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingVertical: 12,
+                paddingHorizontal: 14,
+                backgroundColor: colors.surfaceSecondary,
+                borderRadius: 12,
+                marginBottom: 8,
+              }}
+            >
+              <View
+                style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+              >
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color={colors.success || "#4CAF50"}
+                  style={{ marginRight: 12 }}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "500",
+                      color: colors.text,
+                    }}
+                  >
+                    {bank.name || "Unknown Bank"}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {bank.accounts?.length || 0} account
+                    {bank.accounts?.length !== 1 ? "s" : ""}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => handleDisconnectBank(bank.itemId)}
+                style={{
+                  padding: 8,
+                  borderRadius: 8,
+                  backgroundColor: colors.error + "20",
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color={colors.error || "#F44336"}
+                />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Add Bank Button */}
       <TouchableOpacity
-        onPress={isConnected ? handleDisconnectBank : handleConnectBank}
+        onPress={handleConnectBank}
         disabled={isLoading || isButtonDisabled}
         style={{
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "space-between",
-          paddingVertical: 10,
-          paddingHorizontal: 14,
-          backgroundColor: colors.surfaceSecondary,
+          justifyContent: "center",
+          paddingVertical: 14,
+          paddingHorizontal: 16,
+          backgroundColor: colors.primary,
           borderRadius: 12,
           opacity: isLoading || isButtonDisabled ? 0.6 : 1,
         }}
         activeOpacity={0.7}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-          <Ionicons
-            name={isConnected ? "checkmark-circle" : "link"}
-            size={20}
-            color={colors.textSecondary}
-            style={{ marginRight: 12 }}
+        {isLoading && (
+          <ActivityIndicator
+            size="small"
+            color="#fff"
+            style={{ marginRight: 8 }}
           />
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                fontSize: 14,
-                color: colors.textSecondary,
-              }}
-            >
-              {isConnected
-                ? "Connected via Plaid"
-                : hasPremiumAccess()
-                ? "Connect bank"
-                : "Connect bank"}
-            </Text>
-          </View>
-        </View>
+        )}
+        <Ionicons
+          name="add-circle"
+          size={20}
+          color="#fff"
+          style={{ marginRight: 8 }}
+        />
+        <Text
+          style={{
+            fontSize: 16,
+            fontWeight: "600",
+            color: "#fff",
+          }}
+        >
+          {isBankConnected ? "Add Another Bank" : "Connect Bank"}
+        </Text>
+      </TouchableOpacity>
 
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {isLoading && (
-            <ActivityIndicator
-              size="small"
-              color={colors.primary}
-              style={{ marginRight: 8 }}
-            />
-          )}
+      {/* Disconnect All Button (only show if multiple banks) */}
+      {isBankConnected && connectedBanks.length > 1 && (
+        <TouchableOpacity
+          onPress={() => handleDisconnectBank()}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            backgroundColor: colors.surfaceSecondary,
+            borderRadius: 12,
+            marginTop: 8,
+            borderWidth: 1,
+            borderColor: colors.error + "40",
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="close-circle"
+            size={18}
+            color={colors.error || "#F44336"}
+            style={{ marginRight: 8 }}
+          />
           <Text
             style={{
-              color: colors.textSecondary,
-              marginRight: 8,
               fontSize: 14,
+              fontWeight: "500",
+              color: colors.error || "#F44336",
             }}
           >
-            {isConnected ? "" : "Disconnected"}
+            Disconnect All Banks
           </Text>
-          <View
-            style={{
-              width: 44,
-              height: 24,
-              borderRadius: 12,
-              backgroundColor: isConnected ? colors.primary : colors.border,
-              padding: 2,
-            }}
-          >
-            <View
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 10,
-                backgroundColor: "#fff",
-                transform: [{ translateX: isConnected ? 20 : 0 }],
-              }}
-            />
-          </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

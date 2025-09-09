@@ -20,7 +20,6 @@ export { NotificationSettingsScreen } from "./NotificationSettingsScreen";
 export { PrivacySecurityScreen } from "./PrivacySecurityScreen";
 export { AboutScreen } from "./AboutScreen";
 export { HelpSupportScreen } from "./HelpSupportScreen";
-export { default as SubscriptionScreen } from "./SubscriptionScreen";
 export { BankTransactionsScreen } from "./BankTransactionsScreen";
 export { AIFinancialAdvisorScreen } from "./AIFinancialAdvisorScreen";
 export { FinancialPlansScreen } from "./FinancialPlansScreen";

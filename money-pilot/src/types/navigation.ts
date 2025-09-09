@@ -51,7 +51,6 @@ export type RootStackParamList = {
   HelpSupport: undefined;
   ForgotPassword: undefined;
   RecurringTransactions: undefined;
-  Subscription: undefined;
   BankTransactions: undefined;
   AIFinancialAdvisor: { selectedMonth?: number };
   FinancialPlans: undefined;
