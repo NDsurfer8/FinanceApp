@@ -2695,6 +2695,33 @@ export interface BudgetCategory {
   color: string;
 }
 
+export interface BudgetStreak {
+  currentStreak: number;
+  longestStreak: number;
+  totalSuccessfulMonths: number;
+  lastSuccessfulMonth: string; // YYYY-MM format
+  categoryStreaks: Record<string, number>; // categoryId -> streak count
+  achievements: string[]; // Array of achievement IDs
+}
+
+export interface MonthlyBudgetResult {
+  month: string; // YYYY-MM format
+  totalCategories: number;
+  successfulCategories: number;
+  successRate: number;
+  categoryResults: Record<
+    string,
+    {
+      categoryId: string;
+      categoryName: string;
+      budget: number;
+      spent: number;
+      success: boolean;
+      overAmount?: number;
+    }
+  >;
+}
+
 // Save budget categories to AsyncStorage
 export const saveBudgetCategories = async (
   categories: BudgetCategory[],
@@ -2762,4 +2789,603 @@ export const getUserBudgetCategories = async (
       { id: "16", name: "Other Expenses", monthlyLimit: 0, color: "#C0C0C0" },
     ];
   }
+};
+
+// ===== BUDGET STREAK FUNCTIONS =====
+
+// Get user's budget streak data
+// Clean up invalid achievements based on account age
+const cleanInvalidAchievements = async (
+  streak: BudgetStreak,
+  userId: string
+): Promise<BudgetStreak> => {
+  try {
+    // Get user's account creation date
+    const userRef = ref(db, `users/${userId}/profile`);
+    const userSnapshot = await get(userRef);
+    let accountCreationDate = new Date();
+
+    if (userSnapshot.exists()) {
+      const userData = userSnapshot.val();
+      if (userData.createdAt) {
+        accountCreationDate = new Date(userData.createdAt);
+      }
+    }
+
+    // Calculate how many months the user has had the app
+    const currentDate = new Date();
+    const monthsSinceCreation =
+      (currentDate.getFullYear() - accountCreationDate.getFullYear()) * 12 +
+      (currentDate.getMonth() - accountCreationDate.getMonth()) +
+      1;
+
+    // Clean up invalid achievements based on account age
+
+    // Define all valid achievement IDs
+    const validAchievementIds = new Set([
+      "streak_1",
+      "streak_2",
+      "streak_3",
+      "streak_6",
+      "streak_12",
+      "category_1_1",
+      "category_1_2",
+      "category_1_3",
+      "category_1_6",
+      "category_10_1",
+      "category_10_2",
+      "category_10_3",
+      "category_10_6",
+      "category_11_1",
+      "category_11_2",
+      "category_11_3",
+      "category_11_6",
+      "category_12_1",
+      "category_12_2",
+      "category_12_3",
+      "category_12_6",
+      "category_13_1",
+      "category_13_2",
+      "category_13_3",
+      "category_13_6",
+      "category_14_1",
+      "category_14_2",
+      "category_14_3",
+      "category_14_6",
+    ]);
+
+    // Filter out invalid achievements
+    const validAchievements = streak.achievements.filter((achievementId) => {
+      // Validate achievement ID format
+      if (!achievementId || typeof achievementId !== "string") {
+        return false;
+      }
+
+      // Check if achievement ID is in our valid list
+      if (!validAchievementIds.has(achievementId)) {
+        return false;
+      }
+
+      // Keep streak achievements that are valid based on account age
+      if (achievementId === "streak_1" && monthsSinceCreation >= 1) return true;
+      if (achievementId === "streak_2" && monthsSinceCreation >= 2) return true;
+      if (achievementId === "streak_3" && monthsSinceCreation >= 3) return true;
+      if (achievementId === "streak_6" && monthsSinceCreation >= 6) return true;
+      if (achievementId === "streak_12" && monthsSinceCreation >= 12)
+        return true;
+
+      // Keep category achievements that are valid based on account age
+      if (achievementId.includes("_1") && monthsSinceCreation >= 1) return true;
+      if (achievementId.includes("_2") && monthsSinceCreation >= 2) return true;
+      if (achievementId.includes("_3") && monthsSinceCreation >= 3) return true;
+      if (achievementId.includes("_6") && monthsSinceCreation >= 6) return true;
+
+      // If we get here, the achievement is valid but not appropriate for account age
+      return false;
+    });
+
+    return {
+      ...streak,
+      achievements: validAchievements,
+    };
+  } catch (error) {
+    console.error("Error cleaning invalid achievements:", error);
+    return streak; // Return original streak if cleanup fails
+  }
+};
+
+export const getUserBudgetStreak = async (
+  userId: string
+): Promise<BudgetStreak> => {
+  try {
+    const key = `budgetStreak_${userId}`;
+    const stored = await AsyncStorage.getItem(key);
+
+    if (stored) {
+      const streak = JSON.parse(stored);
+
+      // Clean up invalid achievements based on account age
+      const cleanedStreak = await cleanInvalidAchievements(streak, userId);
+
+      // Save cleaned streak back to AsyncStorage if it was changed
+      if (cleanedStreak.achievements.length !== streak.achievements.length) {
+        await saveUserBudgetStreak(userId, cleanedStreak);
+      }
+
+      return cleanedStreak;
+    }
+
+    // Return default streak data
+    return {
+      currentStreak: 0,
+      longestStreak: 0,
+      totalSuccessfulMonths: 0,
+      lastSuccessfulMonth: "",
+      categoryStreaks: {},
+      achievements: [],
+    };
+  } catch (error) {
+    console.error("Error getting budget streak:", error);
+    return {
+      currentStreak: 0,
+      longestStreak: 0,
+      totalSuccessfulMonths: 0,
+      lastSuccessfulMonth: "",
+      categoryStreaks: {},
+      achievements: [],
+    };
+  }
+};
+
+// Save user's budget streak data
+export const saveUserBudgetStreak = async (
+  userId: string,
+  streak: BudgetStreak
+): Promise<void> => {
+  try {
+    const key = `budgetStreak_${userId}`;
+    await AsyncStorage.setItem(key, JSON.stringify(streak));
+  } catch (error) {
+    console.error("Error saving budget streak:", error);
+    throw error;
+  }
+};
+
+// Calculate monthly budget results
+export const calculateMonthlyBudgetResult = async (
+  userId: string,
+  year: number,
+  month: number
+): Promise<MonthlyBudgetResult> => {
+  try {
+    const categories = await getUserBudgetCategories(userId);
+    const transactions = await getUserTransactions(userId);
+
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0);
+
+    // Filter transactions for the month
+    const monthlyTransactions = transactions.filter((transaction: any) => {
+      const transactionDate = new Date(transaction.date);
+      return (
+        transactionDate >= startDate &&
+        transactionDate <= endDate &&
+        transaction.type === "expense"
+      );
+    });
+
+    // Calculate spending by category
+    const spendingByCategory: Record<string, number> = {};
+    monthlyTransactions.forEach((transaction: any) => {
+      const categoryId = transaction.categoryId || "uncategorized";
+      spendingByCategory[categoryId] =
+        (spendingByCategory[categoryId] || 0) + transaction.amount;
+    });
+
+    // Calculate results for each category
+    const categoryResults: Record<string, any> = {};
+    let successfulCategories = 0;
+
+    categories.forEach((category) => {
+      const spent = spendingByCategory[category.id] || 0;
+      const success = spent <= category.monthlyLimit;
+      const overAmount =
+        spent > category.monthlyLimit
+          ? spent - category.monthlyLimit
+          : undefined;
+
+      if (success) successfulCategories++;
+
+      categoryResults[category.id] = {
+        categoryId: category.id,
+        categoryName: category.name,
+        budget: category.monthlyLimit,
+        spent: spent,
+        success: success,
+        overAmount: overAmount,
+      };
+    });
+
+    const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
+    const successRate =
+      categories.length > 0
+        ? (successfulCategories / categories.length) * 100
+        : 0;
+
+    return {
+      month: monthKey,
+      totalCategories: categories.length,
+      successfulCategories: successfulCategories,
+      successRate: successRate,
+      categoryResults: categoryResults,
+    };
+  } catch (error) {
+    console.error("Error calculating monthly budget result:", error);
+    throw error;
+  }
+};
+
+// Calculate streak by checking consecutive months
+const calculateConsecutiveStreak = async (
+  userId: string,
+  currentMonth: string
+): Promise<number> => {
+  try {
+    let streak = 0;
+    const currentDate = new Date(currentMonth + "-01");
+
+    // Get user's account creation date to limit how far back we look
+    const userRef = ref(db, `users/${userId}/profile`);
+    const userSnapshot = await get(userRef);
+    let accountCreationDate = new Date();
+
+    if (userSnapshot.exists()) {
+      const userData = userSnapshot.val();
+      if (userData.createdAt) {
+        accountCreationDate = new Date(userData.createdAt);
+      }
+    }
+
+    // Calculate how many months back to check (from account creation to current month)
+    const monthsSinceCreation =
+      (currentDate.getFullYear() - accountCreationDate.getFullYear()) * 12 +
+      (currentDate.getMonth() - accountCreationDate.getMonth()) +
+      1; // +1 to include current month
+
+    const maxMonthsToCheck = Math.min(monthsSinceCreation, 12); // Don't check more than 12 months or months since account creation
+
+    // Check months back from current month
+    for (let i = 0; i < maxMonthsToCheck; i++) {
+      const checkDate = new Date(currentDate);
+      checkDate.setMonth(checkDate.getMonth() - i);
+
+      // Skip if this month is before account creation
+      if (checkDate < accountCreationDate) {
+        break;
+      }
+
+      const monthResult = await calculateMonthlyBudgetResult(
+        userId,
+        checkDate.getFullYear(),
+        checkDate.getMonth()
+      );
+
+      if (monthResult.successRate >= 80) {
+        streak++;
+      } else {
+        break; // Streak broken
+      }
+    }
+
+    return streak;
+  } catch (error) {
+    console.error("Error calculating consecutive streak:", error);
+    return 0;
+  }
+};
+
+// Update budget streak based on monthly result
+export const updateBudgetStreak = async (
+  userId: string,
+  monthlyResult: MonthlyBudgetResult
+): Promise<BudgetStreak> => {
+  try {
+    const currentStreak = await getUserBudgetStreak(userId);
+    const isSuccessfulMonth = monthlyResult.successRate >= 80; // 80% success rate threshold
+
+    let newStreak = { ...currentStreak };
+
+    if (isSuccessfulMonth) {
+      // Successful month
+      newStreak.totalSuccessfulMonths += 1;
+      newStreak.lastSuccessfulMonth = monthlyResult.month;
+
+      // Calculate consecutive streak by checking previous months
+      newStreak.currentStreak = await calculateConsecutiveStreak(
+        userId,
+        monthlyResult.month
+      );
+
+      // Update longest streak
+      if (newStreak.currentStreak > newStreak.longestStreak) {
+        newStreak.longestStreak = newStreak.currentStreak;
+      }
+
+      // Update category streaks
+      Object.values(monthlyResult.categoryResults).forEach((result: any) => {
+        if (result.success) {
+          newStreak.categoryStreaks[result.categoryId] =
+            (newStreak.categoryStreaks[result.categoryId] || 0) + 1;
+        } else {
+          newStreak.categoryStreaks[result.categoryId] = 0;
+        }
+      });
+
+      // Check for new achievements (this also cleans up invalid ones)
+      const newAchievements = await checkForNewAchievements(newStreak, userId);
+      newStreak.achievements = [
+        ...new Set([...newStreak.achievements, ...newAchievements]),
+      ];
+    } else {
+      // Unsuccessful month - reset current streak
+      newStreak.currentStreak = 0;
+
+      // Reset category streaks for failed categories
+      Object.values(monthlyResult.categoryResults).forEach((result: any) => {
+        if (!result.success) {
+          newStreak.categoryStreaks[result.categoryId] = 0;
+        }
+      });
+    }
+
+    await saveUserBudgetStreak(userId, newStreak);
+    return newStreak;
+  } catch (error) {
+    console.error("Error updating budget streak:", error);
+    throw error;
+  }
+};
+
+// Check for new achievements
+const checkForNewAchievements = async (
+  streak: BudgetStreak,
+  userId: string
+): Promise<string[]> => {
+  const newAchievements: string[] = [];
+
+  // Get user's account creation date to determine valid achievements
+  const userRef = ref(db, `users/${userId}/profile`);
+  const userSnapshot = await get(userRef);
+  let accountCreationDate = new Date();
+
+  if (userSnapshot.exists()) {
+    const userData = userSnapshot.val();
+    if (userData.createdAt) {
+      accountCreationDate = new Date(userData.createdAt);
+    }
+  }
+
+  // Calculate how many months the user has had the app
+  const currentDate = new Date();
+  const monthsSinceCreation =
+    (currentDate.getFullYear() - accountCreationDate.getFullYear()) * 12 +
+    (currentDate.getMonth() - accountCreationDate.getMonth()) +
+    1;
+
+  // Note: Invalid achievements are already cleaned up in getUserBudgetStreak
+
+  // Only award streak achievements if the user has had the app long enough
+  if (
+    monthsSinceCreation >= 1 &&
+    streak.currentStreak === 1 &&
+    !streak.achievements.includes("streak_1")
+  ) {
+    newAchievements.push("streak_1");
+  }
+  if (
+    monthsSinceCreation >= 2 &&
+    streak.currentStreak === 2 &&
+    !streak.achievements.includes("streak_2")
+  ) {
+    newAchievements.push("streak_2");
+  }
+  if (
+    monthsSinceCreation >= 3 &&
+    streak.currentStreak === 3 &&
+    !streak.achievements.includes("streak_3")
+  ) {
+    newAchievements.push("streak_3");
+  }
+  if (
+    monthsSinceCreation >= 6 &&
+    streak.currentStreak === 6 &&
+    !streak.achievements.includes("streak_6")
+  ) {
+    newAchievements.push("streak_6");
+  }
+  if (
+    monthsSinceCreation >= 12 &&
+    streak.currentStreak === 12 &&
+    !streak.achievements.includes("streak_12")
+  ) {
+    newAchievements.push("streak_12");
+  }
+
+  // Category achievements - only award if user has had app long enough
+  Object.entries(streak.categoryStreaks).forEach(
+    ([categoryId, categoryStreak]) => {
+      if (
+        monthsSinceCreation >= 1 &&
+        categoryStreak === 1 &&
+        !streak.achievements.includes(`category_${categoryId}_1`)
+      ) {
+        newAchievements.push(`category_${categoryId}_1`);
+      }
+      if (
+        monthsSinceCreation >= 2 &&
+        categoryStreak === 2 &&
+        !streak.achievements.includes(`category_${categoryId}_2`)
+      ) {
+        newAchievements.push(`category_${categoryId}_2`);
+      }
+      if (
+        monthsSinceCreation >= 3 &&
+        categoryStreak === 3 &&
+        !streak.achievements.includes(`category_${categoryId}_3`)
+      ) {
+        newAchievements.push(`category_${categoryId}_3`);
+      }
+      if (
+        monthsSinceCreation >= 6 &&
+        categoryStreak === 6 &&
+        !streak.achievements.includes(`category_${categoryId}_6`)
+      ) {
+        newAchievements.push(`category_${categoryId}_6`);
+      }
+    }
+  );
+
+  return newAchievements;
+};
+
+// Get achievement details
+export const getAchievementDetails = (
+  achievementId: string
+): { title: string; description: string; icon: string } => {
+  const achievements: Record<
+    string,
+    { title: string; description: string; icon: string }
+  > = {
+    streak_1: {
+      title: "First Month",
+      description: "Stayed on budget for your first month!",
+      icon: "🎉",
+    },
+    streak_2: {
+      title: "Getting Started",
+      description: "Stayed on budget for 2 consecutive months!",
+      icon: "⭐",
+    },
+    streak_3: {
+      title: "3-Month Streak",
+      description: "Stayed on budget for 3 consecutive months!",
+      icon: "🏆",
+    },
+    streak_6: {
+      title: "6-Month Streak",
+      description: "Stayed on budget for 6 consecutive months!",
+      icon: "🥇",
+    },
+    streak_12: {
+      title: "1-Year Streak",
+      description: "Stayed on budget for 12 consecutive months!",
+      icon: "👑",
+    },
+    // 1-month category achievements
+    category_1_1: {
+      title: "Rent Starter",
+      description: "Stayed under rent budget for 1 month!",
+      icon: "🏠",
+    },
+    category_10_1: {
+      title: "Food Starter",
+      description: "Stayed under food budget for 1 month!",
+      icon: "🍽️",
+    },
+    category_11_1: {
+      title: "Transportation Starter",
+      description: "Stayed under transportation budget for 1 month!",
+      icon: "🚗",
+    },
+    category_12_1: {
+      title: "Health Starter",
+      description: "Stayed under health budget for 1 month!",
+      icon: "💊",
+    },
+    category_13_1: {
+      title: "Entertainment Starter",
+      description: "Stayed under entertainment budget for 1 month!",
+      icon: "🎬",
+    },
+    category_14_1: {
+      title: "Shopping Starter",
+      description: "Stayed under shopping budget for 1 month!",
+      icon: "🛍️",
+    },
+
+    // 2-month category achievements
+    category_1_2: {
+      title: "Rent Pro",
+      description: "Stayed under rent budget for 2 months!",
+      icon: "🏠",
+    },
+    category_10_2: {
+      title: "Food Pro",
+      description: "Stayed under food budget for 2 months!",
+      icon: "🍽️",
+    },
+    category_11_2: {
+      title: "Transportation Pro",
+      description: "Stayed under transportation budget for 2 months!",
+      icon: "🚗",
+    },
+    category_12_2: {
+      title: "Health Pro",
+      description: "Stayed under health budget for 2 months!",
+      icon: "💊",
+    },
+    category_13_2: {
+      title: "Entertainment Pro",
+      description: "Stayed under entertainment budget for 2 months!",
+      icon: "🎬",
+    },
+    category_14_2: {
+      title: "Shopping Pro",
+      description: "Stayed under shopping budget for 2 months!",
+      icon: "🛍️",
+    },
+
+    // 3-month category achievements
+    category_1_3: {
+      title: "Rent Master",
+      description: "Stayed under rent budget for 3 months!",
+      icon: "🏠",
+    },
+    category_10_3: {
+      title: "Food Master",
+      description: "Stayed under food budget for 3 months!",
+      icon: "🍽️",
+    },
+    category_11_3: {
+      title: "Transportation Master",
+      description: "Stayed under transportation budget for 3 months!",
+      icon: "🚗",
+    },
+    category_12_3: {
+      title: "Health Master",
+      description: "Stayed under health budget for 3 months!",
+      icon: "💊",
+    },
+    category_13_3: {
+      title: "Entertainment Master",
+      description: "Stayed under entertainment budget for 3 months!",
+      icon: "🎬",
+    },
+    category_14_3: {
+      title: "Shopping Master",
+      description: "Stayed under shopping budget for 3 months!",
+      icon: "🛍️",
+    },
+  };
+
+  // If achievement ID is not found, return a generic message
+  if (!achievements[achievementId]) {
+    return {
+      title: "Unknown Achievement",
+      description: "This achievement is no longer available.",
+      icon: "❓",
+    };
+  }
+
+  return achievements[achievementId];
 };

@@ -20,6 +20,10 @@ import {
   getUserNetWorthEntries,
   updateNetWorthFromAssetsAndDebts,
   getUserInvitations,
+  getUserBudgetStreak,
+  calculateMonthlyBudgetResult,
+  updateBudgetStreak,
+  getAchievementDetails,
 } from "../services/userData";
 
 import { useTheme } from "../contexts/ThemeContext";
@@ -68,6 +72,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     icon: string;
     color: string;
   } | null>(null);
+  const [budgetStreak, setBudgetStreak] = useState<any>(null);
+  const [monthlyBudgetResult, setMonthlyBudgetResult] = useState<any>(null);
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
 
@@ -142,6 +148,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         refreshTrendData();
         // Fetch pending invitations
         fetchPendingInvitations();
+        // Load budget streak data
+        loadBudgetStreakData();
       }
     }, [user, refreshInBackground, fetchPendingInvitations])
   );
@@ -522,6 +530,34 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     return last6Months;
   };
 
+  // Load budget streak data
+  const loadBudgetStreakData = async () => {
+    if (!user?.uid) return;
+
+    try {
+      // Get current streak data
+      const streak = await getUserBudgetStreak(user.uid);
+      setBudgetStreak(streak);
+
+      // Calculate current month's budget result
+      const currentDate = new Date();
+      const monthlyResult = await calculateMonthlyBudgetResult(
+        user.uid,
+        currentDate.getFullYear(),
+        currentDate.getMonth()
+      );
+      setMonthlyBudgetResult(monthlyResult);
+
+      // Always update streak to ensure proper calculation
+      await updateBudgetStreak(user.uid, monthlyResult);
+      // Reload streak data after update
+      const updatedStreak = await getUserBudgetStreak(user.uid);
+      setBudgetStreak(updatedStreak);
+    } catch (error) {
+      console.error("Error loading budget streak data:", error);
+    }
+  };
+
   // Load trend data
   React.useEffect(() => {
     const loadTrendData = async () => {
@@ -678,6 +714,153 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
           }
         />
+
+        {/* Budget Streak Display */}
+        {budgetStreak && budgetStreak.currentStreak > 0 && (
+          <View
+            style={{
+              backgroundColor: colors.success + "15",
+              borderRadius: 16,
+              padding: 20,
+              marginBottom: 20,
+              borderWidth: 2,
+              borderColor: colors.success + "30",
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <Ionicons
+                name="trophy"
+                size={24}
+                color={colors.success}
+                style={{ marginRight: 12 }}
+              />
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: colors.success,
+                }}
+              >
+                Budget Streak: {budgetStreak.currentStreak} month
+                {budgetStreak.currentStreak !== 1 ? "s" : ""}!
+              </Text>
+            </View>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                marginBottom: 8,
+              }}
+            >
+              You've been staying on budget for {budgetStreak.currentStreak}{" "}
+              consecutive month{budgetStreak.currentStreak !== 1 ? "s" : ""}!
+            </Text>
+            {monthlyBudgetResult && (
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                }}
+              >
+                This month: {monthlyBudgetResult.successfulCategories}/
+                {monthlyBudgetResult.totalCategories} categories under budget
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* Recent Achievements */}
+        {budgetStreak &&
+          budgetStreak.achievements &&
+          budgetStreak.achievements.length > 0 && (
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 16,
+                padding: 20,
+                marginBottom: 20,
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.06,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 2 },
+                elevation: 3,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 16,
+                }}
+              >
+                <Ionicons
+                  name="trophy"
+                  size={24}
+                  color={colors.primary}
+                  style={{ marginRight: 12 }}
+                />
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: colors.text,
+                  }}
+                >
+                  Recent Achievements
+                </Text>
+              </View>
+
+              {budgetStreak.achievements
+                .slice(-3)
+                .map((achievementId: string, index: number) => {
+                  const achievement = getAchievementDetails(achievementId);
+                  return (
+                    <View
+                      key={achievementId}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 8,
+                        borderBottomWidth:
+                          index < budgetStreak.achievements.slice(-3).length - 1
+                            ? 1
+                            : 0,
+                        borderBottomColor: colors.border,
+                      }}
+                    >
+                      <Text style={{ fontSize: 24, marginRight: 12 }}>
+                        {achievement.icon}
+                      </Text>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: "600",
+                            color: colors.text,
+                          }}
+                        >
+                          {achievement.title}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            color: colors.textSecondary,
+                          }}
+                        >
+                          {achievement.description}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
+            </View>
+          )}
 
         {/* Monthly Overview - Large Card */}
         <View

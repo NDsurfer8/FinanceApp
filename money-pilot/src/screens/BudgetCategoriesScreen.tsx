@@ -23,6 +23,8 @@ import {
   saveBudgetCategories,
   getUserBudgetCategories,
   BudgetCategory,
+  getUserBudgetStreak,
+  calculateMonthlyBudgetResult,
 } from "../services/userData";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
@@ -51,6 +53,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
   } = useData();
 
   const [categories, setCategories] = useState<BudgetCategory[]>([]);
+  const [budgetStreak, setBudgetStreak] = useState<any>(null);
+  const [monthlyBudgetResult, setMonthlyBudgetResult] = useState<any>(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<BudgetCategory | null>(
@@ -99,6 +103,28 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       await AsyncStorage.setItem(BUDGET_SETTINGS_KEY, JSON.stringify(settings));
     } catch (error) {
       console.error("Error saving budget settings:", error);
+    }
+  };
+
+  // Load budget streak and monthly report data
+  const loadBudgetReportData = async () => {
+    if (!user?.uid) return;
+
+    try {
+      // Get current streak data
+      const streak = await getUserBudgetStreak(user.uid);
+      setBudgetStreak(streak);
+
+      // Calculate current month's budget result
+      const currentDate = new Date();
+      const monthlyResult = await calculateMonthlyBudgetResult(
+        user.uid,
+        currentDate.getFullYear(),
+        currentDate.getMonth()
+      );
+      setMonthlyBudgetResult(monthlyResult);
+    } catch (error) {
+      console.error("Error loading budget report data:", error);
     }
   };
 
@@ -358,6 +384,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     };
 
     loadCategories();
+    loadBudgetReportData();
   }, [user?.uid]);
 
   // Refresh budget settings when screen comes into focus
@@ -1218,6 +1245,120 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
             )}
           </View>
         </View>
+
+        {/* Monthly Budget Report */}
+        {monthlyBudgetResult && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 20,
+              marginBottom: 20,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.06,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 2 },
+              elevation: 3,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <Ionicons
+                name="analytics"
+                size={24}
+                color={
+                  monthlyBudgetResult.successRate >= 80
+                    ? colors.success
+                    : colors.error
+                }
+                style={{ marginRight: 12 }}
+              />
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
+                This Month's Budget Report
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 12,
+              }}
+            >
+              <Text style={{ fontSize: 16, color: colors.textSecondary }}>
+                Success Rate
+              </Text>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color:
+                    monthlyBudgetResult.successRate >= 80
+                      ? colors.success
+                      : colors.error,
+                }}
+              >
+                {monthlyBudgetResult.successRate.toFixed(1)}%
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 12,
+              }}
+            >
+              <Text style={{ fontSize: 16, color: colors.textSecondary }}>
+                Categories Under Budget
+              </Text>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: colors.text,
+                }}
+              >
+                {monthlyBudgetResult.successfulCategories}/
+                {monthlyBudgetResult.totalCategories}
+              </Text>
+            </View>
+
+            {budgetStreak && budgetStreak.currentStreak > 0 && (
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={{ fontSize: 16, color: colors.textSecondary }}>
+                  Current Streak
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: colors.success,
+                  }}
+                >
+                  {budgetStreak.currentStreak} month
+                  {budgetStreak.currentStreak !== 1 ? "s" : ""}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Categories List */}
         {filteredCategories.map((category) => {
