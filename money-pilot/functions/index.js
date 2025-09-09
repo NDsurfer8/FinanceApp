@@ -1265,8 +1265,7 @@ exports.plaidWebhook = onCall(
 
       const db = getDatabase();
 
-      // Find user by item_id (we'll need to store this mapping)
-      // For now, we'll update all users with this item_id
+      // Find user by item_id in the new multiple-bank structure
       const usersRef = db.ref("users");
       const snapshot = await usersRef.once("value");
       const users = snapshot.val();
@@ -1274,6 +1273,15 @@ exports.plaidWebhook = onCall(
       let userId = null;
       if (users) {
         for (const [uid, userData] of Object.entries(users)) {
+          // Check new multiple-bank structure first
+          if (
+            userData.plaid_connections &&
+            userData.plaid_connections[item_id]
+          ) {
+            userId = uid;
+            break;
+          }
+          // Fallback to legacy single-bank structure
           if (userData.plaid && userData.plaid.itemId === item_id) {
             userId = uid;
             break;
@@ -1303,7 +1311,7 @@ exports.plaidWebhook = onCall(
           await handleTransactionsWebhook(db, userId, webhook_code, item_id);
           break;
         case "INCOME":
-          await handleIncomeWebhook(db, userId, webhook_code);
+          await handleIncomeWebhook(db, userId, webhook_code, item_id);
           break;
         default:
       }
@@ -1318,7 +1326,7 @@ exports.plaidWebhook = onCall(
 
 // Handle ITEM webhooks
 async function handleItemWebhook(db, userId, webhook_code, item_id, error) {
-  const userPlaidRef = db.ref(`users/${userId}/plaid`);
+  const userPlaidRef = db.ref(`users/${userId}/plaid_connections/${item_id}`);
   const updates = {
     lastUpdated: Date.now(),
     lastWebhook: {
@@ -1362,7 +1370,7 @@ async function handleAccountsWebhook(
   item_id,
   new_accounts
 ) {
-  const userPlaidRef = db.ref(`users/${userId}/plaid`);
+  const userPlaidRef = db.ref(`users/${userId}/plaid_connections/${item_id}`);
   const updates = {
     lastUpdated: Date.now(),
     lastWebhook: {
@@ -1387,7 +1395,7 @@ async function handleAccountsWebhook(
 
 // Handle TRANSACTIONS webhooks
 async function handleTransactionsWebhook(db, userId, webhook_code, item_id) {
-  const userPlaidRef = db.ref(`users/${userId}/plaid`);
+  const userPlaidRef = db.ref(`users/${userId}/plaid_connections/${item_id}`);
   const updates = {
     lastUpdated: Date.now(),
     lastWebhook: {
@@ -1429,8 +1437,8 @@ async function handleTransactionsWebhook(db, userId, webhook_code, item_id) {
 }
 
 // Handle INCOME webhooks
-async function handleIncomeWebhook(db, userId, webhook_code) {
-  const userPlaidRef = db.ref(`users/${userId}/plaid`);
+async function handleIncomeWebhook(db, userId, webhook_code, item_id) {
+  const userPlaidRef = db.ref(`users/${userId}/plaid_connections/${item_id}`);
   const updates = {
     lastUpdated: Date.now(),
     lastWebhook: {

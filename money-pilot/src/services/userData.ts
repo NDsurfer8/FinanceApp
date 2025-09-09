@@ -2675,9 +2675,9 @@ export const isNewUser = async (user: any): Promise<boolean> => {
 
     // Convert timestamp to Date object
     const createdAtDate = new Date(createdAt);
-    // User is "new" if created within last 30 minutes
-    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-    const isNew = createdAtDate > thirtyMinutesAgo;
+    // User is "new" if created within last 5 minutes (more conservative)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const isNew = createdAtDate > fiveMinutesAgo;
 
     // console.log("🔍 isNewUser Debug:", {
     //   userId: user.uid,

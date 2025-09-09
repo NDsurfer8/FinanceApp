@@ -857,12 +857,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     let lastWebhookProcessed = 0;
     const WEBHOOK_DEBOUNCE_MS = 2000; // 2 second debounce
 
-    // Listen to Plaid webhook status changes in real-time
-    const plaidRef = ref(db, `users/${user.uid}/plaid`);
-    const unsubscribe = onValue(plaidRef, async (snapshot) => {
-      const plaidData = snapshot.val();
+    // Listen to Plaid webhook status changes in real-time for multiple banks
+    const plaidConnectionsRef = ref(db, `users/${user.uid}/plaid_connections`);
+    const unsubscribe = onValue(plaidConnectionsRef, async (snapshot) => {
+      const plaidConnections = snapshot.val();
 
-      if (!plaidData) return;
+      if (!plaidConnections) return;
 
       // Debounce webhook processing to prevent rapid successive calls
       const now = Date.now();
@@ -871,31 +871,39 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         return;
       }
 
-      // Webhook status update received
+      // Webhook status update received for multiple banks
 
       // Smart webhook handling: consolidate multiple webhook events into single refresh
       let shouldRefresh = false;
       let refreshReason = "";
       let notificationData: { type: string; count?: number } | null = null;
 
-      // Check all webhook conditions and determine if refresh is needed
-      if (plaidData.transactionsSyncAvailable) {
-        shouldRefresh = true;
-        refreshReason = "transactions";
-        notificationData = { type: "transactions", count: 1 };
-      } else if (plaidData.hasNewAccounts) {
-        shouldRefresh = true;
-        refreshReason = "accounts";
-        const newAccountsCount =
-          plaidData.lastWebhook?.newAccounts?.length || 1;
-        notificationData = { type: "accounts", count: newAccountsCount };
-      } else if (
-        plaidData.lastWebhook?.type === "TRANSACTIONS" &&
-        plaidData.lastWebhook?.code === "SYNC_UPDATES_AVAILABLE"
-      ) {
-        shouldRefresh = true;
-        refreshReason = "sync_updates";
-        notificationData = { type: "transactions", count: 1 };
+      // Check all bank connections for webhook conditions
+      for (const [itemId, connectionData] of Object.entries(plaidConnections)) {
+        const plaidData = connectionData as any;
+
+        // Check all webhook conditions and determine if refresh is needed
+        if (plaidData.transactionsSyncAvailable) {
+          shouldRefresh = true;
+          refreshReason = "transactions";
+          notificationData = { type: "transactions", count: 1 };
+          break; // Found a reason to refresh, no need to check other banks
+        } else if (plaidData.hasNewAccounts) {
+          shouldRefresh = true;
+          refreshReason = "accounts";
+          const newAccountsCount =
+            plaidData.lastWebhook?.newAccounts?.length || 1;
+          notificationData = { type: "accounts", count: newAccountsCount };
+          break; // Found a reason to refresh, no need to check other banks
+        } else if (
+          plaidData.lastWebhook?.type === "TRANSACTIONS" &&
+          plaidData.lastWebhook?.code === "SYNC_UPDATES_AVAILABLE"
+        ) {
+          shouldRefresh = true;
+          refreshReason = "sync_updates";
+          notificationData = { type: "transactions", count: 1 };
+          break; // Found a reason to refresh, no need to check other banks
+        }
       }
 
       // Single refresh call for all webhook events
@@ -912,11 +920,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           try {
             await refreshBankData(true);
 
-            // Clear all relevant flags after successful refresh
+            // Clear all relevant flags after successful refresh for all banks
             const updates: any = {};
-            if (plaidData.transactionsSyncAvailable)
-              updates.transactionsSyncAvailable = false;
-            if (plaidData.hasNewAccounts) updates.hasNewAccounts = false;
+            for (const [itemId, connectionData] of Object.entries(
+              plaidConnections
+            )) {
+              const plaidData = connectionData as any;
+              const bankUpdates: any = {};
+
+              if (plaidData.transactionsSyncAvailable) {
+                bankUpdates.transactionsSyncAvailable = false;
+              }
+              if (plaidData.hasNewAccounts) {
+                bankUpdates.hasNewAccounts = false;
+              }
+
+              // Only add updates for this bank if there are changes
+              if (Object.keys(bankUpdates).length > 0) {
+                updates[itemId] = bankUpdates;
+              }
+            }
 
             // Only update Firebase if we have changes to make
             if (Object.keys(updates).length > 0) {
@@ -964,47 +987,52 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
 
       // Handle bank connection issues and send notifications
-      if (plaidData.lastWebhook?.type === "ITEM") {
-        // Check if connection issue notifications are enabled
-        const connectionNotificationsEnabled = await AsyncStorage.getItem(
-          "notification_webhook-connection-issues"
-        );
+      // Check all banks for connection issues
+      for (const [itemId, connectionData] of Object.entries(plaidConnections)) {
+        const plaidData = connectionData as any;
 
-        if (connectionNotificationsEnabled === "true") {
-          switch (plaidData.lastWebhook?.code) {
-            case "ITEM_LOGIN_REQUIRED":
-              try {
-                await notificationService.notifyBankConnectionIssue(
-                  "login_required",
-                  "Your bank credentials have expired. Please reconnect your account."
-                );
-              } catch (notifError) {
-                // Failed to send connection issue notification
-              }
-              break;
-            case "ITEM_PENDING_EXPIRATION":
-              try {
-                await notificationService.notifyBankConnectionIssue(
-                  "expiring_soon",
-                  "Your bank connection will expire soon. Please reconnect to maintain access."
-                );
-              } catch (notifError) {
-                // Failed to send connection issue notification
-              }
-              break;
-            case "ITEM_PENDING_DISCONNECT":
-              try {
-                await notificationService.notifyBankConnectionIssue(
-                  "disconnecting",
-                  "Your bank connection is being disconnected. Please reconnect if you want to continue using this feature."
-                );
-              } catch (notifError) {
-                // Failed to send connection issue notification
-              }
-              break;
+        if (plaidData.lastWebhook?.type === "ITEM") {
+          // Check if connection issue notifications are enabled
+          const connectionNotificationsEnabled = await AsyncStorage.getItem(
+            "notification_webhook-connection-issues"
+          );
+
+          if (connectionNotificationsEnabled === "true") {
+            switch (plaidData.lastWebhook?.code) {
+              case "ITEM_LOGIN_REQUIRED":
+                try {
+                  await notificationService.notifyBankConnectionIssue(
+                    "login_required",
+                    "Your bank credentials have expired. Please reconnect your account."
+                  );
+                } catch (notifError) {
+                  // Failed to send connection issue notification
+                }
+                break;
+              case "ITEM_PENDING_EXPIRATION":
+                try {
+                  await notificationService.notifyBankConnectionIssue(
+                    "expiring_soon",
+                    "Your bank connection will expire soon. Please reconnect to maintain access."
+                  );
+                } catch (notifError) {
+                  // Failed to send connection issue notification
+                }
+                break;
+              case "ITEM_PENDING_DISCONNECT":
+                try {
+                  await notificationService.notifyBankConnectionIssue(
+                    "disconnecting",
+                    "Your bank connection is being disconnected. Please reconnect if you want to continue using this feature."
+                  );
+                } catch (notifError) {
+                  // Failed to send connection issue notification
+                }
+                break;
+            }
+          } else {
+            // Connection issue notifications disabled by user
           }
-        } else {
-          // Connection issue notifications disabled by user
         }
       }
     });
@@ -1018,7 +1046,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         clearTimeout(webhookDebounceTimer);
       }
 
-      off(plaidRef);
+      off(plaidConnectionsRef);
       unsubscribe();
     };
   }, [user?.uid, isBankConnected, refreshBankData]);

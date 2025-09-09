@@ -1714,8 +1714,40 @@ class PlaidService {
         return;
       }
 
-      const plaidDataRef = ref(db, `users/${this.userId}/plaid`);
-      await update(plaidDataRef, {
+      // Clear flags for all bank connections
+      const plaidConnectionsRef = ref(
+        db,
+        `users/${this.userId}/plaid_connections`
+      );
+      const snapshot = await get(plaidConnectionsRef);
+
+      if (snapshot.exists()) {
+        const connections = snapshot.val();
+        const updatePromises: Promise<void>[] = [];
+
+        for (const [itemId, connectionData] of Object.entries(connections)) {
+          const bankRef = ref(
+            db,
+            `users/${this.userId}/plaid_connections/${itemId}`
+          );
+          updatePromises.push(
+            update(bankRef, {
+              hasNewAccounts: false,
+              newAccounts: null,
+              newAccountsAvailableAt: null,
+              expirationWarning: false,
+              disconnectWarning: false,
+              lastUpdated: Date.now(),
+            })
+          );
+        }
+
+        await Promise.all(updatePromises);
+      }
+
+      // Also clear legacy single connection if it exists
+      const legacyPlaidRef = ref(db, `users/${this.userId}/plaid`);
+      await update(legacyPlaidRef, {
         hasNewAccounts: false,
         newAccounts: null,
         newAccountsAvailableAt: null,
@@ -1975,9 +2007,36 @@ class PlaidService {
         return;
       }
 
-      const plaidRef = ref(db, `users/${this.userId}/plaid`);
-      await update(plaidRef, updates);
-      console.log("PlaidService: Updated Plaid status:", updates);
+      // Handle multiple bank updates
+      const plaidConnectionsRef = ref(
+        db,
+        `users/${this.userId}/plaid_connections`
+      );
+
+      // If updates is structured as { itemId: { updates } }, update each bank separately
+      if (typeof updates === "object" && !Array.isArray(updates)) {
+        const updatePromises: Promise<void>[] = [];
+
+        for (const [itemId, bankUpdates] of Object.entries(updates)) {
+          if (typeof bankUpdates === "object" && bankUpdates !== null) {
+            const bankRef = ref(
+              db,
+              `users/${this.userId}/plaid_connections/${itemId}`
+            );
+            updatePromises.push(update(bankRef, bankUpdates));
+          }
+        }
+
+        if (updatePromises.length > 0) {
+          await Promise.all(updatePromises);
+          console.log("PlaidService: Updated multiple bank statuses:", updates);
+        }
+      } else {
+        // Fallback to legacy single-bank structure for backward compatibility
+        const plaidRef = ref(db, `users/${this.userId}/plaid`);
+        await update(plaidRef, updates);
+        console.log("PlaidService: Updated legacy Plaid status:", updates);
+      }
     } catch (error) {
       console.error("PlaidService: Error updating Plaid status:", error);
       throw error;
