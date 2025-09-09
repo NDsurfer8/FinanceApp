@@ -2686,14 +2686,14 @@ export const isNewUser = async (user: any): Promise<boolean> => {
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
     const isNew = createdAtDate > thirtyMinutesAgo;
 
-    console.log("🔍 isNewUser Debug:", {
-      userId: user.uid,
-      createdAt,
-      createdAtDate: createdAtDate.toISOString(),
-      thirtyMinutesAgo: thirtyMinutesAgo.toISOString(),
-      isNew,
-      timeDiff: Date.now() - createdAtDate.getTime(),
-    });
+    // console.log("🔍 isNewUser Debug:", {
+    //   userId: user.uid,
+    //   createdAt,
+    //   createdAtDate: createdAtDate.toISOString(),
+    //   thirtyMinutesAgo: thirtyMinutesAgo.toISOString(),
+    //   isNew,
+    //   timeDiff: Date.now() - createdAtDate.getTime(),
+    // });
 
     return isNew;
   } catch (error) {

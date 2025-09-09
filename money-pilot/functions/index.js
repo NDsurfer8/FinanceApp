@@ -266,13 +266,14 @@ exports.getAccounts = onCall(
       );
     }
 
-    // Handle test token for simulation
+    // Handle test tokens for multiple bank simulation
     if (accessToken === "test_access_token_12345") {
+      // Bank 1: Chase Bank
       return {
         accounts: [
           {
-            account_id: "test_account_1",
-            name: "Test Checking Account",
+            account_id: "chase_checking_1",
+            name: "Chase Total Checking",
             mask: "1234",
             type: "depository",
             subtype: "checking",
@@ -282,8 +283,8 @@ exports.getAccounts = onCall(
             },
           },
           {
-            account_id: "test_account_2",
-            name: "Test Savings Account",
+            account_id: "chase_savings_1",
+            name: "Chase Savings",
             mask: "5678",
             type: "depository",
             subtype: "savings",
@@ -293,8 +294,8 @@ exports.getAccounts = onCall(
             },
           },
           {
-            account_id: "test_account_3",
-            name: "Test Credit Card",
+            account_id: "chase_credit_1",
+            name: "Chase Freedom Credit Card",
             mask: "9876",
             type: "credit",
             subtype: "credit_card",
@@ -303,26 +304,86 @@ exports.getAccounts = onCall(
               current: 2500,
             },
           },
+        ],
+      };
+    }
+
+    if (accessToken === "test_access_token_67890") {
+      // Bank 2: Bank of America
+      return {
+        accounts: [
           {
-            account_id: "test_account_4",
-            name: "Test Loan",
-            mask: "5432",
-            type: "loan",
-            subtype: "loan",
+            account_id: "boa_checking_1",
+            name: "Bank of America Advantage Checking",
+            mask: "2468",
+            type: "depository",
+            subtype: "checking",
             balances: {
-              available: 1000,
-              current: 1000,
+              available: 3200,
+              current: 3200,
             },
           },
           {
-            account_id: "test_account_5",
-            name: "Test Investment",
-            mask: "1234",
+            account_id: "boa_savings_1",
+            name: "Bank of America Savings",
+            mask: "1357",
+            type: "depository",
+            subtype: "savings",
+            balances: {
+              available: 8500,
+              current: 8500,
+            },
+          },
+          {
+            account_id: "boa_credit_1",
+            name: "Bank of America Cash Rewards",
+            mask: "7531",
+            type: "credit",
+            subtype: "credit_card",
+            balances: {
+              available: 1800,
+              current: 1800,
+            },
+          },
+        ],
+      };
+    }
+
+    if (accessToken === "test_access_token_11111") {
+      // Bank 3: Wells Fargo
+      return {
+        accounts: [
+          {
+            account_id: "wf_checking_1",
+            name: "Wells Fargo Everyday Checking",
+            mask: "3691",
+            type: "depository",
+            subtype: "checking",
+            balances: {
+              available: 2100,
+              current: 2100,
+            },
+          },
+          {
+            account_id: "wf_investment_1",
+            name: "Wells Fargo Investment Account",
+            mask: "4826",
             type: "investment",
             subtype: "investment",
             balances: {
-              available: 10000,
-              current: 10000,
+              available: 25000,
+              current: 25000,
+            },
+          },
+          {
+            account_id: "wf_loan_1",
+            name: "Wells Fargo Auto Loan",
+            mask: "1593",
+            type: "loan",
+            subtype: "auto",
+            balances: {
+              available: 15000,
+              current: 15000,
             },
           },
         ],
@@ -374,14 +435,15 @@ exports.getTransactions = onCall(
       );
     }
 
-    // Handle test token for simulation
+    // Handle test tokens for multiple bank simulation
     if (accessToken === "test_access_token_12345") {
+      // Bank 1: Chase Bank transactions
       return {
         transactions: [
-          // September 2025 - Early month
+          // September 2025 - Chase transactions
           {
-            transaction_id: "test_transaction_1",
-            account_id: "test_account_2",
+            transaction_id: "chase_transaction_1",
+            account_id: "chase_checking_1",
             amount: -3500.0,
             date: "2025-09-01",
             name: "Salary Deposit",
@@ -390,8 +452,8 @@ exports.getTransactions = onCall(
             pending: false,
           },
           {
-            transaction_id: "test_transaction_2",
-            account_id: "test_account_1",
+            transaction_id: "chase_transaction_2",
+            account_id: "chase_checking_1",
             amount: 1800.0,
             date: "2025-09-01",
             name: "Rent Payment",
@@ -400,8 +462,8 @@ exports.getTransactions = onCall(
             pending: false,
           },
           {
-            transaction_id: "test_transaction_3",
-            account_id: "test_account_1",
+            transaction_id: "chase_transaction_3",
+            account_id: "chase_checking_1",
             amount: 65.0,
             date: "2025-09-02",
             name: "Whole Foods",
@@ -409,11 +471,9 @@ exports.getTransactions = onCall(
             category: ["Food and Drink", "Groceries"],
             pending: false,
           },
-
-          // September 2025 - Mid month
           {
-            transaction_id: "test_transaction_4",
-            account_id: "test_account_1",
+            transaction_id: "chase_transaction_4",
+            account_id: "chase_credit_1",
             amount: 45.0,
             date: "2025-09-15",
             name: "Shell Gas Station",
@@ -422,8 +482,8 @@ exports.getTransactions = onCall(
             pending: false,
           },
           {
-            transaction_id: "test_transaction_5",
-            account_id: "test_account_1",
+            transaction_id: "chase_transaction_5",
+            account_id: "chase_checking_1",
             amount: 120.0,
             date: "2025-09-20",
             name: "Electric Bill",
@@ -431,62 +491,98 @@ exports.getTransactions = onCall(
             category: ["Utilities", "Electric"],
             pending: false,
           },
+        ],
+        total_transactions: 5,
+      };
+    }
 
-          // October 2025
+    if (accessToken === "test_access_token_67890") {
+      // Bank 2: Bank of America transactions
+      return {
+        transactions: [
+          // September 2025 - Bank of America transactions
           {
-            transaction_id: "test_transaction_6",
-            account_id: "test_account_2",
-            amount: -3500.0,
-            date: "2025-10-01",
-            name: "Salary Deposit",
-            merchant_name: "Tech Corp Inc",
+            transaction_id: "boa_transaction_1",
+            account_id: "boa_checking_1",
+            amount: -2800.0,
+            date: "2025-09-01",
+            name: "Freelance Payment",
+            merchant_name: "Design Studio LLC",
             category: ["Transfer", "Deposit"],
             pending: false,
           },
           {
-            transaction_id: "test_transaction_7",
-            account_id: "test_account_1",
-            amount: 1800.0,
-            date: "2025-10-01",
-            name: "Rent Payment",
-            merchant_name: "Downtown Apartments",
-            category: ["Rent", "Housing"],
-            pending: false,
-          },
-          {
-            transaction_id: "test_transaction_8",
-            account_id: "test_account_1",
+            transaction_id: "boa_transaction_2",
+            account_id: "boa_credit_1",
             amount: 89.0,
-            date: "2025-10-10",
-            name: "Target",
-            merchant_name: "Target",
+            date: "2025-09-05",
+            name: "Amazon Purchase",
+            merchant_name: "Amazon",
             category: ["Shopping", "General"],
             pending: false,
           },
-
-          // November 2025
           {
-            transaction_id: "test_transaction_9",
-            account_id: "test_account_2",
-            amount: -3500.0,
-            date: "2025-11-01",
-            name: "Salary Deposit",
-            merchant_name: "Tech Corp Inc",
-            category: ["Transfer", "Deposit"],
+            transaction_id: "boa_transaction_3",
+            account_id: "boa_checking_1",
+            amount: 25.0,
+            date: "2025-09-10",
+            name: "Netflix Subscription",
+            merchant_name: "Netflix",
+            category: ["Entertainment", "Streaming"],
             pending: false,
           },
           {
-            transaction_id: "test_transaction_10",
-            account_id: "test_account_1",
-            amount: 1800.0,
-            date: "2025-11-01",
-            name: "Rent Payment",
-            merchant_name: "Downtown Apartments",
-            category: ["Rent", "Housing"],
+            transaction_id: "boa_transaction_4",
+            account_id: "boa_credit_1",
+            amount: 75.0,
+            date: "2025-09-18",
+            name: "Restaurant Dinner",
+            merchant_name: "Bistro Central",
+            category: ["Food and Drink", "Restaurants"],
             pending: false,
           },
         ],
-        total_transactions: 10,
+        total_transactions: 4,
+      };
+    }
+
+    if (accessToken === "test_access_token_11111") {
+      // Bank 3: Wells Fargo transactions
+      return {
+        transactions: [
+          // September 2025 - Wells Fargo transactions
+          {
+            transaction_id: "wf_transaction_1",
+            account_id: "wf_checking_1",
+            amount: -500.0,
+            date: "2025-09-01",
+            name: "Investment Transfer",
+            merchant_name: "Wells Fargo Investment",
+            category: ["Transfer", "Investment"],
+            pending: false,
+          },
+          {
+            transaction_id: "wf_transaction_2",
+            account_id: "wf_loan_1",
+            amount: 450.0,
+            date: "2025-09-15",
+            name: "Auto Loan Payment",
+            merchant_name: "Wells Fargo Auto",
+            category: ["Loan", "Auto"],
+            pending: false,
+          },
+          {
+            transaction_id: "wf_transaction_3",
+            account_id: "wf_checking_1",
+            amount: 35.0,
+            date: "2025-09-22",
+            name: "Gym Membership",
+            merchant_name: "FitLife Gym",
+            category: ["Health", "Fitness"],
+            pending: false,
+          },
+        ],
+        total_transactions: 3,
       };
     }
 

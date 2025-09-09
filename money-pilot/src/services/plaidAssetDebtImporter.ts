@@ -214,7 +214,7 @@ class PlaidAssetDebtImporter {
     try {
       const assetRef = ref(db, `users/${userId}/assets/${asset.id}`);
       await set(assetRef, asset);
-      console.log(`✅ Asset imported: ${asset.name}`);
+      // console.log(`✅ Asset imported: ${asset.name}`);
 
       // Note: Net worth will be updated after all imports are complete
     } catch (error) {
@@ -231,7 +231,7 @@ class PlaidAssetDebtImporter {
     try {
       const debtRef = ref(db, `users/${userId}/debts/${debt.id}`);
       await set(debtRef, debt);
-      console.log(`✅ Debt imported: ${debt.name}`);
+      // console.log(`✅ Debt imported: ${debt.name}`);
 
       // Note: Net worth will be updated after all imports are complete
     } catch (error) {
@@ -313,14 +313,15 @@ class PlaidAssetDebtImporter {
       if (assetsSnapshot.exists()) {
         const assets = assetsSnapshot.val();
         for (const [assetId, asset] of Object.entries(assets)) {
+          const assetData = asset as any;
           if (
-            asset.isAutoImported &&
-            asset.plaidAccountId &&
-            !plaidAccountIds.has(asset.plaidAccountId)
+            assetData.isAutoImported &&
+            assetData.plaidAccountId &&
+            !plaidAccountIds.has(assetData.plaidAccountId)
           ) {
             await set(ref(db, `users/${userId}/assets/${assetId}`), null);
             removedAssets++;
-            console.log(`🗑️ Removed orphaned asset: ${asset.name}`);
+            // console.log(`🗑️ Removed orphaned asset: ${assetData.name}`);
           }
         }
       }
@@ -332,14 +333,15 @@ class PlaidAssetDebtImporter {
       if (debtsSnapshot.exists()) {
         const debts = debtsSnapshot.val();
         for (const [debtId, debt] of Object.entries(debts)) {
+          const debtData = debt as any;
           if (
-            debt.isAutoImported &&
-            debt.plaidAccountId &&
-            !plaidAccountIds.has(debt.plaidAccountId)
+            debtData.isAutoImported &&
+            debtData.plaidAccountId &&
+            !plaidAccountIds.has(debtData.plaidAccountId)
           ) {
             await set(ref(db, `users/${userId}/debts/${debtId}`), null);
             removedDebts++;
-            console.log(`🗑️ Removed orphaned debt: ${debt.name}`);
+            // console.log(`🗑️ Removed orphaned debt: ${debtData.name}`);
           }
         }
       }

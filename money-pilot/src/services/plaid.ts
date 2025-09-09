@@ -540,29 +540,36 @@ class PlaidService {
           "PlaidService: Test mode - simulating successful bank connection"
         );
 
-        // Simulate a successful Plaid Link result
+        // Simulate a successful Plaid Link result for Chase Bank
         const mockSuccess: LinkSuccess = {
           publicToken: "test_public_token",
           metadata: {
             linkSessionId: "test_link_session_123",
             institution: {
-              id: "test_institution_123",
-              name: "Test Bank",
+              id: "chase_institution_123",
+              name: "Chase Bank",
             },
             accounts: [
               {
-                id: "test_account_1",
-                name: "Test Checking Account",
+                id: "chase_checking_1",
+                name: "Chase Total Checking",
                 mask: "1234",
                 type: "depository" as any,
                 subtype: "checking",
               },
               {
-                id: "test_account_2",
-                name: "Test Savings Account",
+                id: "chase_savings_1",
+                name: "Chase Savings",
                 mask: "5678",
                 type: "depository" as any,
                 subtype: "savings",
+              },
+              {
+                id: "chase_credit_1",
+                name: "Chase Freedom Credit Card",
+                mask: "9876",
+                type: "credit" as any,
+                subtype: "credit_card",
               },
             ],
           },
@@ -637,8 +644,31 @@ class PlaidService {
         console.log(
           "PlaidService: Test mode detected - using test tokens for App Store review"
         );
-        accessToken = "test_access_token_12345";
-        itemId = "test_item_id_67890";
+
+        // For test mode, we'll cycle through different banks to simulate multiple connections
+        // First, check how many banks are already connected
+        await this.loadConnectionsFromFirebase();
+        const existingConnections = this.getAllConnections();
+        const connectionCount = existingConnections.length;
+
+        // Cycle through different test banks based on connection count
+        if (connectionCount === 0) {
+          // First bank: Chase Bank
+          accessToken = "test_access_token_12345";
+          itemId = "test_item_id_67890";
+        } else if (connectionCount === 1) {
+          // Second bank: Bank of America
+          accessToken = "test_access_token_67890";
+          itemId = "test_item_id_11111";
+        } else if (connectionCount === 2) {
+          // Third bank: Wells Fargo
+          accessToken = "test_access_token_11111";
+          itemId = "test_item_id_22222";
+        } else {
+          // Additional banks: Cycle back to Chase with different ID
+          accessToken = "test_access_token_12345";
+          itemId = `test_item_id_${Date.now()}`;
+        }
       } else {
         // Exchange public token for access token using Firebase Cloud Function
         const exchangePublicToken = httpsCallable(
@@ -720,10 +750,26 @@ class PlaidService {
       }
 
       // Create new connection object
+      let institutionName = "Unknown Bank";
+
+      // For test mode, set the appropriate bank name based on the access token
+      if (publicToken === "test_public_token") {
+        if (accessToken === "test_access_token_12345") {
+          institutionName = "Chase Bank";
+        } else if (accessToken === "test_access_token_67890") {
+          institutionName = "Bank of America";
+        } else if (accessToken === "test_access_token_11111") {
+          institutionName = "Wells Fargo";
+        }
+      }
+
       const connection: PlaidConnection = {
         itemId,
         accessToken,
-        institution: metadata.institution || { name: "Unknown Bank" },
+        institution: metadata.institution || {
+          name: institutionName,
+          institution_id: itemId,
+        },
         accounts: accounts || [],
         connectedAt: Date.now(),
         status: "connected",

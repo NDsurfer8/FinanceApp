@@ -28,12 +28,8 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
   const { user } = useAuth();
   const { colors } = useTheme();
   const dataContext = useData();
-  const {
-    bankAccounts,
-
-    refreshBankData,
-    isBankConnected,
-  } = dataContext;
+  const { bankAccounts, refreshAssetsDebts, refreshBankData, isBankConnected } =
+    dataContext;
   const { hasPremiumAccess } = useSubscription();
   const { presentPaywall } = usePaywall();
 
@@ -157,8 +153,8 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
         // Starting quick refresh after import
 
         // Only refresh assets and debts - that's what we just imported
-        if (dataContext.refreshAssetsDebts) {
-          await dataContext.refreshAssetsDebts();
+        if (refreshAssetsDebts) {
+          await refreshAssetsDebts();
           // Assets and debts refreshed quickly
         }
 

@@ -77,18 +77,18 @@ export const SetupProvider: React.FC<{ children: ReactNode }> = ({
       // 3. If setup was completed, never show again regardless of user age
       const shouldShowSetup = userIsNew && !setupWasCompleted;
 
-      console.log("🔍 Setup Debug:", {
-        userId: user.uid,
-        userIsNew,
-        setupWasCompleted,
-        shouldShowSetup,
-        savedProgress: savedProgress ? "exists" : "null",
-      });
+      // console.log("🔍 Setup Debug:", {
+      //   userId: user.uid,
+      //   userIsNew,
+      //   setupWasCompleted,
+      //   shouldShowSetup,
+      //   savedProgress: savedProgress ? "exists" : "null",
+      // });
 
       setIsFirstTimeUser(shouldShowSetup);
       setIsLoading(false);
     } catch (error) {
-      console.log("Error loading setup progress:", error);
+      // console.log("Error loading setup progress:", error);
       setIsFirstTimeUser(false);
       setIsLoading(false);
     }
@@ -102,7 +102,7 @@ export const SetupProvider: React.FC<{ children: ReactNode }> = ({
         JSON.stringify(progress)
       );
     } catch (error) {
-      console.log("Error saving setup progress:", error);
+      // console.log("Error saving setup progress:", error);
     }
   };
 
