@@ -81,6 +81,9 @@ export class BudgetReminderService {
       await this.scheduleWeeklyBudgetReminder(remainingBalance, totalIncome);
       await this.scheduleDailyBudgetReminder(remainingBalance, totalIncome);
 
+      // Schedule weekly budget check notification
+      await notificationService.scheduleWeeklyBudgetCheck();
+
       console.log("All budget reminders scheduled successfully");
     } catch (error) {
       console.error("Error scheduling budget reminders:", error);
@@ -294,7 +297,10 @@ export class BudgetReminderService {
 
       for (const notification of scheduledNotifications) {
         const data = notification.content.data;
-        if (data?.type === "budget-reminder") {
+        if (
+          data?.type === "budget-reminder" ||
+          data?.type === "weekly-budget-check"
+        ) {
           await notificationService.cancelNotification(notification.identifier);
         }
       }

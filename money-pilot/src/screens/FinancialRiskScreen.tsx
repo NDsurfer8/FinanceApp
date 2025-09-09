@@ -173,11 +173,6 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
     return `$${amount.toLocaleString()}`;
   };
 
-  // TODO: use this function
-  const formatRatio = (ratio: number) => {
-    return ratio.toFixed(2);
-  };
-
   const formatPercentage = (percentage: number) => {
     return `${percentage.toFixed(1)}%`;
   };

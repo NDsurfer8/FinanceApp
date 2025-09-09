@@ -396,6 +396,50 @@
         },
         "updatedAt": {
           ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+
+        "plaid_connections": {
+          "$itemId": {
+            ".read": "auth != null",
+            ".write": "auth != null",
+            ".validate": "newData.hasChildren(['itemId', 'accessToken', 'institution', 'accounts', 'connectedAt', 'status', 'lastUpdated'])",
+            "itemId": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "accessToken": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "accessTokenEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "institution": {
+              ".validate": "newData.hasChildren(['name', 'institution_id'])",
+              "name": {
+                ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+              },
+              "institution_id": {
+                ".validate": "newData.isString() && newData.val().length > 0"
+              }
+            },
+            "institutionEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "accounts": {
+              ".validate": "newData.hasChildren() || newData.val() == null || newData.val() == ''"
+            },
+            "accountsEncrypted": {
+              ".validate": "newData.isString()"
+            },
+            "connectedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "status": {
+              ".validate": "newData.val() === 'connected' || newData.val() === 'disconnected' || newData.val() === 'error'"
+            },
+            "lastUpdated": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            }
+          }
         }
       }
     },

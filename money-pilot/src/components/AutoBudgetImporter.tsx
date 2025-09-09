@@ -91,7 +91,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
     startTime: 0,
   });
 
-  // Smart categorization rules
+  // Enhanced categorization rules for better credit card transaction categorization
   const categorizeTransaction = (
     transaction: any
   ): { category: string; type: "income" | "expense" } => {
@@ -109,7 +109,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
       return { category: mappedCategory, type };
     }
 
-    // Fallback to existing logic when Plaid categories aren't available
+    // Fallback to enhanced logic when Plaid categories aren't available
     // Income patterns (Plaid: negative = income, positive = expense)
     if (amount < 0) {
       if (
@@ -117,54 +117,108 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         name.includes("transfer") ||
         name.includes("salary") ||
         name.includes("payroll") ||
-        name.includes("direct deposit")
+        name.includes("direct deposit") ||
+        name.includes("payroll") ||
+        name.includes("refund") ||
+        name.includes("return") ||
+        name.includes("credit")
       ) {
         return { category: "Salary", type: "income" };
-      }
-      if (name.includes("refund") || name.includes("return")) {
-        return { category: "Refund", type: "income" };
       }
       return { category: "Other Income", type: "income" };
     }
 
-    // Expense patterns (Plaid: positive = expense, negative = income)
+    // Enhanced expense patterns for better credit card categorization
     if (amount > 0) {
-      // Food & Dining
+      // Food & Dining - Enhanced patterns
       if (
         name.includes("restaurant") ||
         name.includes("mcdonalds") ||
         name.includes("starbucks") ||
         name.includes("uber eats") ||
         name.includes("doordash") ||
-        name.includes("grubhub")
+        name.includes("grubhub") ||
+        name.includes("pizza") ||
+        name.includes("burger") ||
+        name.includes("cafe") ||
+        name.includes("coffee") ||
+        name.includes("deli") ||
+        name.includes("food") ||
+        name.includes("grocery") ||
+        name.includes("supermarket") ||
+        name.includes("kroger") ||
+        name.includes("safeway") ||
+        name.includes("whole foods") ||
+        name.includes("trader joe") ||
+        name.includes("albertsons") ||
+        name.includes("publix") ||
+        name.includes("wegmans") ||
+        name.includes("dining") ||
+        name.includes("kitchen") ||
+        name.includes("grill") ||
+        name.includes("bar") ||
+        name.includes("pub") ||
+        name.includes("tavern")
       ) {
         return { category: "Food", type: "expense" };
       }
 
-      // Transportation
+      // Transportation - Enhanced patterns
       if (
         name.includes("uber") ||
         name.includes("lyft") ||
         name.includes("gas") ||
         name.includes("shell") ||
         name.includes("exxon") ||
-        name.includes("chevron")
+        name.includes("chevron") ||
+        name.includes("bp") ||
+        name.includes("mobil") ||
+        name.includes("speedway") ||
+        name.includes("7-eleven") ||
+        name.includes("parking") ||
+        name.includes("toll") ||
+        name.includes("metro") ||
+        name.includes("bus") ||
+        name.includes("train") ||
+        name.includes("taxi") ||
+        name.includes("car") ||
+        name.includes("auto") ||
+        name.includes("vehicle") ||
+        name.includes("fuel") ||
+        name.includes("petrol")
       ) {
         return { category: "Transportation", type: "expense" };
       }
 
-      // Shopping
+      // Shopping - Enhanced patterns
       if (
         name.includes("amazon") ||
         name.includes("walmart") ||
         name.includes("target") ||
         name.includes("costco") ||
-        name.includes("best buy")
+        name.includes("best buy") ||
+        name.includes("home depot") ||
+        name.includes("lowes") ||
+        name.includes("macy") ||
+        name.includes("nordstrom") ||
+        name.includes("gap") ||
+        name.includes("old navy") ||
+        name.includes("h&m") ||
+        name.includes("zara") ||
+        name.includes("uniqlo") ||
+        name.includes("apple") ||
+        name.includes("google") ||
+        name.includes("microsoft") ||
+        name.includes("shop") ||
+        name.includes("store") ||
+        name.includes("retail") ||
+        name.includes("outlet") ||
+        name.includes("mall")
       ) {
         return { category: "Shopping", type: "expense" };
       }
 
-      // Bills & Utilities
+      // Bills & Utilities - Enhanced patterns
       if (
         name.includes("electric") ||
         name.includes("water") ||
@@ -173,31 +227,96 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         name.includes("phone") ||
         name.includes("netflix") ||
         name.includes("spotify") ||
-        name.includes("hulu")
+        name.includes("hulu") ||
+        name.includes("disney") ||
+        name.includes("youtube") ||
+        name.includes("prime") ||
+        name.includes("cable") ||
+        name.includes("wifi") ||
+        name.includes("broadband") ||
+        name.includes("utility") ||
+        name.includes("bill") ||
+        name.includes("payment") ||
+        name.includes("subscription") ||
+        name.includes("membership") ||
+        name.includes("insurance") ||
+        name.includes("rent") ||
+        name.includes("mortgage") ||
+        name.includes("hoa")
       ) {
         return { category: "Utilities", type: "expense" };
       }
 
-      // Healthcare
+      // Healthcare - Enhanced patterns
       if (
         name.includes("pharmacy") ||
         name.includes("cvs") ||
         name.includes("walgreens") ||
         name.includes("doctor") ||
-        name.includes("medical")
+        name.includes("medical") ||
+        name.includes("hospital") ||
+        name.includes("clinic") ||
+        name.includes("dental") ||
+        name.includes("vision") ||
+        name.includes("health") ||
+        name.includes("wellness") ||
+        name.includes("fitness") ||
+        name.includes("gym") ||
+        name.includes("yoga") ||
+        name.includes("spa") ||
+        name.includes("massage")
       ) {
         return { category: "Health", type: "expense" };
       }
 
-      // Entertainment
+      // Entertainment - Enhanced patterns
       if (
         name.includes("movie") ||
         name.includes("theater") ||
         name.includes("concert") ||
         name.includes("game") ||
-        name.includes("ticket")
+        name.includes("ticket") ||
+        name.includes("cinema") ||
+        name.includes("amc") ||
+        name.includes("regal") ||
+        name.includes("entertainment") ||
+        name.includes("fun") ||
+        name.includes("leisure") ||
+        name.includes("recreation") ||
+        name.includes("sports") ||
+        name.includes("golf") ||
+        name.includes("bowling") ||
+        name.includes("arcade") ||
+        name.includes("casino") ||
+        name.includes("bar") ||
+        name.includes("club")
       ) {
         return { category: "Entertainment", type: "expense" };
+      }
+
+      // Business & Professional - New category
+      if (
+        name.includes("office") ||
+        name.includes("business") ||
+        name.includes("professional") ||
+        name.includes("consulting") ||
+        name.includes("legal") ||
+        name.includes("accounting") ||
+        name.includes("software") ||
+        name.includes("adobe") ||
+        name.includes("microsoft") ||
+        name.includes("slack") ||
+        name.includes("zoom") ||
+        name.includes("meeting") ||
+        name.includes("conference") ||
+        name.includes("training") ||
+        name.includes("education") ||
+        name.includes("course") ||
+        name.includes("book") ||
+        name.includes("supply") ||
+        name.includes("equipment")
+      ) {
+        return { category: "Business", type: "expense" };
       }
 
       return { category: "Other Expenses", type: "expense" };

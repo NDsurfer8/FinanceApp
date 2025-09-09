@@ -5,3 +5,5 @@ export { FloatingAIChatbot } from "./FloatingAIChatbot";
 export { CustomTrendChart } from "./CustomTrendChart";
 export { StandardHeader } from "./StandardHeader";
 export { ErrorBoundary } from "./ErrorBoundary";
+export { SetupWizard } from "./SetupWizard";
+export { DashboardPrompts } from "./DashboardPrompts";

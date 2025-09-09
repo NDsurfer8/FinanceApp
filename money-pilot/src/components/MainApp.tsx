@@ -18,8 +18,8 @@ import { SubscriptionProvider } from "../contexts/SubscriptionContext";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { ChatbotProvider } from "../contexts/ChatbotContext";
 import { FriendlyModeProvider } from "../contexts/FriendlyModeContext";
-import { TourProvider } from "../contexts/TourContext";
 import { SelectedMonthProvider } from "../contexts/SelectedMonthContext";
+import { SetupProvider } from "../contexts/SetupContext";
 import { DataPreloader } from "./DataPreloader";
 import { SplashScreen } from "./SplashScreen";
 import revenueCatService from "../services/revenueCat";
@@ -28,6 +28,7 @@ import { useBiometricAuth } from "../hooks/useBiometricAuth";
 import { BiometricAuthOverlay } from "./BiometricAuthOverlay";
 import { FloatingAIChatbot } from "./FloatingAIChatbot";
 import { PlaidUpdateMode } from "./PlaidUpdateMode";
+import { SetupWrapper } from "./SetupWrapper";
 import {
   DashboardScreen,
   BudgetScreen,
@@ -48,9 +49,9 @@ import {
   NotificationSettingsScreen,
   PrivacySecurityScreen,
   AboutScreen,
+  SetupScreen,
   HelpSupportScreen,
   ForgotPasswordScreen,
-  SubscriptionScreen,
   BankTransactionsScreen,
   AIFinancialAdvisorScreen,
   FinancialPlansScreen,
@@ -274,6 +275,32 @@ export const MainApp: React.FC = () => {
       }
     );
 
+    // Schedule weekly budget check notification (only if user has budget categories and enabled notifications)
+    try {
+      // Only schedule if user is logged in and has budget categories
+      if (user?.uid) {
+        // Check if user has budget categories before scheduling
+        const { getUserBudgetCategories } = await import(
+          "../services/userData"
+        );
+        const budgetCategories = await getUserBudgetCategories(user.uid);
+        const hasBudgetCategories =
+          budgetCategories && budgetCategories.length > 0;
+
+        // Check if user has enabled budget reminder notifications
+        const budgetRemindersEnabled = await AsyncStorage.getItem(
+          `notification_budget-reminders`
+        );
+        const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
+
+        if (hasBudgetCategories && isBudgetRemindersEnabled) {
+          await notificationService.scheduleWeeklyBudgetCheck();
+        }
+      }
+    } catch (error) {
+      console.error("Error scheduling weekly budget check:", error);
+    }
+
     return cleanup;
   };
 
@@ -462,17 +489,22 @@ export const MainApp: React.FC = () => {
               <SelectedMonthProvider>
                 <ChatbotProvider>
                   <FriendlyModeProvider>
-                    <TourProvider>
+                    <SetupProvider>
                       <DataPreloader>
                         <NavigationContainer>
                           <Stack.Navigator
+                            initialRouteName="MainTabs"
                             screenOptions={{
                               headerShown: false,
                             }}
                           >
                             <Stack.Screen
+                              name="Setup"
+                              component={SetupScreen}
+                            />
+                            <Stack.Screen
                               name="MainTabs"
-                              component={MainTabNavigator}
+                              component={MainTabsWithSetupWrapper}
                             />
                             <Stack.Screen
                               name="AddTransaction"
@@ -534,10 +566,6 @@ export const MainApp: React.FC = () => {
                             <Stack.Screen
                               name="HelpSupport"
                               component={HelpSupportScreen}
-                            />
-                            <Stack.Screen
-                              name="Subscription"
-                              component={SubscriptionScreen}
                             />
                             <Stack.Screen
                               name="BankTransactions"
@@ -631,7 +659,7 @@ export const MainApp: React.FC = () => {
                         updateType={plaidUpdateType}
                         newAccounts={plaidNewAccounts}
                       />
-                    </TourProvider>
+                    </SetupProvider>
                   </FriendlyModeProvider>
                 </ChatbotProvider>
               </SelectedMonthProvider>
@@ -646,7 +674,9 @@ export const MainApp: React.FC = () => {
   return <SplashScreen />;
 };
 
-const MainTabNavigator = () => {
+const MainTabNavigator = ({
+  initialRoute,
+}: { initialRoute?: keyof BottomTabParamList } = {}) => {
   const { colors } = useTheme();
 
   const handleLogout = async () => {
@@ -665,6 +695,7 @@ const MainTabNavigator = () => {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Tab.Navigator
+        initialRouteName={initialRoute || "Dashboard"}
         screenOptions={({ route }) => ({
           headerShown: false,
           lazy: false, // Pre-mount all tabs to prevent jumpy behavior
@@ -713,5 +744,25 @@ const MainTabNavigator = () => {
         </Tab.Screen>
       </Tab.Navigator>
     </View>
+  );
+};
+
+// Create a proper component for the MainTabs screen to avoid inline function warning
+const MainTabsWithSetupWrapper = () => {
+  const [initialRoute, setInitialRoute] = React.useState<
+    keyof BottomTabParamList | undefined
+  >(undefined);
+
+  return (
+    <SetupWrapper
+      onSetupCompleted={() => {
+        setInitialRoute("Budget");
+      }}
+    >
+      <MainTabNavigator
+        key={initialRoute || "default"}
+        initialRoute={initialRoute}
+      />
+    </SetupWrapper>
   );
 };

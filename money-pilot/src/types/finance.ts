@@ -20,7 +20,7 @@ export type Transaction = {
   note?: string;
   amount: number; // cents or dollars—pick one & stay consistent
   createdAt: number; // Date.now()
-  month: MonthKey; // e.g., "2025-08"
+  month: MonthKey; // e.g., "YYYY-MM"
 };
 
 export type Asset = { name: string; balance: number };

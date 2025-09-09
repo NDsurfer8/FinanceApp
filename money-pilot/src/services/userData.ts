@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   removeUserFromGroup,
   removeGroupSharedData,
-} from "./sharedFinanceDataSync";
+} from "./sharedFinanceUtils";
 
 export interface UserProfile {
   uid: string;
@@ -102,6 +102,8 @@ export interface Transaction {
   date: number;
   userId: string;
   recurringTransactionId?: string; // Reference to the recurring transaction that created this
+  isRecurring?: boolean; // Flag to indicate if this is a recurring transaction
+  endDate?: number; // End date for recurring transactions
   createdAt?: number;
   updatedAt?: number;
   // Flag to distinguish actual vs projected transactions
@@ -485,6 +487,14 @@ export const saveTransaction = async (
       await billReminderService.scheduleAllBillReminders(transaction.userId);
     } catch (error) {
       console.error("Error updating bill reminders:", error);
+    }
+
+    // Track transaction entry for weekly streak
+    try {
+      const { trackTransactionEntry } = await import("./weeklyStreakService");
+      await trackTransactionEntry(transaction.userId);
+    } catch (error) {
+      console.error("Error tracking transaction entry:", error);
     }
 
     return transactionId;
@@ -1849,11 +1859,19 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
     const profileRef = ref(db, `users/${userId}/profile`);
     await remove(profileRef);
 
-    // 8. Delete the entire user node
+    // 8. Delete user's Plaid connections (multiple bank connections)
+    const plaidConnectionsRef = ref(db, `users/${userId}/plaid_connections`);
+    await remove(plaidConnectionsRef);
+
+    // 9. Delete legacy Plaid data (if it exists)
+    const legacyPlaidRef = ref(db, `users/${userId}/plaid`);
+    await remove(legacyPlaidRef);
+
+    // 10. Delete the entire user node
     const userRef = ref(db, `users/${userId}`);
     await remove(userRef);
 
-    // 9. Handle shared groups - remove user from all groups they're a member of
+    // 11. Handle shared groups - remove user from all groups they're a member of
     try {
       const sharedGroupsRef = ref(db, "sharedGroups");
       const sharedGroupsSnapshot = await get(sharedGroupsRef);
@@ -1902,24 +1920,29 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
       // Continue with account deletion even if shared groups fail
     }
 
-    // 10. Delete shared data contributions
+    // 12. Delete shared finance data contributions
     try {
-      const sharedDataRef = ref(db, "sharedData");
-      const sharedDataSnapshot = await get(sharedDataRef);
+      const sharedFinanceDataRef = ref(db, "sharedFinanceData");
+      const sharedFinanceDataSnapshot = await get(sharedFinanceDataRef);
 
-      if (sharedDataSnapshot.exists()) {
-        const sharedData = sharedDataSnapshot.val();
-        const groupIds = Object.keys(sharedData);
+      if (sharedFinanceDataSnapshot.exists()) {
+        const sharedFinanceData = sharedFinanceDataSnapshot.val();
+        const groupIds = Object.keys(sharedFinanceData);
 
         for (const groupId of groupIds) {
           try {
-            const groupData = sharedData[groupId];
-            if (groupData[userId]) {
-              await remove(ref(db, `sharedData/${groupId}/${userId}`));
+            const groupData = sharedFinanceData[groupId];
+            if (groupData.members && groupData.members[userId]) {
+              await remove(
+                ref(db, `sharedFinanceData/${groupId}/members/${userId}`)
+              );
+              console.log(
+                `✅ Removed shared finance data for user ${userId} from group ${groupId}`
+              );
             }
           } catch (sharedDataError) {
             console.error(
-              `Could not delete shared data for group ${groupId}:`,
+              `Could not delete shared finance data for group ${groupId}:`,
               sharedDataError
             );
             // Continue with other groups
@@ -1933,15 +1956,15 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
         sharedDataError?.message?.includes("Permission denied")
       ) {
         console.log(
-          "User account already deleted, skipping shared data cleanup"
+          "User account already deleted, skipping shared finance data cleanup"
         );
       } else {
-        console.error("Could not access shared data:", sharedDataError);
+        console.error("Could not access shared finance data:", sharedDataError);
       }
       // Continue with account deletion
     }
 
-    // 11. Delete user's invitations
+    // 13. Delete user's invitations
     try {
       const invitationsRef = ref(db, "invitations");
       const invitationsSnapshot = await get(invitationsRef);
@@ -2630,16 +2653,47 @@ export const leaveGroup = async (
       `sharedFinanceData/${groupId}/members/${userId}`
     );
     await remove(sharedFinanceDataRef);
-
-    // User's shared data is already removed above
-    console.log("✅ User's shared finance data cleaned up");
-
-    console.log("✅ User left group successfully");
-    console.log("✅ User's shared finance data cleaned up");
-    console.log("✅ Real-time listeners stopped");
   } catch (error) {
     console.error("Error leaving group:", error);
     throw error;
+  }
+};
+
+// ===== USER UTILITIES =====
+
+// Check if user is new (created within last 5 minutes)
+export const isNewUser = async (user: any): Promise<boolean> => {
+  if (!user || !user.uid) return false;
+
+  try {
+    const userRef = ref(db, `users/${user.uid}/profile`);
+    const snapshot = await get(userRef);
+
+    if (!snapshot.exists()) return false;
+
+    const userData = snapshot.val();
+    const createdAt = userData.createdAt;
+    if (!createdAt) return false;
+
+    // Convert timestamp to Date object
+    const createdAtDate = new Date(createdAt);
+    // User is "new" if created within last 5 minutes (more conservative)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const isNew = createdAtDate > fiveMinutesAgo;
+
+    // console.log("🔍 isNewUser Debug:", {
+    //   userId: user.uid,
+    //   createdAt,
+    //   createdAtDate: createdAtDate.toISOString(),
+    //   thirtyMinutesAgo: thirtyMinutesAgo.toISOString(),
+    //   isNew,
+    //   timeDiff: Date.now() - createdAtDate.getTime(),
+    // });
+
+    return isNew;
+  } catch (error) {
+    console.error("Error checking if user is new:", error);
+    return false;
   }
 };
 
@@ -2650,6 +2704,34 @@ export interface BudgetCategory {
   name: string;
   monthlyLimit: number;
   color: string;
+}
+
+export interface BudgetStreak {
+  currentStreak: number;
+  longestStreak: number;
+  totalSuccessfulMonths: number;
+  lastSuccessfulMonth: string; // YYYY-MM format
+  categoryStreaks: Record<string, number>; // categoryId -> streak count
+  achievements: string[]; // Array of achievement IDs
+  seenAchievements?: string[]; // Array of achievement IDs that user has seen
+}
+
+export interface MonthlyBudgetResult {
+  month: string; // YYYY-MM format
+  totalCategories: number;
+  successfulCategories: number;
+  successRate: number;
+  categoryResults: Record<
+    string,
+    {
+      categoryId: string;
+      categoryName: string;
+      budget: number;
+      spent: number;
+      success: boolean;
+      overAmount?: number;
+    }
+  >;
 }
 
 // Save budget categories to AsyncStorage
@@ -2718,5 +2800,271 @@ export const getUserBudgetCategories = async (
       { id: "15", name: "Business", monthlyLimit: 0, color: "#20B2AA" },
       { id: "16", name: "Other Expenses", monthlyLimit: 0, color: "#C0C0C0" },
     ];
+  }
+};
+
+// ===== BUDGET STREAK FUNCTIONS =====
+
+// Get user's budget streak data
+
+export const getUserBudgetStreak = async (
+  userId: string
+): Promise<BudgetStreak> => {
+  try {
+    // Get display streak that respects account age
+    const { getDisplayStreak } = await import("./achievementService");
+    const displayStreak = await getDisplayStreak(userId);
+
+    // Get historical budget data for category streaks
+    const { getBudgetStreakData } = await import("./historicalBudgetService");
+    const historicalData = await getBudgetStreakData(userId);
+
+    // Get existing streak data for achievements
+    const key = `budgetStreak_${userId}`;
+    const stored = await AsyncStorage.getItem(key);
+
+    let existingStreak = stored
+      ? JSON.parse(stored)
+      : {
+          achievements: [],
+          seenAchievements: [],
+        };
+
+    // Return combined data with account-age-respecting streak display
+    const result = {
+      currentStreak: displayStreak.currentStreak,
+      longestStreak: displayStreak.longestStreak,
+      totalSuccessfulMonths: displayStreak.currentStreak, // Use display streak as total
+      lastSuccessfulMonth: historicalData.lastProcessedMonth,
+      categoryStreaks: historicalData.categoryStreaks,
+      achievements: existingStreak.achievements || [],
+      seenAchievements: existingStreak.seenAchievements || [],
+    };
+
+    return result;
+  } catch (error) {
+    console.error("Error getting budget streak:", error);
+    return {
+      currentStreak: 0,
+      longestStreak: 0,
+      totalSuccessfulMonths: 0,
+      lastSuccessfulMonth: "",
+      categoryStreaks: {},
+      achievements: [],
+      seenAchievements: [],
+    };
+  }
+};
+
+// Save user's budget streak data
+export const saveUserBudgetStreak = async (
+  userId: string,
+  streak: BudgetStreak
+): Promise<void> => {
+  try {
+    const key = `budgetStreak_${userId}`;
+    await AsyncStorage.setItem(key, JSON.stringify(streak));
+  } catch (error) {
+    console.error("Error saving budget streak:", error);
+    throw error;
+  }
+};
+
+// Calculate monthly budget results
+export const calculateMonthlyBudgetResult = async (
+  userId: string,
+  year: number,
+  month: number
+): Promise<MonthlyBudgetResult> => {
+  try {
+    const categories = await getUserBudgetCategories(userId);
+    const transactions = await getUserTransactions(userId);
+
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0);
+
+    // Filter transactions for the month
+    const monthlyTransactions = transactions.filter((transaction: any) => {
+      const transactionDate = new Date(transaction.date);
+      return (
+        transactionDate >= startDate &&
+        transactionDate <= endDate &&
+        transaction.type === "expense"
+      );
+    });
+
+    // Calculate spending by category
+    const spendingByCategory: Record<string, number> = {};
+    monthlyTransactions.forEach((transaction: any) => {
+      const categoryId = transaction.categoryId || "uncategorized";
+      spendingByCategory[categoryId] =
+        (spendingByCategory[categoryId] || 0) + transaction.amount;
+    });
+
+    // Calculate results for each category
+    const categoryResults: Record<string, any> = {};
+    let successfulCategories = 0;
+
+    categories.forEach((category) => {
+      const spent = spendingByCategory[category.id] || 0;
+      const success = spent <= category.monthlyLimit;
+      const overAmount =
+        spent > category.monthlyLimit
+          ? spent - category.monthlyLimit
+          : undefined;
+
+      if (success) successfulCategories++;
+
+      categoryResults[category.id] = {
+        categoryId: category.id,
+        categoryName: category.name,
+        budget: category.monthlyLimit,
+        spent: spent,
+        success: success,
+        overAmount: overAmount,
+      };
+    });
+
+    const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
+    const successRate =
+      categories.length > 0
+        ? (successfulCategories / categories.length) * 100
+        : 0;
+
+    return {
+      month: monthKey,
+      totalCategories: categories.length,
+      successfulCategories: successfulCategories,
+      successRate: successRate,
+      categoryResults: categoryResults,
+    };
+  } catch (error) {
+    console.error("Error calculating monthly budget result:", error);
+    throw error;
+  }
+};
+
+// Calculate streak by checking consecutive months
+const calculateConsecutiveStreak = async (
+  userId: string,
+  currentMonth: string
+): Promise<number> => {
+  try {
+    let streak = 0;
+    const currentDate = new Date(currentMonth + "-01");
+
+    // Get user's account creation date to limit how far back we look
+    const userRef = ref(db, `users/${userId}/profile`);
+    const userSnapshot = await get(userRef);
+    let accountCreationDate = new Date();
+
+    if (userSnapshot.exists()) {
+      const userData = userSnapshot.val();
+      if (userData.createdAt) {
+        accountCreationDate = new Date(userData.createdAt);
+      }
+    }
+
+    // Calculate how many months back to check (from account creation to current month)
+    const monthsSinceCreation =
+      (currentDate.getFullYear() - accountCreationDate.getFullYear()) * 12 +
+      (currentDate.getMonth() - accountCreationDate.getMonth()) +
+      1; // +1 to include current month
+
+    const maxMonthsToCheck = Math.min(monthsSinceCreation, 12); // Don't check more than 12 months or months since account creation
+
+    // Check months back from current month
+    for (let i = 0; i < maxMonthsToCheck; i++) {
+      const checkDate = new Date(currentDate);
+      checkDate.setMonth(checkDate.getMonth() - i);
+
+      // Skip if this month is before account creation
+      if (checkDate < accountCreationDate) {
+        break;
+      }
+
+      const monthResult = await calculateMonthlyBudgetResult(
+        userId,
+        checkDate.getFullYear(),
+        checkDate.getMonth()
+      );
+
+      if (monthResult.successRate >= 80) {
+        streak++;
+      } else {
+        break; // Streak broken
+      }
+    }
+
+    return streak;
+  } catch (error) {
+    console.error("Error calculating consecutive streak:", error);
+    return 0;
+  }
+};
+
+// Update budget streak based on monthly result
+export const updateBudgetStreak = async (
+  userId: string,
+  monthlyResult: MonthlyBudgetResult
+): Promise<BudgetStreak> => {
+  try {
+    const currentStreak = await getUserBudgetStreak(userId);
+    const isSuccessfulMonth = monthlyResult.successRate >= 80; // 80% success rate threshold
+
+    // Check if this is the current month - don't award achievements for current month
+    const currentDate = new Date();
+    const resultMonth = new Date(monthlyResult.month + "-01");
+    const isCurrentMonth =
+      resultMonth.getFullYear() === currentDate.getFullYear() &&
+      resultMonth.getMonth() === currentDate.getMonth();
+
+    let newStreak = { ...currentStreak };
+
+    if (isSuccessfulMonth) {
+      // Successful month
+      newStreak.totalSuccessfulMonths += 1;
+      newStreak.lastSuccessfulMonth = monthlyResult.month;
+
+      // Calculate consecutive streak by checking previous months
+      newStreak.currentStreak = await calculateConsecutiveStreak(
+        userId,
+        monthlyResult.month
+      );
+
+      // Update longest streak
+      if (newStreak.currentStreak > newStreak.longestStreak) {
+        newStreak.longestStreak = newStreak.currentStreak;
+      }
+
+      // Update category streaks
+      Object.values(monthlyResult.categoryResults).forEach((result: any) => {
+        if (result.success) {
+          newStreak.categoryStreaks[result.categoryId] =
+            (newStreak.categoryStreaks[result.categoryId] || 0) + 1;
+        } else {
+          newStreak.categoryStreaks[result.categoryId] = 0;
+        }
+      });
+
+      // Note: Achievements are now handled by the dedicated achievement service
+      // and are only processed during month transitions
+    } else {
+      // Unsuccessful month - reset current streak
+      newStreak.currentStreak = 0;
+
+      // Reset category streaks for failed categories
+      Object.values(monthlyResult.categoryResults).forEach((result: any) => {
+        if (!result.success) {
+          newStreak.categoryStreaks[result.categoryId] = 0;
+        }
+      });
+    }
+
+    await saveUserBudgetStreak(userId, newStreak);
+    return newStreak;
+  } catch (error) {
+    console.error("Error updating budget streak:", error);
+    throw error;
   }
 };

@@ -102,7 +102,7 @@ export default function SharedGroupDetailFixed({
 
     try {
       setLoading(true);
-      console.log("🔄 Manual refresh requested");
+      // console.log("🔄 Manual refresh requested");
 
       // Get user's current sharing settings for this group
       const userSharingSettings = await getUserGroupSharingSettings(
@@ -179,12 +179,12 @@ export default function SharedGroupDetailFixed({
                 userData
               );
 
-              console.log("✅ Auto-sync completed successfully");
+              // console.log("✅ Auto-sync completed successfully");
             } else {
-              console.log("⚠️ No sharing settings found for auto-sync");
+              // console.log("⚠️ No sharing settings found for auto-sync");
             }
           } catch (syncError) {
-            console.error("❌ Error during auto-sync:", syncError);
+            // console.error("❌ Error during auto-sync:", syncError);
             // Don't show error to user for auto-sync, just log it
           }
         }
@@ -205,13 +205,13 @@ export default function SharedGroupDetailFixed({
 
   const loadGroupFinancialData = async (group: SharedGroup) => {
     try {
-      console.log("🔄 Loading shared finance data for group:", groupId);
+      // console.log("🔄 Loading shared finance data for group:", groupId);
 
       // Try to load shared finance data first
       const sharedData = await getGroupSharedData(groupId);
 
       if (sharedData && Object.keys(sharedData.members).length > 0) {
-        console.log("✅ Found shared data:", sharedData);
+        // console.log("✅ Found shared data:", sharedData);
 
         // Use the shared data structure
         let totalNetWorth = 0;
@@ -359,9 +359,9 @@ export default function SharedGroupDetailFixed({
           recentTransactions: allTransactions.sort((a, b) => b.date - a.date),
         });
 
-        console.log("✅ Successfully loaded shared finance data");
+        // console.log("✅ Successfully loaded shared finance data");
       } else {
-        console.log("⚠️ No shared data found, showing empty state");
+        // console.log("⚠️ No shared data found, showing empty state");
 
         // Show empty state if no shared data exists
         setGroupData({

@@ -1,5 +1,8 @@
-import { Transaction, RecurringTransaction } from './userData';
-import { TransactionActionsService, RecurringTransactionTemplate } from './TransactionActionsService';
+import { Transaction, RecurringTransaction } from "./userData";
+import {
+  TransactionActionsService,
+  RecurringTransactionTemplate,
+} from "./TransactionActionsService";
 
 export interface TransactionOperationResult {
   success: boolean;
@@ -19,10 +22,15 @@ export class TransactionBusinessService {
     selectedMonth?: Date
   ): Promise<TransactionOperationResult> {
     try {
-      const { createRecurringTransaction } = await import('./transactionService');
-      const { removeTransaction } = await import('./userData');
+      const { createRecurringTransaction } = await import(
+        "./transactionService"
+      );
+      const { removeTransaction } = await import("./userData");
 
       // Remove the original transaction from database
+      if (!transaction.id) {
+        throw new Error("Transaction ID is required");
+      }
       await removeTransaction(userId, transaction.id);
 
       // Create the recurring transaction
@@ -33,15 +41,15 @@ export class TransactionBusinessService {
 
       return {
         success: true,
-        message: TransactionActionsService.getSuccessMessage('convert'),
-        data: { recurringTransactionId }
+        message: TransactionActionsService.getSuccessMessage("convert"),
+        data: { recurringTransactionId },
       };
     } catch (error) {
-      console.error('Error converting to recurring:', error);
+      console.error("Error converting to recurring:", error);
       return {
         success: false,
-        message: 'Failed to convert transaction to recurring',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Failed to convert transaction to recurring",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -55,8 +63,8 @@ export class TransactionBusinessService {
       description: string;
       amount: string;
       category: string;
-      type: 'income' | 'expense';
-      frequency: 'weekly' | 'biweekly' | 'monthly';
+      type: "income" | "expense";
+      frequency: "weekly" | "biweekly" | "monthly";
       date: number;
       endDate?: number;
     },
@@ -65,11 +73,14 @@ export class TransactionBusinessService {
     monthKey: string
   ): Promise<TransactionOperationResult> {
     try {
-      const { updateRecurringTransaction } = await import('./transactionService');
-      const { getUserRecurringTransactions } = await import('./userData');
+      const { updateRecurringTransaction } = await import(
+        "./transactionService"
+      );
+      const { getUserRecurringTransactions } = await import("./userData");
 
       // Get the recurring transaction ID
-      const recurringTransactionId = transaction.recurringTransactionId || transaction.id;
+      const recurringTransactionId =
+        transaction.recurringTransactionId || transaction.id;
 
       // Get the current recurring transaction
       const recurringTransactions = await getUserRecurringTransactions(userId);
@@ -80,8 +91,8 @@ export class TransactionBusinessService {
       if (!currentRecurringTransaction) {
         return {
           success: false,
-          message: 'Recurring transaction not found',
-          error: 'NOT_FOUND'
+          message: "Recurring transaction not found",
+          error: "NOT_FOUND",
         };
       }
 
@@ -130,18 +141,18 @@ export class TransactionBusinessService {
       return {
         success: true,
         message: TransactionActionsService.getSuccessMessage(
-          'update',
+          "update",
           isFutureMonth,
           monthKey
         ),
-        data: { updatedRecurringTransaction }
+        data: { updatedRecurringTransaction },
       };
     } catch (error) {
-      console.error('Error updating recurring transaction:', error);
+      console.error("Error updating recurring transaction:", error);
       return {
         success: false,
-        message: 'Failed to update recurring transaction',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Failed to update recurring transaction",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -154,28 +165,43 @@ export class TransactionBusinessService {
     userId: string
   ): Promise<TransactionOperationResult> {
     try {
-      const { updateRecurringTransactionEndDate } = await import('./transactionService');
+      const { updateRecurringTransactionEndDate } = await import(
+        "./transactionService"
+      );
 
-      const recurringTransactionId = transaction.recurringTransactionId || transaction.id;
-      
+      const recurringTransactionId =
+        transaction.recurringTransactionId || transaction.id;
+
+      if (!recurringTransactionId) {
+        throw new Error("Recurring transaction ID is required");
+      }
+
       // Set end date to the end of the current month being edited
       const editDate = new Date(transaction.date);
-      const endOfMonth = new Date(editDate.getFullYear(), editDate.getMonth() + 1, 0);
+      const endOfMonth = new Date(
+        editDate.getFullYear(),
+        editDate.getMonth() + 1,
+        0
+      );
       endOfMonth.setHours(23, 59, 59, 999);
 
-      await updateRecurringTransactionEndDate(userId, recurringTransactionId, endOfMonth.getTime());
+      await updateRecurringTransactionEndDate(
+        userId,
+        recurringTransactionId,
+        endOfMonth.getTime()
+      );
 
       return {
         success: true,
-        message: TransactionActionsService.getSuccessMessage('stopFuture'),
-        data: { endDate: endOfMonth.getTime() }
+        message: TransactionActionsService.getSuccessMessage("stopFuture"),
+        data: { endDate: endOfMonth.getTime() },
       };
     } catch (error) {
-      console.error('Error stopping future recurring:', error);
+      console.error("Error stopping future recurring:", error);
       return {
         success: false,
-        message: 'Failed to stop future recurring transactions',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Failed to stop future recurring transactions",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -190,35 +216,46 @@ export class TransactionBusinessService {
     monthKey: string
   ): Promise<TransactionOperationResult> {
     try {
-      const recurringTransactionId = transaction.recurringTransactionId || transaction.id;
+      const recurringTransactionId =
+        transaction.recurringTransactionId || transaction.id;
+
+      if (!recurringTransactionId) {
+        throw new Error("Recurring transaction ID is required");
+      }
 
       if (isFutureMonth) {
         // Delete only the month override
-        const { deleteMonthOverride } = await import('./transactionService');
+        const { deleteMonthOverride } = await import("./transactionService");
         await deleteMonthOverride(userId, recurringTransactionId, monthKey);
 
         return {
           success: true,
-          message: TransactionActionsService.getSuccessMessage('delete', true, monthKey),
-          data: { deletedMonthKey: monthKey }
+          message: TransactionActionsService.getSuccessMessage(
+            "delete",
+            true,
+            monthKey
+          ),
+          data: { deletedMonthKey: monthKey },
         };
       } else {
         // Delete the entire recurring transaction
-        const { deleteRecurringTransaction } = await import('./transactionService');
+        const { deleteRecurringTransaction } = await import(
+          "./transactionService"
+        );
         await deleteRecurringTransaction(recurringTransactionId, userId);
 
         return {
           success: true,
-          message: TransactionActionsService.getSuccessMessage('delete'),
-          data: { deletedRecurringId: recurringTransactionId }
+          message: TransactionActionsService.getSuccessMessage("delete"),
+          data: { deletedRecurringId: recurringTransactionId },
         };
       }
     } catch (error) {
-      console.error('Error deleting recurring transaction:', error);
+      console.error("Error deleting recurring transaction:", error);
       return {
         success: false,
-        message: 'Failed to delete recurring transaction',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Failed to delete recurring transaction",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -230,7 +267,9 @@ export class TransactionBusinessService {
     template: RecurringTransactionTemplate
   ): Promise<TransactionOperationResult> {
     try {
-      const { createRecurringTransaction } = await import('./transactionService');
+      const { createRecurringTransaction } = await import(
+        "./transactionService"
+      );
 
       const recurringTransactionId = await createRecurringTransaction(
         template,
@@ -239,15 +278,15 @@ export class TransactionBusinessService {
 
       return {
         success: true,
-        message: TransactionActionsService.getSuccessMessage('create'),
-        data: { recurringTransactionId }
+        message: TransactionActionsService.getSuccessMessage("create"),
+        data: { recurringTransactionId },
       };
     } catch (error) {
-      console.error('Error creating recurring transaction:', error);
+      console.error("Error creating recurring transaction:", error);
       return {
         success: false,
-        message: 'Failed to create recurring transaction',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Failed to create recurring transaction",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -261,20 +300,22 @@ export class TransactionBusinessService {
       description: string;
       amount: string;
       category: string;
-      type: 'income' | 'expense';
+      type: "income" | "expense";
       date: number;
     },
     userId: string
   ): Promise<TransactionOperationResult> {
     try {
-      const { deleteRecurringTransaction } = await import('./transactionService');
-      const { saveTransaction } = await import('./userData');
+      const { deleteRecurringTransaction } = await import(
+        "./transactionService"
+      );
+      const { saveTransaction } = await import("./userData");
 
       // Create new regular transaction
       const newTransaction = {
         id: Date.now().toString(),
         description: formData.description,
-        amount: parseFloat(formData.amount.replace(/,/g, '')),
+        amount: parseFloat(formData.amount.replace(/,/g, "")),
         category: formData.category,
         type: formData.type,
         date: formData.date,
@@ -284,7 +325,13 @@ export class TransactionBusinessService {
       };
 
       // Delete the recurring transaction
-      const recurringTransactionId = transaction.recurringTransactionId || transaction.id;
+      const recurringTransactionId =
+        transaction.recurringTransactionId || transaction.id;
+
+      if (!recurringTransactionId) {
+        throw new Error("Recurring transaction ID is required");
+      }
+
       await deleteRecurringTransaction(recurringTransactionId, userId);
 
       // Save the new regular transaction
@@ -292,18 +339,18 @@ export class TransactionBusinessService {
 
       return {
         success: true,
-        message: 'Recurring transaction converted to regular transaction!',
-        data: { 
+        message: "Recurring transaction converted to regular transaction!",
+        data: {
           newTransactionId: savedTransactionId,
-          deletedRecurringId: recurringTransactionId
-        }
+          deletedRecurringId: recurringTransactionId,
+        },
       };
     } catch (error) {
-      console.error('Error converting to regular:', error);
+      console.error("Error converting to regular:", error);
       return {
         success: false,
-        message: 'Failed to convert recurring transaction to regular',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Failed to convert recurring transaction to regular",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }

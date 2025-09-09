@@ -8,19 +8,35 @@ import {
   Alert,
   Modal,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useScrollDetection } from "../hooks/useScrollDetection";
-import { useTour } from "../contexts/TourContext";
+import { isNewUser } from "../services/userData";
 
 import { useData } from "../contexts/DataContext";
 import {
   getUserNetWorthEntries,
   updateNetWorthFromAssetsAndDebts,
   getUserInvitations,
+  getUserBudgetStreak,
+  calculateMonthlyBudgetResult,
+  updateBudgetStreak,
+  getUserBudgetCategories,
 } from "../services/userData";
+import {
+  getAchievementProgress,
+  markAchievementsAsSeen as markAchievementsAsSeenService,
+  getUnseenAchievements,
+  cleanupIrrelevantAchievements,
+  Achievement,
+} from "../services/achievementService";
+import {
+  checkMonthTransitions,
+  initializeMonthTracking,
+} from "../services/monthTransitionService";
 
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
@@ -28,8 +44,9 @@ import { translate } from "../services/translations";
 import { StandardHeader } from "../components/StandardHeader";
 import { CustomTrendChart } from "../components/CustomTrendChart";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
-import { TourGuide } from "../components/TourGuide";
 import { HelpfulTooltip } from "../components/HelpfulTooltip";
+import { DashboardPrompts } from "../components/DashboardPrompts";
+import { useSetup } from "../contexts/SetupContext";
 
 interface DashboardScreenProps {
   navigation: any;
@@ -47,19 +64,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     refreshInBackground,
   } = useZeroLoading();
   const { goals, budgetSettings, refreshAssetsDebts } = useData();
+  const { setupProgress, updateSetupProgress } = useSetup();
   console.log("goals", goals);
   console.log("budgetSettings", budgetSettings);
   const { isScrolling, handleScrollBegin, handleScrollEnd } =
     useScrollDetection();
-  const { startTour, hasCompletedTour, isTourStatusLoaded, isNewUser } =
-    useTour();
 
   const [loading, setLoading] = useState(false);
   const [trendData, setTrendData] = useState<any[]>([]);
   const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(
     new Set()
   );
-  const [hasCheckedForTour, setHasCheckedForTour] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<number>(0);
   const [isNewUserState, setIsNewUserState] = useState<boolean>(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -69,13 +84,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     icon: string;
     color: string;
   } | null>(null);
+  const [budgetStreak, setBudgetStreak] = useState<any>(null);
+  const [monthlyBudgetResult, setMonthlyBudgetResult] = useState<any>(null);
+  const [showAllAchievements, setShowAllAchievements] = useState(false);
+  const [hasBudgetCategories, setHasBudgetCategories] = useState(false);
+  const [achievementsHidden, setAchievementsHidden] = useState(false);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [unseenAchievements, setUnseenAchievements] = useState<Achievement[]>(
+    []
+  );
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
-
-  // TODO: use this function
-  const shouldWrapName = (name: string) => {
-    return name.length > 15;
-  };
 
   // Generate personalized welcome message
   const getWelcomeMessage = () => {
@@ -132,49 +151,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     };
 
     checkIfNewUser();
-  }, [user, isNewUser]);
-
-  // Auto-start tour for new users (Firebase-based detection)
-  React.useEffect(() => {
-    const checkAndShowTour = async () => {
-      // Only proceed if user is authenticated and has a valid UID
-      if (
-        user &&
-        user.uid &&
-        !hasCheckedForTour &&
-        isTourStatusLoaded &&
-        !hasCompletedTour
-      ) {
-        const isNew = await isNewUser(user);
-
-        if (isNew) {
-          setHasCheckedForTour(true);
-
-          // Wait for dashboard to fully render
-          const timer = setTimeout(() => {
-            startTour(navigation);
-          }, 1000);
-
-          return () => clearTimeout(timer);
-        } else {
-          setHasCheckedForTour(true);
-        }
-      } else if (!user) {
-        // Reset tour check when user logs out
-        setHasCheckedForTour(false);
-      }
-    };
-
-    checkAndShowTour();
-  }, [
-    user,
-    hasCheckedForTour,
-    isTourStatusLoaded,
-    hasCompletedTour,
-    startTour,
-    navigation,
-    isNewUser,
-  ]);
+  }, [user]);
 
   // Background refresh when screen comes into focus
   useFocusEffect(
@@ -190,6 +167,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         refreshTrendData();
         // Fetch pending invitations
         fetchPendingInvitations();
+        // Load budget streak data
+        loadBudgetStreakData();
+        checkBudgetCategories();
+        loadAchievements();
       }
     }, [user, refreshInBackground, fetchPendingInvitations])
   );
@@ -570,6 +551,136 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     return last6Months;
   };
 
+  // Load budget streak data
+  // Function to check if user has budget categories with limits
+  const checkBudgetCategories = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const categories = await getUserBudgetCategories(user.uid);
+      const hasCategoriesWithLimits = categories.some(
+        (category: any) => category.monthlyLimit > 0
+      );
+      setHasBudgetCategories(hasCategoriesWithLimits);
+    } catch (error) {
+      console.error("Error checking budget categories:", error);
+      setHasBudgetCategories(false);
+    }
+  };
+
+  // Load achievements and hidden state
+  const loadAchievements = async () => {
+    if (!user?.uid) return;
+
+    try {
+      // Clean up irrelevant achievements first
+      await cleanupIrrelevantAchievements(user.uid);
+
+      // Load achievement progress
+      const progress = await getAchievementProgress(user.uid);
+      setAchievements(progress.achievements);
+
+      // Load unseen achievements
+      const unseen = await getUnseenAchievements(user.uid);
+      setUnseenAchievements(unseen);
+
+      // Load hidden state
+      const hiddenState = await AsyncStorage.getItem(
+        `achievementsHidden_${user.uid}`
+      );
+      if (hiddenState !== null) {
+        setAchievementsHidden(JSON.parse(hiddenState));
+      }
+    } catch (error) {
+      console.error("Error loading achievements:", error);
+    }
+  };
+
+  // Save achievements hidden state
+  const saveAchievementsHiddenState = async (hidden: boolean) => {
+    if (!user?.uid) return;
+
+    try {
+      await AsyncStorage.setItem(
+        `achievementsHidden_${user.uid}`,
+        JSON.stringify(hidden)
+      );
+    } catch (error) {
+      console.error("Error saving achievements hidden state:", error);
+    }
+  };
+
+  // Check if achievements should be shown
+  const shouldShowAchievements = () => {
+    if (!hasBudgetCategories || achievements.length === 0) return false;
+
+    // Always show if there are unseen achievements
+    if (unseenAchievements.length > 0) return true;
+
+    // Show if not hidden by user
+    return !achievementsHidden;
+  };
+
+  // Mark achievements as seen
+  const markAchievementsAsSeen = async () => {
+    if (!user?.uid || unseenAchievements.length === 0) return;
+
+    try {
+      const achievementIds = unseenAchievements.map((a) => a.id);
+      await markAchievementsAsSeenService(user.uid, achievementIds);
+
+      // Update local state
+      const unseen = await getUnseenAchievements(user.uid);
+      setUnseenAchievements(unseen);
+    } catch (error) {
+      console.error("Error marking achievements as seen:", error);
+    }
+  };
+
+  const loadBudgetStreakData = async () => {
+    if (!user?.uid) return;
+
+    try {
+      // Check for month transitions and process achievements
+      // This will only process completed months, not the current month
+      await checkMonthTransitions(user.uid);
+
+      // Initialize month tracking for new users
+      await initializeMonthTracking(user.uid);
+
+      // Get current streak data
+      const streak = await getUserBudgetStreak(user.uid);
+      setBudgetStreak(streak);
+
+      // Calculate current month's budget result
+      const currentDate = new Date();
+      const monthlyResult = await calculateMonthlyBudgetResult(
+        user.uid,
+        currentDate.getFullYear(),
+        currentDate.getMonth()
+      );
+      setMonthlyBudgetResult(monthlyResult);
+
+      // Update streak for current month (no achievements awarded)
+      await updateBudgetStreak(user.uid, monthlyResult);
+
+      // Reload streak data after update
+      const updatedStreak = await getUserBudgetStreak(user.uid);
+      setBudgetStreak(updatedStreak);
+
+      // Reload achievements to check for new ones
+      await loadAchievements();
+
+      // Auto-show achievements card if there are unseen achievements
+      if (unseenAchievements.length > 0 && achievementsHidden) {
+        setAchievementsHidden(false);
+        await saveAchievementsHiddenState(false);
+      }
+    } catch (error) {
+      console.error("Error loading budget streak data:", error);
+    }
+  };
+
   // Load trend data
   React.useEffect(() => {
     const loadTrendData = async () => {
@@ -727,413 +838,562 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           }
         />
 
-        {/* Monthly Overview - Large Card */}
-        <TourGuide zone={1} screen="Dashboard">
+        {/* Recent Achievements */}
+        {shouldShowAchievements() && (
           <View
             style={{
               backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 24,
+              borderRadius: 16,
+              padding: 20,
               marginBottom: 20,
               shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
+              shadowOpacity: 0.06,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 2 },
+              elevation: 3,
             }}
           >
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 20,
+                justifyContent: "space-between",
+                marginBottom: 16,
               }}
             >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons
+                  name="trophy"
+                  size={24}
+                  color={colors.primary}
+                  style={{ marginRight: 12 }}
+                />
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: colors.text,
+                  }}
+                >
+                  Recent Achievements
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={async () => {
+                  setAchievementsHidden(true);
+                  await saveAchievementsHiddenState(true);
+                  await markAchievementsAsSeen();
+                }}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: colors.surfaceSecondary,
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close" size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {achievements.length > 0 ? (
+              (() => {
+                const achievementsToShow = showAllAchievements
+                  ? achievements
+                  : achievements.slice(-3);
+
+                return achievementsToShow.map(
+                  (achievement: Achievement, index: number) => {
+                    const isUnseen = unseenAchievements.some(
+                      (u) => u.id === achievement.id
+                    );
+                    return (
+                      <View
+                        key={achievement.id}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          paddingVertical: 8,
+                          borderBottomWidth:
+                            index < achievementsToShow.length - 1 ? 1 : 0,
+                          borderBottomColor: colors.border,
+                          backgroundColor: isUnseen
+                            ? colors.primary + "10"
+                            : "transparent",
+                          borderRadius: isUnseen ? 8 : 0,
+                          paddingHorizontal: isUnseen ? 8 : 0,
+                        }}
+                      >
+                        <Text style={{ fontSize: 24, marginRight: 12 }}>
+                          {achievement.icon}
+                        </Text>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              fontSize: 16,
+                              fontWeight: "600",
+                              color: colors.text,
+                            }}
+                          >
+                            {achievement.title}
+                            {isUnseen && (
+                              <Text
+                                style={{ color: colors.primary, fontSize: 12 }}
+                              >
+                                {" "}
+                                NEW
+                              </Text>
+                            )}
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              color: colors.textSecondary,
+                            }}
+                          >
+                            {achievement.description}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  }
+                );
+              })()
+            ) : (
+              <View style={{ paddingVertical: 20, alignItems: "center" }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: colors.textSecondary,
+                    textAlign: "center",
+                  }}
+                >
+                  No achievements yet. Stay on budget to earn your first
+                  achievement! 🎯
+                </Text>
+              </View>
+            )}
+
+            {/* Show All / Show Less Button */}
+            {achievements.length > 3 && (
+              <TouchableOpacity
+                onPress={() => setShowAllAchievements(!showAllAchievements)}
+                style={{
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  alignItems: "center",
+                  borderTopWidth: 1,
+                  borderTopColor: colors.border,
+                }}
+              >
+                <Text
+                  style={{
+                    color: colors.primary,
+                    fontSize: 14,
+                    fontWeight: "600",
+                  }}
+                >
+                  {showAllAchievements
+                    ? `Show Less (${achievements.length - 3} hidden)`
+                    : `Show All (${achievements.length - 3} more)`}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* Monthly Overview - Large Card */}
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 20,
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: colors.surfaceSecondary,
+                padding: 12,
+                borderRadius: 14,
+                marginRight: 16,
+              }}
+            >
+              <Ionicons name="calendar" size={22} color={colors.primary} />
+            </View>
+            <View>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: colors.text,
+                  letterSpacing: -0.3,
+                }}
+              >
+                Budget Snapshot
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginTop: 2,
+                  fontWeight: "500",
+                }}
+              >
+                {new Date().toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ gap: 20 }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
                   backgroundColor: colors.surfaceSecondary,
                   padding: 12,
-                  borderRadius: 14,
+                  borderRadius: 12,
                   marginRight: 16,
+                  width: 50,
+                  height: 50,
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}
               >
-                <Ionicons name="calendar" size={22} color={colors.primary} />
+                <Ionicons name="trending-up" size={20} color={colors.primary} />
               </View>
-              <View>
+              <View style={{ flex: 1 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 4,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      fontWeight: "600",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {translate("income", isFriendlyMode)}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      showInfoModalHandler(
+                        "Income Breakdown",
+                        "Income includes both actual transactions this month and recurring income (salary, rent, etc.) that automatically occurs each month.",
+                        "trending-up",
+                        colors.success
+                      );
+                    }}
+                    style={{ marginLeft: 8 }}
+                  >
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
                 <Text
                   style={{
                     fontSize: 20,
                     fontWeight: "700",
-                    color: colors.text,
+                    color: colors.success,
                     letterSpacing: -0.3,
                   }}
                 >
-                  Budget Snapshot
+                  {formatCurrency(monthlyIncome)}
                 </Text>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    marginTop: 2,
-                    fontWeight: "500",
-                  }}
-                >
-                  {new Date().toLocaleDateString("en-US", {
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </Text>
+                {/* Show breakdown of actual vs recurring income */}
+                {recurringMonthlyIncome > 0 && (
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {formatCurrency(monthlyIncome - recurringMonthlyIncome)}{" "}
+                    recorded + {formatCurrency(recurringMonthlyIncome)}{" "}
+                    recurring
+                  </Text>
+                )}
               </View>
             </View>
 
-            <View style={{ gap: 20 }}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View
-                  style={{
-                    backgroundColor: colors.surfaceSecondary,
-                    padding: 12,
-                    borderRadius: 12,
-                    marginRight: 16,
-                    width: 50,
-                    height: 50,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Ionicons
-                    name="trending-up"
-                    size={20}
-                    color={colors.primary}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 4,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      {translate("income", isFriendlyMode)}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        showInfoModalHandler(
-                          "Income Breakdown",
-                          "Income includes both actual transactions this month and recurring income (salary, rent, etc.) that automatically occurs each month.",
-                          "trending-up",
-                          colors.success
-                        );
-                      }}
-                      style={{ marginLeft: 8 }}
-                    >
-                      <Ionicons
-                        name="information-circle-outline"
-                        size={16}
-                        color={colors.textSecondary}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      fontWeight: "700",
-                      color: colors.success,
-                      letterSpacing: -0.3,
-                    }}
-                  >
-                    {formatCurrency(monthlyIncome)}
-                  </Text>
-                  {/* Show breakdown of actual vs recurring income */}
-                  {recurringMonthlyIncome > 0 && (
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                        marginTop: 2,
-                      }}
-                    >
-                      {formatCurrency(monthlyIncome - recurringMonthlyIncome)}{" "}
-                      recorded + {formatCurrency(recurringMonthlyIncome)}{" "}
-                      recurring
-                    </Text>
-                  )}
-                </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  backgroundColor: colors.surfaceSecondary,
+                  padding: 12,
+                  borderRadius: 12,
+                  marginRight: 16,
+                  width: 50,
+                  height: 50,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Ionicons name="trending-down" size={20} color={colors.error} />
               </View>
-
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={{ flex: 1 }}>
                 <View
                   style={{
-                    backgroundColor: colors.surfaceSecondary,
-                    padding: 12,
-                    borderRadius: 12,
-                    marginRight: 16,
-                    width: 50,
-                    height: 50,
-                    justifyContent: "center",
+                    flexDirection: "row",
                     alignItems: "center",
+                    marginBottom: 4,
                   }}
                 >
-                  <Ionicons
-                    name="trending-down"
-                    size={20}
-                    color={colors.error}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 4,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      {translate("expenses", isFriendlyMode)}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        showInfoModalHandler(
-                          "Expenses Breakdown",
-                          "Expenses include both actual transactions this month and recurring expenses (mortgage, utilities, etc.) that automatically occur each month.",
-                          "trending-down",
-                          colors.error
-                        );
-                      }}
-                      style={{ marginLeft: 8 }}
-                    >
-                      <Ionicons
-                        name="information-circle-outline"
-                        size={16}
-                        color={colors.textSecondary}
-                      />
-                    </TouchableOpacity>
-                  </View>
                   <Text
                     style={{
-                      fontSize: 20,
-                      fontWeight: "700",
-                      color: colors.error,
-                      letterSpacing: -0.3,
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      fontWeight: "600",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
                     }}
                   >
-                    {formatCurrency(monthlyExpenses)}
+                    {translate("expenses", isFriendlyMode)}
                   </Text>
-                  {/* Show breakdown of actual vs recurring expenses */}
-                  {recurringMonthlyExpenses > 0 && (
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                        marginTop: 2,
-                      }}
-                    >
-                      {formatCurrency(
-                        monthlyExpenses - recurringMonthlyExpenses
-                      )}{" "}
-                      recorded + {formatCurrency(recurringMonthlyExpenses)}{" "}
-                      recurring
-                    </Text>
-                  )}
+                  <TouchableOpacity
+                    onPress={() => {
+                      showInfoModalHandler(
+                        "Expenses Breakdown",
+                        "Expenses include both actual transactions this month and recurring expenses (mortgage, utilities, etc.) that automatically occur each month.",
+                        "trending-down",
+                        colors.error
+                      );
+                    }}
+                    style={{ marginLeft: 8 }}
+                  >
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
                 </View>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: colors.error,
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  {formatCurrency(monthlyExpenses)}
+                </Text>
+                {/* Show breakdown of actual vs recurring expenses */}
+                {recurringMonthlyExpenses > 0 && (
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {formatCurrency(monthlyExpenses - recurringMonthlyExpenses)}{" "}
+                    recorded + {formatCurrency(recurringMonthlyExpenses)}{" "}
+                    recurring
+                  </Text>
+                )}
               </View>
+            </View>
 
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  backgroundColor: colors.surfaceSecondary,
+                  padding: 12,
+                  borderRadius: 12,
+                  marginRight: 16,
+                  width: 50,
+                  height: 50,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Ionicons
+                  name={availableAmount >= 0 ? "wallet" : "alert-circle"}
+                  size={20}
+                  color={colors.primary}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
                 <View
                   style={{
-                    backgroundColor: colors.surfaceSecondary,
-                    padding: 12,
-                    borderRadius: 12,
-                    marginRight: 16,
-                    width: 50,
-                    height: 50,
-                    justifyContent: "center",
+                    flexDirection: "row",
                     alignItems: "center",
+                    marginBottom: 4,
                   }}
                 >
-                  <Ionicons
-                    name={availableAmount >= 0 ? "wallet" : "alert-circle"}
-                    size={20}
-                    color={colors.primary}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 4,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      {translate("availableAmount", isFriendlyMode)}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        showInfoModalHandler(
-                          "Available Amount Calculation",
-                          `FORMULA\nNet Income - Savings (${savingsPercent}%) - Goal Contributions - Debt Payoff (${debtPayoffPercent}%)\n\nINCOME & EXPENSES\nGross Income:     ${formatCurrency(
-                            monthlyIncome
-                          )}\nExpenses:         ${formatCurrency(
-                            monthlyExpenses
-                          )}\n─────────────────────────\nNet Income:       ${formatCurrency(
-                            netIncome
-                          )}\n\nALLOCATIONS\nSavings:          ${formatCurrency(
-                            savingsAmount
-                          )}\nGoal Contrib:     ${formatCurrency(
-                            totalGoalContributions
-                          )}\nDebt Payoff:      ${formatCurrency(
-                            debtPayoffAmount
-                          )}\n─────────────────────────\nAvailable:        ${formatCurrency(
-                            availableAmount
-                          )}`,
-                          "calculator",
-                          availableAmount >= 0 ? colors.warning : colors.error
-                        );
-                      }}
-                      style={{ marginLeft: 8 }}
-                    >
-                      <Ionicons
-                        name="information-circle-outline"
-                        size={16}
-                        color={colors.textSecondary}
-                      />
-                    </TouchableOpacity>
-                  </View>
                   <Text
                     style={{
-                      fontSize: 20,
-                      fontWeight: "700",
-                      color:
-                        availableAmount >= 0 ? colors.warning : colors.error,
-                      letterSpacing: -0.3,
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      fontWeight: "600",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
                     }}
                   >
-                    {formatCurrency(availableAmount)}
+                    {translate("availableAmount", isFriendlyMode)}
                   </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      showInfoModalHandler(
+                        "Available Amount Calculation",
+                        `FORMULA\nNet Income - Savings (${savingsPercent}%) - Goal Contributions - Debt Payoff (${debtPayoffPercent}%)\n\nINCOME & EXPENSES\nGross Income:     ${formatCurrency(
+                          monthlyIncome
+                        )}\nExpenses:         ${formatCurrency(
+                          monthlyExpenses
+                        )}\n─────────────────────────\nNet Income:       ${formatCurrency(
+                          netIncome
+                        )}\n\nALLOCATIONS\nSavings:          ${formatCurrency(
+                          savingsAmount
+                        )}\nGoal Contrib:     ${formatCurrency(
+                          totalGoalContributions
+                        )}\nDebt Payoff:      ${formatCurrency(
+                          debtPayoffAmount
+                        )}\n─────────────────────────\nAvailable:        ${formatCurrency(
+                          availableAmount
+                        )}`,
+                        "calculator",
+                        availableAmount >= 0 ? colors.warning : colors.error
+                      );
+                    }}
+                    style={{ marginLeft: 8 }}
+                  >
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
                 </View>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: availableAmount >= 0 ? colors.warning : colors.error,
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  {formatCurrency(availableAmount)}
+                </Text>
               </View>
             </View>
           </View>
-        </TourGuide>
+        </View>
 
         {/* Balance Sheet Card */}
 
-        <TourGuide zone={2} screen="Dashboard">
-          <View
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 20,
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          }}
+        >
+          <Text
             style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 24,
+              fontSize: 20,
+              fontWeight: "700",
               marginBottom: 20,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
+              color: colors.text,
             }}
           >
+            Balance Sheet Snapshot
+          </Text>
+
+          <View style={{ alignItems: "center", marginBottom: 24 }}>
             <Text
               style={{
-                fontSize: 20,
-                fontWeight: "700",
-                marginBottom: 20,
-                color: colors.text,
+                fontSize: 36,
+                fontWeight: "800",
+                color: netWorth >= 0 ? colors.success : colors.error,
+                marginBottom: 8,
               }}
             >
-              Balance Sheet Snapshot
+              {formatCurrency(netWorth)}
             </Text>
+            <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+              {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
+            </Text>
+          </View>
 
-            <View style={{ alignItems: "center", marginBottom: 24 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+            }}
+          >
+            <View style={{ alignItems: "center", flex: 1 }}>
               <Text
                 style={{
-                  fontSize: 36,
-                  fontWeight: "800",
-                  color: netWorth >= 0 ? colors.success : colors.error,
-                  marginBottom: 8,
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 4,
                 }}
               >
-                {formatCurrency(netWorth)}
+                Total {translate("assets", isFriendlyMode)}
               </Text>
-              <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.success,
+                }}
+              >
+                {formatCurrency(totalAssets)}
               </Text>
             </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
-            >
-              <View style={{ alignItems: "center", flex: 1 }}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    marginBottom: 4,
-                  }}
-                >
-                  Total {translate("assets", isFriendlyMode)}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "700",
-                    color: colors.success,
-                  }}
-                >
-                  {formatCurrency(totalAssets)}
-                </Text>
-              </View>
-              <View style={{ alignItems: "center", flex: 1 }}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    marginBottom: 4,
-                  }}
-                >
-                  Total {translate("liabilities", isFriendlyMode)}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "700",
-                    color: colors.error,
-                  }}
-                >
-                  {formatCurrency(totalDebts)}
-                </Text>
-              </View>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  marginBottom: 4,
+                }}
+              >
+                Total {translate("liabilities", isFriendlyMode)}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.error,
+                }}
+              >
+                {formatCurrency(totalDebts)}
+              </Text>
             </View>
           </View>
-        </TourGuide>
+        </View>
 
         {/* Smart Insights - Only show if there are insights */}
         {insights.length > 0 && (
@@ -1305,17 +1565,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </HelpfulTooltip>
       </ScrollView>
       <FloatingAIChatbot hideOnScroll={true} isScrolling={isScrolling} />
-      <TourGuide zone={3} screen="Dashboard">
-        <View
-          style={{
-            position: "absolute",
-            width: 56,
-            height: 56,
-            right: 20,
-            bottom: 120,
-          }}
-        />
-      </TourGuide>
 
       {/* Info Modal */}
       <Modal

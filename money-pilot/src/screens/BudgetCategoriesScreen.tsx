@@ -611,8 +611,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     }
 
     const limit = parseFloat(newCategoryLimit);
-    if (isNaN(limit) || limit <= 0) {
-      Alert.alert("Error", "Please enter a valid amount");
+    if (isNaN(limit) || limit < 0) {
+      Alert.alert("Error", "Please enter a valid amount (0 or greater)");
       return;
     }
 
@@ -650,8 +650,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     }
 
     const limit = parseFloat(tempCategoryLimit);
-    if (isNaN(limit) || limit <= 0) {
-      Alert.alert("Error", "Please enter a valid amount");
+    if (isNaN(limit) || limit < 0) {
+      Alert.alert("Error", "Please enter a valid amount (0 or greater)");
       return;
     }
 
@@ -1383,7 +1383,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     }}
                   >
                     {spending.actual === 0
-                      ? "$0"
+                      ? "No spending yet"
                       : `-$${spending.actual.toFixed(0)}`}
                   </Text>
                 </View>
@@ -1679,7 +1679,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                         setNewCategoryLimit(text);
                       }
                     }}
-                    placeholder="0.00"
+                    placeholder="0.00 (or 0 for no budget)"
                     keyboardType="numeric"
                     style={{
                       backgroundColor: colors.surfaceSecondary,

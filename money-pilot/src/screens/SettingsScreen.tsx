@@ -19,7 +19,7 @@ import { sendEmailVerificationLink } from "../services/auth";
 import { PlaidLinkComponent } from "../components/PlaidLinkComponent";
 import { usePaywall } from "../hooks/usePaywall";
 import { useSubscription } from "../contexts/SubscriptionContext";
-import { plaidService } from "../services/plaid";
+import { plaidService, PlaidAccount } from "../services/plaid";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
@@ -28,7 +28,6 @@ import { useData } from "../contexts/DataContext";
 import { AIUsageAdminScreen } from "./AIUsageAdminScreen";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 import { useScrollDetection } from "../hooks/useScrollDetection";
-import { useTour } from "../contexts/TourContext";
 import { HelpfulTooltip } from "../components/HelpfulTooltip";
 
 interface SettingsScreenProps {
@@ -46,13 +45,29 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     useScrollDetection();
   const [photoKey, setPhotoKey] = useState(Date.now());
   const { presentPaywall } = usePaywall();
-  const {
-    startTour,
-    hasCompletedTour,
-    setHasCompletedTour,
-    showTooltips,
-    setShowTooltips,
-  } = useTour();
+  const [showTooltips, setShowTooltips] = useState(false);
+
+  // Load tooltips setting from AsyncStorage
+  useEffect(() => {
+    const loadTooltipsSetting = async () => {
+      if (!user) return;
+
+      try {
+        const saved = await AsyncStorage.getItem(`show_tooltips_${user.uid}`);
+        if (saved !== null) {
+          setShowTooltips(saved === "true");
+        } else {
+          // Default to false for new users (no tooltips)
+          setShowTooltips(false);
+        }
+      } catch (error) {
+        console.error("Error loading tooltips setting:", error);
+        setShowTooltips(false);
+      }
+    };
+
+    loadTooltipsSetting();
+  }, [user]);
 
   const handlePaywallPress = async () => {
     setLoading(true);
@@ -72,10 +87,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     bankTransactions,
     isBankConnected,
   } = useData();
-  const [connectedBankInfo, setConnectedBankInfo] = useState<{
-    name: string;
-    accounts: any[];
-  } | null>(null);
+  const [connectedBankInfo, setConnectedBankInfo] = useState<
+    | {
+        name: string;
+        accounts: PlaidAccount[];
+        itemId: string;
+      }[]
+    | null
+  >(null);
   const [loading, setLoading] = useState(false);
   const [emailVerificationLoading, setEmailVerificationLoading] =
     useState(false);
@@ -92,9 +111,22 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     toggleChatbot();
   };
 
-  const handleToggleTooltips = () => {
+  const handleToggleTooltips = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setShowTooltips(!showTooltips);
+    const newValue = !showTooltips;
+    setShowTooltips(newValue);
+
+    // Save to AsyncStorage
+    if (user) {
+      try {
+        await AsyncStorage.setItem(
+          `show_tooltips_${user.uid}`,
+          newValue.toString()
+        );
+      } catch (error) {
+        console.error("Error saving tooltips setting:", error);
+      }
+    }
   };
 
   // Check if user is admin (you can modify this logic as needed)
@@ -627,19 +659,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           />
           {isBankConnected ? (
             <View style={{ marginTop: 12 }}>
-              {connectedBankInfo?.accounts &&
-                connectedBankInfo.accounts.length > 0 && (
-                  <Text
-                    style={{
-                      color: colors.textSecondary,
-                      fontSize: 12,
-                    }}
-                  >
-                    {connectedBankInfo.accounts.length} account
-                    {connectedBankInfo.accounts.length !== 1 ? "s" : ""}{" "}
-                    connected
-                  </Text>
-                )}
+              {connectedBankInfo && connectedBankInfo.length > 0 && (
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: 12,
+                  }}
+                >
+                  {connectedBankInfo.reduce(
+                    (total, bank) => total + bank.accounts.length,
+                    0
+                  )}{" "}
+                  account
+                  {connectedBankInfo.reduce(
+                    (total, bank) => total + bank.accounts.length,
+                    0
+                  ) !== 1
+                    ? "s"
+                    : ""}{" "}
+                  connected
+                </Text>
+              )}
             </View>
           ) : (
             <Text style={{ marginTop: 12, color: colors.textSecondary }}>
@@ -903,32 +943,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 />
               </View>
             </View>
-          </TouchableOpacity>
-
-          {/* Tour Controls */}
-          <TouchableOpacity
-            style={[
-              styles.settingItem,
-              { borderBottomColor: colors.borderLight },
-            ]}
-            onPress={() => startTour(navigation)}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons
-                name="map"
-                size={20}
-                color={colors.textSecondary}
-                style={{ marginRight: 12 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text }]}>
-                Take App Tour
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={16}
-              color={colors.textSecondary}
-            />
           </TouchableOpacity>
 
           <HelpfulTooltip

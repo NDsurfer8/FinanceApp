@@ -4,7 +4,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
-import { TourGuide } from "./TourGuide";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface BudgetOverviewCardProps {
@@ -50,8 +49,9 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
 
   // Animation and state for glow effects
   const [showSettingsGlow, setShowSettingsGlow] = useState(false);
-  const glowAnim = React.useRef(new Animated.Value(0)).current;
   const settingsGlowAnim = React.useRef(new Animated.Value(0)).current;
+  const incomeGlowAnim = React.useRef(new Animated.Value(0)).current;
+  const expenseGlowAnim = React.useRef(new Animated.Value(0)).current;
 
   // Ensure all values are safe numbers
   const safeNetIncome = Number(netIncome) || 0;
@@ -78,9 +78,6 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
 
   const budgetStatus = getBudgetStatus();
 
-  // Check if there are no transactions
-  const hasNoTransactions = safeTotalIncome === 0 && safeTotalExpenses === 0;
-
   // Load settings glow state from AsyncStorage
   useEffect(() => {
     const loadSettingsGlowState = async () => {
@@ -97,31 +94,6 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
     };
     loadSettingsGlowState();
   }, []);
-
-  // Animate glow effects
-  useEffect(() => {
-    if (hasNoTransactions) {
-      // Start pulsing glow animation
-      const pulseAnimation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(glowAnim, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: false,
-          }),
-          Animated.timing(glowAnim, {
-            toValue: 0,
-            duration: 1000,
-            useNativeDriver: false,
-          }),
-        ])
-      );
-      pulseAnimation.start();
-    } else {
-      // Stop animation and reset
-      glowAnim.setValue(0);
-    }
-  }, [hasNoTransactions]);
 
   useEffect(() => {
     if (showSettingsGlow) {
@@ -147,6 +119,56 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
     }
   }, [showSettingsGlow]);
 
+  // Animate glow effect when no income transactions
+  useEffect(() => {
+    if (safeTotalIncome === 0) {
+      // Start pulsing glow animation for income button
+      const pulseAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(incomeGlowAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+          Animated.timing(incomeGlowAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+        ])
+      );
+      pulseAnimation.start();
+    } else {
+      // Stop animation and reset
+      incomeGlowAnim.setValue(0);
+    }
+  }, [safeTotalIncome]);
+
+  // Animate glow effect when no expense transactions
+  useEffect(() => {
+    if (safeTotalExpenses === 0) {
+      // Start pulsing glow animation for expense button
+      const pulseAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(expenseGlowAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+          Animated.timing(expenseGlowAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: false,
+          }),
+        ])
+      );
+      pulseAnimation.start();
+    } else {
+      // Stop animation and reset
+      expenseGlowAnim.setValue(0);
+    }
+  }, [safeTotalExpenses]);
+
   // Handle settings press with glow dismissal
   const handleSettingsPress = async () => {
     if (showSettingsGlow) {
@@ -167,33 +189,11 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
         borderRadius: 20,
         padding: 24,
         marginBottom: 20,
-        shadowColor: hasNoTransactions ? colors.primary : colors.shadow,
-        shadowOpacity: hasNoTransactions
-          ? glowAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.08, 0.3],
-            })
-          : 0.08,
-        shadowRadius: hasNoTransactions
-          ? glowAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [12, 20],
-            })
-          : 12,
+        shadowColor: colors.shadow,
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
         shadowOffset: { width: 0, height: 4 },
-        elevation: hasNoTransactions
-          ? glowAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [4, 8],
-            })
-          : 4,
-        borderWidth: hasNoTransactions ? 2 : 0,
-        borderColor: hasNoTransactions
-          ? glowAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [colors.primary + "40", colors.primary + "80"],
-            })
-          : "transparent",
+        elevation: 4,
       }}
     >
       {/* Header */}
@@ -323,85 +323,137 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
           marginBottom: 20,
         }}
       >
-        <TouchableOpacity
-          style={{ flex: 1, marginRight: 12 }}
-          onPress={onPressIncome}
-          activeOpacity={0.7}
+        <Animated.View
+          style={{
+            flex: 1,
+            marginRight: 12,
+            shadowColor: safeTotalIncome === 0 ? colors.success : "transparent",
+            shadowOpacity:
+              safeTotalIncome === 0
+                ? incomeGlowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 0.4],
+                  })
+                : 0,
+            shadowRadius:
+              safeTotalIncome === 0
+                ? incomeGlowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 15],
+                  })
+                : 0,
+            shadowOffset: { width: 0, height: 0 },
+            elevation:
+              safeTotalIncome === 0
+                ? incomeGlowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 6],
+                  })
+                : 0,
+          }}
         >
-          <View
-            style={{
-              backgroundColor: colors.surfaceSecondary,
-              padding: 16,
-              borderRadius: 12,
-              alignItems: "center",
-            }}
-          >
-            <Ionicons name="trending-up" size={20} color={colors.primary} />
-            <Text
+          <TouchableOpacity onPress={onPressIncome} activeOpacity={0.7}>
+            <View
               style={{
-                fontSize: 18,
-                fontWeight: "700",
-                color: colors.success,
-                marginTop: 4,
+                backgroundColor: colors.surfaceSecondary,
+                padding: 16,
+                borderRadius: 12,
+                alignItems: "center",
               }}
             >
-              $
-              {safeTotalIncome.toLocaleString(undefined, {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })}
-            </Text>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.textSecondary,
-                marginTop: 2,
-              }}
-            >
-              Income
-            </Text>
-          </View>
-        </TouchableOpacity>
+              <Ionicons name="trending-up" size={20} color={colors.primary} />
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.success,
+                  marginTop: 4,
+                }}
+              >
+                $
+                {safeTotalIncome.toLocaleString(undefined, {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                  marginTop: 2,
+                }}
+              >
+                Income
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
 
-        <TouchableOpacity
-          style={{ flex: 1, marginLeft: 12 }}
-          onPress={onPressExpense}
-          activeOpacity={0.7}
+        <Animated.View
+          style={{
+            flex: 1,
+            marginLeft: 12,
+            shadowColor: safeTotalExpenses === 0 ? colors.error : "transparent",
+            shadowOpacity:
+              safeTotalExpenses === 0
+                ? expenseGlowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 0.4],
+                  })
+                : 0,
+            shadowRadius:
+              safeTotalExpenses === 0
+                ? expenseGlowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 15],
+                  })
+                : 0,
+            shadowOffset: { width: 0, height: 0 },
+            elevation:
+              safeTotalExpenses === 0
+                ? expenseGlowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 6],
+                  })
+                : 0,
+          }}
         >
-          <View
-            style={{
-              backgroundColor: colors.surfaceSecondary,
-              padding: 16,
-              borderRadius: 12,
-              alignItems: "center",
-            }}
-          >
-            <Ionicons name="trending-down" size={20} color={colors.error} />
-            <Text
+          <TouchableOpacity onPress={onPressExpense} activeOpacity={0.7}>
+            <View
               style={{
-                fontSize: 18,
-                fontWeight: "700",
-                color: colors.error,
-                marginTop: 4,
+                backgroundColor: colors.surfaceSecondary,
+                padding: 16,
+                borderRadius: 12,
+                alignItems: "center",
               }}
             >
-              $
-              {safeTotalExpenses.toLocaleString(undefined, {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })}
-            </Text>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.textSecondary,
-                marginTop: 2,
-              }}
-            >
-              Expenses
-            </Text>
-          </View>
-        </TouchableOpacity>
+              <Ionicons name="trending-down" size={20} color={colors.error} />
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: colors.error,
+                  marginTop: 4,
+                }}
+              >
+                $
+                {safeTotalExpenses.toLocaleString(undefined, {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                  marginTop: 2,
+                }}
+              >
+                Expenses
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
 
       {/* Savings Progress */}
@@ -495,81 +547,79 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
           </Text>
         </TouchableOpacity>
 
-        <TourGuide zone={2} screen="Budget">
-          <Animated.View
+        <Animated.View
+          style={{
+            shadowColor: showSettingsGlow ? colors.primary : "transparent",
+            shadowOpacity: showSettingsGlow
+              ? settingsGlowAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.4],
+                })
+              : 0,
+            shadowRadius: showSettingsGlow
+              ? settingsGlowAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 15],
+                })
+              : 0,
+            shadowOffset: { width: 0, height: 0 },
+            elevation: showSettingsGlow
+              ? settingsGlowAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 6],
+                })
+              : 0,
+          }}
+        >
+          <TouchableOpacity
+            onPress={handleSettingsPress}
             style={{
-              shadowColor: showSettingsGlow ? colors.primary : "transparent",
-              shadowOpacity: showSettingsGlow
-                ? settingsGlowAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 0.4],
-                  })
-                : 0,
-              shadowRadius: showSettingsGlow
-                ? settingsGlowAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 15],
-                  })
-                : 0,
-              shadowOffset: { width: 0, height: 0 },
-              elevation: showSettingsGlow
-                ? settingsGlowAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 6],
-                  })
-                : 0,
+              backgroundColor: colors.surfaceSecondary,
+              padding: 12,
+              borderRadius: 12,
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: 60,
+              position: "relative",
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderStyle: "dashed",
             }}
           >
-            <TouchableOpacity
-              onPress={handleSettingsPress}
-              style={{
-                backgroundColor: colors.surfaceSecondary,
-                padding: 12,
-                borderRadius: 12,
-                alignItems: "center",
-                justifyContent: "center",
-                minWidth: 60,
-                position: "relative",
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderStyle: "dashed",
-              }}
-            >
-              <Ionicons
-                name="settings-outline"
-                size={20}
-                color={colors.buttonPrimary}
-              />
-              {props.hasOverBudgetItems && (
-                <View
+            <Ionicons
+              name="settings-outline"
+              size={20}
+              color={colors.buttonPrimary}
+            />
+            {props.hasOverBudgetItems && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -4,
+                  right: -4,
+                  backgroundColor: colors.error,
+                  borderRadius: 8,
+                  width: 16,
+                  height: 16,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 2,
+                  borderColor: colors.surface,
+                }}
+              >
+                <Text
                   style={{
-                    position: "absolute",
-                    top: -4,
-                    right: -4,
-                    backgroundColor: colors.error,
-                    borderRadius: 8,
-                    width: 16,
-                    height: 16,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderWidth: 2,
-                    borderColor: colors.surface,
+                    color: colors.buttonText,
+                    fontSize: 10,
+                    fontWeight: "700",
                   }}
                 >
-                  <Text
-                    style={{
-                      color: colors.buttonText,
-                      fontSize: 10,
-                      fontWeight: "700",
-                    }}
-                  >
-                    !
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
-        </TourGuide>
+                  !
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     </Animated.View>
   );

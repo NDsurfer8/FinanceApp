@@ -266,13 +266,14 @@ exports.getAccounts = onCall(
       );
     }
 
-    // Handle test token for simulation
+    // Handle test tokens for multiple bank simulation
     if (accessToken === "test_access_token_12345") {
+      // Bank 1: Chase Bank
       return {
         accounts: [
           {
-            account_id: "test_account_1",
-            name: "Test Checking Account",
+            account_id: "chase_checking_1",
+            name: "Chase Total Checking",
             mask: "1234",
             type: "depository",
             subtype: "checking",
@@ -282,8 +283,8 @@ exports.getAccounts = onCall(
             },
           },
           {
-            account_id: "test_account_2",
-            name: "Test Savings Account",
+            account_id: "chase_savings_1",
+            name: "Chase Savings",
             mask: "5678",
             type: "depository",
             subtype: "savings",
@@ -293,8 +294,8 @@ exports.getAccounts = onCall(
             },
           },
           {
-            account_id: "test_account_3",
-            name: "Test Credit Card",
+            account_id: "chase_credit_1",
+            name: "Chase Freedom Credit Card",
             mask: "9876",
             type: "credit",
             subtype: "credit_card",
@@ -303,26 +304,86 @@ exports.getAccounts = onCall(
               current: 2500,
             },
           },
+        ],
+      };
+    }
+
+    if (accessToken === "test_access_token_67890") {
+      // Bank 2: Bank of America
+      return {
+        accounts: [
           {
-            account_id: "test_account_4",
-            name: "Test Loan",
-            mask: "5432",
-            type: "loan",
-            subtype: "loan",
+            account_id: "boa_checking_1",
+            name: "Bank of America Advantage Checking",
+            mask: "2468",
+            type: "depository",
+            subtype: "checking",
             balances: {
-              available: 1000,
-              current: 1000,
+              available: 3200,
+              current: 3200,
             },
           },
           {
-            account_id: "test_account_5",
-            name: "Test Investment",
-            mask: "1234",
+            account_id: "boa_savings_1",
+            name: "Bank of America Savings",
+            mask: "1357",
+            type: "depository",
+            subtype: "savings",
+            balances: {
+              available: 8500,
+              current: 8500,
+            },
+          },
+          {
+            account_id: "boa_credit_1",
+            name: "Bank of America Cash Rewards",
+            mask: "7531",
+            type: "credit",
+            subtype: "credit_card",
+            balances: {
+              available: 1800,
+              current: 1800,
+            },
+          },
+        ],
+      };
+    }
+
+    if (accessToken === "test_access_token_11111") {
+      // Bank 3: Wells Fargo
+      return {
+        accounts: [
+          {
+            account_id: "wf_checking_1",
+            name: "Wells Fargo Everyday Checking",
+            mask: "3691",
+            type: "depository",
+            subtype: "checking",
+            balances: {
+              available: 2100,
+              current: 2100,
+            },
+          },
+          {
+            account_id: "wf_investment_1",
+            name: "Wells Fargo Investment Account",
+            mask: "4826",
             type: "investment",
             subtype: "investment",
             balances: {
-              available: 10000,
-              current: 10000,
+              available: 25000,
+              current: 25000,
+            },
+          },
+          {
+            account_id: "wf_loan_1",
+            name: "Wells Fargo Auto Loan",
+            mask: "1593",
+            type: "loan",
+            subtype: "auto",
+            balances: {
+              available: 15000,
+              current: 15000,
             },
           },
         ],
@@ -374,14 +435,15 @@ exports.getTransactions = onCall(
       );
     }
 
-    // Handle test token for simulation
+    // Handle test tokens for multiple bank simulation
     if (accessToken === "test_access_token_12345") {
+      // Bank 1: Chase Bank transactions
       return {
         transactions: [
-          // September 2025 - Early month
+          // September 2025 - Chase transactions
           {
-            transaction_id: "test_transaction_1",
-            account_id: "test_account_2",
+            transaction_id: "chase_transaction_1",
+            account_id: "chase_checking_1",
             amount: -3500.0,
             date: "2025-09-01",
             name: "Salary Deposit",
@@ -390,8 +452,8 @@ exports.getTransactions = onCall(
             pending: false,
           },
           {
-            transaction_id: "test_transaction_2",
-            account_id: "test_account_1",
+            transaction_id: "chase_transaction_2",
+            account_id: "chase_checking_1",
             amount: 1800.0,
             date: "2025-09-01",
             name: "Rent Payment",
@@ -400,8 +462,8 @@ exports.getTransactions = onCall(
             pending: false,
           },
           {
-            transaction_id: "test_transaction_3",
-            account_id: "test_account_1",
+            transaction_id: "chase_transaction_3",
+            account_id: "chase_checking_1",
             amount: 65.0,
             date: "2025-09-02",
             name: "Whole Foods",
@@ -409,11 +471,9 @@ exports.getTransactions = onCall(
             category: ["Food and Drink", "Groceries"],
             pending: false,
           },
-
-          // September 2025 - Mid month
           {
-            transaction_id: "test_transaction_4",
-            account_id: "test_account_1",
+            transaction_id: "chase_transaction_4",
+            account_id: "chase_credit_1",
             amount: 45.0,
             date: "2025-09-15",
             name: "Shell Gas Station",
@@ -422,8 +482,8 @@ exports.getTransactions = onCall(
             pending: false,
           },
           {
-            transaction_id: "test_transaction_5",
-            account_id: "test_account_1",
+            transaction_id: "chase_transaction_5",
+            account_id: "chase_checking_1",
             amount: 120.0,
             date: "2025-09-20",
             name: "Electric Bill",
@@ -431,62 +491,98 @@ exports.getTransactions = onCall(
             category: ["Utilities", "Electric"],
             pending: false,
           },
+        ],
+        total_transactions: 5,
+      };
+    }
 
-          // October 2025
+    if (accessToken === "test_access_token_67890") {
+      // Bank 2: Bank of America transactions
+      return {
+        transactions: [
+          // September 2025 - Bank of America transactions
           {
-            transaction_id: "test_transaction_6",
-            account_id: "test_account_2",
-            amount: -3500.0,
-            date: "2025-10-01",
-            name: "Salary Deposit",
-            merchant_name: "Tech Corp Inc",
+            transaction_id: "boa_transaction_1",
+            account_id: "boa_checking_1",
+            amount: -2800.0,
+            date: "2025-09-01",
+            name: "Freelance Payment",
+            merchant_name: "Design Studio LLC",
             category: ["Transfer", "Deposit"],
             pending: false,
           },
           {
-            transaction_id: "test_transaction_7",
-            account_id: "test_account_1",
-            amount: 1800.0,
-            date: "2025-10-01",
-            name: "Rent Payment",
-            merchant_name: "Downtown Apartments",
-            category: ["Rent", "Housing"],
-            pending: false,
-          },
-          {
-            transaction_id: "test_transaction_8",
-            account_id: "test_account_1",
+            transaction_id: "boa_transaction_2",
+            account_id: "boa_credit_1",
             amount: 89.0,
-            date: "2025-10-10",
-            name: "Target",
-            merchant_name: "Target",
+            date: "2025-09-05",
+            name: "Amazon Purchase",
+            merchant_name: "Amazon",
             category: ["Shopping", "General"],
             pending: false,
           },
-
-          // November 2025
           {
-            transaction_id: "test_transaction_9",
-            account_id: "test_account_2",
-            amount: -3500.0,
-            date: "2025-11-01",
-            name: "Salary Deposit",
-            merchant_name: "Tech Corp Inc",
-            category: ["Transfer", "Deposit"],
+            transaction_id: "boa_transaction_3",
+            account_id: "boa_checking_1",
+            amount: 25.0,
+            date: "2025-09-10",
+            name: "Netflix Subscription",
+            merchant_name: "Netflix",
+            category: ["Entertainment", "Streaming"],
             pending: false,
           },
           {
-            transaction_id: "test_transaction_10",
-            account_id: "test_account_1",
-            amount: 1800.0,
-            date: "2025-11-01",
-            name: "Rent Payment",
-            merchant_name: "Downtown Apartments",
-            category: ["Rent", "Housing"],
+            transaction_id: "boa_transaction_4",
+            account_id: "boa_credit_1",
+            amount: 75.0,
+            date: "2025-09-18",
+            name: "Restaurant Dinner",
+            merchant_name: "Bistro Central",
+            category: ["Food and Drink", "Restaurants"],
             pending: false,
           },
         ],
-        total_transactions: 10,
+        total_transactions: 4,
+      };
+    }
+
+    if (accessToken === "test_access_token_11111") {
+      // Bank 3: Wells Fargo transactions
+      return {
+        transactions: [
+          // September 2025 - Wells Fargo transactions
+          {
+            transaction_id: "wf_transaction_1",
+            account_id: "wf_checking_1",
+            amount: -500.0,
+            date: "2025-09-01",
+            name: "Investment Transfer",
+            merchant_name: "Wells Fargo Investment",
+            category: ["Transfer", "Investment"],
+            pending: false,
+          },
+          {
+            transaction_id: "wf_transaction_2",
+            account_id: "wf_loan_1",
+            amount: 450.0,
+            date: "2025-09-15",
+            name: "Auto Loan Payment",
+            merchant_name: "Wells Fargo Auto",
+            category: ["Loan", "Auto"],
+            pending: false,
+          },
+          {
+            transaction_id: "wf_transaction_3",
+            account_id: "wf_checking_1",
+            amount: 35.0,
+            date: "2025-09-22",
+            name: "Gym Membership",
+            merchant_name: "FitLife Gym",
+            category: ["Health", "Fitness"],
+            pending: false,
+          },
+        ],
+        total_transactions: 3,
       };
     }
 
@@ -556,52 +652,51 @@ exports.getTransactions = onCall(
 // AI Financial Advisor Functions
 
 // Core system prompt components
-const SYSTEM_PROMPT_CORE = `You are Vectra, a friendly and laidback professional AI Financial Advisor for the VectorFi app. You help users with budgeting, goal setting, debt management, investing advice, and financial planning.
+const SYSTEM_PROMPT_CORE = `You are Vectra — a friendly, laid-back financial coach inside the VectorFi app (educational only; not financial/tax/legal advice).
+Goal: provide concise, practical guidance on budgeting, cash flow, debt payoff, and general investing concepts. Help users build wealth through better habits, planning, and income ideas (e.g., side hustles).
 
-Your style:
-- Use bullet points and emojis like ChatGPT
-- Be friendly and laidback professional
-- Provide actionable, practical advice
-- Keep responses concise but helpful
-- Use plain text (no markdown headers like ### or **bold**)
+Expertise
+- Operate at an expert personal finance educator level.
+- Use standard frameworks: 50/30/20 and zero-based budgeting; sinking funds; emergency funds (3–6 months); debt snowball vs avalanche; APR vs APY; amortization basics; compound growth; DTI and savings rate; goal-based planning.
+- Show quick math with currency/locale formatting (e.g., $300 ≈ 10% of $3,000). Round to whole dollars unless precision matters.
 
-IMPORTANT CONVERSATION RULES:
-- Maintain conversation continuity - don't start responses with "Hey there!" or "Hello!" if you're continuing a conversation
-- If the user asks follow-up questions or wants you to "dive deeper", continue naturally from where you left off
-- Don't repeat introductions or greetings in follow-up responses
-- Keep the conversation flowing naturally as if you're having a real conversation
-- If you offered to "dive deeper" on a topic and they accept, go straight into the detailed explanation
+STYLE
+- Detect the user's language and respond in that same language. If they write in Spanish, respond in Spanish. If they write in French, respond in French, etc.
+- Plain English (or the user's language), calm and supportive. NEVER give greetings like "Hey there", "Hello", "Hi" - the user has already been greeted.
+- No "As an AI…" or "I'm an AI" - respond like a real person would.
+- Use short bullets (•) and occasional emojis 👍 only when helpful.
+- Prioritize the single most impactful action first.
+- Max 300 words total. If detail is requested, give a second, short follow-up.
+- For casual questions like "how are you", respond naturally like a friend would.
 
-Always be encouraging and supportive while giving practical financial guidance.
-You also know that the user is currently on the VectorFi app and you are helping them with their financial questions and anything else they may need help with.`;
+DATA & CALCULATIONS
+- Use only the financial data provided by the app/user (respect currency/locale).
+- If a critical number is missing: ask ONE clarifying question OR make ONE simple, labeled assumption — not both.
+- You do not fetch live market/bank data; if asked for "today's" numbers, explain the limitation and offer an estimate method. Or ask the user to provide the data.
 
-const FIN_PLAN_RULES = `When generating financial plans, follow this exact 6-section structure:
+SAFETY & SCOPE
+- Educational only, not financial/tax/legal advice; no securities picks or guarantees.
+- Avoid sensitive PII requests.
 
-1. Snapshot of Current Finances
-- Monthly income, expenses, net savings
-- Current savings, debts, assets
+RESPONSE STYLE
+- Be conversational and natural. Respond like a helpful friend who knows finance.
+- For simple questions, just answer directly without rigid formatting.
+- Only use structured format (Quick Wins/Plan/Next Steps) when giving comprehensive advice or action plans.
+- For follow-up questions, continue the conversation naturally.
 
-2. Goal Definition
-- Clear goal statement with timeline
+CONVERSATION
+- Keep context from prior turns; don't re-introduce yourself.
+- If user says "dive deeper," continue exactly where you left off.
+- If a user just asks a question, respond naturally and conversationally.
+- For casual questions like "how are you", "what's up", "how's it going" - respond like a friend would: "Doing great! Ready to help with your finances" or "All good! What can I help you with today?"
+- Never use greetings - the user has already been welcomed to the app.
+`;
 
-3. Step-by-Step Action Plan
-- Specific monthly actions
-- Prioritized steps (debt first, then savings)
-- Include side hustle opportunities
-
-4. Options / Trade-Offs
-- 3 realistic options with pros/cons
-- Different timelines or approaches
-
-5. Recommendations
-- 3-4 specific actionable recommendations
-- Focus on high-impact actions
-
-6. Overview
-- Provide a brief overview of the financial plan and the steps they need to take to achieve their goals.
-
-
-Use bullet points and emojis, no markdown headers.`;
+const FIN_PLAN_RULES = `When a plan is requested, keep ≤300 words and use:
+1) Current Snapshot – income, expenses, savings, debts, assets, liabilities, net worth, cash flow, debt to income ratio, etc. Explain what the terms mean in a way that a “13-year-old” old can understand if you use them (1–2 bullets)
+2) Goal & Timeline – 1 line
+3) Action Plan – 3–4 bullets with $/%, timelines, and specific actions
+4) Next Steps – this week's 2–3 actions + milestones`;
 
 // Helper function to build system prompt
 function buildSystemPrompt(
@@ -631,71 +726,45 @@ function buildSystemPrompt(
   return systemPrompt;
 }
 
-// Helper function to detect plan requests
-function isPlanRequest(userQuestion) {
-  const planKeywords = ["generate", "create", "make", "plan", "strategy"];
+// Helper function to detect plan requests (renamed to avoid collision)
+function looksLikePlanRequest(userQuestion) {
+  const planKeywords = [
+    "generate",
+    "create",
+    "make",
+    "plan",
+    "strategy",
+    "roadmap",
+    "projection",
+    "forecast",
+    "afford",
+  ];
   return planKeywords.some((keyword) =>
     userQuestion.toLowerCase().includes(keyword)
   );
 }
 
-// Helper function to detect follow-up questions
-function detectFollowUpQuestion(currentMessage, conversationHistory) {
-  if (!conversationHistory || conversationHistory.length === 0) {
-    return false;
-  }
+// Safer follow-up detector (trim false positives)
+function detectFollowUpQuestion(currentMessage, conversationHistory = []) {
+  if (!conversationHistory.length) return false;
+  const msg = currentMessage.trim().toLowerCase();
 
-  const lowerMessage = currentMessage.toLowerCase();
-
-  // Keywords that indicate follow-up questions
-  const followUpKeywords = [
-    "yes",
-    "no",
-    "sure",
-    "okay",
-    "ok",
-    "yeah",
-    "yep",
-    "nope",
+  const shortYesNo = /^(yes|no|sure|ok(ay)?|yeah|yep|nope)$/i.test(msg);
+  const followUps = [
     "dive deeper",
     "tell me more",
     "explain",
-    "how",
     "what about",
-    "what else",
-    "and",
-    "also",
-    "too",
-    "as well",
-    "additionally",
-    "furthermore",
-    "moreover",
-    "besides",
-    "in addition",
-    "can you",
-    "could you",
-    "would you",
-    "will you",
-    "please",
-    "thanks",
-    "thank you",
-    "thx",
+    "and then",
+    "next",
+    "details",
+    "breakdown",
+    "step by step",
   ];
+  const hasFollowUp = followUps.some((k) => msg.includes(k));
+  const isShort = msg.length < 45;
 
-  // Check if current message contains follow-up keywords
-  const hasFollowUpKeywords = followUpKeywords.some((keyword) =>
-    lowerMessage.includes(keyword)
-  );
-
-  // Check if message is short (likely a follow-up)
-  const isShortMessage = currentMessage.length < 50;
-
-  // Check if it's a direct response to a question (yes/no)
-  const isDirectResponse = /^(yes|no|sure|okay|ok|yeah|yep|nope)$/i.test(
-    currentMessage.trim()
-  );
-
-  return hasFollowUpKeywords || isShortMessage || isDirectResponse;
+  return shortYesNo || hasFollowUp || isShort;
 }
 
 // Helper function to analyze question type
@@ -759,144 +828,68 @@ function analyzeQuestionType(question) {
 function generateContextInstructions(questionType) {
   const instructions = {
     recommendation:
-      "Provide specific, actionable recommendations with percentages or dollar amounts when relevant.",
+      "Give specific, actionable recommendations with percentages or dollar amounts when relevant. Be conversational and helpful.",
     educational:
-      "Explain concepts in simple, relatable terms using analogies when helpful.",
+      "Explain concepts in simple, relatable terms using analogies when helpful. Be conversational and easy to understand.",
     analytical:
-      "Provide clear calculations and breakdowns using the user's actual financial data.",
+      "Provide clear calculations and breakdowns using the user's actual financial data. Explain the numbers in plain English.",
     guidance:
-      "Offer supportive, non-judgmental advice with step-by-step guidance.",
+      "Offer supportive, non-judgmental advice with step-by-step guidance. Be encouraging and practical.",
     planning:
-      "Create realistic, achievable plans broken down into manageable steps.",
+      "Create realistic, achievable plans broken down into manageable steps. Use the 4-section structure for comprehensive plans.",
     comparison:
-      "Present balanced comparisons highlighting pros and cons of each option.",
+      "Present balanced comparisons highlighting pros and cons of each option. Be conversational and helpful.",
     crisis:
-      "Be calm and reassuring with immediate, actionable steps for stability.",
+      "Be calm and reassuring with immediate, actionable steps for stability. Prioritize urgent actions while staying supportive.",
     general:
-      "Respond naturally and conversationally using the user's financial data when relevant.",
+      "Respond naturally and conversationally using the user's financial data when relevant. Be helpful and friendly.",
   };
 
   return instructions[questionType] || instructions.general;
 }
 
-// Helper function to calculate cost
-function calculateCost(usage, model = "gpt-4o-mini") {
-  // Pricing per 1K tokens (Chat Completions API)
-  const pricingPer1K = {
-    "gpt-4o-mini": {
-      input: 0.00015, // $0.15 per 1M input tokens
-      output: 0.0006, // $0.60 per 1M output tokens
-    },
-    "gpt-4o": {
-      input: 0.0025, // $2.50 per 1M input tokens
-      output: 0.01, // $10.00 per 1M output tokens
-    },
-  };
-
-  const modelPricing = pricingPer1K[model] || pricingPer1K["gpt-4o-mini"];
-  const inputCost = (usage.prompt_tokens / 1000) * modelPricing.input;
-  const outputCost = (usage.completion_tokens / 1000) * modelPricing.output;
-
-  return inputCost + outputCost;
+// Cost calculation (externalize pricing with error handling)
+let PRICING = {};
+try {
+  PRICING = JSON.parse(process.env.LLM_PRICING_JSON || "{}");
+} catch (parseError) {
+  console.warn(
+    "Failed to parse LLM_PRICING_JSON, using fallback pricing:",
+    parseError.message
+  );
+  PRICING = {};
 }
 
-// Smart model selection based on request complexity
-function selectOptimalModel(message, isPlanRequest) {
-  // Keywords that indicate complex planning requests (more specific)
-  const complexPlanningKeywords = [
-    "create a plan",
-    "financial strategy",
-    "debt payoff plan",
-    "investment strategy",
-    "retirement plan",
-    "mortgage plan",
-    "loan strategy",
-    "budget plan",
-    "financial plan",
-    "what if scenario",
-    "projection analysis",
-    "forecast analysis",
-    "compare options",
-    "optimize budget",
-    "maximize savings",
-    "minimize debt",
-    "trade-off analysis",
-    "long-term plan",
-    "multi-year plan",
-    "comprehensive plan",
-  ];
+const FALLBACK = {
+  "gpt-4o-mini": { input: 0.00015, output: 0.0006 },
+  "gpt-4o": { input: 0.0025, output: 0.01 },
+};
 
-  // Keywords that indicate simple requests
-  const simpleRequestKeywords = [
-    "what is",
-    "explain",
-    "how much",
-    "show me",
-    "list",
-    "categorize",
-    "quick",
-    "simple",
-    "brief",
-    "summary",
-    "overview",
-    "can i afford",
-    "check my budget",
-    "what's my spending",
-    "how much left",
-    "current balance",
-    "monthly expenses",
-    "income breakdown",
-    "spending summary",
-    "budget status",
-    "available amount",
-  ];
-
-  const messageLower = message.toLowerCase();
-
-  // Check for complex planning indicators
-  const hasComplexKeywords = complexPlanningKeywords.some((keyword) =>
-    messageLower.includes(keyword)
+function calculateCost(usage, model = "gpt-4o-mini") {
+  const p = PRICING[model] || FALLBACK[model];
+  if (!p) return 0;
+  return (
+    (usage.prompt_tokens / 1000) * p.input +
+    (usage.completion_tokens / 1000) * p.output
   );
+}
 
-  // Check for simple request indicators
-  const hasSimpleKeywords = simpleRequestKeywords.some((keyword) =>
-    messageLower.includes(keyword)
-  );
-
-  // Check message length (longer messages often need more reasoning)
-  const isLongMessage = message.length > 100;
-
-  // Check if it's explicitly a plan request or has complex keywords
-  if (isPlanRequest || hasComplexKeywords) {
-    console.log(
-      `Using GPT-4o for complex request: ${message.substring(0, 50)}...`
-    );
+// Model selection (cleaner & token-safe)
+function selectOptimalModel(message, planFlag) {
+  const long = message.length > 120;
+  if (planFlag || long) {
     return {
       model: "gpt-4o",
-      maxTokens: 800, // Reduced from 1500 for faster responses
-      temperature: 0.7,
-      reason: "Complex planning request",
+      maxTokens: 420,
+      temperature: 0.6,
+      reason: "planning/long",
     };
   }
-
-  // Use GPT-4o-mini for simple requests or when simple keywords are detected
-  if (hasSimpleKeywords || !isLongMessage) {
-    console.log(
-      `Using GPT-4o-mini for simple request: ${message.substring(0, 50)}...`
-    );
-    return {
-      model: "gpt-4o-mini",
-      maxTokens: 500, // Reduced from 1000 for faster responses
-      temperature: 0.7,
-      reason: "Simple request",
-    };
-  }
-
   return {
     model: "gpt-4o-mini",
-    maxTokens: 500, // Reduced from 1000 for faster responses
+    maxTokens: 320,
     temperature: 0.7,
-    reason: "Default to mini for cost efficiency",
+    reason: "short/simple",
   };
 }
 
@@ -924,18 +917,22 @@ exports.aiChat = onCall(async (data, context) => {
     voice = "alloy", // Voice selection (alloy, echo, fable, onyx, nova, shimmer)
   } = actualData;
 
-  if (!message) {
-    console.error("Message is missing from data");
+  // Validate voice parameter
+  const validVoices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"];
+  const safeVoice = validVoices.includes(voice) ? voice : "alloy";
+
+  if (!message || typeof message !== "string" || message.trim().length === 0) {
+    console.error("Message is missing, invalid, or empty from data");
     throw new functions.https.HttpsError(
       "invalid-argument",
-      "Message is required"
+      "Message is required and must be a non-empty string"
     );
   }
 
   try {
     // Analyze the question and detect if this is a plan request
     const questionType = analyzeQuestionType(message);
-    const isPlanRequestFlag = isPlanRequest(message);
+    const isPlanRequestFlag = looksLikePlanRequest(message);
     const contextInstructions = generateContextInstructions(questionType);
 
     // Build system prompt with enhanced context
@@ -943,14 +940,22 @@ exports.aiChat = onCall(async (data, context) => {
       buildSystemPrompt(message, isPlanRequestFlag, userPreferences) +
       `\n\nQuestion Type: ${questionType}\nContext Instructions: ${contextInstructions}`;
 
-    // Build user message with financial context
+    // Build user message with financial context (with error handling)
     let userMessage = message;
     if (financialData) {
-      userMessage = `User Financial Data:\n${JSON.stringify(
-        financialData,
-        null,
-        2
-      )}\n\nUser Question: ${message}`;
+      try {
+        userMessage = `User Financial Data:\n${JSON.stringify(
+          financialData,
+          null,
+          2
+        )}\n\nUser Question: ${message}`;
+      } catch (stringifyError) {
+        console.warn(
+          "Failed to stringify financial data, using message only:",
+          stringifyError.message
+        );
+        userMessage = message;
+      }
     }
 
     const openaiClient = getOpenAIClient();
@@ -967,9 +972,14 @@ exports.aiChat = onCall(async (data, context) => {
     if (
       isFollowUpQuestion &&
       conversationHistory &&
+      Array.isArray(conversationHistory) &&
       conversationHistory.length > 0
     ) {
-      const recentHistory = conversationHistory.slice(-3); // Keep last 3 messages for follow-ups
+      const recentHistory = conversationHistory
+        .slice(-3) // Keep last 3 messages for follow-ups
+        .filter(
+          (msg) => msg && typeof msg === "object" && msg.role && msg.content
+        );
       messages.push(...recentHistory);
     }
 
@@ -1000,11 +1010,11 @@ exports.aiChat = onCall(async (data, context) => {
 
     if (includeAudio && aiResponse) {
       try {
-        console.log(`Generating audio for response with voice: ${voice}`);
+        console.log(`Generating audio for response with voice: ${safeVoice}`);
 
         const audioResponse = await openaiClient.audio.speech.create({
           model: "tts-1", // Use tts-1 for faster generation, tts-1-hd for higher quality
-          voice: voice,
+          voice: safeVoice, // Use validated voice
           input: aiResponse,
           speed: 1.1, // Slightly faster speech for quicker playback
         });
@@ -1044,7 +1054,7 @@ exports.aiChat = onCall(async (data, context) => {
       modelReason: modelConfig.reason,
       audioBuffer: audioBuffer, // Base64 encoded audio data
       hasAudio: !!audioBuffer,
-      voiceUsed: includeAudio ? voice : null,
+      voiceUsed: includeAudio ? safeVoice : null,
     };
   } catch (error) {
     console.error("AI Chat error:", error);
@@ -1169,8 +1179,7 @@ exports.plaidWebhook = onCall(
 
       const db = getDatabase();
 
-      // Find user by item_id (we'll need to store this mapping)
-      // For now, we'll update all users with this item_id
+      // Find user by item_id in the new multiple-bank structure
       const usersRef = db.ref("users");
       const snapshot = await usersRef.once("value");
       const users = snapshot.val();
@@ -1178,6 +1187,15 @@ exports.plaidWebhook = onCall(
       let userId = null;
       if (users) {
         for (const [uid, userData] of Object.entries(users)) {
+          // Check new multiple-bank structure first
+          if (
+            userData.plaid_connections &&
+            userData.plaid_connections[item_id]
+          ) {
+            userId = uid;
+            break;
+          }
+          // Fallback to legacy single-bank structure
           if (userData.plaid && userData.plaid.itemId === item_id) {
             userId = uid;
             break;
@@ -1207,7 +1225,7 @@ exports.plaidWebhook = onCall(
           await handleTransactionsWebhook(db, userId, webhook_code, item_id);
           break;
         case "INCOME":
-          await handleIncomeWebhook(db, userId, webhook_code);
+          await handleIncomeWebhook(db, userId, webhook_code, item_id);
           break;
         default:
       }
@@ -1222,7 +1240,7 @@ exports.plaidWebhook = onCall(
 
 // Handle ITEM webhooks
 async function handleItemWebhook(db, userId, webhook_code, item_id, error) {
-  const userPlaidRef = db.ref(`users/${userId}/plaid`);
+  const userPlaidRef = db.ref(`users/${userId}/plaid_connections/${item_id}`);
   const updates = {
     lastUpdated: Date.now(),
     lastWebhook: {
@@ -1266,7 +1284,7 @@ async function handleAccountsWebhook(
   item_id,
   new_accounts
 ) {
-  const userPlaidRef = db.ref(`users/${userId}/plaid`);
+  const userPlaidRef = db.ref(`users/${userId}/plaid_connections/${item_id}`);
   const updates = {
     lastUpdated: Date.now(),
     lastWebhook: {
@@ -1291,7 +1309,7 @@ async function handleAccountsWebhook(
 
 // Handle TRANSACTIONS webhooks
 async function handleTransactionsWebhook(db, userId, webhook_code, item_id) {
-  const userPlaidRef = db.ref(`users/${userId}/plaid`);
+  const userPlaidRef = db.ref(`users/${userId}/plaid_connections/${item_id}`);
   const updates = {
     lastUpdated: Date.now(),
     lastWebhook: {
@@ -1333,8 +1351,8 @@ async function handleTransactionsWebhook(db, userId, webhook_code, item_id) {
 }
 
 // Handle INCOME webhooks
-async function handleIncomeWebhook(db, userId, webhook_code) {
-  const userPlaidRef = db.ref(`users/${userId}/plaid`);
+async function handleIncomeWebhook(db, userId, webhook_code, item_id) {
+  const userPlaidRef = db.ref(`users/${userId}/plaid_connections/${item_id}`);
   const updates = {
     lastUpdated: Date.now(),
     lastWebhook: {

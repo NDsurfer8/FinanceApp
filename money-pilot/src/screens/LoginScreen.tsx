@@ -615,7 +615,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 </Text>
 
                 <Text style={styles.modalEffectiveDate}>
-                  This privacy policy is effective as of 2025-01-27
+                  This privacy policy is effective as of September 5, 2025
                 </Text>
               </View>
             ) : (
@@ -972,7 +972,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 </Text>
 
                 <Text style={styles.modalEffectiveDate}>
-                  These terms and conditions are effective as of 2025-01-27
+                  These terms and conditions are effective as of September 5,
+                  2025
                 </Text>
               </View>
             )}

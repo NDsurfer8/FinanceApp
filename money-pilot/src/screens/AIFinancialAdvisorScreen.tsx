@@ -430,69 +430,24 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     }
   }, [isPlaying, audioPlayingAnimation]);
 
-  // Typing indicator component
-  const TypingIndicator = () => {
-    const dot1Opacity = typingAnimation.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [0.3, 1, 0.3],
-    });
-
-    const dot2Opacity = typingAnimation.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [0.3, 1, 0.3],
-      extrapolate: "clamp",
-    });
-
-    const dot3Opacity = typingAnimation.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [0.3, 1, 0.3],
-      extrapolate: "clamp",
-    });
-
+  // Thinking indicator component
+  const ThinkingIndicator = () => {
     return (
       <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <ActivityIndicator
+          size="small"
+          color={colors.textSecondary}
+          style={{ marginRight: 6 }}
+        />
         <Text
           style={{
             color: colors.textSecondary,
             fontSize: 14,
-            marginRight: 8,
             fontStyle: "italic",
           }}
         >
-          Vectra is typing
+          Analyzing...
         </Text>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Animated.View
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: 3,
-              backgroundColor: colors.textSecondary,
-              marginHorizontal: 2,
-              opacity: dot1Opacity,
-            }}
-          />
-          <Animated.View
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: 3,
-              backgroundColor: colors.textSecondary,
-              marginHorizontal: 2,
-              opacity: dot2Opacity,
-            }}
-          />
-          <Animated.View
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: 3,
-              backgroundColor: colors.textSecondary,
-              marginHorizontal: 2,
-              opacity: dot3Opacity,
-            }}
-          />
-        </View>
       </View>
     );
   };
@@ -1621,7 +1576,7 @@ Requirements:
     const lines = text.substring(0, matchIndex).split("\n");
     const lastFewLines = lines.slice(-3).join(" ").toLowerCase();
 
-    console.log("🔍 Budget Detection - Context lines:", lastFewLines);
+    // console.log("🔍 Budget Detection - Context lines:", lastFewLines);
 
     // Look for category names in the context
     const categoryKeywords = [
@@ -1661,12 +1616,12 @@ Requirements:
 
     for (const keyword of categoryKeywords) {
       if (lastFewLines.includes(keyword)) {
-        console.log("🔍 Budget Detection - Found keyword in context:", keyword);
+        // console.log("🔍 Budget Detection - Found keyword in context:", keyword);
         return keyword;
       }
     }
 
-    console.log("🔍 Budget Detection - No keyword found in context");
+    // console.log("🔍 Budget Detection - No keyword found in context");
     return "unknown";
   };
 
@@ -2099,7 +2054,7 @@ Original Request: ${basePrompt}
                     </View>
                     <View style={{ flex: 1, paddingRight: 16 }}>
                       {message.isLoading ? (
-                        <TypingIndicator />
+                        <ThinkingIndicator />
                       ) : (
                         <Text
                           style={{
@@ -2122,7 +2077,7 @@ Original Request: ${basePrompt}
                     </View>
                     <View style={{ flex: 1, paddingRight: 16 }}>
                       {message.isLoading ? (
-                        <TypingIndicator />
+                        <ThinkingIndicator />
                       ) : (
                         <View>
                           <Text
