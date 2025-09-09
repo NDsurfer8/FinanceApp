@@ -85,7 +85,7 @@ export const DashboardPrompts: React.FC<DashboardPromptsProps> = ({
             { backgroundColor: prompt.color + "20" },
           ]}
         >
-          <Ionicons name={prompt.icon} size={24} color={prompt.color} />
+          <Ionicons name={prompt.icon as any} size={24} color={prompt.color} />
         </View>
 
         <View style={styles.textContainer}>

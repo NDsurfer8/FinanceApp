@@ -10,13 +10,14 @@ export const SetupScreen: React.FC = () => {
   const handleComplete = () => {
     completeSetup();
     // Navigate to Budget screen instead of MainTabs
-    navigation.navigate("MainTabs" as never, { screen: "Budget" } as never);
+
+    (navigation as any).navigate("MainTabs", { screen: "Budget" });
   };
 
   const handleSkip = () => {
     completeSetup();
     // Navigate to Budget screen instead of MainTabs
-    navigation.navigate("MainTabs" as never, { screen: "Budget" } as never);
+    (navigation as any).navigate("MainTabs", { screen: "Budget" });
   };
 
   return <SetupWizard onComplete={handleComplete} onSkip={handleSkip} />;

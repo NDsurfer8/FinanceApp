@@ -39,6 +39,8 @@ export const useTransactionActions = ({
         canStopFuture: false,
         canModify: false,
         availableActions: [],
+        deleteButtonText: "Delete",
+        stopFutureButtonText: "Stop Future",
       };
     }
 
@@ -76,10 +78,10 @@ export const useTransactionActions = ({
   }, [actions.canStopFuture]);
 
   const canShowModificationIndicator = useMemo(() => {
-    return (
+    return Boolean(
       isEditMode &&
-      (transaction?.isRecurring || transaction?.recurringTransactionId) &&
-      originalRecurringData
+        (transaction?.isRecurring || transaction?.recurringTransactionId) &&
+        originalRecurringData
     );
   }, [
     isEditMode,

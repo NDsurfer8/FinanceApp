@@ -42,9 +42,10 @@ export class TransactionActionsService {
     } | null,
     isEditMode: boolean = false
   ): TransactionActions {
-    const isRecurring =
-      transaction.isRecurring || transaction.recurringTransactionId;
-    const hasEndDate = transaction.endDate;
+    const isRecurring = Boolean(
+      transaction.isRecurring || transaction.recurringTransactionId
+    );
+    const hasEndDate = Boolean(transaction.endDate);
 
     // Check if transaction has been modified from original (only for recurring transactions)
     const isModified = isRecurring
@@ -63,7 +64,11 @@ export class TransactionActionsService {
 
     // Get button text
     const deleteButtonText = this.getButtonText("delete", isRecurring, false);
-    const stopFutureButtonText = this.getButtonText("stopFuture");
+    const stopFutureButtonText = this.getButtonText(
+      "stopFuture",
+      isRecurring,
+      false
+    );
 
     return {
       canDelete,

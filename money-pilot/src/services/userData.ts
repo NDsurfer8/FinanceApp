@@ -102,6 +102,8 @@ export interface Transaction {
   date: number;
   userId: string;
   recurringTransactionId?: string; // Reference to the recurring transaction that created this
+  isRecurring?: boolean; // Flag to indicate if this is a recurring transaction
+  endDate?: number; // End date for recurring transactions
   createdAt?: number;
   updatedAt?: number;
   // Flag to distinguish actual vs projected transactions

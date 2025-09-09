@@ -19,7 +19,7 @@ import { sendEmailVerificationLink } from "../services/auth";
 import { PlaidLinkComponent } from "../components/PlaidLinkComponent";
 import { usePaywall } from "../hooks/usePaywall";
 import { useSubscription } from "../contexts/SubscriptionContext";
-import { plaidService } from "../services/plaid";
+import { plaidService, PlaidAccount } from "../services/plaid";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
@@ -87,10 +87,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     bankTransactions,
     isBankConnected,
   } = useData();
-  const [connectedBankInfo, setConnectedBankInfo] = useState<{
-    name: string;
-    accounts: any[];
-  } | null>(null);
+  const [connectedBankInfo, setConnectedBankInfo] = useState<
+    | {
+        name: string;
+        accounts: PlaidAccount[];
+        itemId: string;
+      }[]
+    | null
+  >(null);
   const [loading, setLoading] = useState(false);
   const [emailVerificationLoading, setEmailVerificationLoading] =
     useState(false);
@@ -655,19 +659,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           />
           {isBankConnected ? (
             <View style={{ marginTop: 12 }}>
-              {connectedBankInfo?.accounts &&
-                connectedBankInfo.accounts.length > 0 && (
-                  <Text
-                    style={{
-                      color: colors.textSecondary,
-                      fontSize: 12,
-                    }}
-                  >
-                    {connectedBankInfo.accounts.length} account
-                    {connectedBankInfo.accounts.length !== 1 ? "s" : ""}{" "}
-                    connected
-                  </Text>
-                )}
+              {connectedBankInfo && connectedBankInfo.length > 0 && (
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: 12,
+                  }}
+                >
+                  {connectedBankInfo.reduce(
+                    (total, bank) => total + bank.accounts.length,
+                    0
+                  )}{" "}
+                  account
+                  {connectedBankInfo.reduce(
+                    (total, bank) => total + bank.accounts.length,
+                    0
+                  ) !== 1
+                    ? "s"
+                    : ""}{" "}
+                  connected
+                </Text>
+              )}
             </View>
           ) : (
             <Text style={{ marginTop: 12, color: colors.textSecondary }}>
