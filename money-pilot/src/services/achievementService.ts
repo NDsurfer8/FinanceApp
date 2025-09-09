@@ -682,7 +682,7 @@ export const processMonthAchievements = async (
         console.log(
           `🎉 Awarding streak_1 achievement: accountAge=${accountAge}, currentStreak=${currentStreak}`
         );
-        newAchievements.push(createAchievement("streak_1"));
+        newAchievements.push(await createAchievement("streak_1", userId));
       } else if (currentStreak >= 1) {
         console.log(
           `⏸️ Skipping streak_1 achievement: accountAge=${accountAge} < 1 month required`
@@ -693,28 +693,28 @@ export const processMonthAchievements = async (
         currentStreak >= 2 &&
         !hasAchievement(progress, "streak_2")
       ) {
-        newAchievements.push(createAchievement("streak_2"));
+        newAchievements.push(await createAchievement("streak_2", userId));
       }
       if (
         accountAge >= 3 &&
         currentStreak >= 3 &&
         !hasAchievement(progress, "streak_3")
       ) {
-        newAchievements.push(createAchievement("streak_3"));
+        newAchievements.push(await createAchievement("streak_3", userId));
       }
       if (
         accountAge >= 6 &&
         currentStreak >= 6 &&
         !hasAchievement(progress, "streak_6")
       ) {
-        newAchievements.push(createAchievement("streak_6"));
+        newAchievements.push(await createAchievement("streak_6", userId));
       }
       if (
         accountAge >= 12 &&
         currentStreak >= 12 &&
         !hasAchievement(progress, "streak_12")
       ) {
-        newAchievements.push(createAchievement("streak_12"));
+        newAchievements.push(await createAchievement("streak_12", userId));
       }
 
       // Award weekly streak achievements based on account age
@@ -723,35 +723,35 @@ export const processMonthAchievements = async (
         weeklyStreak >= 4 &&
         !hasAchievement(progress, "weekly_4")
       ) {
-        newAchievements.push(createAchievement("weekly_4"));
+        newAchievements.push(await createAchievement("weekly_4", userId));
       }
       if (
         accountAge >= 2 &&
         weeklyStreak >= 8 &&
         !hasAchievement(progress, "weekly_8")
       ) {
-        newAchievements.push(createAchievement("weekly_8"));
+        newAchievements.push(await createAchievement("weekly_8", userId));
       }
       if (
         accountAge >= 3 &&
         weeklyStreak >= 12 &&
         !hasAchievement(progress, "weekly_12")
       ) {
-        newAchievements.push(createAchievement("weekly_12"));
+        newAchievements.push(await createAchievement("weekly_12", userId));
       }
       if (
         accountAge >= 6 &&
         weeklyStreak >= 24 &&
         !hasAchievement(progress, "weekly_24")
       ) {
-        newAchievements.push(createAchievement("weekly_24"));
+        newAchievements.push(await createAchievement("weekly_24", userId));
       }
       if (
         accountAge >= 12 &&
         weeklyStreak >= 52 &&
         !hasAchievement(progress, "weekly_52")
       ) {
-        newAchievements.push(createAchievement("weekly_52"));
+        newAchievements.push(await createAchievement("weekly_52", userId));
       }
 
       // Award category achievements ONLY for categories the user actually budgets for
@@ -790,7 +790,10 @@ export const processMonthAchievements = async (
               )
             ) {
               newAchievements.push(
-                createAchievement(`category_${categoryResult.categoryId}_1`)
+                await createAchievement(
+                  `category_${categoryResult.categoryId}_1`,
+                  userId
+                )
               );
             }
             if (
@@ -802,7 +805,10 @@ export const processMonthAchievements = async (
               )
             ) {
               newAchievements.push(
-                createAchievement(`category_${categoryResult.categoryId}_2`)
+                await createAchievement(
+                  `category_${categoryResult.categoryId}_2`,
+                  userId
+                )
               );
             }
             if (
@@ -814,7 +820,10 @@ export const processMonthAchievements = async (
               )
             ) {
               newAchievements.push(
-                createAchievement(`category_${categoryResult.categoryId}_3`)
+                await createAchievement(
+                  `category_${categoryResult.categoryId}_3`,
+                  userId
+                )
               );
             }
           }
@@ -850,17 +859,61 @@ const hasAchievement = (
   );
 };
 
-const createAchievement = (achievementId: string): Achievement => {
+const createAchievement = async (
+  achievementId: string,
+  userId?: string
+): Promise<Achievement> => {
   const definition =
     ACHIEVEMENT_DEFINITIONS[
       achievementId as keyof typeof ACHIEVEMENT_DEFINITIONS
     ];
+
   if (!definition) {
+    // Check if this is a custom category achievement
+    const categoryMatch = achievementId.match(/^category_(\d+)_(\d+)$/);
+    if (categoryMatch && userId) {
+      const [, categoryId, streakLevel] = categoryMatch;
+
+      try {
+        // Get the category name
+        const { getUserBudgetCategories } = await import("./userData");
+        const categories = await getUserBudgetCategories(userId);
+        const category = categories.find((cat) => cat.id === categoryId);
+
+        if (category) {
+          const streakText =
+            streakLevel === "1"
+              ? "Starter"
+              : streakLevel === "2"
+              ? "Pro"
+              : "Master";
+          const monthText =
+            streakLevel === "1"
+              ? "1 month"
+              : streakLevel === "2"
+              ? "2 months"
+              : "3 months";
+
+          return {
+            id: achievementId,
+            title: `${category.name} ${streakText}`,
+            description: `Stayed under ${category.name} budget for ${monthText}!`,
+            icon: "🎯",
+            earnedAt: new Date().toISOString(),
+          };
+        }
+      } catch (error) {
+        console.error("Error getting category name for achievement:", error);
+      }
+    }
+
+    // Fallback for unknown achievements
     return {
       id: achievementId,
       title: "Unknown Achievement",
       description: "This achievement is no longer available.",
       icon: "❓",
+      earnedAt: new Date().toISOString(),
     };
   }
 
