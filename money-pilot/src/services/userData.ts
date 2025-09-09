@@ -1902,24 +1902,29 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
       // Continue with account deletion even if shared groups fail
     }
 
-    // 10. Delete shared data contributions
+    // 10. Delete shared finance data contributions
     try {
-      const sharedDataRef = ref(db, "sharedData");
-      const sharedDataSnapshot = await get(sharedDataRef);
+      const sharedFinanceDataRef = ref(db, "sharedFinanceData");
+      const sharedFinanceDataSnapshot = await get(sharedFinanceDataRef);
 
-      if (sharedDataSnapshot.exists()) {
-        const sharedData = sharedDataSnapshot.val();
-        const groupIds = Object.keys(sharedData);
+      if (sharedFinanceDataSnapshot.exists()) {
+        const sharedFinanceData = sharedFinanceDataSnapshot.val();
+        const groupIds = Object.keys(sharedFinanceData);
 
         for (const groupId of groupIds) {
           try {
-            const groupData = sharedData[groupId];
-            if (groupData[userId]) {
-              await remove(ref(db, `sharedData/${groupId}/${userId}`));
+            const groupData = sharedFinanceData[groupId];
+            if (groupData.members && groupData.members[userId]) {
+              await remove(
+                ref(db, `sharedFinanceData/${groupId}/members/${userId}`)
+              );
+              console.log(
+                `✅ Removed shared finance data for user ${userId} from group ${groupId}`
+              );
             }
           } catch (sharedDataError) {
             console.error(
-              `Could not delete shared data for group ${groupId}:`,
+              `Could not delete shared finance data for group ${groupId}:`,
               sharedDataError
             );
             // Continue with other groups
@@ -1933,10 +1938,10 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
         sharedDataError?.message?.includes("Permission denied")
       ) {
         console.log(
-          "User account already deleted, skipping shared data cleanup"
+          "User account already deleted, skipping shared finance data cleanup"
         );
       } else {
-        console.error("Could not access shared data:", sharedDataError);
+        console.error("Could not access shared finance data:", sharedDataError);
       }
       // Continue with account deletion
     }
@@ -2661,15 +2666,15 @@ export const isNewUser = async (user: any): Promise<boolean> => {
 
     // Convert timestamp to Date object
     const createdAtDate = new Date(createdAt);
-    // User is "new" if created within last 5 minutes
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const isNew = createdAtDate > fiveMinutesAgo;
+    // User is "new" if created within last 30 minutes
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+    const isNew = createdAtDate > thirtyMinutesAgo;
 
     console.log("🔍 isNewUser Debug:", {
       userId: user.uid,
       createdAt,
       createdAtDate: createdAtDate.toISOString(),
-      fiveMinutesAgo: fiveMinutesAgo.toISOString(),
+      thirtyMinutesAgo: thirtyMinutesAgo.toISOString(),
       isNew,
       timeDiff: Date.now() - createdAtDate.getTime(),
     });

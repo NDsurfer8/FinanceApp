@@ -56,7 +56,7 @@ export const SetupProvider: React.FC<{ children: ReactNode }> = ({
     if (!user) return;
 
     try {
-      // Check if user is new (created within last 5 minutes)
+      // Check if user is new (created within last 30 minutes)
       const userIsNew = await isNewUser(user);
 
       // Check if setup was previously completed
@@ -72,7 +72,7 @@ export const SetupProvider: React.FC<{ children: ReactNode }> = ({
       }
 
       // Show setup wizard only if:
-      // 1. User is new (created within last 5 minutes) AND
+      // 1. User is new (created within last 30 minutes) AND
       // 2. Setup hasn't been completed yet
       // 3. If setup was completed, never show again regardless of user age
       const shouldShowSetup = userIsNew && !setupWasCompleted;
