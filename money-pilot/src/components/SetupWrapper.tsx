@@ -19,14 +19,14 @@ export const SetupWrapper: React.FC<SetupWrapperProps> = ({
   const navigation = useNavigation();
   const [setupJustCompleted, setSetupJustCompleted] = useState(false);
 
-  const handleSetupComplete = () => {
-    completeSetup();
+  const handleSetupComplete = async () => {
+    await completeSetup();
     setSetupJustCompleted(true);
     onSetupCompleted?.();
   };
 
-  const handleSetupSkip = () => {
-    completeSetup();
+  const handleSetupSkip = async () => {
+    await completeSetup();
     setSetupJustCompleted(true);
     onSetupCompleted?.();
   };

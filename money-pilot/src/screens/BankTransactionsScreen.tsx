@@ -183,10 +183,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
 
         Alert.alert(
           "Auto-Import Complete!",
-          `Successfully imported:\n` +
-            `• ${result.importedAssets.length} assets (401ks, investments, etc.)\n` +
-            `• ${result.importedDebts.length} debts (credit cards, loans)\n\n` +
-            `Navigate to Assets & Debts to see your imported items!`,
+          `Successfully imported: ${result.importedAssets.length} assets and ${result.importedDebts.length} debts. Navigate to Assets and Debts to see your imported items!`,
           [
             {
               text: "View Assets & Debts",
