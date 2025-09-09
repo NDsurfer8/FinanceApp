@@ -702,6 +702,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Load data when user changes (optimized for app refresh)
   useEffect(() => {
+    let bankConnectedCallback: (() => void) | null = null;
+
     if (user) {
       // Load user data (transactions, assets, debts, etc.) - this is fast from Firebase
       loadAllData();
@@ -713,13 +715,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           plaidService.setUserId(user.uid);
 
           // Register callback for when bank is connected
-          plaidService.onBankConnected(async () => {
+          bankConnectedCallback = async () => {
             setIsBankConnected(true);
             // Load connected banks info
             const banksInfo = await plaidService.getConnectedBankInfo();
             setConnectedBanks(banksInfo);
             await refreshBankData(true); // Force refresh when new bank connects
-          });
+          };
+          plaidService.onBankConnected(bankConnectedCallback);
 
           // Check if bank is connected
           const connected = await plaidService.isBankConnected();
@@ -805,6 +808,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setConnectedBanks([]);
       setBankDataLastUpdated(null);
     }
+
+    // Cleanup function to remove callback
+    return () => {
+      if (bankConnectedCallback) {
+        plaidService.removeBankConnectedCallback(bankConnectedCallback);
+      }
+    };
   }, [user, loadAllData, loadCachedBankData, subscriptionStatus?.isPremium]);
 
   // Clear bank data when subscription expires

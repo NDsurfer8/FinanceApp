@@ -1857,11 +1857,19 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
     const profileRef = ref(db, `users/${userId}/profile`);
     await remove(profileRef);
 
-    // 8. Delete the entire user node
+    // 8. Delete user's Plaid connections (multiple bank connections)
+    const plaidConnectionsRef = ref(db, `users/${userId}/plaid_connections`);
+    await remove(plaidConnectionsRef);
+
+    // 9. Delete legacy Plaid data (if it exists)
+    const legacyPlaidRef = ref(db, `users/${userId}/plaid`);
+    await remove(legacyPlaidRef);
+
+    // 10. Delete the entire user node
     const userRef = ref(db, `users/${userId}`);
     await remove(userRef);
 
-    // 9. Handle shared groups - remove user from all groups they're a member of
+    // 11. Handle shared groups - remove user from all groups they're a member of
     try {
       const sharedGroupsRef = ref(db, "sharedGroups");
       const sharedGroupsSnapshot = await get(sharedGroupsRef);
@@ -1910,7 +1918,7 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
       // Continue with account deletion even if shared groups fail
     }
 
-    // 10. Delete shared finance data contributions
+    // 12. Delete shared finance data contributions
     try {
       const sharedFinanceDataRef = ref(db, "sharedFinanceData");
       const sharedFinanceDataSnapshot = await get(sharedFinanceDataRef);
@@ -1954,7 +1962,7 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
       // Continue with account deletion
     }
 
-    // 11. Delete user's invitations
+    // 13. Delete user's invitations
     try {
       const invitationsRef = ref(db, "invitations");
       const invitationsSnapshot = await get(invitationsRef);

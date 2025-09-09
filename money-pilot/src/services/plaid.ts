@@ -106,6 +106,14 @@ class PlaidService {
     this.onBankConnectedCallbacks = [];
   }
 
+  // Clean up callbacks to prevent memory leaks
+  removeBankConnectedCallback(callback: () => void) {
+    const index = this.onBankConnectedCallbacks.indexOf(callback);
+    if (index > -1) {
+      this.onBankConnectedCallbacks.splice(index, 1);
+    }
+  }
+
   // Get all connected banks
   getConnectedBanks(): PlaidConnection[] {
     return Array.from(this.connections.values()).filter(
@@ -135,7 +143,11 @@ class PlaidService {
 
   // Generate cache key for requests
   private getCacheKey(endpoint: string, params: any): string {
-    return `${endpoint}_${JSON.stringify(params)}`;
+    const connectionCount = this.connections.size;
+    const connectionIds = Array.from(this.connections.keys()).sort().join(",");
+    return `${endpoint}_${connectionCount}_${connectionIds}_${JSON.stringify(
+      params
+    )}`;
   }
 
   // Queue Plaid API requests to prevent concurrent calls with timeout
@@ -1661,9 +1673,6 @@ class PlaidService {
       );
 
       try {
-        // Clear invalid connections
-        this.connections.clear();
-
         // Try to reload connection data from Firebase
         await this.isBankConnected();
 
@@ -1714,6 +1723,49 @@ class PlaidService {
     } catch (error) {
       console.error("PlaidService: Error silently disconnecting banks:", error);
       // Don't throw for silent disconnection
+    }
+  }
+
+  // Clear all connections for account deletion (more thorough than disconnectBankSilently)
+  async clearAllConnectionsForAccountDeletion(): Promise<void> {
+    try {
+      if (!this.userId) {
+        return;
+      }
+
+      // Clear any pending status updates
+      if (this.statusUpdateTimer) {
+        clearTimeout(this.statusUpdateTimer);
+        this.statusUpdateTimer = null;
+      }
+      this.pendingStatusUpdates = {};
+
+      // Remove all connections from Firebase
+      const plaidConnectionsRef = ref(
+        db,
+        `users/${this.userId}/plaid_connections`
+      );
+      await remove(plaidConnectionsRef);
+
+      // Also remove legacy single connection if it exists
+      const legacyPlaidRef = ref(db, `users/${this.userId}/plaid`);
+      await remove(legacyPlaidRef);
+
+      // Clear all local state
+      this.connections.clear();
+      this.onBankConnectedCallbacks = [];
+      this.pendingTransactionsRequest = null;
+      this.pendingAccountsRequest = null;
+      this.requestCache.clear();
+      this.requestQueue = [];
+      this.isProcessingQueue = false;
+      this.isLinkInitialized = false;
+      this.userId = null;
+
+      console.log("✅ All Plaid connections cleared for account deletion");
+    } catch (error) {
+      console.error("Error clearing connections for account deletion:", error);
+      // Don't throw - this is for cleanup scenarios
     }
   }
 
