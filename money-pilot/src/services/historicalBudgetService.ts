@@ -84,7 +84,7 @@ export const getAllBudgetHistory = async (
 
     if (stored) {
       const history = JSON.parse(stored);
-      return Object.values(history).sort((a: any, b: any) =>
+      return (Object.values(history) as MonthlyBudgetHistory[]).sort((a, b) =>
         a.month.localeCompare(b.month)
       );
     }
@@ -164,8 +164,6 @@ export const processHistoricalMonth = async (
   month: string
 ): Promise<void> => {
   try {
-    console.log(`📊 Processing historical data for month: ${month}`);
-
     // Calculate the monthly budget result
     const monthDate = new Date(month + "-01");
     const monthlyResult = await calculateMonthlyBudgetResult(

@@ -51,8 +51,6 @@ const processPreviousMonth = async (
   month: string
 ): Promise<void> => {
   try {
-    console.log(`📊 Processing achievements for month: ${month}`);
-
     // Double-check that this is a completed month (not current month)
     const currentDate = new Date();
     const currentMonth = `${currentDate.getFullYear()}-${String(

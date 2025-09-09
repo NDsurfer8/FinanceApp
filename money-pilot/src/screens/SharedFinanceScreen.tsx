@@ -149,7 +149,7 @@ export default function SharedFinanceScreen({
         try {
           await saveUserProfile(basicProfile);
           userProfile = basicProfile;
-          console.log("✅ Created basic user profile for group creation");
+          // console.log("✅ Created basic user profile for group creation");
         } catch (error) {
           console.error("❌ Error creating basic profile:", error);
         }
@@ -157,7 +157,7 @@ export default function SharedFinanceScreen({
 
       const displayName =
         userProfile?.displayName || user.email?.split("@")[0] || "User";
-      console.log("🔍 Using display name for group creation:", displayName);
+      // console.log("🔍 Using display name for group creation:", displayName);
 
       const newGroup: SharedGroup = {
         name: groupName.trim(),

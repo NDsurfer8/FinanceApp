@@ -33,8 +33,19 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [lastTapTime, setLastTapTime] = useState(0);
+  const [connectionStartTime, setConnectionStartTime] = useState(0);
   const BUTTON_DEBOUNCE_TIME = 1000; // 1 second debounce between button taps
+  const MIN_CONNECTION_TIME = 3000; // Minimum 3 seconds for connection process
   const { user } = useAuth();
+
+  // Helper function to ensure minimum connection time has passed
+  const ensureMinimumConnectionTime = async () => {
+    const elapsed = Date.now() - connectionStartTime;
+    if (elapsed < MIN_CONNECTION_TIME) {
+      const remaining = MIN_CONNECTION_TIME - elapsed;
+      await new Promise((resolve) => setTimeout(resolve, remaining));
+    }
+  };
   const { isFeatureAvailable, PREMIUM_FEATURES, hasPremiumAccess } =
     useSubscription();
   const {
@@ -87,6 +98,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
         }
 
         if (connected) {
+          await ensureMinimumConnectionTime();
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false); // Re-enable button
@@ -105,6 +117,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
     // If we reach here, connection wasn't confirmed
     if (isLoading) {
+      await ensureMinimumConnectionTime();
       setIsLoading(false);
       onLoadingChange?.(false);
       setIsButtonDisabled(false); // Re-enable button
@@ -146,7 +159,9 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     // Disable button to prevent multiple taps
     setIsButtonDisabled(true);
     setIsLoading(true);
+    setConnectionStartTime(Date.now());
     onLoadingChange?.(true);
+
     try {
       // Starting Plaid Link flow
 
@@ -159,7 +174,25 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       // Don't stop loading here - let it continue until bank is actually connected
     } catch (error) {
       console.error("Error connecting bank:", error);
-      Alert.alert("Error", "Failed to connect bank account");
+
+      // Check if it's a rate limiting error
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (
+        errorMessage.includes("Too many connection attempts") ||
+        errorMessage.includes("Please wait") ||
+        errorMessage.includes("rate limit")
+      ) {
+        Alert.alert(
+          "Connection Limit Reached",
+          "Please wait a moment before trying to connect another bank. This helps ensure a smooth connection process."
+        );
+      } else {
+        Alert.alert("Error", "Failed to connect bank account");
+      }
+
+      // Ensure minimum connection time has passed before re-enabling button
+      await ensureMinimumConnectionTime();
       setIsLoading(false);
       onLoadingChange?.(false);
       setIsButtonDisabled(false); // Re-enable button
@@ -180,12 +213,14 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
         const isPremium = hasPremiumAccess();
 
         if (connected && isPremium) {
+          await ensureMinimumConnectionTime();
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
           onSuccess?.();
           return; // Don't start polling if we're already connected
         } else if (!isPremium) {
+          await ensureMinimumConnectionTime();
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
@@ -199,8 +234,9 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       }, 1000); // 1 second delay to allow Firebase to update
 
       // Add a fallback timeout to stop loading if polling doesn't work
-      setTimeout(() => {
+      setTimeout(async () => {
         if (isLoading) {
+          await ensureMinimumConnectionTime();
           setIsLoading(false);
           onLoadingChange?.(false);
           setIsButtonDisabled(false);
@@ -223,14 +259,16 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     } catch (error) {
       console.error("Error handling Plaid success:", error);
       Alert.alert("Error", "Failed to complete bank connection");
+      await ensureMinimumConnectionTime();
       setIsLoading(false);
       onLoadingChange?.(false);
       setIsButtonDisabled(false); // Re-enable button
     }
   };
 
-  const handlePlaidExit = (linkExit: LinkExit) => {
+  const handlePlaidExit = async (linkExit: LinkExit) => {
     // Stop loading when user exits (cancels or completes)
+    await ensureMinimumConnectionTime();
     setIsLoading(false);
     onLoadingChange?.(false);
     setIsButtonDisabled(false); // Re-enable button
@@ -347,7 +385,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
                 // Disconnect specific bank
                 await plaidService.disconnectBank(itemId);
                 // Refresh bank data to update the UI
-                await refreshBankData();
+                await refreshBankData(true);
               } else {
                 // Disconnect all banks
                 await disconnectBankAndClearData();

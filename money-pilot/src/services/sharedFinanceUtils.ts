@@ -12,7 +12,6 @@ const handlePermissionError = (error: any, context: string) => {
     error?.code === "PERMISSION_DENIED" ||
     error?.message?.includes("Permission denied")
   ) {
-    console.log(`⚠️ Permission denied for ${context}, skipping operation`);
     return true;
   }
   return false;
@@ -42,7 +41,7 @@ export const removeGroupSharedData = async (groupId: string): Promise<void> => {
   try {
     const sharedDataRef = ref(db, `sharedFinanceData/${groupId}`);
     await remove(sharedDataRef);
-    console.log("✅ Removed all shared data for group:", groupId);
+    // console.log("✅ Removed all shared data for group:", groupId);
   } catch (error: any) {
     if (handlePermissionError(error, "skipping group shared data removal")) {
       return;

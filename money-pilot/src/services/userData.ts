@@ -2651,13 +2651,6 @@ export const leaveGroup = async (
       `sharedFinanceData/${groupId}/members/${userId}`
     );
     await remove(sharedFinanceDataRef);
-
-    // User's shared data is already removed above
-    console.log("✅ User's shared finance data cleaned up");
-
-    console.log("✅ User left group successfully");
-    console.log("✅ User's shared finance data cleaned up");
-    console.log("✅ Real-time listeners stopped");
   } catch (error) {
     console.error("Error leaving group:", error);
     throw error;

@@ -1621,7 +1621,7 @@ Requirements:
     const lines = text.substring(0, matchIndex).split("\n");
     const lastFewLines = lines.slice(-3).join(" ").toLowerCase();
 
-    console.log("🔍 Budget Detection - Context lines:", lastFewLines);
+    // console.log("🔍 Budget Detection - Context lines:", lastFewLines);
 
     // Look for category names in the context
     const categoryKeywords = [
@@ -1661,12 +1661,12 @@ Requirements:
 
     for (const keyword of categoryKeywords) {
       if (lastFewLines.includes(keyword)) {
-        console.log("🔍 Budget Detection - Found keyword in context:", keyword);
+        // console.log("🔍 Budget Detection - Found keyword in context:", keyword);
         return keyword;
       }
     }
 
-    console.log("🔍 Budget Detection - No keyword found in context");
+    // console.log("🔍 Budget Detection - No keyword found in context");
     return "unknown";
   };
 
