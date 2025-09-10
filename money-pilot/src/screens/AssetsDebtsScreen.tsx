@@ -18,8 +18,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
-import { useFriendlyMode } from "../contexts/FriendlyModeContext";
-import { translate } from "../services/translations";
+import { useTranslation } from "react-i18next";
 import { StandardHeader } from "../components/StandardHeader";
 import { getAssetTypeLabel } from "../utils/assetMigration";
 import { useData } from "../contexts/DataContext";
@@ -49,7 +48,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   const [isDebtsCollapsed, setIsDebtsCollapsed] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const { colors } = useTheme();
-  const { isFriendlyMode } = useFriendlyMode();
+  const { t } = useTranslation();
   const { hasPremiumAccess } = useSubscription();
   const { presentPaywall } = usePaywall();
 
@@ -160,12 +159,15 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
 
   const handleDeleteItem = (item: any, type: "asset" | "debt") => {
     Alert.alert(
-      `Delete ${type === "asset" ? "Asset" : "Debt"}`,
-      `Are you sure you want to delete "${item.name}"? This action cannot be undone.`,
+      t("assets_debts.delete_confirm_title", {
+        type:
+          type === "asset" ? t("assets_debts.asset") : t("assets_debts.debt"),
+      }),
+      t("assets_debts.delete_confirm_message", { name: item.name }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: () => {
             // Handle deletion logic here
@@ -263,7 +265,9 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 fontSize: 14,
               }}
             >
-              Add Your First {type === "asset" ? "Asset" : "Debt"}
+              {type === "asset"
+                ? t("assets_debts.add_first_asset")
+                : t("assets_debts.add_first_debt")}
             </Text>
           </TouchableOpacity>
         </Animated.View>
@@ -348,7 +352,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               fontSize: 14,
             }}
           >
-            Add Your First Debt
+            {t("assets_debts.add_first_debt")}
           </Text>
         </TouchableOpacity>
       </Animated.View>
@@ -599,7 +603,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               marginBottom: 4,
             }}
           >
-            Net Worth
+            {t("assets_debts.net_worth")}
           </Text>
           <Text
             style={{
@@ -634,7 +638,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 fontFamily: fontFamily.medium,
               }}
             >
-              {debtToAssetRatio.toFixed(0)}% Debt Ratio
+              {debtToAssetRatio.toFixed(0)}% {t("assets_debts.debt_ratio")}
             </Text>
           </View>
           <Text
@@ -644,7 +648,9 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               fontFamily: fontFamily.regular,
             }}
           >
-            {isHealthyRatio ? "Healthy" : "High"}
+            {isHealthyRatio
+              ? t("assets_debts.healthy")
+              : t("assets_debts.high")}
           </Text>
         </View>
       </View>
@@ -681,7 +687,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             fontSize: 14,
           }}
         >
-          View Financial Accounts
+          {t("assets_debts.view_financial_accounts")}
         </Text>
         {!hasPremiumAccess() && (
           <View
@@ -723,8 +729,8 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
       >
         {/* Header */}
         <StandardHeader
-          title={translate("assetsDebts", isFriendlyMode)}
-          subtitle="Track your net worth and financial health"
+          title={t("assets_debts.title")}
+          subtitle={t("assets_debts.subtitle")}
           showBackButton={false}
           rightComponent={
             <TouchableOpacity
@@ -798,7 +804,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   fontFamily: fontFamily.semiBold,
                 }}
               >
-                {translate("assets", isFriendlyMode)}
+                {t("assets_debts.assets")}
               </Text>
               <Text
                 style={{
@@ -807,7 +813,8 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   fontFamily: fontFamily.regular,
                 }}
               >
-                {assets.length} item{assets.length !== 1 ? "s" : ""} • $
+                {assets.length}{" "}
+                {t("assets_debts.item", { count: assets.length })} • $
                 {assetTotal.toLocaleString()}
               </Text>
             </View>
@@ -824,10 +831,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 renderEmptyState(
                   "asset",
                   "wallet-outline",
-                  `No ${translate(
-                    "assets",
-                    isFriendlyMode
-                  ).toLowerCase()} yet. Start building your wealth by adding your first asset.`
+                  t("assets_debts.no_assets_yet")
                 )
               ) : (
                 <>
@@ -856,7 +860,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                         color: colors.text,
                       }}
                     >
-                      Total Assets
+                      {t("assets_debts.total_assets")}
                     </Text>
                     <Text
                       style={{
@@ -922,7 +926,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   fontFamily: fontFamily.semiBold,
                 }}
               >
-                {translate("debt", isFriendlyMode)}
+                {t("assets_debts.debts")}
               </Text>
               <Text
                 style={{
@@ -931,8 +935,8 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   fontFamily: fontFamily.regular,
                 }}
               >
-                {debts.length} item{debts.length !== 1 ? "s" : ""} • $
-                {totalDebt.toLocaleString()}
+                {debts.length} {t("assets_debts.item", { count: debts.length })}{" "}
+                • ${totalDebt.toLocaleString()}
               </Text>
             </View>
             <Ionicons
@@ -948,10 +952,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 renderEmptyState(
                   "debt",
                   "card-outline",
-                  `No ${translate(
-                    "debt",
-                    isFriendlyMode
-                  ).toLowerCase()} yet. Track your debts to better manage your finances.`
+                  t("assets_debts.no_debts_yet")
                 )
               ) : (
                 <>
@@ -980,7 +981,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                         color: colors.text,
                       }}
                     >
-                      Total Debt
+                      {t("assets_debts.total_debt")}
                     </Text>
                     <Text
                       style={{
@@ -1041,7 +1042,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   fontFamily: fontFamily.semiBold,
                 }}
               >
-                Visual Breakdown
+                {t("assets_debts.visual_breakdown")}
               </Text>
             </View>
             <AssetsDebtsChart assets={chartAssets} debts={chartDebts} />
@@ -1092,7 +1093,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 marginBottom: 20,
               }}
             >
-              Add New Item
+              {t("assets_debts.add_new_item")}
             </Text>
 
             <Text
@@ -1104,7 +1105,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 marginBottom: 24,
               }}
             >
-              What would you like to add to your financial portfolio?
+              {t("assets_debts.add_to_portfolio_question")}
             </Text>
 
             <View style={{ gap: 12 }}>
@@ -1152,7 +1153,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                       marginBottom: 2,
                     }}
                   >
-                    Add Asset
+                    {t("assets_debts.add_asset")}
                   </Text>
                   <Text
                     style={{
@@ -1161,7 +1162,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                       fontFamily: fontFamily.regular,
                     }}
                   >
-                    Track your investments, savings, and valuable items
+                    {t("assets_debts.add_asset_description")}
                   </Text>
                 </View>
                 <Ionicons
@@ -1251,7 +1252,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                         marginBottom: 2,
                       }}
                     >
-                      Add Debt
+                      {t("assets_debts.add_debt")}
                     </Text>
                     <Text
                       style={{
@@ -1260,7 +1261,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                         fontFamily: fontFamily.regular,
                       }}
                     >
-                      Track your loans, credit cards, and other debts
+                      {t("assets_debts.add_debt_description")}
                     </Text>
                   </View>
                   <Ionicons
@@ -1289,7 +1290,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   fontFamily: fontFamily.medium,
                 }}
               >
-                Cancel
+                {t("common.cancel")}
               </Text>
             </TouchableOpacity>
           </View>

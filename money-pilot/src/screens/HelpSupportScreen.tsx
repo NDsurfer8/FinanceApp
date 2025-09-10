@@ -17,6 +17,7 @@ import * as MailComposer from "expo-mail-composer";
 import { useAuth } from "../hooks/useAuth";
 
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
+import { useTranslation } from "react-i18next";
 
 interface HelpSupportScreenProps {
   navigation: any;
@@ -34,6 +35,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 }) => {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
   const { isFriendlyMode, setIsFriendlyMode } = useFriendlyMode();
 
@@ -43,11 +45,11 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 
     // Show confirmation message
     Alert.alert(
-      value ? "Friendly Mode Enabled" : "Friendly Mode Disabled",
+      value ? t("help_support.friendly_mode_enabled") : t("help_support.friendly_mode_disabled"),
       value
-        ? "Financial terms will now be shown in friendly, easy-to-understand language."
-        : "Financial terms will now be shown in standard language.",
-      [{ text: "OK" }]
+        ? t("help_support.friendly_mode_enabled_message")
+        : t("help_support.friendly_mode_disabled_message"),
+      [{ text: t("common.ok") }]
     );
   };
 

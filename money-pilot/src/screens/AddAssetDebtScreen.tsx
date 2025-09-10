@@ -14,6 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { StandardHeader } from "../components/StandardHeader";
 import {
@@ -44,6 +45,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const { assets, debts, updateDataOptimistically, refreshInBackground } =
     useZeroLoading();
   const { type, editMode, asset, debt } = route.params as RouteParams; // "asset" or "debt"
@@ -69,17 +71,17 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
 
   const handleSave = async () => {
     if (!formData.name || !formData.balance) {
-      Alert.alert("Error", "Please fill in all required fields");
+      Alert.alert(t("common.error"), t("add_asset_debt.fill_all_fields"));
       return;
     }
 
     if (type === "debt" && (!formData.rate || !formData.payment)) {
-      Alert.alert("Error", "Please fill in APR and monthly payment for debts");
+      Alert.alert(t("common.error"), t("add_asset_debt.fill_debt_fields"));
       return;
     }
 
     if (!user) {
-      Alert.alert("Error", "You must be logged in to save data");
+      Alert.alert(t("common.error"), t("add_asset_debt.must_be_logged_in"));
       return;
     }
 
@@ -201,7 +203,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
 
   const handleDelete = async () => {
     if (!user) {
-      Alert.alert("Error", "You must be logged in to delete data");
+      Alert.alert(t("common.error"), t("add_asset_debt.must_be_logged_in"));
       return;
     }
 
@@ -209,18 +211,20 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
 
     try {
       Alert.alert(
-        "Delete Confirmation",
-        `Are you sure you want to delete this ${type}? This action cannot be undone.`,
+        t("add_asset_debt.delete_confirmation"),
+        t("add_asset_debt.delete_confirmation_message", {
+          type: t(`add_asset_debt.${type}`),
+        }),
         [
           {
-            text: "Cancel",
+            text: t("common.cancel"),
             style: "cancel",
             onPress: () => {
               setDeleteLoading(false);
             },
           },
           {
-            text: "Delete",
+            text: t("common.delete"),
             style: "destructive",
             onPress: async () => {
               try {
@@ -247,17 +251,19 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 }
 
                 Alert.alert(
-                  "Success",
-                  `${
-                    type === "asset" ? "Asset" : "Debt"
-                  } deleted successfully!`,
-                  [{ text: "OK", onPress: () => navigation.goBack() }]
+                  t("common.success"),
+                  t("add_asset_debt.delete_success", {
+                    type: t(`add_asset_debt.${type}`),
+                  }),
+                  [{ text: t("common.ok"), onPress: () => navigation.goBack() }]
                 );
               } catch (error) {
                 console.error(`Error deleting ${type}:`, error);
                 Alert.alert(
-                  "Error",
-                  `Failed to delete ${type}. Please try again.`
+                  t("common.error"),
+                  t("add_asset_debt.delete_failed", {
+                    type: t(`add_asset_debt.${type}`),
+                  })
                 );
 
                 // Revert optimistic update on error
@@ -287,8 +293,10 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
         >
           {/* Header */}
           <StandardHeader
-            title={`${editMode ? "Edit" : "Add"} ${
-              type === "asset" ? "Asset" : "Debt"
+            title={`${editMode ? t("common.edit") : t("common.add")} ${
+              type === "asset"
+                ? t("add_asset_debt.asset")
+                : t("add_asset_debt.debt")
             }`}
             onBack={() => navigation.goBack()}
             showBackButton={true}
@@ -305,7 +313,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Name
+              {t("add_asset_debt.name")}
             </Text>
             <TextInput
               style={{
@@ -318,7 +326,9 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 backgroundColor: colors.card,
               }}
               placeholder={
-                type === "asset" ? "e.g., Savings Account" : "e.g., Credit Card"
+                type === "asset"
+                  ? t("add_asset_debt.asset_name_placeholder")
+                  : t("add_asset_debt.debt_name_placeholder")
               }
               placeholderTextColor={colors.textSecondary}
               value={formData.name}
@@ -336,7 +346,9 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              {type === "asset" ? "Current Balance" : "Outstanding Balance"}
+              {type === "asset"
+                ? t("add_asset_debt.current_balance")
+                : t("add_asset_debt.outstanding_balance")}
             </Text>
             <TextInput
               style={{
@@ -348,7 +360,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 color: colors.text,
                 backgroundColor: colors.card,
               }}
-              placeholder="0.00"
+              placeholder={t("add_asset_debt.amount_placeholder")}
               placeholderTextColor={colors.textSecondary}
               value={formatNumberWithCommas(formData.balance)}
               onChangeText={(text) => {
@@ -370,7 +382,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   marginBottom: 8,
                 }}
               >
-                Asset Type
+                {t("add_asset_debt.asset_type")}
               </Text>
               <ScrollView
                 horizontal
@@ -378,12 +390,36 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 style={{ marginBottom: 8 }}
               >
                 {[
-                  { value: "savings", label: "Savings", icon: "💾" },
-                  { value: "checking", label: "Checking", icon: "🏦" },
-                  { value: "investment", label: "Investment", icon: "📈" },
-                  { value: "real_estate", label: "Real Estate", icon: "🏠" },
-                  { value: "vehicle", label: "Vehicle", icon: "🚗" },
-                  { value: "other", label: "Other", icon: "💼" },
+                  {
+                    value: "savings",
+                    label: t("add_asset_debt.asset_types.savings"),
+                    icon: "💾",
+                  },
+                  {
+                    value: "checking",
+                    label: t("add_asset_debt.asset_types.checking"),
+                    icon: "🏦",
+                  },
+                  {
+                    value: "investment",
+                    label: t("add_asset_debt.asset_types.investment"),
+                    icon: "📈",
+                  },
+                  {
+                    value: "real_estate",
+                    label: t("add_asset_debt.asset_types.real_estate"),
+                    icon: "🏠",
+                  },
+                  {
+                    value: "vehicle",
+                    label: t("add_asset_debt.asset_types.vehicle"),
+                    icon: "🚗",
+                  },
+                  {
+                    value: "other",
+                    label: t("add_asset_debt.asset_types.other"),
+                    icon: "💼",
+                  },
                 ].map((assetType) => (
                   <TouchableOpacity
                     key={assetType.value}
@@ -432,7 +468,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   marginTop: 8,
                 }}
               >
-                💡 Savings accounts are used for emergency fund calculations
+                💡 {t("add_asset_debt.savings_accounts_note")}
               </Text>
             </View>
           )}
@@ -448,7 +484,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   marginBottom: 8,
                 }}
               >
-                APR (%)
+                {t("add_asset_debt.apr")}
               </Text>
               <TextInput
                 style={{
@@ -460,7 +496,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   color: colors.text,
                   backgroundColor: colors.card,
                 }}
-                placeholder="0.00"
+                placeholder={t("add_asset_debt.amount_placeholder")}
                 placeholderTextColor={colors.textSecondary}
                 value={formData.rate}
                 onChangeText={(text) =>
@@ -482,7 +518,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   marginBottom: 8,
                 }}
               >
-                Monthly Payment
+                {t("add_asset_debt.monthly_payment")}
               </Text>
               <TextInput
                 style={{
@@ -494,7 +530,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   color: colors.text,
                   backgroundColor: colors.card,
                 }}
-                placeholder="0.00"
+                placeholder={t("add_asset_debt.amount_placeholder")}
                 placeholderTextColor={colors.textSecondary}
                 value={formatNumberWithCommas(formData.payment)}
                 onChangeText={(text) => {
@@ -540,8 +576,8 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   fontWeight: "700",
                 }}
               >
-                {editMode ? "Update" : "Save"}{" "}
-                {type === "asset" ? "Asset" : "Debt"}
+                {editMode ? t("common.update") : t("common.save")}{" "}
+                {type === "asset" ? t("add_asset_debt.asset") : t("add_asset_debt.debt")}
               </Text>
             </TouchableOpacity>
 
@@ -575,7 +611,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                     fontWeight: "700",
                   }}
                 >
-                  Delete {type === "asset" ? "Asset" : "Debt"}
+                  {t("common.delete")} {type === "asset" ? t("add_asset_debt.asset") : t("add_asset_debt.debt")}
                 </Text>
               </TouchableOpacity>
             )}
