@@ -340,7 +340,8 @@
     "financial_plans": "财务计划",
     "about": "关于",
     "ai_usage_admin": "AI使用管理",
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "see_plans_pricing": "查看计划和定价"
   },
   "premium": {
     "title": "高级功能",

@@ -331,7 +331,8 @@
     "financial_plans": "Planes Financieros",
     "about": "Acerca de",
     "ai_usage_admin": "Administrador de Uso de IA",
-    "logout": "Cerrar Sesión"
+    "logout": "Cerrar Sesión",
+    "see_plans_pricing": "Ver Planes y Precios"
   },
   "premium": {
     "title": "Características Premium",

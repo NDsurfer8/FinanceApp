@@ -340,7 +340,8 @@
     "financial_plans": "Plans Financiers",
     "about": "À Propos",
     "ai_usage_admin": "Administrateur d'Usage IA",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "see_plans_pricing": "Voir les Plans et Tarifs"
   },
   "premium": {
     "title": "Fonctionnalités Premium",

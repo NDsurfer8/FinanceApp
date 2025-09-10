@@ -340,7 +340,8 @@
     "financial_plans": "Finanzpläne",
     "about": "Über",
     "ai_usage_admin": "KI-Nutzungs-Administrator",
-    "logout": "Abmelden"
+    "logout": "Abmelden",
+    "see_plans_pricing": "Pläne und Preise Anzeigen"
   },
   "premium": {
     "title": "Premium-Funktionen",

@@ -569,7 +569,8 @@
     "financial_plans": "Financial Plans",
     "about": "About",
     "ai_usage_admin": "AI Usage Admin",
-    "logout": "Logout"
+    "logout": "Logout",
+    "see_plans_pricing": "See Plans & Pricing"
   },
   "categories": {
     "rent": "Rent",

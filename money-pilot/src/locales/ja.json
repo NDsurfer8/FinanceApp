@@ -340,7 +340,8 @@
     "financial_plans": "ファイナンシャルプラン",
     "about": "アプリについて",
     "ai_usage_admin": "AI使用管理",
-    "logout": "ログアウト"
+    "logout": "ログアウト",
+    "see_plans_pricing": "プランと価格を見る"
   },
   "premium": {
     "title": "プレミアム機能",

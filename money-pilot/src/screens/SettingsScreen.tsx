@@ -28,9 +28,9 @@ import { AIUsageAdminScreen } from "./AIUsageAdminScreen";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 import { useScrollDetection } from "../hooks/useScrollDetection";
 import { HelpfulTooltip } from "../components/HelpfulTooltip";
+import { useTranslation } from "react-i18next";
 import { LanguageSelector } from "../components/LanguageSelector";
 import { useLanguage } from "../contexts/LanguageContext";
-import { useTranslation } from "react-i18next";
 import { LanguageAwareText } from "../components/LanguageAwareText";
 
 interface SettingsScreenProps {
@@ -812,9 +812,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         letterSpacing: 0.5,
                       }}
                     >
-                      {introOfferEligible
-                        ? "See Plans & Pricing"
-                        : "See Plans & Pricing"}
+{t("settings.see_plans_pricing")}
                     </Text>
                   </View>
                 )}
