@@ -232,7 +232,14 @@
     "delete_confirm_title": "Удалить {{type}}",
     "delete_confirm_message": "Вы уверены, что хотите удалить \"{{name}}\"? Это действие нельзя отменить.",
     "asset": "Актив",
-    "debt": "Долг"
+    "debt": "Долг",
+    "debt_to_asset_ratio": "Соотношение Долг-Активы",
+    "negative": "Отрицательный",
+    "high_risk": "Высокий риск",
+    "moderate_risk": "Умеренный риск",
+    "low_risk": "Низкий риск",
+    "top_assets": "Основные Активы",
+    "top_debts": "Основные Долги"
   },
   "goals": {
     "title": "Цели",

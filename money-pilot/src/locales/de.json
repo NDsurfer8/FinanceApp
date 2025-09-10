@@ -232,7 +232,14 @@
     "delete_confirm_title": "{{type}} Löschen",
     "delete_confirm_message": "Sind Sie sicher, dass Sie \"{{name}}\" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
     "asset": "Vermögen",
-    "debt": "Schulden"
+    "debt": "Schulden",
+    "debt_to_asset_ratio": "Schulden-zu-Vermögens-Verhältnis",
+    "negative": "Negativ",
+    "high_risk": "Hohes Risiko",
+    "moderate_risk": "Mittleres Risiko",
+    "low_risk": "Niedriges Risiko",
+    "top_assets": "Top-Vermögenswerte",
+    "top_debts": "Top-Schulden"
   },
   "goals": {
     "title": "Ziele",

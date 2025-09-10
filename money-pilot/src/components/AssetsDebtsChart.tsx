@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { useTheme } from "../contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 
 const { width } = Dimensions.get("window");
 
@@ -20,6 +21,7 @@ interface AssetsDebtsChartProps {
 export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
   ({ assets, debts, title }) => {
     const { colors } = useTheme();
+    const { t } = useTranslation();
     const totalAssets = assets.reduce((sum, asset) => sum + asset.balance, 0);
     const totalDebts = debts.reduce((sum, debt) => sum + debt.balance, 0);
     const netWorth = totalAssets - totalDebts;
@@ -50,7 +52,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                 <Text
                   style={[styles.summaryLabel, { color: colors.textSecondary }]}
                 >
-                  Total Assets
+                  {t("assets_debts.total_assets")}
                 </Text>
                 <Text style={[styles.summaryValue, { color: colors.success }]}>
                   ${totalAssets.toLocaleString()}
@@ -60,7 +62,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                 <Text
                   style={[styles.summaryLabel, { color: colors.textSecondary }]}
                 >
-                  Total Debts
+                  {t("assets_debts.total_debt")}
                 </Text>
                 <Text style={[styles.summaryValue, { color: colors.error }]}>
                   ${totalDebts.toLocaleString()}
@@ -72,7 +74,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
               <Text
                 style={[styles.netWorthLabel, { color: colors.textSecondary }]}
               >
-                Net Worth
+                {t("assets_debts.net_worth")}
               </Text>
               <Text
                 style={[
@@ -81,7 +83,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                 ]}
               >
                 ${Math.abs(netWorth).toLocaleString()}
-                {netWorth < 0 ? " (Negative)" : ""}
+                {netWorth < 0 ? ` (${t("assets_debts.negative")})` : ""}
               </Text>
             </View>
           </View>
@@ -89,7 +91,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
           {/* Debt-to-Asset Ratio */}
           <View style={styles.ratioContainer}>
             <Text style={[styles.ratioLabel, { color: colors.textSecondary }]}>
-              Debt-to-Asset Ratio
+              {t("assets_debts.debt_to_asset_ratio")}
             </Text>
             <View style={[styles.ratioBar, { backgroundColor: colors.border }]}>
               <View
@@ -114,10 +116,10 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
               style={[styles.ratioDescription, { color: colors.textSecondary }]}
             >
               {debtToAssetRatio > 50
-                ? "High risk"
+                ? t("assets_debts.high_risk")
                 : debtToAssetRatio > 30
-                ? "Moderate risk"
-                : "Low risk"}
+                ? t("assets_debts.moderate_risk")
+                : t("assets_debts.low_risk")}
             </Text>
           </View>
 
@@ -125,7 +127,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
           {topAssets.length > 0 && (
             <View style={styles.breakdownContainer}>
               <Text style={[styles.breakdownTitle, { color: colors.text }]}>
-                Top Assets
+                {t("assets_debts.top_assets")}
               </Text>
               {topAssets.map((asset, index) => {
                 const percentage =
@@ -178,7 +180,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
           {topDebts.length > 0 && (
             <View style={styles.breakdownContainer}>
               <Text style={[styles.breakdownTitle, { color: colors.text }]}>
-                Top Debts
+                {t("assets_debts.top_debts")}
               </Text>
               {topDebts.map((debt, index) => {
                 const percentage =

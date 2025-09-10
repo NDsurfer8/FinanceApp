@@ -232,7 +232,14 @@
     "delete_confirm_title": "{{type}}を削除",
     "delete_confirm_message": "\"{{name}}\"を削除してもよろしいですか？この操作は元に戻せません。",
     "asset": "資産",
-    "debt": "負債"
+    "debt": "負債",
+    "debt_to_asset_ratio": "負債対資産比率",
+    "negative": "負",
+    "high_risk": "高リスク",
+    "moderate_risk": "中リスク",
+    "low_risk": "低リスク",
+    "top_assets": "主要資産",
+    "top_debts": "主要負債"
   },
   "goals": {
     "title": "目標",

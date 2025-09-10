@@ -232,7 +232,14 @@
     "delete_confirm_title": "Supprimer {{type}}",
     "delete_confirm_message": "Êtes-vous sûr de vouloir supprimer \"{{name}}\" ? Cette action ne peut pas être annulée.",
     "asset": "Actif",
-    "debt": "Dette"
+    "debt": "Dette",
+    "debt_to_asset_ratio": "Ratio Dette-Actifs",
+    "negative": "Négatif",
+    "high_risk": "Risque élevé",
+    "moderate_risk": "Risque modéré",
+    "low_risk": "Faible risque",
+    "top_assets": "Principaux Actifs",
+    "top_debts": "Principales Dettes"
   },
   "goals": {
     "title": "Objectifs",

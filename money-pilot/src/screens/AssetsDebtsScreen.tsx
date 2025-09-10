@@ -706,7 +706,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 fontFamily: fontFamily.bold,
               }}
             >
-              PREMIUM
+              {t("common.premium")}
             </Text>
           </View>
         )}

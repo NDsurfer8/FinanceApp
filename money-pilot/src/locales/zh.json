@@ -232,7 +232,14 @@
     "delete_confirm_title": "删除{{type}}",
     "delete_confirm_message": "您确定要删除\"{{name}}\"吗？此操作无法撤销。",
     "asset": "资产",
-    "debt": "债务"
+    "debt": "债务",
+    "debt_to_asset_ratio": "债务资产比率",
+    "negative": "负",
+    "high_risk": "高风险",
+    "moderate_risk": "中等风险",
+    "low_risk": "低风险",
+    "top_assets": "主要资产",
+    "top_debts": "主要债务"
   },
   "goals": {
     "title": "目标",

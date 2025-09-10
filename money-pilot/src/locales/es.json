@@ -223,7 +223,14 @@
     "delete_confirm_title": "Eliminar {{type}}",
     "delete_confirm_message": "¿Estás seguro de que quieres eliminar \"{{name}}\"? Esta acción no se puede deshacer.",
     "asset": "Activo",
-    "debt": "Deuda"
+    "debt": "Deuda",
+    "debt_to_asset_ratio": "Relación Deuda-Activos",
+    "negative": "Negativo",
+    "high_risk": "Alto riesgo",
+    "moderate_risk": "Riesgo moderado",
+    "low_risk": "Bajo riesgo",
+    "top_assets": "Principales Activos",
+    "top_debts": "Principales Deudas"
   },
   "goals": {
     "title": "Objetivos",

@@ -232,7 +232,14 @@
     "delete_confirm_title": "Excluir {{type}}",
     "delete_confirm_message": "Tem certeza de que deseja excluir \"{{name}}\"? Esta ação não pode ser desfeita.",
     "asset": "Ativo",
-    "debt": "Dívida"
+    "debt": "Dívida",
+    "debt_to_asset_ratio": "Relação Dívida-Ativos",
+    "negative": "Negativo",
+    "high_risk": "Alto risco",
+    "moderate_risk": "Risco moderado",
+    "low_risk": "Baixo risco",
+    "top_assets": "Principais Ativos",
+    "top_debts": "Principais Dívidas"
   },
   "goals": {
     "title": "Objetivos",
