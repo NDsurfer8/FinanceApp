@@ -22,7 +22,6 @@ import { useSubscription } from "../contexts/SubscriptionContext";
 import { plaidService, PlaidAccount } from "../services/plaid";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
-import { translate } from "../services/translations";
 import { useChatbot } from "../contexts/ChatbotContext";
 import { useData } from "../contexts/DataContext";
 import { AIUsageAdminScreen } from "./AIUsageAdminScreen";
@@ -432,7 +431,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               })()}
 
               <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                Member since{" "}
+                {t("settings.member_since")}{" "}
                 {currentUser?.metadata?.creationTime
                   ? new Date(
                       currentUser.metadata.creationTime
@@ -440,7 +439,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       month: "short",
                       year: "numeric",
                     })
-                  : "Recently"}
+                  : t("settings.recently")}
               </Text>
             </View>
             <TouchableOpacity
@@ -480,7 +479,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     letterSpacing: 0.3,
                   }}
                 >
-                  Edit
+                  {t("common.edit")}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -525,7 +524,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   opacity: 0.8,
                 }}
               >
-                Last Login
+                {t("settings.last_login")}
               </Text>
             </View>
             <View style={{ alignItems: "center", flex: 1 }}>
@@ -540,7 +539,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   fontFamily: "System",
                 }}
               >
-                {subscriptionStatus?.isPremium ? "Premium" : "Free"}
+                {subscriptionStatus?.isPremium
+                  ? t("settings.premium")
+                  : t("settings.free")}
               </Text>
               <Text
                 style={{
@@ -552,7 +553,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   opacity: 0.8,
                 }}
               >
-                Plan
+                {t("settings.plan")}
               </Text>
             </View>
             <View style={{ alignItems: "center", flex: 1 }}>
@@ -577,7 +578,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   opacity: 0.8,
                 }}
               >
-                Verified
+                {t("settings.verified")}
               </Text>
               {!currentUser?.emailVerified && currentUser?.email && (
                 <TouchableOpacity
@@ -603,7 +604,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         textTransform: "uppercase",
                       }}
                     >
-                      Verify Email
+                      {t("settings.verify_email")}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -677,20 +678,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     (total, bank) => total + bank.accounts.length,
                     0
                   )}{" "}
-                  account
-                  {connectedBankInfo.reduce(
-                    (total, bank) => total + bank.accounts.length,
-                    0
-                  ) !== 1
-                    ? "s"
-                    : ""}{" "}
-                  connected
+                  {t("settings.account", {
+                    count: connectedBankInfo.reduce(
+                      (total, bank) => total + bank.accounts.length,
+                      0
+                    ),
+                  })}{" "}
+                  {t("settings.connected")}
                 </Text>
               )}
             </View>
           ) : (
             <Text style={{ marginTop: 12, color: colors.textSecondary }}>
-              Or keep it manual—works great from day one.
+              {t("settings.manual_option")}
             </Text>
           )}
         </View>
@@ -845,7 +845,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               color: colors.text,
             }}
           >
-            {translate("settings", isFriendlyMode)}
+            {t("settings.title")}
           </Text>
 
           {/* Dark Mode Toggle */}

@@ -45,7 +45,9 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 
     // Show confirmation message
     Alert.alert(
-      value ? t("help_support.friendly_mode_enabled") : t("help_support.friendly_mode_disabled"),
+      value
+        ? t("help_support.friendly_mode_enabled")
+        : t("help_support.friendly_mode_disabled"),
       value
         ? t("help_support.friendly_mode_enabled_message")
         : t("help_support.friendly_mode_disabled_message"),
@@ -56,66 +58,57 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
   const faqs: FAQItem[] = [
     {
       id: "1",
-      question: "How do I add my first transaction?",
-      answer:
-        "Tap the '+' button on the Dashboard or go to the Transactions tab and tap 'Add Transaction'. Fill in the amount, category, description, and date, then save.",
-      category: "Getting Started",
+      question: t("help_support.faq.add_transaction.question"),
+      answer: t("help_support.faq.add_transaction.answer"),
+      category: t("help_support.categories.getting_started"),
     },
     {
       id: "2",
-      question: "How do I generate financial plans with Vectra?",
-      answer:
-        "Go to the AI Financial Advisor tab and tap 'Generate Plan'. Vectra will analyze your financial data and create personalized recommendations for budgeting, saving, investing, and debt management. You can customize the plan based on your goals and preferences.",
-      category: "AI Features",
+      question: t("help_support.faq.generate_plans.question"),
+      answer: t("help_support.faq.generate_plans.answer"),
+      category: t("help_support.categories.ai_features"),
     },
     {
       id: "3",
-      question: "How do I set up a budget?",
-      answer:
-        "Go to the Budget tab. You can add income sources, fixed expenses, and variable expenses. The app will automatically calculate your remaining budget.",
-      category: "Budgeting",
+      question: t("help_support.faq.setup_budget.question"),
+      answer: t("help_support.faq.setup_budget.answer"),
+      category: t("help_support.categories.budgeting"),
     },
     {
       id: "4",
-      question: "Can I share my finances with family members?",
-      answer:
-        "Yes! Use the Shared Finance feature to create groups with family members. You can share transactions, assets, and debts while maintaining privacy.",
-      category: "Shared Finance",
+      question: t("help_support.faq.share_finances.question"),
+      answer: t("help_support.faq.share_finances.answer"),
+      category: t("help_support.categories.shared_finance"),
     },
     {
       id: "5",
-      question: "How do I set financial goals?",
-      answer:
-        "Go to the Goals tab and tap 'Add Goal'. Set a target amount, monthly contribution, and target date. Track your progress visually.",
-      category: "Goals",
+      question: t("help_support.faq.set_goals.question"),
+      answer: t("help_support.faq.set_goals.answer"),
+      category: t("help_support.categories.goals"),
     },
     {
       id: "6",
-      question: "Is my financial data secure?",
-      answer:
-        "Absolutely! We use industry-standard encryption and Firebase security. Your data is private and only accessible to you and your shared group members.",
-      category: "Security",
+      question: t("help_support.faq.data_security.question"),
+      answer: t("help_support.faq.data_security.answer"),
+      category: t("help_support.categories.security"),
     },
     {
       id: "7",
-      question: "How do I export my data?",
-      answer:
-        "Go to Settings → Privacy & Security → Export My Data. You'll receive an email with your financial data within 24 hours.",
-      category: "Data Management",
+      question: t("help_support.faq.export_data.question"),
+      answer: t("help_support.faq.export_data.answer"),
+      category: t("help_support.categories.data_management"),
     },
     {
       id: "8",
-      question: "Can I use the app offline?",
-      answer:
-        "The app requires an internet connection to sync your data with our secure servers. However, you can view recently loaded data when offline.",
-      category: "Technical",
+      question: t("help_support.faq.offline_use.question"),
+      answer: t("help_support.faq.offline_use.answer"),
+      category: t("help_support.categories.technical"),
     },
     {
       id: "9",
-      question: "How do I change my password?",
-      answer:
-        "Go to Settings → Privacy & Security → Change Password. Enter your current password and set a new one.",
-      category: "Account",
+      question: t("help_support.faq.change_password.question"),
+      answer: t("help_support.faq.change_password.answer"),
+      category: t("help_support.categories.account"),
     },
   ];
 
@@ -130,9 +123,9 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 
       if (!isAvailable) {
         Alert.alert(
-          "Email Not Available",
-          "No email app is configured on this device. Please set up an email account in your device settings.",
-          [{ text: "OK" }]
+          t("help_support.email_not_available"),
+          t("help_support.email_not_available_message"),
+          [{ text: t("common.ok") }]
         );
         return;
       }
@@ -173,32 +166,33 @@ ${user?.displayName || "VectorFi User"}`,
 
       if (result.status === MailComposer.MailComposerStatus.SENT) {
         Alert.alert(
-          "Email Sent",
-          "Thank you for contacting us. We'll get back to you as soon as possible.",
-          [{ text: "OK" }]
+          t("help_support.email_sent"),
+          t("help_support.email_sent_message"),
+          [{ text: t("common.ok") }]
         );
       }
     } catch (error) {
       console.error("Error opening email composer:", error);
-      Alert.alert(
-        "Error",
-        "Unable to open email composer. Please try again or contact us through other means.",
-        [{ text: "OK" }]
-      );
+      Alert.alert(t("common.error"), t("help_support.email_composer_error"), [
+        { text: t("common.ok") },
+      ]);
     }
   };
 
   const openLiveChat = () => {
     Alert.alert(
-      "Live Chat",
-      "Live chat support is available during business hours (9 AM - 6 PM EST). Would you like to start a chat?",
+      t("help_support.live_chat"),
+      t("help_support.live_chat_message"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Start Chat",
+          text: t("help_support.start_chat"),
           onPress: () => {
             // Implement live chat functionality here
-            Alert.alert("Live Chat", "Live chat would be implemented here");
+            Alert.alert(
+              t("help_support.live_chat"),
+              t("help_support.live_chat_placeholder")
+            );
           },
         },
       ]
@@ -219,9 +213,9 @@ ${user?.displayName || "VectorFi User"}`,
 
       if (!isAvailable) {
         Alert.alert(
-          "Email Not Available",
-          "No email app is configured on this device. Please set up an email account in your device settings.",
-          [{ text: "OK" }]
+          t("help_support.email_not_available"),
+          t("help_support.email_not_available_message"),
+          [{ text: t("common.ok") }]
         );
         return;
       }
@@ -271,15 +265,15 @@ ${user?.displayName || "VectorFi User"}`,
 
       if (result.status === MailComposer.MailComposerStatus.SENT) {
         Alert.alert(
-          "Bug Report Sent",
-          "Thank you for reporting this bug. We'll investigate and fix it as soon as possible.",
-          [{ text: "OK" }]
+          t("help_support.bug_report_sent"),
+          t("help_support.bug_report_sent_message"),
+          [{ text: t("common.ok") }]
         );
       }
     } catch (error) {
       console.error("Error opening email composer:", error);
-      Alert.alert("Error", "Unable to open email composer. Please try again.", [
-        { text: "OK" },
+      Alert.alert(t("common.error"), t("help_support.email_composer_error"), [
+        { text: t("common.ok") },
       ]);
     }
   };
@@ -290,9 +284,9 @@ ${user?.displayName || "VectorFi User"}`,
 
       if (!isAvailable) {
         Alert.alert(
-          "Email Not Available",
-          "No email app is configured on this device. Please set up an email account in your device settings.",
-          [{ text: "OK" }]
+          t("help_support.email_not_available"),
+          t("help_support.email_not_available_message"),
+          [{ text: t("common.ok") }]
         );
         return;
       }
@@ -340,15 +334,15 @@ ${user?.displayName || "VectorFi User"}`,
 
       if (result.status === MailComposer.MailComposerStatus.SENT) {
         Alert.alert(
-          "Feature Request Sent",
-          "Thank you for your feature request. We'll review it and consider it for future updates.",
-          [{ text: "OK" }]
+          t("help_support.feature_request_sent"),
+          t("help_support.feature_request_sent_message"),
+          [{ text: t("common.ok") }]
         );
       }
     } catch (error) {
       console.error("Error opening email composer:", error);
-      Alert.alert("Error", "Unable to open email composer. Please try again.", [
-        { text: "OK" },
+      Alert.alert(t("common.error"), t("help_support.email_composer_error"), [
+        { text: t("common.ok") },
       ]);
     }
   };
@@ -418,10 +412,10 @@ ${user?.displayName || "VectorFi User"}`,
           </TouchableOpacity>
           <View>
             <Text style={[styles.title, { color: colors.text }]}>
-              Help & Support
+              {t("help_support.title")}
             </Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Get help and find answers
+              {t("help_support.subtitle")}
             </Text>
           </View>
         </View>
@@ -429,7 +423,7 @@ ${user?.displayName || "VectorFi User"}`,
         {/* Friendly Mode Toggle */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Accessibility
+            {t("help_support.accessibility")}
           </Text>
 
           <View
@@ -450,7 +444,7 @@ ${user?.displayName || "VectorFi User"}`,
                 </View>
                 <View style={styles.settingText}>
                   <Text style={[styles.settingTitle, { color: colors.text }]}>
-                    Friendly Mode
+                    {t("help_support.friendly_mode")}
                   </Text>
                   <Text
                     style={[
@@ -458,8 +452,7 @@ ${user?.displayName || "VectorFi User"}`,
                       { color: colors.textSecondary },
                     ]}
                   >
-                    Translate financial terms into friendly, easy-to-understand
-                    language
+                    {t("help_support.friendly_mode_description")}
                   </Text>
                 </View>
               </View>
@@ -478,7 +471,7 @@ ${user?.displayName || "VectorFi User"}`,
         {/* Quick Support Options */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Quick Support
+            {t("help_support.quick_support")}
           </Text>
 
           <TouchableOpacity
@@ -501,7 +494,7 @@ ${user?.displayName || "VectorFi User"}`,
                 <Text
                   style={[styles.emailSupportTitle, { color: colors.text }]}
                 >
-                  Email Support
+                  {t("help_support.email_support")}
                 </Text>
                 <Text
                   style={[
@@ -509,7 +502,7 @@ ${user?.displayName || "VectorFi User"}`,
                     { color: colors.textSecondary },
                   ]}
                 >
-                  Get help via email
+                  {t("help_support.email_support_description")}
                 </Text>
               </View>
             </View>
@@ -614,7 +607,7 @@ ${user?.displayName || "VectorFi User"}`,
         {/* FAQ Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Frequently Asked Questions
+            {t("help_support.frequently_asked_questions")}
           </Text>
 
           {faqs.map((faq) => (
@@ -674,7 +667,7 @@ ${user?.displayName || "VectorFi User"}`,
         {/* Feedback Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Feedback & Requests
+            {t("help_support.feedback_requests")}
           </Text>
 
           <TouchableOpacity
@@ -687,7 +680,7 @@ ${user?.displayName || "VectorFi User"}`,
             <View style={styles.feedbackContent}>
               <Ionicons name="bug" size={20} color="#ef4444" />
               <Text style={[styles.feedbackText, { color: colors.text }]}>
-                Report a Bug
+                {t("help_support.report_bug")}
               </Text>
             </View>
             <Ionicons
@@ -707,7 +700,7 @@ ${user?.displayName || "VectorFi User"}`,
             <View style={styles.feedbackContent}>
               <Ionicons name="bulb" size={20} color="#6366f1" />
               <Text style={[styles.feedbackText, { color: colors.text }]}>
-                Request a Feature
+                {t("help_support.request_feature")}
               </Text>
             </View>
             <Ionicons
@@ -721,7 +714,7 @@ ${user?.displayName || "VectorFi User"}`,
         {/* Contact Information */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Contact Information
+            {t("help_support.contact_information")}
           </Text>
           <View
             style={[

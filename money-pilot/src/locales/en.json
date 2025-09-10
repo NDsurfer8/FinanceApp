@@ -514,6 +514,114 @@
     "asset": "Asset",
     "debt": "Debt"
   },
+  "help_support": {
+    "title": "Help & Support",
+    "subtitle": "Get help and find answers",
+    "accessibility": "Accessibility",
+    "friendly_mode": "Friendly Mode",
+    "friendly_mode_description": "Translate financial terms into friendly, easy-to-understand language",
+    "friendly_mode_enabled": "Friendly Mode Enabled",
+    "friendly_mode_disabled": "Friendly Mode Disabled",
+    "friendly_mode_enabled_message": "Financial terms will now be shown in friendly, easy-to-understand language.",
+    "friendly_mode_disabled_message": "Financial terms will now be shown in standard language.",
+    "quick_support": "Quick Support",
+    "email_support": "Email Support",
+    "email_support_description": "Get help via email",
+    "email_not_available": "Email Not Available",
+    "email_not_available_message": "No email app is configured on this device. Please set up an email account in your device settings.",
+    "email_sent": "Email Sent",
+    "email_sent_message": "Thank you for contacting us. We'll get back to you as soon as possible.",
+    "email_composer_error": "Unable to open email composer. Please try again or contact us through other means.",
+    "live_chat": "Live Chat",
+    "live_chat_message": "Live chat support is available during business hours (9 AM - 6 PM EST). Would you like to start a chat?",
+    "start_chat": "Start Chat",
+    "live_chat_placeholder": "Live chat would be implemented here",
+    "bug_report_sent": "Bug Report Sent",
+    "bug_report_sent_message": "Thank you for reporting this bug. We'll investigate and fix it as soon as possible.",
+    "feature_request_sent": "Feature Request Sent",
+    "feature_request_sent_message": "Thank you for your feature request. We'll review it and consider it for future updates.",
+    "categories": {
+      "getting_started": "Getting Started",
+      "ai_features": "AI Features",
+      "budgeting": "Budgeting",
+      "shared_finance": "Shared Finance",
+      "goals": "Goals",
+      "security": "Security",
+      "data_management": "Data Management",
+      "technical": "Technical",
+      "account": "Account"
+    },
+    "faq": {
+      "add_transaction": {
+        "question": "How do I add my first transaction?",
+        "answer": "Tap the '+' button on the Dashboard or go to the Transactions tab and tap 'Add Transaction'. Fill in the amount, category, description, and date, then save."
+      },
+      "generate_plans": {
+        "question": "How do I generate financial plans with Vectra?",
+        "answer": "Go to the AI Financial Advisor tab and tap 'Generate Plan'. Vectra will analyze your financial data and create personalized recommendations for budgeting, saving, investing, and debt management. You can customize the plan based on your goals and preferences."
+      },
+      "setup_budget": {
+        "question": "How do I set up a budget?",
+        "answer": "Go to the Budget tab. You can add income sources, fixed expenses, and variable expenses. The app will automatically calculate your remaining budget."
+      },
+      "share_finances": {
+        "question": "Can I share my finances with family members?",
+        "answer": "Yes! Use the Shared Finance feature to create groups with family members. You can share transactions, assets, and debts while maintaining privacy."
+      },
+      "set_goals": {
+        "question": "How do I set financial goals?",
+        "answer": "Go to the Goals tab and tap 'Add Goal'. Set a target amount, monthly contribution, and target date. Track your progress visually."
+      },
+      "data_security": {
+        "question": "Is my financial data secure?",
+        "answer": "Absolutely! We use industry-standard encryption and Firebase security. Your data is private and only accessible to you and your shared group members."
+      },
+      "export_data": {
+        "question": "How do I export my data?",
+        "answer": "Go to Settings → Privacy & Security → Export My Data. You'll receive an email with your financial data within 24 hours."
+      },
+      "offline_use": {
+        "question": "Can I use the app offline?",
+        "answer": "The app requires an internet connection to sync your data with our secure servers. However, you can view recently loaded data when offline."
+      },
+      "change_password": {
+        "question": "How do I change my password?",
+        "answer": "Go to Settings → Privacy & Security → Change Password. Enter your current password and set a new one."
+      }
+    },
+    "frequently_asked_questions": "Frequently Asked Questions",
+    "feedback_requests": "Feedback & Requests",
+    "report_bug": "Report a Bug",
+    "request_feature": "Request a Feature",
+    "contact_information": "Contact Information"
+  },
+  "settings": {
+    "title": "Settings",
+    "data_sources": "Data Sources",
+    "member_since": "Member since",
+    "recently": "Recently",
+    "last_login": "Last Login",
+    "premium": "Premium",
+    "free": "Free",
+    "plan": "Plan",
+    "verified": "Verified",
+    "verify_email": "Verify Email",
+    "account": "account",
+    "account_plural": "accounts",
+    "connected": "connected",
+    "manual_option": "Or keep it manual—works great from day one.",
+    "dark_mode": "Dark Mode",
+    "ai_chatbot": "AI Chatbot",
+    "show_tooltips": "Show Tooltips",
+    "language": "Language",
+    "notifications": "Notifications",
+    "privacy": "Privacy & Security",
+    "help": "Help & Support",
+    "financial_plans": "Financial Plans",
+    "about": "About",
+    "ai_usage_admin": "AI Usage Admin",
+    "logout": "Logout"
+  },
   "categories": {
     "rent": "Rent",
     "car_payment": "Car Payment",
