@@ -45,6 +45,7 @@ import {
 import { VectraAvatar } from "../components/VectraAvatar";
 import { sendBackendAIFeedback } from "../services/backendAI";
 import { Audio } from "expo-av";
+import { useTranslation } from "react-i18next";
 
 // Voice options for TTS
 const VOICE_OPTIONS = [
@@ -279,6 +280,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
 
   const { hideChatbot, showChatbot } = useChatbot();
   const { hasPremiumAccess } = useSubscription();
+  const { t } = useTranslation();
   const {
     transactions,
     assets,
@@ -552,7 +554,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   // Get welcome message
   const getWelcomeMessage = (): Message => ({
     id: "1",
-    text: "Aloha! I’m Vectra, your personal AI Financial Advisor. I can help with budgeting, goals, debt, investing, and side hustles — what’s on your mind today? 🤙",
+    text: t("ai_chat.initial_message"),
     isUser: false,
     timestamp: new Date(),
   });

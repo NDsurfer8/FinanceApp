@@ -632,5 +632,8 @@
     "add_another_bank": "Agregar Otro Banco",
     "connect_bank": "Conectar Banco",
     "disconnect_all_banks": "Desconectar Todos los Bancos"
+  },
+  "ai_chat": {
+    "initial_message": "¡Aloha! Soy Vectra, tu Asesor Financiero AI personal. Puedo ayudarte con presupuestos, metas, deudas, inversiones y trabajos secundarios — ¿qué tienes en mente hoy? 🤙"
   }
 }

@@ -641,5 +641,8 @@
     "add_another_bank": "別の銀行を追加",
     "connect_bank": "銀行を接続",
     "disconnect_all_banks": "すべての銀行を切断"
+  },
+  "ai_chat": {
+    "initial_message": "アロハ！私はVectra、あなたのパーソナルAIファイナンシャルアドバイザーです。予算、目標、借金、投資、サイドハッスルについてお手伝いできます — 今日は何をお考えですか？🤙"
   }
 }

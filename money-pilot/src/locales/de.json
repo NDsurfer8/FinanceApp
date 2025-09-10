@@ -641,5 +641,8 @@
     "add_another_bank": "Andere Bank Hinzufügen",
     "connect_bank": "Bank Verbinden",
     "disconnect_all_banks": "Alle Banken Trennen"
+  },
+  "ai_chat": {
+    "initial_message": "Aloha! Ich bin Vectra, Ihr persönlicher KI-Finanzberater. Ich kann bei Budgets, Zielen, Schulden, Investitionen und Nebentätigkeiten helfen — was haben Sie heute im Sinn? 🤙"
   }
 }

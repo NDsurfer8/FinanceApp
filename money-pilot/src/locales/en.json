@@ -645,6 +645,9 @@
     "connect_bank": "Connect Bank",
     "disconnect_all_banks": "Disconnect All Banks"
   },
+  "ai_chat": {
+    "initial_message": "Aloha! I'm Vectra, your personal AI Financial Advisor. I can help with budgeting, goals, debt, investing, and side hustles — what's on your mind today? 🤙"
+  },
   "add_transaction": {
     "title": "Add Transaction",
     "edit_title": "Edit Transaction",
