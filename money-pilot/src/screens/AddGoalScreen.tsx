@@ -16,6 +16,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import {
   saveGoal,
@@ -44,6 +45,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const { goals, updateDataOptimistically } = useZeroLoading();
   const { canAddGoal, getGoalLimitInfo } = useTransactionLimits();
   const { presentPaywall } = usePaywall();
@@ -56,27 +58,52 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
   const goalCategories = [
     {
       key: "emergency",
-      label: "Emergency Fund",
+      label: t("goals.categories.emergency_fund"),
       icon: "shield-checkmark",
       color: "#d97706",
     },
-    { key: "vacation", label: "Vacation", icon: "airplane", color: "#3b82f6" },
+    {
+      key: "vacation",
+      label: t("goals.categories.vacation"),
+      icon: "airplane",
+      color: "#3b82f6",
+    },
     {
       key: "downpayment",
-      label: "Down Payment",
+      label: t("goals.categories.down_payment"),
       icon: "home",
       color: "#16a34a",
     },
-    { key: "car", label: "New Car", icon: "car", color: "#8b5cf6" },
-    { key: "wedding", label: "Wedding", icon: "heart", color: "#ec4899" },
-    { key: "education", label: "Education", icon: "school", color: "#f59e0b" },
+    {
+      key: "car",
+      label: t("goals.categories.new_car"),
+      icon: "car",
+      color: "#8b5cf6",
+    },
+    {
+      key: "wedding",
+      label: t("goals.categories.wedding"),
+      icon: "heart",
+      color: "#ec4899",
+    },
+    {
+      key: "education",
+      label: t("goals.categories.education"),
+      icon: "school",
+      color: "#f59e0b",
+    },
     {
       key: "retirement",
-      label: "Retirement",
+      label: t("goals.categories.retirement"),
       icon: "trending-up",
       color: "#10b981",
     },
-    { key: "other", label: "Other", icon: "star", color: "#6b7280" },
+    {
+      key: "other",
+      label: t("goals.categories.other"),
+      icon: "star",
+      color: "#6b7280",
+    },
   ];
 
   const priorityColors = {
@@ -295,7 +322,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
         >
           {/* Header */}
           <StandardHeader
-            title={`${editMode ? "Edit" : "Add"} Goal`}
+            title={`${editMode ? t("goals.edit_goal") : t("goals.add_goal")}`}
             onBack={() => navigation.goBack()}
           />
 
@@ -310,7 +337,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Goal Description *
+              {t("goals.goal_description")} *
             </Text>
             <TextInput
               style={{
@@ -322,7 +349,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 color: colors.text,
                 backgroundColor: colors.card,
               }}
-              placeholder="e.g., Emergency Fund"
+              placeholder={t("goals.goal_description_placeholder")}
               placeholderTextColor={colors.textSecondary}
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
@@ -339,7 +366,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 marginBottom: 12,
               }}
             >
-              Category
+              {t("goals.category")}
             </Text>
             <ScrollView
               horizontal
@@ -408,7 +435,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Goal Target Amount *
+              {t("goals.goal_target_amount")} *
             </Text>
             <TextInput
               style={{
@@ -441,7 +468,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Current Amount Saved *
+              {t("goals.current_amount_saved")} *
             </Text>
             <TextInput
               style={{
@@ -474,7 +501,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Monthly Contribution *
+              {t("goals.planned_monthly_contribution")} *
             </Text>
             <TextInput
               style={{
@@ -507,7 +534,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Target Achievement Date
+              {t("goals.target_achievement_date")}
             </Text>
             <TouchableOpacity
               style={{
@@ -550,7 +577,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 marginBottom: 12,
               }}
             >
-              Priority
+              {t("goals.priority")}
             </Text>
             <View style={{ flexDirection: "row", gap: 12 }}>
               {(["low", "medium", "high"] as const).map((priority) => (
@@ -584,7 +611,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                       textTransform: "capitalize",
                     }}
                   >
-                    {priority}
+                    {t(`goals.priorities.${priority}`)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -625,7 +652,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                   fontWeight: "700",
                 }}
               >
-                {editMode ? "Update" : "Save"} Goal
+                {editMode ? t("goals.update_goal") : t("goals.save_goal")}
               </Text>
             </TouchableOpacity>
 
@@ -659,7 +686,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                     fontWeight: "700",
                   }}
                 >
-                  Delete Goal
+                  {t("goals.delete_goal")}
                 </Text>
               </TouchableOpacity>
             )}
@@ -708,7 +735,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 textAlign: "center",
               }}
             >
-              Select Target Date
+              {t("goals.select_target_date")}
             </Text>
             <View
               style={{
@@ -754,7 +781,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                     fontWeight: "600",
                   }}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -774,7 +801,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                     fontWeight: "600",
                   }}
                 >
-                  Done
+                  {t("common.done")}
                 </Text>
               </TouchableOpacity>
             </View>

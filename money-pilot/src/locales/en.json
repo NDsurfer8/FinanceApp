@@ -395,6 +395,66 @@
     "monthly_limit": "Monthly Limit",
     "of_income": "of income"
   },
+  "goals": {
+    "title": "Goals",
+    "subtitle": "Track your progress",
+    "summary_title": "Goals Summary",
+    "total_goals": "Total Goals",
+    "total_target": "Total Target",
+    "total_saved": "Total Saved",
+    "no_goals_yet": "No Goals Yet",
+    "start_adding_goals": "Start by adding your first financial goal",
+    "add_goal": "Add Goal",
+    "target": "Target",
+    "monthly": "Monthly",
+    "time_left": "Time Left",
+    "target_achievement_date": "Target Achievement Date",
+    "no_date_set": "No date set",
+    "edit_goal": "Edit Goal",
+    "add_new_goal": "Add New Goal",
+    "goal_description": "Goal Description",
+    "goal_description_placeholder": "e.g., Emergency Fund",
+    "category": "Category",
+    "goal_target_amount": "Goal Target Amount",
+    "current_amount_saved": "Current Amount Saved",
+    "planned_monthly_contribution": "Planned Monthly Contribution",
+    "priority": "Priority",
+    "target_amount_placeholder": "5,000",
+    "current_amount_placeholder": "0",
+    "monthly_contribution_placeholder": "500",
+    "select_date": "Select Date",
+    "update_goal": "Update Goal",
+    "delete_goal": "Delete Goal",
+    "deleting": "Deleting...",
+    "select_target_date": "Select Target Date",
+    "save_goal": "Save Goal",
+    "categories": {
+      "emergency_fund": "Emergency Fund",
+      "vacation": "Vacation",
+      "down_payment": "Down Payment",
+      "new_car": "New Car",
+      "wedding": "Wedding",
+      "education": "Education",
+      "retirement": "Retirement",
+      "other": "Other"
+    },
+    "priorities": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "status": {
+      "completed": "Completed!",
+      "almost_there": "Almost There",
+      "halfway_there": "Halfway There",
+      "getting_started": "Getting Started",
+      "just_starting": "Just Starting"
+    },
+    "time": {
+      "no_date": "No Date",
+      "overdue": "Overdue"
+    }
+  },
   "categories": {
     "rent": "Rent",
     "car_payment": "Car Payment",
