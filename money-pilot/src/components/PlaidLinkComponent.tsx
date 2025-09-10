@@ -17,6 +17,7 @@ import { useData } from "../contexts/DataContext";
 import { usePaywall } from "../hooks/usePaywall";
 import { LinkSuccess, LinkExit } from "react-native-plaid-link-sdk";
 import { useTheme } from "../contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 
 interface PlaidLinkComponentProps {
   onSuccess?: () => void;
@@ -30,6 +31,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
   onLoadingChange,
 }) => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [lastTapTime, setLastTapTime] = useState(0);
@@ -147,11 +149,11 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     // Check if user has premium access
     if (!hasPremiumAccess()) {
       Alert.alert(
-        "Premium Feature",
-        "Bank connection is a premium feature. Upgrade to Premium to connect your bank account and automatically sync transactions!",
+        t("plaid.premium_feature"),
+        t("plaid.premium_feature_message"),
         [
-          { text: "Cancel", style: "cancel" },
-          { text: "Upgrade to Premium", onPress: presentPaywall },
+          { text: t("common.cancel"), style: "cancel" },
+          { text: t("plaid.upgrade_to_premium"), onPress: presentPaywall },
         ]
       );
       return;
@@ -185,11 +187,11 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
         errorMessage.includes("rate limit")
       ) {
         Alert.alert(
-          "Connection Limit Reached",
-          "Please wait a moment before trying to connect another bank. This helps ensure a smooth connection process."
+          t("plaid.connection_limit_reached"),
+          t("plaid.connection_limit_message")
         );
       } else {
-        Alert.alert("Error", "Failed to connect bank account");
+        Alert.alert(t("common.error"), t("plaid.failed_to_connect"));
       }
 
       // Ensure minimum connection time has passed before re-enabling button
@@ -259,7 +261,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       // Don't call onSuccess here - let polling handle it when connection is confirmed
     } catch (error) {
       console.error("Error handling Plaid success:", error);
-      Alert.alert("Error", "Failed to complete bank connection");
+      Alert.alert(t("common.error"), t("plaid.failed_to_complete_connection"));
       await ensureMinimumConnectionTime();
       setIsLoading(false);
       onLoadingChange?.(false);
@@ -292,24 +294,22 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
     console.error("Plaid exit with error:", linkExit.error);
 
     // Enhanced error messaging
-    let errorMessage = "Failed to connect bank account";
+    let errorMessage = t("plaid.failed_to_connect");
 
     if (linkExit.error.errorCode) {
       switch (linkExit.error.errorCode) {
         case "INVALID_LINK_TOKEN":
-          errorMessage = "Connection session expired. Please try again.";
+          errorMessage = t("plaid.session_expired");
           break;
         case "ITEM_LOGIN_REQUIRED":
-          errorMessage = "Bank login required. Please try again.";
+          errorMessage = t("plaid.login_required");
           break;
         case "INSTITUTION_DOWN":
         case "INSTITUTION_NOT_RESPONDING":
-          errorMessage =
-            "Bank is temporarily unavailable. Please try again later.";
+          errorMessage = t("plaid.bank_unavailable");
           break;
         case "RATE_LIMIT":
-          errorMessage =
-            "There were too many connection attempts in a short time. For security, the bank has temporarily paused new logins. Try again in about an hour.";
+          errorMessage = t("plaid.rate_limit_message");
           // Log the request IDs for debugging
           if (linkExit.metadata) {
             // Plaid request metadata available
@@ -318,8 +318,8 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
           plaidService.resetRateLimiting();
           // Show more specific alert for RATE_LIMIT
           Alert.alert(
-            "Please try again later",
-            "There were too many connection attempts in a short time. For security, the bank has temporarily paused new logins. Try again in about an hour."
+            t("plaid.try_again_later"),
+            t("plaid.rate_limit_message")
           );
           break;
         default:
@@ -330,8 +330,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
               linkExit.error.errorMessage.includes("RATE_LIMIT_EXCEEDED") ||
               linkExit.error.errorMessage.includes("rate limit")
             ) {
-              errorMessage =
-                "Too many connection attempts. Please wait 2-3 minutes and try again.";
+              errorMessage = t("plaid.too_many_attempts");
             } else if (
               linkExit.error.errorMessage.includes("PRODUCT_NOT_READY") ||
               linkExit.error.errorMessage.includes("product not ready")
@@ -344,8 +343,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
               linkExit.error.errorMessage.includes("INSTITUTION_DOWN") ||
               linkExit.error.errorMessage.includes("institution down")
             ) {
-              errorMessage =
-                "Bank is temporarily unavailable. Please try again later.";
+              errorMessage = t("plaid.bank_unavailable");
             } else {
               errorMessage = linkExit.error.errorMessage || errorMessage;
             }
@@ -355,7 +353,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
       }
     }
 
-    Alert.alert("Connection Error", errorMessage);
+    Alert.alert(t("plaid.connection_error"), errorMessage);
     onExit?.();
   };
 
@@ -365,16 +363,16 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
 
     const bankName = itemId
       ? connectedBanks.find((bank) => bank.itemId === itemId)?.name ||
-        "this bank"
-      : "all your banks";
+        t("plaid.this_bank")
+      : t("plaid.all_your_banks");
 
     Alert.alert(
-      "Disconnect Bank",
-      `Are you sure you want to disconnect ${bankName}?`,
+      t("plaid.disconnect_bank"),
+      t("plaid.disconnect_confirmation", { bankName }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Disconnect",
+          text: t("plaid.disconnect"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -391,7 +389,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
               }
             } catch (error) {
               console.error("Error disconnecting bank:", error);
-              Alert.alert("Error", "Failed to disconnect bank account");
+              Alert.alert(t("common.error"), t("plaid.failed_to_disconnect"));
             }
           },
         },
@@ -412,7 +410,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
               marginBottom: 8,
             }}
           >
-            Connected Banks ({connectedBanks.length})
+            {t("plaid.connected_banks", { count: connectedBanks.length })}
           </Text>
           {connectedBanks.map((bank, index) => (
             <View
@@ -445,7 +443,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
                       color: colors.text,
                     }}
                   >
-                    {bank.name || "Unknown Bank"}
+                    {bank.name || t("plaid.unknown_bank")}
                   </Text>
                   <Text
                     style={{
@@ -454,8 +452,11 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
                       marginTop: 2,
                     }}
                   >
-                    {bank.accounts?.length || 0} account
-                    {bank.accounts?.length !== 1 ? "s" : ""}
+                    {bank.accounts?.length === 1
+                      ? t("plaid.account_count", { count: 1 })
+                      : t("plaid.account_count_plural", {
+                          count: bank.accounts?.length || 0,
+                        })}
                   </Text>
                 </View>
               </View>
@@ -515,7 +516,9 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
             color: "#fff",
           }}
         >
-          {isBankConnected ? "Add Another Bank" : "Connect Bank"}
+          {isBankConnected
+            ? t("plaid.add_another_bank")
+            : t("plaid.connect_bank")}
         </Text>
       </TouchableOpacity>
 
@@ -550,7 +553,7 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
               color: colors.error || "#F44336",
             }}
           >
-            Disconnect All Banks
+            {t("plaid.disconnect_all_banks")}
           </Text>
         </TouchableOpacity>
       )}
