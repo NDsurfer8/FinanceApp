@@ -19,7 +19,8 @@
     "no": "いいえ",
     "on": "オン",
     "off": "オフ",
-    "user": "ユーザー"
+    "user": "ユーザー",
+    "premium": "プレミアム"
   },
   "auth": {
     "login": "Login",
@@ -113,7 +114,10 @@
     "savings": "貯蓄:",
     "goal_contrib": "目標貢献:",
     "debt_payoff": "債務返済:",
-    "available": "利用可能:"
+    "available": "利用可能:",
+    "excellent_discretionary_savings_message": "追加の貯蓄に利用可能な収入の{{rate}}%があります",
+    "emergency_fund_complete": "緊急資金完了！",
+    "emergency_fund_complete_message": "6ヶ月目標の{{progress}}%を達成しています"
   },
   "budget": {
     "title": "予算",

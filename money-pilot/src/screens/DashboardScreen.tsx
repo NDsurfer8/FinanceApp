@@ -309,9 +309,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           type: "success",
           icon: "trending-up",
           title: t("dashboard.excellent_discretionary_savings"),
-          message: `You have ${discretionarySavingsRate.toFixed(
-            1
-          )}% of your income available for additional savings`,
+          message: t("dashboard.excellent_discretionary_savings_message", {
+            rate: discretionarySavingsRate.toFixed(1),
+          }),
         });
       } else if (discretionarySavingsRate < 0) {
         insights.push({

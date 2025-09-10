@@ -19,7 +19,8 @@
     "no": "No",
     "on": "Activado",
     "off": "Desactivado",
-    "user": "Usuario"
+    "user": "Usuario",
+    "premium": "Premium"
   },
   "auth": {
     "login": "Iniciar Sesión",
@@ -104,7 +105,10 @@
     "savings": "Ahorros:",
     "goal_contrib": "Contrib. Objetivo:",
     "debt_payoff": "Pago de Deudas:",
-    "available": "Disponible:"
+    "available": "Disponible:",
+    "excellent_discretionary_savings_message": "Tienes {{rate}}% de tus ingresos disponibles para ahorros adicionales",
+    "emergency_fund_complete": "¡Fondo de Emergencia Completo!",
+    "emergency_fund_complete_message": "Tienes {{progress}}% de tu objetivo de 6 meses"
   },
   "budget": {
     "title": "Presupuesto",

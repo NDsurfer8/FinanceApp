@@ -19,7 +19,8 @@
     "no": "Нет",
     "on": "Включено",
     "off": "Выключено",
-    "user": "Пользователь"
+    "user": "Пользователь",
+    "premium": "Премиум"
   },
   "auth": {
     "login": "Login",
@@ -113,7 +114,10 @@
     "savings": "Сбережения:",
     "goal_contrib": "Взнос на цель:",
     "debt_payoff": "Погашение долгов:",
-    "available": "Доступно:"
+    "available": "Доступно:",
+    "excellent_discretionary_savings_message": "У вас есть {{rate}}% вашего дохода, доступного для дополнительных сбережений",
+    "emergency_fund_complete": "Резервный фонд завершен!",
+    "emergency_fund_complete_message": "У вас есть {{progress}}% от вашей цели на 6 месяцев"
   },
   "budget": {
     "title": "Бюджет",

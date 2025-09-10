@@ -19,7 +19,8 @@
     "no": "Nein",
     "on": "An",
     "off": "Aus",
-    "user": "Benutzer"
+    "user": "Benutzer",
+    "premium": "Premium"
   },
   "auth": {
     "login": "Login",
@@ -113,7 +114,10 @@
     "savings": "Ersparnisse:",
     "goal_contrib": "Zielbeitrag:",
     "debt_payoff": "Schuldentilgung:",
-    "available": "Verfügbar:"
+    "available": "Verfügbar:",
+    "excellent_discretionary_savings_message": "Sie haben {{rate}}% Ihres Einkommens für zusätzliche Ersparnisse verfügbar",
+    "emergency_fund_complete": "Notfallfonds abgeschlossen!",
+    "emergency_fund_complete_message": "Sie haben {{progress}}% Ihres 6-Monats-Ziels"
   },
   "budget": {
     "title": "Budget",

@@ -19,7 +19,8 @@
     "no": "No",
     "on": "On",
     "off": "Off",
-    "user": "User"
+    "user": "User",
+    "premium": "Premium"
   },
   "auth": {
     "login": "Login",
@@ -84,6 +85,7 @@
     "over_budget": "Over Budget",
     "over_budget_message": "Your expenses and allocations exceed your income",
     "excellent_discretionary_savings": "Excellent Discretionary Savings!",
+    "excellent_discretionary_savings_message": "You have {{rate}}% of your income available for additional savings",
     "emergency_fund_complete": "Emergency Fund Complete!",
     "emergency_fund_complete_message": "You have {{progress}}% of your 6-month target",
     "high_debt_ratio": "High Debt Ratio",

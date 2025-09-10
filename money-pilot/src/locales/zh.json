@@ -19,7 +19,8 @@
     "no": "否",
     "on": "开启",
     "off": "关闭",
-    "user": "用户"
+    "user": "用户",
+    "premium": "高级版"
   },
   "auth": {
     "login": "登录",
@@ -113,7 +114,10 @@
     "savings": "储蓄:",
     "goal_contrib": "目标贡献:",
     "debt_payoff": "债务偿还:",
-    "available": "可用:"
+    "available": "可用:",
+    "excellent_discretionary_savings_message": "您有{{rate}}%的收入可用于额外储蓄",
+    "emergency_fund_complete": "应急基金完成！",
+    "emergency_fund_complete_message": "您已达到6个月目标的{{progress}}%"
   },
   "budget": {
     "title": "预算",

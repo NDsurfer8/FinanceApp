@@ -19,7 +19,8 @@
     "no": "नहीं",
     "on": "चालू",
     "off": "बंद",
-    "user": "उपयोगकर्ता"
+    "user": "उपयोगकर्ता",
+    "premium": "प्रीमियम"
   },
   "auth": {
     "login": "लॉग इन",
@@ -113,7 +114,10 @@
     "savings": "बचत:",
     "goal_contrib": "लक्ष्य योगदान:",
     "debt_payoff": "ऋण भुगतान:",
-    "available": "उपलब्ध:"
+    "available": "उपलब्ध:",
+    "excellent_discretionary_savings_message": "आपके पास अतिरिक्त बचत के लिए आपकी आय का {{rate}}% उपलब्ध है",
+    "emergency_fund_complete": "आपातकालीन फंड पूरा!",
+    "emergency_fund_complete_message": "आपके पास 6 महीने के लक्ष्य का {{progress}}% है"
   },
   "budget": {
     "title": "बजट",

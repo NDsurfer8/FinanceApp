@@ -19,7 +19,8 @@
     "no": "لا",
     "on": "تشغيل",
     "off": "إيقاف",
-    "user": "مستخدم"
+    "user": "مستخدم",
+    "premium": "مميز"
   },
   "auth": {
     "login": "Login",
@@ -113,7 +114,10 @@
     "savings": "الادخار:",
     "goal_contrib": "مساهمة الهدف:",
     "debt_payoff": "سداد الديون:",
-    "available": "متاح:"
+    "available": "متاح:",
+    "excellent_discretionary_savings_message": "لديك {{rate}}% من دخلك متاح للادخار الإضافي",
+    "emergency_fund_complete": "صندوق الطوارئ مكتمل!",
+    "emergency_fund_complete_message": "لديك {{progress}}% من هدفك لمدة 6 أشهر"
   },
   "budget": {
     "title": "الميزانية",
