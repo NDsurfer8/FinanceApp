@@ -703,7 +703,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       }}
                       numberOfLines={1}
                     >
-                      {account.name}
+                      {(account.name || "")
+                        .toString()
+                        .replace(/[^\x20-\x7E]/g, "")
+                        .trim() || "Checking Account"}
                     </Text>
                     <Text
                       style={{
@@ -713,7 +716,16 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       }}
                       numberOfLines={1}
                     >
-                      ****{account.mask} • {account.subtype}
+                      ****
+                      {(account.mask || "")
+                        .toString()
+                        .replace(/[^\x20-\x7E]/g, "")
+                        .trim() || "0000"}{" "}
+                      •{" "}
+                      {(account.subtype || "")
+                        .toString()
+                        .replace(/[^\x20-\x7E]/g, "")
+                        .trim() || "Checking"}
                     </Text>
                   </View>
                   <View style={{ alignItems: "flex-end" }}>
@@ -727,7 +739,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                             : colors.error,
                       }}
                     >
-                      {formatCurrency(account.balances.current)}
+                      {formatCurrency(account.balances?.current || 0)}
                     </Text>
                     <Text
                       style={{
@@ -807,7 +819,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       }}
                       numberOfLines={1}
                     >
-                      {account.name}
+                      {(account.name || "")
+                        .toString()
+                        .replace(/[^\x20-\x7E]/g, "")
+                        .trim() || "Loan Account"}
                     </Text>
                     <Text
                       style={{
@@ -817,7 +832,15 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       }}
                       numberOfLines={1}
                     >
-                      {account.subtype} • ****{account.mask}
+                      {(account.subtype || "")
+                        .toString()
+                        .replace(/[^\x20-\x7E]/g, "")
+                        .trim() || "Loan"}{" "}
+                      • ****
+                      {(account.mask || "")
+                        .toString()
+                        .replace(/[^\x20-\x7E]/g, "")
+                        .trim() || "0000"}
                     </Text>
                   </View>
                   <View style={{ alignItems: "flex-end" }}>
@@ -828,7 +851,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         color: "#dc2626",
                       }}
                     >
-                      {formatCurrency(Math.abs(account.balances.current))}
+                      {formatCurrency(Math.abs(account.balances?.current || 0))}
                     </Text>
                     <Text
                       style={{
@@ -920,7 +943,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       }}
                       numberOfLines={1}
                     >
-                      {account.name}
+                      {(account.name || "")
+                        .toString()
+                        .replace(/[^\x20-\x7E]/g, "")
+                        .trim() || "Credit Card"}
                     </Text>
                     <Text
                       style={{
@@ -930,7 +956,11 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       }}
                       numberOfLines={1}
                     >
-                      Credit Card • ****{account.mask}
+                      Credit Card • ****
+                      {(account.mask || "")
+                        .toString()
+                        .replace(/[^\x20-\x7E]/g, "")
+                        .trim() || "0000"}
                     </Text>
                   </View>
                   <View style={{ alignItems: "flex-end" }}>
@@ -941,7 +971,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         color: "#dc2626",
                       }}
                     >
-                      {formatCurrency(Math.abs(account.balances.current))}
+                      {formatCurrency(Math.abs(account.balances?.current || 0))}
                     </Text>
                     <Text
                       style={{
@@ -952,7 +982,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     >
                       Current Balance
                     </Text>
-                    {account.balances.limit && (
+                    {account.balances?.limit && (
                       <Text
                         style={{
                           fontSize: 10,
@@ -1044,7 +1074,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       }}
                       numberOfLines={1}
                     >
-                      {account.name}
+                      {(account.name || "")
+                        .toString()
+                        .replace(/[^\x20-\x7E]/g, "")
+                        .trim() || "Investment Account"}
                     </Text>
                     <Text
                       style={{
@@ -1054,7 +1087,15 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       }}
                       numberOfLines={1}
                     >
-                      {account.subtype} • ****{account.mask}
+                      {(account.subtype || "")
+                        .toString()
+                        .replace(/[^\x20-\x7E]/g, "")
+                        .trim() || "Investment"}{" "}
+                      • ****
+                      {(account.mask || "")
+                        .toString()
+                        .replace(/[^\x20-\x7E]/g, "")
+                        .trim() || "0000"}
                     </Text>
                   </View>
                   <View style={{ alignItems: "flex-end" }}>
@@ -1065,7 +1106,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         color: colors.success,
                       }}
                     >
-                      {formatCurrency(account.balances.current)}
+                      {formatCurrency(account.balances?.current || 0)}
                     </Text>
                     <Text
                       style={{

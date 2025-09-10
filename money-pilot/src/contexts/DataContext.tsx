@@ -164,44 +164,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const TRANSACTION_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours for new transactions
 
   // Disconnect a specific bank and clear only its data
-  const disconnectSpecificBank = useCallback(
-    async (itemId: string) => {
-      try {
-        // 1. Disconnect from Plaid service
-        await plaidService.disconnectBank(itemId);
+  const disconnectSpecificBank = useCallback(async (itemId: string) => {
+    try {
+      // Disconnect from Plaid service - this will trigger callbacks that refresh data
+      await plaidService.disconnectBank(itemId);
 
-        // 2. Filter out data from the disconnected bank only
-        setBankTransactions((prev) =>
-          prev.filter((transaction) => transaction.item_id !== itemId)
-        );
-        setBankAccounts((prev) =>
-          prev.filter((account) => account.item_id !== itemId)
-        );
-        setBankRecurringSuggestions((prev) =>
-          prev.filter((suggestion) => suggestion.item_id !== itemId)
-        );
-        setConnectedBanks((prev) =>
-          prev.filter((bank) => bank.itemId !== itemId)
-        );
-
-        // 3. Check if any banks remain connected
-        const remainingBanks = connectedBanks.filter(
-          (bank) => bank.itemId !== itemId
-        );
-        if (remainingBanks.length === 0) {
-          setIsBankConnected(false);
-          setSelectedBankAccount(null);
-        }
-
-        // 4. Refresh bank data to get remaining connected banks
-        await refreshBankData(true);
-      } catch (error) {
-        console.error("DataContext: Error disconnecting specific bank:", error);
-        throw error;
-      }
-    },
-    [connectedBanks]
-  );
+      // The bankConnectedCallback will automatically call refreshBankData(true)
+      // which will fetch fresh data from the API for remaining connected banks
+    } catch (error) {
+      console.error("DataContext: Error disconnecting specific bank:", error);
+      throw error;
+    }
+  }, []);
 
   // Comprehensive bank disconnection and data clearing
   const disconnectBankAndClearData = useCallback(async () => {
@@ -786,11 +760,23 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
           // Register callback for when bank is connected
           bankConnectedCallback = async () => {
-            setIsBankConnected(true);
-            // Load connected banks info
+            // Load connected banks info first
             const banksInfo = await plaidService.getConnectedBankInfo();
             setConnectedBanks(banksInfo);
-            await refreshBankData(true); // Force refresh when new bank connects
+
+            // Check if any banks are connected
+            const isConnected = banksInfo.length > 0;
+            setIsBankConnected(isConnected);
+
+            if (isConnected) {
+              await refreshBankData(true); // Force refresh when banks are connected
+            } else {
+              // No banks connected, clear bank data
+              setBankTransactions([]);
+              setBankAccounts([]);
+              setBankRecurringSuggestions([]);
+              setSelectedBankAccount(null);
+            }
           };
           plaidService.onBankConnected(bankConnectedCallback);
 
