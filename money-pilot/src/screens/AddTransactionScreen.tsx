@@ -18,6 +18,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
+import { useTranslation } from "react-i18next";
 import { StandardHeader } from "../components/StandardHeader";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useData } from "../contexts/DataContext";
@@ -62,6 +63,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const { user } = useAuth();
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
+  const { t } = useTranslation();
   const { transactions, updateDataOptimistically } = useZeroLoading();
   const { refreshRecurringTransactions, refreshTransactions } = useData();
   const [loading, setLoading] = useState(false);
@@ -268,48 +270,72 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     setShowEndDatePicker(true);
   };
 
+  // Function to translate category names
+  const translateCategoryName = (categoryName: string): string => {
+    const categoryMap: { [key: string]: string } = {
+      Rent: t("categories.rent"),
+      "Car Payment": t("categories.car_payment"),
+      Insurance: t("categories.insurance"),
+      Utilities: t("categories.utilities"),
+      Internet: t("categories.internet"),
+      Phone: t("categories.phone"),
+      Subscriptions: t("categories.subscriptions"),
+      "Credit Card": t("categories.credit_card"),
+      "Loan Payment": t("categories.loan_payment"),
+      Food: t("categories.food"),
+      Transportation: t("categories.transportation"),
+      Health: t("categories.health"),
+      Entertainment: t("categories.entertainment"),
+      Shopping: t("categories.shopping"),
+      Business: t("categories.business"),
+      "Other Expenses": t("categories.other_expenses"),
+    };
+
+    return categoryMap[categoryName] || categoryName; // Return translated name or original if not found
+  };
+
   // Get categories based on transaction type
   const getCategories = (type: string) => {
     if (type === "income") {
       return [
-        "Salary",
-        "VA Disability",
-        "Social Security",
-        "Freelance",
-        "Business",
-        "Investment",
-        "Rental Income",
-        "Side Hustle",
-        "Bonus",
-        "Commission",
-        "Tips",
-        "Gift",
-        "Refund",
-        "Other Income",
+        t("add_transaction.income_categories.salary"),
+        t("add_transaction.income_categories.va_disability"),
+        t("add_transaction.income_categories.social_security"),
+        t("add_transaction.income_categories.freelance"),
+        t("add_transaction.income_categories.business"),
+        t("add_transaction.income_categories.investment"),
+        t("add_transaction.income_categories.rental_income"),
+        t("add_transaction.income_categories.side_hustle"),
+        t("add_transaction.income_categories.bonus"),
+        t("add_transaction.income_categories.commission"),
+        t("add_transaction.income_categories.tips"),
+        t("add_transaction.income_categories.gift"),
+        t("add_transaction.income_categories.refund"),
+        t("add_transaction.income_categories.other_income"),
       ];
     } else {
       // Use budget categories for expenses, fallback to defaults if not loaded yet
       if (budgetCategories.length > 0) {
-        return budgetCategories.map((cat) => cat.name);
+        return budgetCategories.map((cat) => translateCategoryName(cat.name));
       } else {
         // Fallback to default categories while budget categories are loading
         return [
-          "Rent",
-          "Car Payment",
-          "Insurance",
-          "Utilities",
-          "Internet",
-          "Phone",
-          "Subscriptions",
-          "Credit Card",
-          "Loan Payment",
-          "Food",
-          "Transportation",
-          "Health",
-          "Entertainment",
-          "Shopping",
-          "Business",
-          "Other Expenses",
+          t("categories.rent"),
+          t("categories.car_payment"),
+          t("categories.insurance"),
+          t("categories.utilities"),
+          t("categories.internet"),
+          t("categories.phone"),
+          t("categories.subscriptions"),
+          t("categories.credit_card"),
+          t("categories.loan_payment"),
+          t("categories.food"),
+          t("categories.transportation"),
+          t("categories.health"),
+          t("categories.entertainment"),
+          t("categories.shopping"),
+          t("categories.business"),
+          t("categories.other_expenses"),
         ];
       }
     }
@@ -329,12 +355,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
   const handleSave = async () => {
     if (!formData.description || !formData.amount || !formData.category) {
-      Alert.alert("Error", "Please fill in all required fields");
+      Alert.alert("Error", t("add_transaction.error_fill_fields"));
       return;
     }
 
     if (!user) {
-      Alert.alert("Error", "You must be logged in to save transactions");
+      Alert.alert("Error", t("add_transaction.error_must_be_logged_in"));
       return;
     }
 
@@ -566,9 +592,11 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           // Update in database
           await updateTransaction(updatedTransaction);
 
-          Alert.alert("Success", "Transaction updated successfully!", [
-            { text: "OK", onPress: () => navigation.goBack() },
-          ]);
+          Alert.alert(
+            "Success",
+            t("add_transaction.success_transaction_updated"),
+            [{ text: "OK", onPress: () => navigation.goBack() }]
+          );
         }
       } else if (formData.isRecurring) {
         // Use business service to create new recurring transaction
@@ -640,13 +668,13 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           await billReminderService.scheduleAllBillReminders(user.uid);
         }
 
-        Alert.alert("Success", "Transaction saved successfully!", [
+        Alert.alert("Success", t("add_transaction.success_transaction_saved"), [
           { text: "OK", onPress: () => navigation.goBack() },
         ]);
       }
     } catch (error) {
       console.error("Error saving transaction:", error);
-      Alert.alert("Error", "Failed to save transaction. Please try again.");
+      Alert.alert("Error", t("add_transaction.error_failed_to_save"));
 
       // Revert optimistic update on error
       if (!editMode && !formData.isRecurring) {
@@ -662,7 +690,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
   const handleStopFutureRecurring = async () => {
     if (!user || !editMode || !transaction) {
-      Alert.alert("Error", "Cannot stop future recurring");
+      Alert.alert("Error", t("add_transaction.error_cannot_stop_future"));
       return;
     }
 
@@ -670,18 +698,18 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     const isRecurringTransaction =
       transaction.isRecurring || transaction.recurringTransactionId;
     if (!isRecurringTransaction) {
-      Alert.alert("Error", "This is not a recurring transaction");
+      Alert.alert("Error", t("add_transaction.error_not_recurring"));
       return;
     }
 
     // Show confirmation
     Alert.alert(
-      "Stop Future Recurring",
-      "Stop creating future recurring transactions?\n\nYour custom amounts for other months will be preserved.",
+      t("add_transaction.stop_future_confirmation"),
+      t("add_transaction.stop_future_message"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("add_transaction.cancel"), style: "cancel" },
         {
-          text: "Stop Future Recurring",
+          text: t("add_transaction.stop_future_recurring"),
           style: "destructive",
           onPress: async () => {
             setStopFutureLoading(true);
@@ -709,7 +737,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               console.error("Error stopping future recurring:", error);
               Alert.alert(
                 "Error",
-                "Failed to stop future recurring. Please try again."
+                t("add_transaction.error_failed_to_stop_future")
               );
             } finally {
               setStopFutureLoading(false);
@@ -722,7 +750,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
   const handleDelete = async () => {
     if (!user || !editMode || !transaction) {
-      Alert.alert("Error", "Cannot delete transaction");
+      Alert.alert("Error", t("add_transaction.error_cannot_delete"));
       return;
     }
 
@@ -740,13 +768,13 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
         // Show confirmation for deleting recurring transaction
         Alert.alert(
-          "Delete Recurring Transaction",
+          t("add_transaction.delete_recurring_confirmation"),
           futureMonth
-            ? `Delete this month's custom amount?\n\nThis month will use the standard recurring amount instead.`
-            : "Delete this recurring transaction?\n\nThis will delete this transaction and all future projections.",
+            ? t("add_transaction.delete_this_month_custom")
+            : t("add_transaction.delete_recurring_message"),
           [
             {
-              text: "Cancel",
+              text: t("add_transaction.cancel"),
               style: "cancel",
               onPress: () => {
                 setDeleteLoading(false);
@@ -795,7 +823,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   console.error("Error deleting recurring transaction:", error);
                   Alert.alert(
                     "Error",
-                    "Failed to delete recurring transaction. Please try again."
+                    t("add_transaction.error_failed_to_delete")
                   );
                 } finally {
                   setDeleteLoading(false);
@@ -807,18 +835,18 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
       } else {
         // Regular transaction deletion
         Alert.alert(
-          "Delete Confirmation",
-          "Are you sure you want to delete this transaction? This action cannot be undone.",
+          t("add_transaction.delete_confirmation"),
+          t("add_transaction.delete_confirmation_message"),
           [
             {
-              text: "Cancel",
+              text: t("add_transaction.cancel"),
               style: "cancel",
               onPress: () => {
                 setDeleteLoading(false);
               },
             },
             {
-              text: "Delete",
+              text: t("add_transaction.delete"),
               style: "destructive",
               onPress: async () => {
                 try {
@@ -839,14 +867,16 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     refreshRecurringTransactions(),
                   ]);
 
-                  Alert.alert("Success", "Transaction deleted successfully!", [
-                    { text: "OK", onPress: () => navigation.goBack() },
-                  ]);
+                  Alert.alert(
+                    "Success",
+                    t("add_transaction.success_transaction_deleted"),
+                    [{ text: "OK", onPress: () => navigation.goBack() }]
+                  );
                 } catch (error) {
                   console.error("Error deleting transaction:", error);
                   Alert.alert(
                     "Error",
-                    "Failed to delete transaction. Please try again."
+                    t("add_transaction.error_failed_to_delete")
                   );
                 } finally {
                   setDeleteLoading(false);
@@ -878,12 +908,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           <StandardHeader
             title={
               editMode
-                ? translate("edit", isFriendlyMode)
-                : translate("addTransaction", isFriendlyMode).split(" ")[0] +
-                  " " +
-                  (formData.type === "income"
-                    ? translate("income", isFriendlyMode)
-                    : translate("expenses", isFriendlyMode))
+                ? formData.type === "income"
+                  ? t("add_transaction.edit_income")
+                  : t("add_transaction.edit_expense")
+                : formData.type === "income"
+                ? t("add_transaction.add_income")
+                : t("add_transaction.add_expense")
             }
             onBack={() => navigation.goBack()}
           />
@@ -990,7 +1020,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Type
+              {t("add_transaction.type")}
             </Text>
             <View style={{ flexDirection: "row", gap: 12 }}>
               <TouchableOpacity
@@ -1019,7 +1049,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     fontWeight: "600",
                   }}
                 >
-                  Expense
+                  {t("add_transaction.expense")}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -1044,7 +1074,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     fontWeight: "600",
                   }}
                 >
-                  Income
+                  {t("add_transaction.income")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1060,7 +1090,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Description
+              {t("add_transaction.description")}
             </Text>
             <TextInput
               style={{
@@ -1076,7 +1106,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               onChangeText={(text) =>
                 setFormData({ ...formData, description: text })
               }
-              placeholder="Enter description"
+              placeholder={t("add_transaction.description_placeholder")}
               placeholderTextColor={colors.textSecondary}
             />
           </View>
@@ -1091,7 +1121,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              $ Amount
+              {t("add_transaction.amount")}
             </Text>
             <TextInput
               style={{
@@ -1108,7 +1138,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 const cleanValue = removeCommas(text);
                 setFormData({ ...formData, amount: cleanValue });
               }}
-              placeholder="0.00"
+              placeholder={t("add_transaction.amount_placeholder")}
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
             />
@@ -1135,7 +1165,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                       marginBottom: 4,
                     }}
                   >
-                    📅 Monthly Equivalent
+                    {t("add_transaction.monthly_equivalent")}
                   </Text>
                   <Text
                     style={{
@@ -1155,11 +1185,17 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     }}
                   >
                     {formData.frequency === "weekly" &&
-                      `($${formData.amount} × 4 weeks)`}
+                      t("add_transaction.weekly_calculation", {
+                        amount: formData.amount,
+                      })}
                     {formData.frequency === "biweekly" &&
-                      `($${formData.amount} × 2 bi-weekly periods)`}
+                      t("add_transaction.biweekly_calculation", {
+                        amount: formData.amount,
+                      })}
                     {formData.frequency === "monthly" &&
-                      `($${formData.amount} × 1 month)`}
+                      t("add_transaction.monthly_calculation", {
+                        amount: formData.amount,
+                      })}
                   </Text>
                 </View>
               )}
@@ -1175,7 +1211,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Category
+              {t("add_transaction.category")}
             </Text>
             <ScrollView
               horizontal
@@ -1226,7 +1262,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              Date
+              {t("add_transaction.date")}
             </Text>
             <TouchableOpacity
               style={{
@@ -1249,7 +1285,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               >
                 {formData.date
                   ? timestampToDateString(formData.date)
-                  : "Select Date"}
+                  : t("add_transaction.select_date")}
               </Text>
               <Ionicons
                 name="calendar-outline"
@@ -1292,7 +1328,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     color: colors.text,
                   }}
                 >
-                  Recurring Transaction
+                  {t("add_transaction.recurring_transaction")}
                 </Text>
               </View>
               <View
@@ -1333,7 +1369,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     marginBottom: 8,
                   }}
                 >
-                  Frequency
+                  {t("add_transaction.frequency")}
                 </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   {["weekly", "biweekly", "monthly"].map((frequency) => (
@@ -1368,7 +1404,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                           textTransform: "capitalize",
                         }}
                       >
-                        {frequency}
+                        {t(`add_transaction.${frequency}`)}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -1385,7 +1421,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     marginBottom: 8,
                   }}
                 >
-                  End Date (Optional)
+                  {t("add_transaction.end_date_optional")}
                 </Text>
                 <TouchableOpacity
                   style={{
@@ -1410,7 +1446,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   >
                     {formData.endDate
                       ? new Date(formData.endDate).toISOString().split("T")[0]
-                      : "Select End Date (Optional)"}
+                      : t("add_transaction.select_end_date_optional")}
                   </Text>
                   <Ionicons
                     name="calendar-outline"
@@ -1456,7 +1492,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   fontWeight: "700",
                 }}
               >
-                {editMode ? "Update" : "Save"} Transaction
+                {editMode
+                  ? t("add_transaction.update_transaction")
+                  : t("add_transaction.save_transaction")}
               </Text>
             </TouchableOpacity>
 
@@ -1472,8 +1510,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                       fontStyle: "italic",
                     }}
                   >
-                    This transaction has been modified from the original
-                    recurring amount
+                    {t("add_transaction.modified_from_original")}
                   </Text>
                 ) : (
                   <Text
@@ -1484,7 +1521,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                       fontStyle: "italic",
                     }}
                   >
-                    This is the original recurring transaction amount
+                    {t("add_transaction.original_recurring_amount")}
                   </Text>
                 )}
               </View>
@@ -1520,7 +1557,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     fontWeight: "700",
                   }}
                 >
-                  Stop Future Recurring
+                  {t("add_transaction.stop_future_recurring")}
                 </Text>
               </TouchableOpacity>
             )}
@@ -1604,7 +1641,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 textAlign: "center",
               }}
             >
-              Select Date
+              {t("add_transaction.select_date_modal")}
             </Text>
             <View
               style={{
@@ -1649,7 +1686,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     fontWeight: "600",
                   }}
                 >
-                  Cancel
+                  {t("add_transaction.cancel")}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -1669,7 +1706,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     fontWeight: "600",
                   }}
                 >
-                  Done
+                  {t("add_transaction.done")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1718,7 +1755,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 textAlign: "center",
               }}
             >
-              Select End Date
+              {t("add_transaction.select_end_date_modal")}
             </Text>
             <View
               style={{
@@ -1765,7 +1802,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     fontWeight: "600",
                   }}
                 >
-                  Cancel
+                  {t("add_transaction.cancel")}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -1785,7 +1822,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                     fontWeight: "600",
                   }}
                 >
-                  Done
+                  {t("add_transaction.done")}
                 </Text>
               </TouchableOpacity>
             </View>

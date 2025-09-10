@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Transaction } from "../services/userData";
 import {
   TransactionActionsService,
@@ -32,6 +33,8 @@ export const useTransactionActions = ({
   originalRecurringData,
   isEditMode,
 }: UseTransactionActionsProps): UseTransactionActionsReturn => {
+  const { t } = useTranslation();
+
   const actions = useMemo(() => {
     if (!transaction) {
       return {
@@ -39,17 +42,38 @@ export const useTransactionActions = ({
         canStopFuture: false,
         canModify: false,
         availableActions: [],
-        deleteButtonText: "Delete",
-        stopFutureButtonText: "Stop Future",
+        deleteButtonText: t("add_transaction.delete"),
+        stopFutureButtonText: t("add_transaction.stop_future_recurring"),
       };
     }
 
-    return TransactionActionsService.getAvailableActions(
+    const baseActions = TransactionActionsService.getAvailableActions(
       transaction,
       originalRecurringData,
       isEditMode
     );
-  }, [transaction, originalRecurringData, isEditMode]);
+
+    // Override button texts with translations
+    const isRecurring = Boolean(
+      transaction.isRecurring || transaction.recurringTransactionId
+    );
+    const isFutureMonth = TransactionActionsService.isFutureMonth(
+      transaction.date
+    );
+
+    let deleteButtonText = t("add_transaction.delete");
+    if (isRecurring) {
+      deleteButtonText = isFutureMonth
+        ? t("add_transaction.delete_custom_amount")
+        : t("add_transaction.delete_recurring_transaction");
+    }
+
+    return {
+      ...baseActions,
+      deleteButtonText,
+      stopFutureButtonText: t("add_transaction.stop_future_recurring"),
+    };
+  }, [transaction, originalRecurringData, isEditMode, t]);
 
   const isFutureMonth = useMemo(() => {
     if (!transaction?.date) return false;
