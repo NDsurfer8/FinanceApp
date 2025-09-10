@@ -18,6 +18,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 import { StandardHeader } from "../components/StandardHeader";
 
 interface NotificationSettingsScreenProps {
@@ -38,6 +39,7 @@ export const NotificationSettingsScreen: React.FC<
 > = ({ navigation }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<NotificationSetting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -82,65 +84,76 @@ export const NotificationSettingsScreen: React.FC<
       const defaultSettings: NotificationSetting[] = [
         {
           id: "badge-indicators",
-          title: "Badge Indicators",
-          description: "Show notification count on app icon",
+          title: t("notification_settings.badge_indicators"),
+          description: t("notification_settings.badge_indicators_description"),
           icon: "notifications",
           enabled: false,
           type: "badge",
         },
         {
           id: "budget-reminders",
-          title: "Budget Reminders",
-          description: "Get reminded to track your expenses",
+          title: t("notification_settings.budget_reminders"),
+          description: t("notification_settings.budget_reminders_description"),
           icon: "wallet",
           enabled: false,
           type: "budget",
         },
         {
           id: "bill-reminders",
-          title: "Bill Due Reminders",
-          description: "Get notified before bills are due",
+          title: t("notification_settings.bill_due_reminders"),
+          description: t(
+            "notification_settings.bill_due_reminders_description"
+          ),
           icon: "calendar",
           enabled: false,
           type: "bills",
         },
         {
           id: "low-balance-alerts",
-          title: "Low Balance Alerts",
-          description: "Get notified when account balances are low",
+          title: t("notification_settings.low_balance_alerts"),
+          description: t(
+            "notification_settings.low_balance_alerts_description"
+          ),
           icon: "warning",
           enabled: false,
           type: "balance",
         },
         {
           id: "goal-reminders",
-          title: "Goal Progress Alerts",
-          description: "Get notified about your financial goal progress",
+          title: t("notification_settings.goal_progress_alerts"),
+          description: t(
+            "notification_settings.goal_progress_alerts_description"
+          ),
           icon: "trophy",
           enabled: false,
           type: "goals",
         },
         {
           id: "webhook-transactions",
-          title: "New Transaction Alerts",
-          description:
-            "Get notified when new transactions arrive from your bank",
+          title: t("notification_settings.new_transaction_alerts"),
+          description: t(
+            "notification_settings.new_transaction_alerts_description"
+          ),
           icon: "refresh",
           enabled: false,
           type: "webhook-transactions",
         },
         {
           id: "webhook-accounts",
-          title: "New Account Alerts",
-          description: "Get notified when new bank accounts are detected",
+          title: t("notification_settings.new_account_alerts"),
+          description: t(
+            "notification_settings.new_account_alerts_description"
+          ),
           icon: "card",
           enabled: false,
           type: "webhook-accounts",
         },
         {
           id: "webhook-connection-issues",
-          title: "Connection Issue Alerts",
-          description: "Get notified about bank connection problems",
+          title: t("notification_settings.connection_issue_alerts"),
+          description: t(
+            "notification_settings.connection_issue_alerts_description"
+          ),
           icon: "alert-circle",
           enabled: false,
           type: "webhook-issue",
@@ -348,7 +361,10 @@ export const NotificationSettingsScreen: React.FC<
       }
     } catch (error) {
       console.error("Error scheduling notification:", error);
-      Alert.alert("Error", "Failed to schedule notification");
+      Alert.alert(
+        t("common.error"),
+        t("notification_settings.failed_to_schedule_notification")
+      );
     }
   };
 
@@ -411,7 +427,10 @@ export const NotificationSettingsScreen: React.FC<
       // Updated balance threshold
     } catch (error) {
       console.error("Error updating balance threshold:", error);
-      Alert.alert("Error", "Failed to update balance threshold");
+      Alert.alert(
+        t("common.error"),
+        t("notification_settings.failed_to_update_balance_threshold")
+      );
     }
   };
 
@@ -421,8 +440,8 @@ export const NotificationSettingsScreen: React.FC<
 
     if (!granted) {
       Alert.alert(
-        "Permissions Required",
-        "Please enable notifications in your device settings to receive financial reminders."
+        t("notification_settings.permissions_required"),
+        t("notification_settings.permissions_required_message")
       );
     }
   };
@@ -434,8 +453,8 @@ export const NotificationSettingsScreen: React.FC<
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <StandardHeader
-            title="Notification Settings"
-            subtitle="Loading..."
+            title={t("notification_settings.title")}
+            subtitle={t("common.loading")}
             onBack={() => navigation.goBack()}
           />
         </ScrollView>
@@ -450,8 +469,8 @@ export const NotificationSettingsScreen: React.FC<
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <StandardHeader
-          title="Notification Settings"
-          subtitle="Manage your financial reminders"
+          title={t("notification_settings.title")}
+          subtitle={t("notification_settings.subtitle")}
           onBack={() => navigation.goBack()}
         />
 
@@ -470,8 +489,8 @@ export const NotificationSettingsScreen: React.FC<
             />
             <Text style={[styles.permissionTitle, { color: colors.text }]}>
               {permissionGranted
-                ? "Notifications Enabled"
-                : "Permissions Required"}
+                ? t("notification_settings.notifications_enabled")
+                : t("notification_settings.permissions_required")}
             </Text>
           </View>
           <Text
@@ -481,8 +500,8 @@ export const NotificationSettingsScreen: React.FC<
             ]}
           >
             {permissionGranted
-              ? "You'll receive financial reminders and updates"
-              : "Enable notifications to get financial reminders and updates"}
+              ? t("notification_settings.notifications_enabled_description")
+              : t("notification_settings.permissions_required_description")}
           </Text>
           {!permissionGranted && (
             <TouchableOpacity
@@ -498,7 +517,7 @@ export const NotificationSettingsScreen: React.FC<
                   { color: colors.buttonText },
                 ]}
               >
-                Enable Notifications
+                {t("notification_settings.enable_notifications")}
               </Text>
             </TouchableOpacity>
           )}
@@ -507,7 +526,7 @@ export const NotificationSettingsScreen: React.FC<
         {/* Notification Settings */}
         <View style={styles.settingsContainer}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Notification Types
+            {t("notification_settings.notification_types")}
           </Text>
 
           {settings.map((setting) => (
@@ -564,7 +583,7 @@ export const NotificationSettingsScreen: React.FC<
         {/* Balance Thresholds */}
         <View style={styles.settingsContainer}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Balance Alert Thresholds
+            {t("notification_settings.balance_alert_thresholds")}
           </Text>
           <View
             style={[styles.thresholdCard, { backgroundColor: colors.surface }]}
@@ -575,14 +594,13 @@ export const NotificationSettingsScreen: React.FC<
                 { color: colors.textSecondary },
               ]}
             >
-              Set thresholds to receive alerts when account balances are low or
-              credit is running out
+              {t("notification_settings.balance_threshold_description")}
             </Text>
 
             {/* Default account thresholds */}
             <View style={styles.thresholdItem}>
               <Text style={[styles.accountName, { color: colors.text }]}>
-                Checking Account
+                {t("notification_settings.checking_account")}
               </Text>
               <View style={styles.thresholdInput}>
                 <Text
@@ -618,7 +636,7 @@ export const NotificationSettingsScreen: React.FC<
 
             <View style={styles.thresholdItem}>
               <Text style={[styles.accountName, { color: colors.text }]}>
-                Savings Account
+                {t("notification_settings.savings_account")}
               </Text>
               <View style={styles.thresholdInput}>
                 <Text
@@ -654,7 +672,7 @@ export const NotificationSettingsScreen: React.FC<
 
             <View style={styles.thresholdItem}>
               <Text style={[styles.accountName, { color: colors.text }]}>
-                Credit Card
+                {t("notification_settings.credit_card")}
               </Text>
               <View style={styles.thresholdInput}>
                 <Text
@@ -691,7 +709,7 @@ export const NotificationSettingsScreen: React.FC<
               <Text
                 style={[styles.thresholdHint, { color: colors.textSecondary }]}
               >
-                💳 Alert when available credit falls below this amount
+                {t("notification_settings.credit_card_hint")}
               </Text>
             </View>
           </View>
@@ -700,7 +718,7 @@ export const NotificationSettingsScreen: React.FC<
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Quick Actions
+            {t("notification_settings.quick_actions")}
           </Text>
 
           <TouchableOpacity
@@ -712,7 +730,7 @@ export const NotificationSettingsScreen: React.FC<
           >
             <Ionicons name="close-circle" size={20} color="#ef4444" />
             <Text style={[styles.actionButtonText, { color: colors.text }]}>
-              Cancel All Notifications
+              {t("notification_settings.cancel_all_notifications")}
             </Text>
           </TouchableOpacity>
 
@@ -725,14 +743,16 @@ export const NotificationSettingsScreen: React.FC<
               const notifications =
                 await notificationService.getScheduledNotifications();
               Alert.alert(
-                "Scheduled Notifications",
-                `You have ${notifications.length} scheduled notifications`
+                t("notification_settings.scheduled_notifications"),
+                t("notification_settings.scheduled_notifications_message", {
+                  count: notifications.length,
+                })
               );
             }}
           >
             <Ionicons name="list" size={20} color={colors.primary} />
             <Text style={[styles.actionButtonText, { color: colors.text }]}>
-              View Scheduled
+              {t("notification_settings.view_scheduled")}
             </Text>
           </TouchableOpacity>
         </View>
