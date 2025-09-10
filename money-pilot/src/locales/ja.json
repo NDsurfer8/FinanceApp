@@ -643,6 +643,17 @@
     "disconnect_all_banks": "すべての銀行を切断"
   },
   "ai_chat": {
-    "initial_message": "アロハ！私はVectra、あなたのパーソナルAIファイナンシャルアドバイザーです。予算、目標、借金、投資、サイドハッスルについてお手伝いできます — 今日は何をお考えですか？🤙"
+    "initial_message": "アロハ！私はVectra、あなたのパーソナルAIファイナンシャルアドバイザーです。予算、目標、借金、投資、サイドハッスルについてお手伝いできます — 今日は何をお考えですか？🤙",
+    "input_placeholder": "✨ あなたの財務について聞いてください...",
+    "audio_tooltip_title": "Vectraの声を聞くためにオーディオをオンにしてください！",
+    "audio_tooltip_description": "音声応答を有効にするには、下のスピーカーアイコンをタップしてください",
+    "select_voice": "音声を選択",
+    "choose_voice_description": "Vectraの好みの音声を選択してください",
+    "voice_alloy": "中性的でバランスの取れたトーン",
+    "voice_echo": "クリアでプロフェッショナルな声",
+    "voice_fable": "温かく物語的な声",
+    "voice_onyx": "深く威厳のあるトーン",
+    "voice_nova": "明るくエネルギッシュな声",
+    "voice_shimmer": "柔らかく優しいトーン"
   }
 }

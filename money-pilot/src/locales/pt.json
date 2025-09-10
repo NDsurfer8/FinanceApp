@@ -643,6 +643,17 @@
     "disconnect_all_banks": "Desconectar Todos os Bancos"
   },
   "ai_chat": {
-    "initial_message": "Aloha! Eu sou a Vectra, sua Consultora Financeira IA pessoal. Posso ajudar com orçamentos, metas, dívidas, investimentos e trabalhos paralelos — o que você tem em mente hoje? 🤙"
+    "initial_message": "Aloha! Eu sou a Vectra, sua Consultora Financeira IA pessoal. Posso ajudar com orçamentos, metas, dívidas, investimentos e trabalhos paralelos — o que você tem em mente hoje? 🤙",
+    "input_placeholder": "✨ Pergunte-me sobre suas finanças...",
+    "audio_tooltip_title": "Ative o áudio para ouvir a voz da Vectra!",
+    "audio_tooltip_description": "Toque no ícone do alto-falante abaixo para ativar respostas de voz",
+    "select_voice": "Selecionar Voz",
+    "choose_voice_description": "Escolha sua voz preferida para a Vectra",
+    "voice_alloy": "Tom neutro e equilibrado",
+    "voice_echo": "Voz clara e profissional",
+    "voice_fable": "Voz calorosa e narrativa",
+    "voice_onyx": "Tom profundo e autoritário",
+    "voice_nova": "Voz brilhante e energética",
+    "voice_shimmer": "Tom suave e gentil"
   }
 }

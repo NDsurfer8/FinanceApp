@@ -643,6 +643,17 @@
     "disconnect_all_banks": "断开所有银行连接"
   },
   "ai_chat": {
-    "initial_message": "阿罗哈！我是Vectra，您的个人AI财务顾问。我可以帮助您处理预算、目标、债务、投资和副业——您今天在想什么？🤙"
+    "initial_message": "阿罗哈！我是Vectra，您的个人AI财务顾问。我可以帮助您处理预算、目标、债务、投资和副业——您今天在想什么？🤙",
+    "input_placeholder": "✨ 询问我关于您的财务...",
+    "audio_tooltip_title": "开启音频以听到Vectra的声音！",
+    "audio_tooltip_description": "点击下面的扬声器图标以启用语音回复",
+    "select_voice": "选择声音",
+    "choose_voice_description": "为Vectra选择您喜欢的声音",
+    "voice_alloy": "中性、平衡的音调",
+    "voice_echo": "清晰、专业的声音",
+    "voice_fable": "温暖、讲故事的声音",
+    "voice_onyx": "深沉、权威的音调",
+    "voice_nova": "明亮、充满活力的声音",
+    "voice_shimmer": "柔和、温和的音调"
   }
 }

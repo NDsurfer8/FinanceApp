@@ -646,7 +646,18 @@
     "disconnect_all_banks": "Disconnect All Banks"
   },
   "ai_chat": {
-    "initial_message": "Aloha! I'm Vectra, your personal AI Financial Advisor. I can help with budgeting, goals, debt, investing, and side hustles — what's on your mind today? 🤙"
+    "initial_message": "Aloha! I'm Vectra, your personal AI Financial Advisor. I can help with budgeting, goals, debt, investing, and side hustles — what's on your mind today? 🤙",
+    "input_placeholder": "✨ Ask me about your finances...",
+    "audio_tooltip_title": "Turn on audio to hear Vectra's voice!",
+    "audio_tooltip_description": "Tap the speaker icon below to enable voice responses",
+    "select_voice": "Select Voice",
+    "choose_voice_description": "Choose your preferred voice for Vectra",
+    "voice_alloy": "Neutral, balanced tone",
+    "voice_echo": "Clear, professional voice",
+    "voice_fable": "Warm, storytelling voice",
+    "voice_onyx": "Deep, authoritative tone",
+    "voice_nova": "Bright, energetic voice",
+    "voice_shimmer": "Soft, gentle tone"
   },
   "add_transaction": {
     "title": "Add Transaction",

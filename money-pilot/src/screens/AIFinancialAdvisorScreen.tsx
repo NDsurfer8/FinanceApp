@@ -2285,7 +2285,7 @@ Original Request: ${basePrompt}
                     marginBottom: 8,
                   }}
                 >
-                  Turn on audio to hear Vectra's voice!
+                  {t("ai_chat.audio_tooltip_title")}
                 </Text>
                 <Text
                   style={{
@@ -2296,7 +2296,7 @@ Original Request: ${basePrompt}
                     marginBottom: 12,
                   }}
                 >
-                  Tap the speaker icon below to enable voice responses
+                  {t("ai_chat.audio_tooltip_description")}
                 </Text>
                 <TouchableOpacity
                   onPress={dismissAudioTooltip}
@@ -2445,7 +2445,7 @@ Original Request: ${basePrompt}
                 paddingHorizontal: 8,
                 paddingVertical: 8,
               }}
-              placeholder="✨ Ask me about your finances..."
+              placeholder={t("ai_chat.input_placeholder")}
               placeholderTextColor={colors.textSecondary}
               value={inputText}
               onChangeText={setInputText}
@@ -2538,7 +2538,7 @@ Original Request: ${basePrompt}
                     marginBottom: 4,
                   }}
                 >
-                  Select Voice
+                  {t("ai_chat.select_voice")}
                 </Text>
                 <Text
                   style={{
@@ -2546,7 +2546,7 @@ Original Request: ${basePrompt}
                     color: colors.textSecondary,
                   }}
                 >
-                  Choose your preferred voice for Vectra
+                  {t("ai_chat.choose_voice_description")}
                 </Text>
               </View>
               <TouchableOpacity
@@ -2624,12 +2624,7 @@ Original Request: ${basePrompt}
                         color: colors.textSecondary,
                       }}
                     >
-                      {voice.id === "alloy" && "Neutral, balanced tone"}
-                      {voice.id === "echo" && "Clear, professional voice"}
-                      {voice.id === "fable" && "Warm, storytelling voice"}
-                      {voice.id === "onyx" && "Deep, authoritative tone"}
-                      {voice.id === "nova" && "Bright, energetic voice"}
-                      {voice.id === "shimmer" && "Soft, gentle tone"}
+                      {t(`ai_chat.voice_${voice.id}`)}
                     </Text>
                   </View>
                   {selectedVoice === voice.id && (
@@ -2661,7 +2656,7 @@ Original Request: ${basePrompt}
                   color: colors.text,
                 }}
               >
-                Close
+                {t("common.close")}
               </Text>
             </TouchableOpacity>
           </View>

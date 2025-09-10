@@ -643,6 +643,17 @@
     "disconnect_all_banks": "Alle Banken Trennen"
   },
   "ai_chat": {
-    "initial_message": "Aloha! Ich bin Vectra, Ihr persönlicher KI-Finanzberater. Ich kann bei Budgets, Zielen, Schulden, Investitionen und Nebentätigkeiten helfen — was haben Sie heute im Sinn? 🤙"
+    "initial_message": "Aloha! Ich bin Vectra, Ihr persönlicher KI-Finanzberater. Ich kann bei Budgets, Zielen, Schulden, Investitionen und Nebentätigkeiten helfen — was haben Sie heute im Sinn? 🤙",
+    "input_placeholder": "✨ Fragen Sie mich zu Ihren Finanzen...",
+    "audio_tooltip_title": "Aktivieren Sie Audio, um Vectras Stimme zu hören!",
+    "audio_tooltip_description": "Tippen Sie auf das Lautsprecher-Symbol unten, um Sprachantworten zu aktivieren",
+    "select_voice": "Stimme Auswählen",
+    "choose_voice_description": "Wählen Sie Ihre bevorzugte Stimme für Vectra",
+    "voice_alloy": "Neutraler, ausgewogener Ton",
+    "voice_echo": "Klare, professionelle Stimme",
+    "voice_fable": "Warme, erzählende Stimme",
+    "voice_onyx": "Tiefer, autoritärer Ton",
+    "voice_nova": "Helle, energische Stimme",
+    "voice_shimmer": "Sanfter, sanfter Ton"
   }
 }
