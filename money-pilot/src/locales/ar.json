@@ -64,6 +64,9 @@
     "bank_accounts": "الحسابات المصرفية"
   },
   "dashboard": {
+    "income": "الدخل",
+    "expenses": "المصروفات",
+    "net_worth": "صافي الثروة",
     "welcome_new": "مرحباً، {{name}}",
     "welcome_back": "مرحباً بعودتك، {{name}}",
     "over_budget": "تجاوز الميزانية",
@@ -108,7 +111,6 @@
     "net_income_minus_savings": "صافي الدخل - الادخار ({{savingsPercent}}%) - مساهمات الهدف - سداد الديون ({{debtPayoffPercent}}%)",
     "income_expenses": "الدخل والمصروفات",
     "gross_income": "إجمالي الدخل:",
-    "expenses": "المصروفات:",
     "net_income": "صافي الدخل:",
     "allocations": "التخصيصات",
     "savings": "الادخار:",

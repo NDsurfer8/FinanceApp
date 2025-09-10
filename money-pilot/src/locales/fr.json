@@ -64,6 +64,9 @@
     "bank_accounts": "Comptes Bancaires"
   },
   "dashboard": {
+    "income": "Revenus",
+    "expenses": "Dépenses",
+    "net_worth": "Valeur Nette",
     "welcome_new": "Bienvenue, {{name}}",
     "welcome_back": "Bon retour, {{name}}",
     "over_budget": "Dépassement de budget",
@@ -108,7 +111,6 @@
     "net_income_minus_savings": "Revenu Net - Épargne ({{savingsPercent}}%) - Contributions aux Objectifs - Remboursement de Dette ({{debtPayoffPercent}}%)",
     "income_expenses": "REVENUS ET DÉPENSES",
     "gross_income": "Revenu Brut:",
-    "expenses": "Dépenses:",
     "net_income": "Revenu Net:",
     "allocations": "ALLOCATIONS",
     "savings": "Épargne:",

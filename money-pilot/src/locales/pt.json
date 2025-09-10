@@ -64,6 +64,9 @@
     "bank_accounts": "Contas Bancárias"
   },
   "dashboard": {
+    "income": "Renda",
+    "expenses": "Despesas",
+    "net_worth": "Patrimônio Líquido",
     "welcome_new": "Bem-vindo, {{name}}",
     "welcome_back": "Bem-vindo de volta, {{name}}",
     "over_budget": "Acima do Orçamento",
@@ -108,7 +111,6 @@
     "net_income_minus_savings": "Renda Líquida - Poupança ({{savingsPercent}}%) - Contribuições para Objetivos - Pagamento de Dívidas ({{debtPayoffPercent}}%)",
     "income_expenses": "RENDA E DESPESAS",
     "gross_income": "Renda Bruta:",
-    "expenses": "Despesas:",
     "net_income": "Renda Líquida:",
     "allocations": "ALOCAÇÕES",
     "savings": "Poupança:",

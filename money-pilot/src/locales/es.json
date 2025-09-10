@@ -64,6 +64,9 @@
     "bank_accounts": "Cuentas Bancarias"
   },
   "dashboard": {
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "net_worth": "Patrimonio Neto",
     "welcome_new": "Bienvenido, {{name}}",
     "welcome_back": "Bienvenido de nuevo, {{name}}",
     "over_budget": "Sobre Presupuesto",
@@ -99,7 +102,7 @@
     "net_income_minus_savings": "Ingresos Netos - Ahorros ({{savingsPercent}}%) - Contribuciones a Objetivos - Pago de Deudas ({{debtPayoffPercent}}%)",
     "income_expenses": "INGRESOS Y GASTOS",
     "gross_income": "Ingresos Brutos:",
-    "expenses": "Gastos:",
+    "expenses": "Gastos",
     "net_income": "Ingresos Netos:",
     "allocations": "ASIGNACIONES",
     "savings": "Ahorros:",
@@ -108,7 +111,9 @@
     "available": "Disponible:",
     "excellent_discretionary_savings_message": "Tienes {{rate}}% de tus ingresos disponibles para ahorros adicionales",
     "emergency_fund_complete": "¡Fondo de Emergencia Completo!",
-    "emergency_fund_complete_message": "Tienes {{progress}}% de tu objetivo de 6 meses"
+    "emergency_fund_complete_message": "Tienes {{progress}}% de tu objetivo de 6 meses",
+    "income": "Ingresos",
+    "net_worth": "Patrimonio Neto"
   },
   "budget": {
     "title": "Presupuesto",

@@ -64,6 +64,9 @@
     "bank_accounts": "Bankkonten"
   },
   "dashboard": {
+    "income": "Einkommen",
+    "expenses": "Ausgaben",
+    "net_worth": "Nettovermögen",
     "welcome_new": "Willkommen, {{name}}",
     "welcome_back": "Willkommen zurück, {{name}}",
     "over_budget": "Über Budget",
@@ -108,7 +111,6 @@
     "net_income_minus_savings": "Nettoeinkommen - Ersparnisse ({{savingsPercent}}%) - Zielbeiträge - Schuldentilgung ({{debtPayoffPercent}}%)",
     "income_expenses": "EINKOMMEN UND AUSGABEN",
     "gross_income": "Bruttoeinkommen:",
-    "expenses": "Ausgaben:",
     "net_income": "Nettoeinkommen:",
     "allocations": "ZUWEISUNGEN",
     "savings": "Ersparnisse:",

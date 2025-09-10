@@ -64,6 +64,9 @@
     "bank_accounts": "銀行口座"
   },
   "dashboard": {
+    "income": "収入",
+    "expenses": "支出",
+    "net_worth": "純資産",
     "welcome_new": "ようこそ、{{name}}さん",
     "welcome_back": "おかえりなさい、{{name}}さん",
     "over_budget": "予算超過",
@@ -108,7 +111,7 @@
     "net_income_minus_savings": "純利益 - 貯蓄 ({{savingsPercent}}%) - 目標への貢献 - 債務返済 ({{debtPayoffPercent}}%)",
     "income_expenses": "収入と支出",
     "gross_income": "総収入:",
-    "expenses": "支出:",
+    "expenses": "支出",
     "net_income": "純利益:",
     "allocations": "配分",
     "savings": "貯蓄:",
@@ -117,7 +120,9 @@
     "available": "利用可能:",
     "excellent_discretionary_savings_message": "追加の貯蓄に利用可能な収入の{{rate}}%があります",
     "emergency_fund_complete": "緊急資金完了！",
-    "emergency_fund_complete_message": "6ヶ月目標の{{progress}}%を達成しています"
+    "emergency_fund_complete_message": "6ヶ月目標の{{progress}}%を達成しています",
+    "income": "収入",
+    "net_worth": "純資産"
   },
   "budget": {
     "title": "予算",

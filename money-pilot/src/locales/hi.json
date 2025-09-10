@@ -64,6 +64,9 @@
     "bank_accounts": "बैंक खाते"
   },
   "dashboard": {
+    "income": "आय",
+    "expenses": "व्यय",
+    "net_worth": "शुद्ध संपत्ति",
     "welcome_new": "स्वागत है, {{name}}",
     "welcome_back": "वापस स्वागत है, {{name}}",
     "over_budget": "बजट से अधिक",
@@ -108,7 +111,6 @@
     "net_income_minus_savings": "शुद्ध आय - बचत ({{savingsPercent}}%) - लक्ष्य योगदान - ऋण भुगतान ({{debtPayoffPercent}}%)",
     "income_expenses": "आय और व्यय",
     "gross_income": "सकल आय:",
-    "expenses": "व्यय:",
     "net_income": "शुद्ध आय:",
     "allocations": "आवंटन",
     "savings": "बचत:",

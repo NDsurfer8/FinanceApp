@@ -64,6 +64,9 @@
     "bank_accounts": "银行账户"
   },
   "dashboard": {
+    "income": "收入",
+    "expenses": "支出",
+    "net_worth": "净资产",
     "title": "仪表板",
     "welcome_message": "欢迎回来！",
     "total_balance": "总余额",
@@ -108,7 +111,6 @@
     "net_income_minus_savings": "净收入 - 储蓄 ({{savingsPercent}}%) - 目标贡献 - 债务偿还 ({{debtPayoffPercent}}%)",
     "income_expenses": "收入和支出",
     "gross_income": "总收入:",
-    "expenses": "支出:",
     "net_income": "净收入:",
     "allocations": "分配",
     "savings": "储蓄:",

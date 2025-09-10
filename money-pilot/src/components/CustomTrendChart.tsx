@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, Dimensions, Animated } from "react-native";
 import { useTheme } from "../contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 
 const { width } = Dimensions.get("window");
 const CHART_WIDTH = width - 80;
@@ -35,6 +36,7 @@ const formatLargeNumber = (num: number): string => {
 export const CustomTrendChart: React.FC<CustomTrendChartProps> = React.memo(
   ({ incomeData, expensesData, netWorthData, height = 280 }) => {
     const { colors } = useTheme();
+    const { t } = useTranslation();
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
@@ -316,7 +318,7 @@ export const CustomTrendChart: React.FC<CustomTrendChartProps> = React.memo(
                 fontWeight: "600",
               }}
             >
-              Income
+{t("dashboard.income")}
             </Text>
           </View>
 
@@ -342,7 +344,7 @@ export const CustomTrendChart: React.FC<CustomTrendChartProps> = React.memo(
                 fontWeight: "600",
               }}
             >
-              Expenses
+{t("dashboard.expenses")}
             </Text>
           </View>
 
@@ -368,7 +370,7 @@ export const CustomTrendChart: React.FC<CustomTrendChartProps> = React.memo(
                 fontWeight: "700",
               }}
             >
-              Net Worth
+{t("dashboard.net_worth")}
             </Text>
           </View>
         </View>

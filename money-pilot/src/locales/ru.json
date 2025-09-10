@@ -64,6 +64,9 @@
     "bank_accounts": "Банковские Счета"
   },
   "dashboard": {
+    "income": "Доходы",
+    "expenses": "Расходы",
+    "net_worth": "Чистые Активы",
     "welcome_new": "Добро пожаловать, {{name}}",
     "welcome_back": "Добро пожаловать обратно, {{name}}",
     "over_budget": "Превышение бюджета",
@@ -108,7 +111,6 @@
     "net_income_minus_savings": "Чистый доход - Сбережения ({{savingsPercent}}%) - Взносы на цели - Погашение долгов ({{debtPayoffPercent}}%)",
     "income_expenses": "ДОХОДЫ И РАСХОДЫ",
     "gross_income": "Валовой доход:",
-    "expenses": "Расходы:",
     "net_income": "Чистый доход:",
     "allocations": "РАСПРЕДЕЛЕНИЯ",
     "savings": "Сбережения:",
