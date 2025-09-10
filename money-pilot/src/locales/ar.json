@@ -593,5 +593,23 @@
     "expenses": "المصروفات",
     "savings": "الادخار ({{percentage}}%)",
     "view_details": "عرض التفاصيل"
+  },
+  "budget_settings": {
+    "title": "تفاصيل الميزانية",
+    "done": "تم",
+    "monthly_allocation": "التخصيص الشهري",
+    "monthly_summary": "الملخص الشهري",
+    "income": "الدخل",
+    "expenses": "المصروفات",
+    "net_income": "صافي الدخل",
+    "savings": "الادخار",
+    "debt_payoff": "سداد الديون",
+    "financial_goals": "الأهداف المالية",
+    "available_for_spending": "متاح للإنفاق",
+    "per_month": "{{amount}} شهرياً",
+    "monthly_contribution": "المساهمة الشهرية",
+    "recommendation_low_savings": "فكر في ادخار 20% على الأقل من دخلك للأمان المالي.",
+    "recommendation_high_allocation": "أنت تخصص نسبة عالية. تأكد من ترك مساحة للإنفاق التقديري.",
+    "recommendation_great_allocation": "تخصيص رائع! أنت توازن بين الادخار وسداد الديون والإنفاق بشكل جيد."
   }
 }

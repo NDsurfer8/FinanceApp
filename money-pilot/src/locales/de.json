@@ -593,5 +593,23 @@
     "expenses": "Ausgaben",
     "savings": "Ersparnisse ({{percentage}}%)",
     "view_details": "Details Anzeigen"
+  },
+  "budget_settings": {
+    "title": "Budget-Details",
+    "done": "Fertig",
+    "monthly_allocation": "Monatliche Zuweisung",
+    "monthly_summary": "Monatliche Zusammenfassung",
+    "income": "Einkommen",
+    "expenses": "Ausgaben",
+    "net_income": "Nettoeinkommen",
+    "savings": "Ersparnisse",
+    "debt_payoff": "Schuldenabbau",
+    "financial_goals": "Finanzielle Ziele",
+    "available_for_spending": "Verfügbar zum Ausgeben",
+    "per_month": "{{amount}} pro Monat",
+    "monthly_contribution": "Monatliche Beitrag",
+    "recommendation_low_savings": "Erwägen Sie, mindestens 20% Ihres Einkommens für finanzielle Sicherheit zu sparen.",
+    "recommendation_high_allocation": "Sie weisen einen hohen Prozentsatz zu. Stellen Sie sicher, dass Sie Platz für diskretionäre Ausgaben lassen.",
+    "recommendation_great_allocation": "Großartige Zuweisung! Sie balancieren Sparen, Schuldenabbau und Ausgaben gut aus."
   }
 }

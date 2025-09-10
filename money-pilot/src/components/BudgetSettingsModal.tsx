@@ -12,6 +12,7 @@ import * as Haptics from "expo-haptics";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
+import { useTranslation } from "react-i18next";
 
 interface Goal {
   id: string;
@@ -56,6 +57,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
 }) => {
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
+  const { t } = useTranslation();
   const [localSavings, setLocalSavings] = useState(savingsPercentage);
   const [localDebt, setLocalDebt] = useState(debtPayoffPercentage);
   const [localGoals, setLocalGoals] = useState<Goal[]>(goals);
@@ -142,24 +144,21 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
     if (totalAllocated < 20) {
       return {
         type: "warning",
-        message:
-          "Consider saving at least 20% of your income for financial security.",
+        message: t("budget_settings.recommendation_low_savings"),
         icon: "warning-outline",
         color: colors.warning,
       };
     } else if (totalAllocated > 80) {
       return {
         type: "info",
-        message:
-          "You're allocating a high percentage. Make sure to leave room for discretionary spending.",
+        message: t("budget_settings.recommendation_high_allocation"),
         icon: "information-circle-outline",
         color: colors.info || "#3b82f6",
       };
     } else {
       return {
         type: "success",
-        message:
-          "Great allocation! You're balancing savings, debt payoff, and spending well.",
+        message: t("budget_settings.recommendation_great_allocation"),
         icon: "checkmark-circle-outline",
         color: colors.success,
       };
@@ -198,7 +197,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
               color: colors.text,
             }}
           >
-            Budget Details
+            {t("budget_settings.title")}
           </Text>
           <TouchableOpacity
             onPress={async () => {
@@ -271,7 +270,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                 color: hasChanges() ? "white" : colors.textSecondary,
               }}
             >
-              Done
+              {t("budget_settings.done")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -294,7 +293,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                 marginBottom: 16,
               }}
             >
-              Monthly Allocation
+              {t("budget_settings.monthly_allocation")}
             </Text>
 
             {/* Visual Allocation Bar */}
@@ -480,7 +479,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                 marginBottom: 12,
               }}
             >
-              Monthly Summary
+              {t("budget_settings.monthly_summary")}
             </Text>
 
             <View style={{ marginBottom: 8 }}>
@@ -490,7 +489,9 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ color: colors.textSecondary }}>Income:</Text>
+                <Text style={{ color: colors.textSecondary }}>
+                  {t("budget_settings.income")}:
+                </Text>
                 <Text style={{ color: colors.text, fontWeight: "600" }}>
                   {formatCurrency(netIncome)}
                 </Text>
@@ -504,7 +505,9 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ color: colors.textSecondary }}>Expenses:</Text>
+                <Text style={{ color: colors.textSecondary }}>
+                  {t("budget_settings.expenses")}:
+                </Text>
                 <Text style={{ color: colors.error, fontWeight: "600" }}>
                   -{formatCurrency(totalExpenses)}
                 </Text>
@@ -527,7 +530,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                 }}
               >
                 <Text style={{ color: colors.text, fontWeight: "600" }}>
-                  Net Income:
+                  {t("budget_settings.net_income")}:
                 </Text>
                 <Text style={{ color: colors.text, fontWeight: "700" }}>
                   {formatCurrency(netIncome - totalExpenses)}
@@ -542,7 +545,9 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ color: colors.textSecondary }}>Savings:</Text>
+                <Text style={{ color: colors.textSecondary }}>
+                  {t("budget_settings.savings")}:
+                </Text>
                 <Text style={{ color: colors.success, fontWeight: "600" }}>
                   -{formatCurrency(savingsAmount)}
                 </Text>
@@ -557,7 +562,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                 }}
               >
                 <Text style={{ color: colors.textSecondary }}>
-                  Debt Payoff:
+                  {t("budget_settings.debt_payoff")}:
                 </Text>
                 <Text style={{ color: colors.error, fontWeight: "600" }}>
                   -{formatCurrency(debtAmount)}
@@ -574,7 +579,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                   }}
                 >
                   <Text style={{ color: colors.textSecondary }}>
-                    Financial Goals:
+                    {t("budget_settings.financial_goals")}:
                   </Text>
                   <Text
                     style={{
@@ -603,7 +608,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                 }}
               >
                 <Text style={{ color: colors.text, fontWeight: "600" }}>
-                  Available for Spending:
+                  {t("budget_settings.available_for_spending")}:
                 </Text>
                 <Text style={{ color: colors.warning, fontWeight: "700" }}>
                   {formatCurrency(
@@ -654,7 +659,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                       color: colors.text,
                     }}
                   >
-                    Savings
+                    {t("budget_settings.savings")}
                   </Text>
                   <Text
                     style={{
@@ -662,7 +667,9 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                       color: colors.textSecondary,
                     }}
                   >
-                    {formatCurrency(savingsAmount)} per month
+                    {t("budget_settings.per_month", {
+                      amount: formatCurrency(savingsAmount),
+                    })}
                   </Text>
                 </View>
               </View>
@@ -775,7 +782,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                       color: colors.text,
                     }}
                   >
-                    Debt Payoff
+                    {t("budget_settings.debt_payoff")}
                   </Text>
                   <Text
                     style={{
@@ -783,7 +790,9 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                       color: colors.textSecondary,
                     }}
                   >
-                    {formatCurrency(debtAmount)} per month
+                    {t("budget_settings.per_month", {
+                      amount: formatCurrency(debtAmount),
+                    })}
                   </Text>
                 </View>
               </View>
@@ -897,7 +906,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                         color: colors.text,
                       }}
                     >
-                      Financial Goals
+                      {t("budget_settings.financial_goals")}
                     </Text>
                     <Text
                       style={{
@@ -905,7 +914,9 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                         color: colors.textSecondary,
                       }}
                     >
-                      {formatCurrency(goalsAmount)} per month
+                      {t("budget_settings.per_month", {
+                        amount: formatCurrency(goalsAmount),
+                      })}
                     </Text>
                   </View>
                 </View>
@@ -1006,7 +1017,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                           color: colors.textSecondary,
                         }}
                       >
-                        Monthly Contribution:
+                        {t("budget_settings.monthly_contribution")}:
                       </Text>
                       <View style={{ flexDirection: "row", gap: 8 }}>
                         <TouchableOpacity

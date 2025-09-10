@@ -597,6 +597,24 @@
     "savings": "Savings ({{percentage}}%)",
     "view_details": "View Details"
   },
+  "budget_settings": {
+    "title": "Budget Details",
+    "done": "Done",
+    "monthly_allocation": "Monthly Allocation",
+    "monthly_summary": "Monthly Summary",
+    "income": "Income",
+    "expenses": "Expenses",
+    "net_income": "Net Income",
+    "savings": "Savings",
+    "debt_payoff": "Debt Payoff",
+    "financial_goals": "Financial Goals",
+    "available_for_spending": "Available for Spending",
+    "per_month": "{{amount}} per month",
+    "monthly_contribution": "Monthly Contribution",
+    "recommendation_low_savings": "Consider saving at least 20% of your income for financial security.",
+    "recommendation_high_allocation": "You're allocating a high percentage. Make sure to leave room for discretionary spending.",
+    "recommendation_great_allocation": "Great allocation! You're balancing savings, debt payoff, and spending well."
+  },
   "add_transaction": {
     "title": "Add Transaction",
     "edit_title": "Edit Transaction",

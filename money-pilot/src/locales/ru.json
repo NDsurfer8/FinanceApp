@@ -593,5 +593,23 @@
     "expenses": "Расходы",
     "savings": "Сбережения ({{percentage}}%)",
     "view_details": "Просмотр Деталей"
+  },
+  "budget_settings": {
+    "title": "Детали Бюджета",
+    "done": "Готово",
+    "monthly_allocation": "Месячное Распределение",
+    "monthly_summary": "Месячная Сводка",
+    "income": "Доходы",
+    "expenses": "Расходы",
+    "net_income": "Чистый Доход",
+    "savings": "Сбережения",
+    "debt_payoff": "Погашение Долга",
+    "financial_goals": "Финансовые Цели",
+    "available_for_spending": "Доступно для Траты",
+    "per_month": "{{amount}} в месяц",
+    "monthly_contribution": "Месячный Взнос",
+    "recommendation_low_savings": "Рассмотрите возможность сбережения как минимум 20% вашего дохода для финансовой безопасности.",
+    "recommendation_high_allocation": "Вы выделяете высокий процент. Убедитесь, что оставляете место для дискреционных расходов.",
+    "recommendation_great_allocation": "Отличное распределение! Вы хорошо балансируете сбережения, погашение долга и расходы."
   }
 }

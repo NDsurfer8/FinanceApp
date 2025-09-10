@@ -593,5 +593,23 @@
     "expenses": "Dépenses",
     "savings": "Épargne ({{percentage}}%)",
     "view_details": "Voir les Détails"
+  },
+  "budget_settings": {
+    "title": "Détails du Budget",
+    "done": "Terminé",
+    "monthly_allocation": "Allocation Mensuelle",
+    "monthly_summary": "Résumé Mensuel",
+    "income": "Revenus",
+    "expenses": "Dépenses",
+    "net_income": "Revenus Nets",
+    "savings": "Épargne",
+    "debt_payoff": "Remboursement de Dette",
+    "financial_goals": "Objectifs Financiers",
+    "available_for_spending": "Disponible pour Dépenser",
+    "per_month": "{{amount}} par mois",
+    "monthly_contribution": "Contribution Mensuelle",
+    "recommendation_low_savings": "Considérez épargner au moins 20% de vos revenus pour la sécurité financière.",
+    "recommendation_high_allocation": "Vous allouez un pourcentage élevé. Assurez-vous de laisser de la place pour les dépenses discrétionnaires.",
+    "recommendation_great_allocation": "Excellente allocation ! Vous équilibrez bien l'épargne, le remboursement de dette et les dépenses."
   }
 }

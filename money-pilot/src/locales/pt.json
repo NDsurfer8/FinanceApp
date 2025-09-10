@@ -593,5 +593,23 @@
     "expenses": "Despesas",
     "savings": "Poupanças ({{percentage}}%)",
     "view_details": "Ver Detalhes"
+  },
+  "budget_settings": {
+    "title": "Detalhes do Orçamento",
+    "done": "Concluído",
+    "monthly_allocation": "Alocação Mensal",
+    "monthly_summary": "Resumo Mensal",
+    "income": "Receitas",
+    "expenses": "Despesas",
+    "net_income": "Receita Líquida",
+    "savings": "Poupanças",
+    "debt_payoff": "Pagamento de Dívidas",
+    "financial_goals": "Metas Financeiras",
+    "available_for_spending": "Disponível para Gastar",
+    "per_month": "{{amount}} por mês",
+    "monthly_contribution": "Contribuição Mensal",
+    "recommendation_low_savings": "Considere poupar pelo menos 20% de sua receita para segurança financeira.",
+    "recommendation_high_allocation": "Você está alocando uma alta porcentagem. Certifique-se de deixar espaço para gastos discricionários.",
+    "recommendation_great_allocation": "Excelente alocação! Você está equilibrando bem poupanças, pagamento de dívidas e gastos."
   }
 }

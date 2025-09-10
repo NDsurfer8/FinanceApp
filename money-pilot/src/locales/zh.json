@@ -593,5 +593,23 @@
     "expenses": "支出",
     "savings": "储蓄 ({{percentage}}%)",
     "view_details": "查看详情"
+  },
+  "budget_settings": {
+    "title": "预算详情",
+    "done": "完成",
+    "monthly_allocation": "月度分配",
+    "monthly_summary": "月度摘要",
+    "income": "收入",
+    "expenses": "支出",
+    "net_income": "净收入",
+    "savings": "储蓄",
+    "debt_payoff": "债务偿还",
+    "financial_goals": "财务目标",
+    "available_for_spending": "可用于支出",
+    "per_month": "每月 {{amount}}",
+    "monthly_contribution": "月度贡献",
+    "recommendation_low_savings": "考虑至少储蓄收入的20%以确保财务安全。",
+    "recommendation_high_allocation": "您分配的百分比很高。确保为自由支出留出空间。",
+    "recommendation_great_allocation": "分配得很好！您在储蓄、债务偿还和支出之间取得了很好的平衡。"
   }
 }

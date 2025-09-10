@@ -593,5 +593,23 @@
     "expenses": "支出",
     "savings": "貯蓄 ({{percentage}}%)",
     "view_details": "詳細を表示"
+  },
+  "budget_settings": {
+    "title": "予算詳細",
+    "done": "完了",
+    "monthly_allocation": "月次配分",
+    "monthly_summary": "月次サマリー",
+    "income": "収入",
+    "expenses": "支出",
+    "net_income": "純収入",
+    "savings": "貯蓄",
+    "debt_payoff": "債務返済",
+    "financial_goals": "財務目標",
+    "available_for_spending": "支出可能額",
+    "per_month": "月額 {{amount}}",
+    "monthly_contribution": "月次貢献",
+    "recommendation_low_savings": "財務セキュリティのために、収入の少なくとも20%を貯蓄することを検討してください。",
+    "recommendation_high_allocation": "高い割合を配分しています。裁量的支出の余地を残すことを確認してください。",
+    "recommendation_great_allocation": "素晴らしい配分です！貯蓄、債務返済、支出をうまくバランスさせています。"
   }
 }

@@ -593,5 +593,23 @@
     "expenses": "व्यय",
     "savings": "बचत ({{percentage}}%)",
     "view_details": "विवरण देखें"
+  },
+  "budget_settings": {
+    "title": "बजट विवरण",
+    "done": "पूर्ण",
+    "monthly_allocation": "मासिक आवंटन",
+    "monthly_summary": "मासिक सारांश",
+    "income": "आय",
+    "expenses": "व्यय",
+    "net_income": "शुद्ध आय",
+    "savings": "बचत",
+    "debt_payoff": "ऋण चुकौती",
+    "financial_goals": "वित्तीय लक्ष्य",
+    "available_for_spending": "खर्च के लिए उपलब्ध",
+    "per_month": "प्रति माह {{amount}}",
+    "monthly_contribution": "मासिक योगदान",
+    "recommendation_low_savings": "वित्तीय सुरक्षा के लिए अपनी आय का कम से कम 20% बचाने पर विचार करें।",
+    "recommendation_high_allocation": "आप एक उच्च प्रतिशत आवंटित कर रहे हैं। विवेकाधीन खर्च के लिए जगह छोड़ना सुनिश्चित करें।",
+    "recommendation_great_allocation": "बेहतरीन आवंटन! आप बचत, ऋण चुकौती और खर्च को अच्छी तरह से संतुलित कर रहे हैं।"
   }
 }

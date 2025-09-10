@@ -584,5 +584,23 @@
     "expenses": "Gastos",
     "savings": "Ahorros ({{percentage}}%)",
     "view_details": "Ver Detalles"
+  },
+  "budget_settings": {
+    "title": "Detalles del Presupuesto",
+    "done": "Hecho",
+    "monthly_allocation": "Asignación Mensual",
+    "monthly_summary": "Resumen Mensual",
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "net_income": "Ingresos Netos",
+    "savings": "Ahorros",
+    "debt_payoff": "Pago de Deudas",
+    "financial_goals": "Metas Financieras",
+    "available_for_spending": "Disponible para Gastar",
+    "per_month": "{{amount}} por mes",
+    "monthly_contribution": "Contribución Mensual",
+    "recommendation_low_savings": "Considere ahorrar al menos el 20% de sus ingresos para seguridad financiera.",
+    "recommendation_high_allocation": "Está asignando un alto porcentaje. Asegúrese de dejar espacio para gastos discrecionales.",
+    "recommendation_great_allocation": "¡Excelente asignación! Está equilibrando bien los ahorros, el pago de deudas y los gastos."
   }
 }
