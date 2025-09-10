@@ -20,7 +20,9 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSFaceIDUsageDescription": "VectorFi uses Face ID to securely log you into your account and protect your financial information.",
-        "UIDeviceFamily": [1]
+        "UIDeviceFamily": [
+          1
+        ]
       }
     },
     "android": {
@@ -29,7 +31,9 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": ["android.permission.RECORD_AUDIO"],
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
       "package": "com.ndsurf888.vectorfii"
     },
     "web": {
@@ -53,7 +57,8 @@
       "expo-apple-authentication",
       "expo-local-authentication",
       "expo-dev-client",
-      "expo-mail-composer"
+      "expo-mail-composer",
+      "expo-localization"
     ],
     "extra": {
       "firebase": {

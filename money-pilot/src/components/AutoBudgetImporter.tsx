@@ -14,6 +14,7 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 import { saveTransaction } from "../services/userData";
 import { formatCurrency } from "../utils/formatNumber";
 import { mapPlaidCategoryToBudgetCategory } from "../utils/plaidCategoryMapping";
@@ -47,6 +48,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
   const { user } = useAuth();
   const { bankTransactions, transactions, isBankConnected } = useData();
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   // Helper function to format month
   const formatMonth = (date: Date) => {
@@ -399,8 +401,8 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
     );
     if (selectedTransactions.length === 0) {
       Alert.alert(
-        "No Transactions Selected",
-        "Please select at least one transaction to import."
+        t("budget.no_transactions_selected"),
+        t("budget.select_at_least_one_transaction")
       );
       return;
     }
@@ -458,11 +460,11 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         // All succeeded
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert(
-          "Success!",
-          `Successfully imported ${savedCount} transactions to your budget.`,
+          t("common.success"),
+          t("budget.import_success_message", { count: savedCount }),
           [
             {
-              text: "OK",
+              text: t("common.ok"),
               onPress: () => {
                 onDataRefresh?.(); // Refresh data to update import button count
                 onSuccess?.(savedCount);
@@ -475,11 +477,14 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         // Partial success
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         Alert.alert(
-          "Partial Success",
-          `Imported ${savedCount} transactions successfully.\n\n${failedCount} transactions failed to save (likely due to temporary connection issues).\n\nYou can try importing the failed transactions again.`,
+          t("budget.partial_success"),
+          t("budget.partial_success_message", {
+            saved: savedCount,
+            failed: failedCount,
+          }),
           [
             {
-              text: "OK",
+              text: t("common.ok"),
               onPress: () => {
                 onDataRefresh?.(); // Refresh data to update import button count
                 onSuccess?.(savedCount);

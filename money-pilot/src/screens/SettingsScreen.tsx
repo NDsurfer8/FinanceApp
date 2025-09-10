@@ -29,6 +29,10 @@ import { AIUsageAdminScreen } from "./AIUsageAdminScreen";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 import { useScrollDetection } from "../hooks/useScrollDetection";
 import { HelpfulTooltip } from "../components/HelpfulTooltip";
+import { LanguageSelector } from "../components/LanguageSelector";
+import { useLanguage } from "../contexts/LanguageContext";
+import { useTranslation } from "react-i18next";
+import { LanguageAwareText } from "../components/LanguageAwareText";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -46,6 +50,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [photoKey, setPhotoKey] = useState(Date.now());
   const { presentPaywall } = usePaywall();
   const [showTooltips, setShowTooltips] = useState(false);
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const { currentLanguage, availableLanguages } = useLanguage();
+  const { t } = useTranslation();
 
   // Load tooltips setting from AsyncStorage
   useEffect(() => {
@@ -627,7 +634,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               color: colors.text,
             }}
           >
-            Data Sources
+            {t("settings.data_sources")}
           </Text>
           <PlaidLinkComponent
             onSuccess={async () => {
@@ -849,18 +856,34 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             ]}
             onPress={handleToggleTheme}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                flex: 1,
+                marginRight: 12,
+              }}
+            >
               <Ionicons
                 name={isDark ? "moon" : "sunny"}
                 size={20}
                 color={colors.textSecondary}
                 style={{ marginRight: 12 }}
               />
-              <Text style={[styles.settingText, { color: colors.text }]}>
-                Dark Mode
-              </Text>
+              <LanguageAwareText
+                style={[styles.settingText, { color: colors.text, flex: 1 }]}
+                maxLines={2}
+              >
+                {t("settings.dark_mode")}
+              </LanguageAwareText>
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                flexShrink: 0,
+              }}
+            >
               <Text
                 style={{
                   color: colors.textSecondary,
@@ -868,7 +891,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   fontSize: 14,
                 }}
               >
-                {isDark ? "On" : "Off"}
+                {isDark ? t("common.on") : t("common.off")}
               </Text>
               <View
                 style={{
@@ -900,18 +923,34 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             ]}
             onPress={handleToggleChatbot}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                flex: 1,
+                marginRight: 12,
+              }}
+            >
               <Ionicons
                 name="chatbubble-ellipses"
                 size={20}
                 color={colors.textSecondary}
                 style={{ marginRight: 12 }}
               />
-              <Text style={[styles.settingText, { color: colors.text }]}>
-                AI Chatbot
-              </Text>
+              <LanguageAwareText
+                style={[styles.settingText, { color: colors.text, flex: 1 }]}
+                maxLines={2}
+              >
+                {t("settings.ai_chatbot")}
+              </LanguageAwareText>
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                flexShrink: 0,
+              }}
+            >
               <Text
                 style={{
                   color: colors.textSecondary,
@@ -919,7 +958,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   fontSize: 14,
                 }}
               >
-                {isChatbotVisible ? "On" : "Off"}
+                {isChatbotVisible ? t("common.on") : t("common.off")}
               </Text>
               <View
                 style={{
@@ -959,18 +998,34 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               ]}
               onPress={handleToggleTooltips}
             >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  flex: 1,
+                  marginRight: 12,
+                }}
+              >
                 <Ionicons
                   name="help-circle"
                   size={20}
                   color={colors.textSecondary}
                   style={{ marginRight: 12 }}
                 />
-                <Text style={[styles.settingText, { color: colors.text }]}>
-                  Show Helpful Tooltips
-                </Text>
+                <LanguageAwareText
+                  style={[styles.settingText, { color: colors.text, flex: 1 }]}
+                  maxLines={2}
+                >
+                  {t("settings.show_tooltips")}
+                </LanguageAwareText>
               </View>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  flexShrink: 0,
+                }}
+              >
                 <Text
                   style={{
                     color: colors.textSecondary,
@@ -978,7 +1033,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     fontSize: 14,
                   }}
                 >
-                  {showTooltips ? "On" : "Off"}
+                  {showTooltips ? t("common.on") : t("common.off")}
                 </Text>
                 <View
                   style={{
@@ -1005,6 +1060,49 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </TouchableOpacity>
           </HelpfulTooltip>
 
+          {/* Language Selector */}
+          <TouchableOpacity
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
+            onPress={() => setShowLanguageSelector(true)}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="language"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                {t("settings.language")}
+              </Text>
+            </View>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+            >
+              <LanguageAwareText
+                style={{
+                  color: colors.textSecondary,
+                  marginRight: 8,
+                  fontSize: 14,
+                  flex: 1,
+                }}
+                maxLines={1}
+              >
+                {availableLanguages.find(
+                  (lang) => lang.code === currentLanguage
+                )?.nativeName || "English"}
+              </LanguageAwareText>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.textSecondary}
+              />
+            </View>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[
               styles.settingItem,
@@ -1012,21 +1110,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             ]}
             onPress={() => navigation?.navigate("NotificationSettings")}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                flex: 1,
+                marginRight: 12,
+              }}
+            >
               <Ionicons
                 name="notifications"
                 size={20}
                 color={colors.textSecondary}
                 style={{ marginRight: 12 }}
               />
-              <Text style={[styles.settingText, { color: colors.text }]}>
-                Notifications
-              </Text>
+              <LanguageAwareText
+                style={[styles.settingText, { color: colors.text, flex: 1 }]}
+                maxLines={2}
+              >
+                {t("settings.notifications")}
+              </LanguageAwareText>
             </View>
             <Ionicons
               name="chevron-forward"
               size={16}
               color={colors.textSecondary}
+              style={{ flexShrink: 0 }}
             />
           </TouchableOpacity>
 
@@ -1037,21 +1146,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             ]}
             onPress={() => navigation?.navigate("PrivacySecurity")}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                flex: 1,
+                marginRight: 12,
+              }}
+            >
               <Ionicons
                 name="shield-checkmark"
                 size={20}
                 color={colors.textSecondary}
                 style={{ marginRight: 12 }}
               />
-              <Text style={[styles.settingText, { color: colors.text }]}>
-                Privacy & Security
-              </Text>
+              <LanguageAwareText
+                style={[styles.settingText, { color: colors.text, flex: 1 }]}
+                maxLines={2}
+              >
+                {t("settings.privacy")}
+              </LanguageAwareText>
             </View>
             <Ionicons
               name="chevron-forward"
               size={16}
               color={colors.textSecondary}
+              style={{ flexShrink: 0 }}
             />
           </TouchableOpacity>
 
@@ -1062,21 +1182,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             ]}
             onPress={() => navigation?.navigate("HelpSupport")}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                flex: 1,
+                marginRight: 12,
+              }}
+            >
               <Ionicons
                 name="help-circle"
                 size={20}
                 color={colors.textSecondary}
                 style={{ marginRight: 12 }}
               />
-              <Text style={[styles.settingText, { color: colors.text }]}>
-                Help & Support
-              </Text>
+              <LanguageAwareText
+                style={[styles.settingText, { color: colors.text, flex: 1 }]}
+                maxLines={2}
+              >
+                {t("settings.help")}
+              </LanguageAwareText>
             </View>
             <Ionicons
               name="chevron-forward"
               size={16}
               color={colors.textSecondary}
+              style={{ flexShrink: 0 }}
             />
           </TouchableOpacity>
 
@@ -1087,21 +1218,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             ]}
             onPress={() => navigation?.navigate("FinancialPlans")}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                flex: 1,
+                marginRight: 12,
+              }}
+            >
               <Ionicons
                 name="document-text"
                 size={20}
                 color={colors.textSecondary}
                 style={{ marginRight: 12 }}
               />
-              <Text style={[styles.settingText, { color: colors.text }]}>
-                Financial Plans
-              </Text>
+              <LanguageAwareText
+                style={[styles.settingText, { color: colors.text, flex: 1 }]}
+                maxLines={2}
+              >
+                {t("settings.financial_plans")}
+              </LanguageAwareText>
             </View>
             <Ionicons
               name="chevron-forward"
               size={16}
               color={colors.textSecondary}
+              style={{ flexShrink: 0 }}
             />
           </TouchableOpacity>
 
@@ -1112,21 +1254,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             ]}
             onPress={() => navigation?.navigate("About")}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                flex: 1,
+                marginRight: 12,
+              }}
+            >
               <Ionicons
                 name="information-circle"
                 size={20}
                 color={colors.textSecondary}
                 style={{ marginRight: 12 }}
               />
-              <Text style={[styles.settingText, { color: colors.text }]}>
-                About
-              </Text>
+              <LanguageAwareText
+                style={[styles.settingText, { color: colors.text, flex: 1 }]}
+                maxLines={2}
+              >
+                {t("settings.about")}
+              </LanguageAwareText>
             </View>
             <Ionicons
               name="chevron-forward"
               size={16}
               color={colors.textSecondary}
+              style={{ flexShrink: 0 }}
             />
           </TouchableOpacity>
 
@@ -1139,21 +1292,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               ]}
               onPress={() => navigation?.navigate("AIUsageAdmin")}
             >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  flex: 1,
+                  marginRight: 12,
+                }}
+              >
                 <Ionicons
                   name="settings"
                   size={20}
                   color={colors.textSecondary}
                   style={{ marginRight: 12 }}
                 />
-                <Text style={[styles.settingText, { color: colors.text }]}>
-                  AI Usage Admin
-                </Text>
+                <LanguageAwareText
+                  style={[styles.settingText, { color: colors.text, flex: 1 }]}
+                  maxLines={2}
+                >
+                  {t("settings.ai_usage_admin")}
+                </LanguageAwareText>
               </View>
               <Ionicons
                 name="chevron-forward"
                 size={16}
                 color={colors.textSecondary}
+                style={{ flexShrink: 0 }}
               />
             </TouchableOpacity>
           )}
@@ -1188,7 +1352,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               style={{ marginRight: 8 }}
             />
             <Text style={{ color: "#ef4444", fontSize: 16, fontWeight: "600" }}>
-              Logout
+              {t("settings.logout")}
             </Text>
           </View>
         </TouchableOpacity>
@@ -1196,6 +1360,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
       {/* Floating AI Chatbot - only show on main tab screens */}
       <FloatingAIChatbot hideOnScroll={true} isScrolling={isScrolling} />
+
+      {/* Language Selector Modal */}
+      <LanguageSelector
+        visible={showLanguageSelector}
+        onClose={() => setShowLanguageSelector(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -1208,6 +1378,7 @@ const styles = {
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#f3f4f6",
+    minHeight: 60,
   },
   settingText: {
     fontSize: 16,

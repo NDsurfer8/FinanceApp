@@ -34,7 +34,9 @@
     "expo-status-bar": "~2.2.3",
     "expo-store-review": "~8.1.5",
     "firebase": "^12.1.0",
+    "i18next": "^25.5.2",
     "react": "19.0.0",
+    "react-i18next": "^15.7.3",
     "react-native": "0.79.5",
     "react-native-app-intro-slider": "^4.0.4",
     "react-native-chart-kit": "^6.12.0",
@@ -47,7 +49,8 @@
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-svg": "15.11.2",
-    "react-native-tourguide": "^1.0.6"
+    "react-native-tourguide": "^1.0.6",
+    "expo-localization": "~16.1.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

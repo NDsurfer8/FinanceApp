@@ -8,8 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
-import { useFriendlyMode } from "../contexts/FriendlyModeContext";
-import { translate } from "../services/translations";
+import { useTranslation } from "react-i18next";
 import { HelpfulTooltip } from "./HelpfulTooltip";
 
 interface Transaction {
@@ -54,7 +53,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
   isRecurringTransaction,
 }) => {
   const { colors } = useTheme();
-  const { isFriendlyMode } = useFriendlyMode();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
@@ -194,7 +193,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                 color: colors.text,
                 marginBottom: 12,
               }}
-              placeholder="Search transactions..."
+              placeholder={t("transactions.search_transactions")}
               placeholderTextColor={colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -231,7 +230,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                             : colors.textSecondary,
                       }}
                     >
-                      {category === "all" ? "All" : category}
+                      {category === "all" ? t("transactions.all") : category}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -386,8 +385,8 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                 }}
               >
                 {searchQuery || selectedCategory !== "all"
-                  ? "No transactions match your filters"
-                  : "No transactions yet"}
+                  ? t("transactions.no_transactions_match_filters")
+                  : t("transactions.no_transactions_yet")}
               </Text>
             </View>
           )}
@@ -401,13 +400,13 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
             }
             title={
               title.toLowerCase().includes("expense")
-                ? "Track Your Expenses"
-                : "Track Your Income"
+                ? t("transactions.track_your_expenses")
+                : t("transactions.track_your_income")
             }
             description={
               title.toLowerCase().includes("expense")
-                ? "Add your monthly expenses like rent, groceries, and utilities here. This helps you see where your money goes and stay within your budget."
-                : "Add your salary, freelance income, and other earnings here. This helps you understand your total monthly income for better budgeting."
+                ? t("transactions.expenses_description")
+                : t("transactions.income_description")
             }
             position="top"
             delay={title.toLowerCase().includes("expense") ? 3000 : 2000}

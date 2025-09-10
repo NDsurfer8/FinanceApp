@@ -18,6 +18,8 @@ import { fontFamily } from "../config/fonts";
 import { signIn, validateEmail, signInWithApple } from "../services/auth";
 import * as AppleAuthentication from "expo-apple-authentication";
 import Constants from "expo-constants";
+import { useTranslation } from "../hooks/useTranslation";
+import { LanguageAwareText } from "../components/LanguageAwareText";
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -40,6 +42,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     "privacy"
   );
   const isExpoGo = Constants.appOwnership === "expo";
+  const { t } = useTranslation();
 
   // Refs for input focus management
   const passwordRef = useRef<TextInput>(null);
@@ -56,12 +59,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert(t("common.error"), t("auth.fill_all_fields"));
       return;
     }
 
     if (!validateEmail(email)) {
-      Alert.alert("Error", "Please enter a valid email address");
+      Alert.alert(t("common.error"), t("auth.invalid_email"));
       return;
     }
 
@@ -72,9 +75,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       onLogin();
     } catch (error: any) {
       console.error("Login error:", error);
-      const errorMessage =
-        error.message || "An error occurred. Please try again.";
-      Alert.alert("Login Failed", errorMessage);
+      const errorMessage = error.message || t("auth.login_error");
+      Alert.alert(t("auth.login_failed"), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -87,10 +89,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       onLogin();
     } catch (error: any) {
       console.error("Apple login error:", error);
-      const errorMessage =
-        error.message ||
-        "An error occurred with Apple Sign In. Please try again.";
-      Alert.alert("Apple Sign In Failed", errorMessage);
+      const errorMessage = error.message || t("auth.apple_signin_error");
+      Alert.alert(t("auth.apple_signin_failed"), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -147,7 +147,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               />
               <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder={t("auth.email")}
                 placeholderTextColor="#9ca3af"
                 value={email}
                 onChangeText={setEmail}
@@ -172,7 +172,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <TextInput
                 ref={passwordRef}
                 style={styles.input}
-                placeholder="Password"
+                placeholder={t("auth.password")}
                 placeholderTextColor="#9ca3af"
                 value={password}
                 onChangeText={setPassword}
@@ -300,8 +300,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </TouchableOpacity>
             <Text style={styles.modalTitle}>
               {legalModalType === "privacy"
-                ? "Privacy Policy"
-                : "Terms of Service"}
+                ? t("auth.privacy_policy")
+                : t("auth.terms_of_service")}
             </Text>
             <View style={styles.modalSpacer} />
           </View>

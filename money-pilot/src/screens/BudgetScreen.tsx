@@ -15,10 +15,9 @@ import { useAuth } from "../hooks/useAuth";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
-import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { useSelectedMonth } from "../contexts/SelectedMonthContext";
 import { useFocusEffect } from "@react-navigation/native";
-import { translate } from "../services/translations";
+import { useTranslation } from "react-i18next";
 import { StandardHeader } from "../components/StandardHeader";
 import { AutoBudgetImporter } from "../components/AutoBudgetImporter";
 import { BudgetOverviewCard } from "../components/BudgetOverviewCard";
@@ -95,7 +94,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const monthPickerScrollRef = useRef<ScrollView>(null);
   const lastMonthRef = useRef<string>("");
   const { colors } = useTheme();
-  const { isFriendlyMode } = useFriendlyMode();
+  const { t } = useTranslation();
 
   // Load budget categories and check for over-budget items
   const loadBudgetCategories = async () => {
@@ -264,18 +263,18 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           id: "excellent-savings-rate",
           type: "success",
           icon: "trending-up",
-          title: "Excellent Discretionary Savings!",
-          message: `You have ${discretionarySavingsRate.toFixed(
-            1
-          )}% of your income available for additional savings`,
+          title: t("budget.excellent_discretionary_savings"),
+          message: t("budget.excellent_discretionary_savings_message", {
+            rate: discretionarySavingsRate.toFixed(1),
+          }),
         });
       } else if (discretionarySavingsRate < 0) {
         insights.push({
           id: "spending-more-than-income",
           type: "warning",
           icon: "alert-circle",
-          title: "Over Budget",
-          message: "Your expenses and allocations exceed your income",
+          title: t("budget.over_budget"),
+          message: t("budget.over_budget_message"),
         });
       }
     }
@@ -287,10 +286,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           id: "high-expense-ratio",
           type: "warning",
           icon: "trending-down",
-          title: "High Expense Ratio",
-          message: `${expenseToIncomeRatio.toFixed(
-            1
-          )}% of income goes to expenses`,
+          title: t("budget.high_expense_ratio"),
+          message: t("budget.high_expense_ratio_message", {
+            ratio: expenseToIncomeRatio.toFixed(1),
+          }),
         });
       }
     }
@@ -300,8 +299,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         id: "active-month",
         type: "info",
         icon: "analytics",
-        title: "Active Month",
-        message: `${allMonthTransactions.length} transactions tracked`,
+        title: t("budget.active_month"),
+        message: t("budget.active_month_message", {
+          count: allMonthTransactions.length,
+        }),
       });
     }
 
@@ -311,16 +312,20 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         id: "high-savings-rate",
         type: "success",
         icon: "trending-up",
-        title: "High Savings Rate!",
-        message: `${savingsPercentage}% savings rate is excellent`,
+        title: t("budget.high_savings_rate"),
+        message: t("budget.high_savings_rate_message", {
+          percentage: savingsPercentage,
+        }),
       });
     } else if (parseFloat(savingsPercentage) < 10) {
       insights.push({
         id: "low-savings-rate",
         type: "warning",
         icon: "trending-down",
-        title: "Low Savings Rate",
-        message: `Consider increasing your ${savingsPercentage}% savings rate`,
+        title: t("budget.low_savings_rate"),
+        message: t("budget.low_savings_rate_message", {
+          percentage: savingsPercentage,
+        }),
       });
     }
 
@@ -469,10 +474,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       await refreshBudgetSettings();
 
       setHasUnsavedChanges(false);
-      Alert.alert("Success", "Budget settings saved successfully!");
+      Alert.alert(t("common.success"), t("budget.budget_settings_saved"));
     } catch (error) {
       console.error("Error saving budget settings:", error);
-      Alert.alert("Error", "Failed to save budget settings");
+      Alert.alert(t("common.error"), t("budget.budget_settings_failed"));
     }
   };
 
@@ -691,8 +696,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       >
         {/* Header */}
         <StandardHeader
-          title={translate("budget", isFriendlyMode)}
-          subtitle="Monthly Planning"
+          title={t("budget.title")}
+          subtitle={t("budget.monthly_planning")}
           showBackButton={false}
           rightComponent={
             <PanGestureHandler onGestureEvent={onGestureEvent}>
@@ -820,7 +825,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   fontWeight: "600",
                 }}
               >
-                Reconnect
+                {t("budget.reconnect")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1035,7 +1040,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   color: colors.text,
                 }}
               >
-                {translate("smartInsights", isFriendlyMode)}
+                {t("budget.smart_insights")}
               </Text>
             </View>
 
@@ -1106,7 +1111,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         {/* Income Section */}
 
         <TransactionListCard
-          title="Income"
+          title={t("budget.income")}
           icon="trending-up"
           iconColor={colors.success}
           transactions={selectedMonthTransactions.filter(
@@ -1134,7 +1139,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         {/* Expenses Section */}
 
         <TransactionListCard
-          title="Expenses"
+          title={t("budget.expenses")}
           icon="trending-down"
           iconColor={colors.error}
           transactions={selectedMonthTransactions.filter(
@@ -1197,10 +1202,16 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 await refreshBudgetSettings();
 
                 setHasUnsavedChanges(false);
-                Alert.alert("Success", "Budget settings saved successfully!");
+                Alert.alert(
+                  t("common.success"),
+                  t("budget.budget_settings_saved")
+                );
               } catch (error) {
                 console.error("Error saving budget settings:", error);
-                Alert.alert("Error", "Failed to save budget settings");
+                Alert.alert(
+                  t("common.error"),
+                  t("budget.budget_settings_failed")
+                );
               }
             };
 
@@ -1289,7 +1300,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                   color: colors.text,
                 }}
               >
-                Select Month
+                {t("budget.select_month")}
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <TouchableOpacity
@@ -1313,7 +1324,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                       color: colors.buttonText,
                     }}
                   >
-                    Current
+                    {t("budget.current")}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -1401,7 +1412,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                               color: colors.buttonText,
                             }}
                           >
-                            Current
+                            {t("budget.current")}
                           </Text>
                         </View>
                       )}
@@ -1425,7 +1436,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           setShowAutoImporter(false);
           setImportSuccess({
             count,
-            message: `Successfully imported ${count} transactions to your budget!`,
+            message: t("budget.import_success_message", { count }),
           });
           setTimeout(() => setImportSuccess(null), 5000);
         }}

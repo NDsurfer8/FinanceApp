@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { forgotPassword, validateEmail } from "../services/auth";
 
 interface ForgotPasswordScreenProps {
@@ -23,6 +24,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
 }) => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useTranslation();
 
   const handleResetPassword = async () => {
     if (!email) {
@@ -96,7 +98,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
               />
               <TextInput
                 style={styles.input}
-                placeholder="Enter your email"
+                placeholder={t("auth.enter_your_email")}
                 placeholderTextColor="#9ca3af"
                 value={email}
                 onChangeText={setEmail}

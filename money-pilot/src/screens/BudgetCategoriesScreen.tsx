@@ -13,8 +13,7 @@ import { useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
-import { useFriendlyMode } from "../contexts/FriendlyModeContext";
-import { translate } from "../services/translations";
+import { useTranslation } from "react-i18next";
 import { StandardHeader } from "../components/StandardHeader";
 import { useData } from "../contexts/DataContext";
 import { useAuth } from "../hooks/useAuth";
@@ -35,9 +34,55 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
   navigation,
 }) => {
   const { colors } = useTheme();
-  const { isFriendlyMode } = useFriendlyMode();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const route = useRoute();
+
+  // Helper function to translate category names
+  const translateCategoryName = (categoryName: string): string => {
+    const categoryMap: { [key: string]: string } = {
+      Rent: t("categories.rent"),
+      "Car Payment": t("categories.car_payment"),
+      Insurance: t("categories.insurance"),
+      Utilities: t("categories.utilities"),
+      Internet: t("categories.internet"),
+      Phone: t("categories.phone"),
+      Subscriptions: t("categories.subscriptions"),
+      "Credit Card": t("categories.credit_card"),
+      "Loan Payment": t("categories.loan_payment"),
+      Food: t("categories.food"),
+      Transportation: t("categories.transportation"),
+      Health: t("categories.health"),
+      Entertainment: t("categories.entertainment"),
+      Shopping: t("categories.shopping"),
+      Business: t("categories.business"),
+      "Other Expenses": t("categories.other_expenses"),
+    };
+    return categoryMap[categoryName] || categoryName;
+  };
+
+  // Helper function to check if a category name is a default category (only checks English names since that's what's stored in database)
+  const isDefaultCategoryName = (categoryName: string): boolean => {
+    const defaultCategoriesEnglish = [
+      "Rent",
+      "Car Payment",
+      "Insurance",
+      "Utilities",
+      "Internet",
+      "Phone",
+      "Subscriptions",
+      "Credit Card",
+      "Loan Payment",
+      "Food",
+      "Transportation",
+      "Health",
+      "Entertainment",
+      "Shopping",
+      "Business",
+      "Other Expenses",
+    ];
+    return defaultCategoriesEnglish.includes(categoryName);
+  };
   const selectedMonthParam = (route.params as any)?.selectedMonth;
   const selectedMonth = selectedMonthParam
     ? new Date(selectedMonthParam)
@@ -252,41 +297,48 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
 
           // Only add missing default categories for new users (when no custom categories exist)
           const hasCustomCategories = uniqueCategories.some(
-            (cat) =>
-              ![
-                "Rent",
-                "Car Payment",
-                "Insurance",
-                "Utilities",
-                "Internet",
-                "Phone",
-                "Subscriptions",
-                "Credit Card",
-                "Loan Payment",
-                "Food",
-                "Transportation",
-                "Health",
-                "Entertainment",
-                "Shopping",
-                "Business",
-                "Other Expenses",
-              ].includes(cat.name)
+            (cat) => !isDefaultCategoryName(cat.name)
           );
 
           if (!hasCustomCategories && uniqueCategories.length <= 16) {
             // Only add missing default categories for new users
             const defaultCategories = [
-              { id: "1", name: "Rent", monthlyLimit: 0, color: "#FF6B6B" },
+              {
+                id: "1",
+                name: "Rent",
+                monthlyLimit: 0,
+                color: "#FF6B6B",
+              },
               {
                 id: "2",
                 name: "Car Payment",
                 monthlyLimit: 0,
                 color: "#4ECDC4",
               },
-              { id: "3", name: "Insurance", monthlyLimit: 0, color: "#45B7D1" },
-              { id: "4", name: "Utilities", monthlyLimit: 0, color: "#96CEB4" },
-              { id: "5", name: "Internet", monthlyLimit: 0, color: "#FFEAA7" },
-              { id: "6", name: "Phone", monthlyLimit: 0, color: "#DDA0DD" },
+              {
+                id: "3",
+                name: "Insurance",
+                monthlyLimit: 0,
+                color: "#45B7D1",
+              },
+              {
+                id: "4",
+                name: "Utilities",
+                monthlyLimit: 0,
+                color: "#96CEB4",
+              },
+              {
+                id: "5",
+                name: "Internet",
+                monthlyLimit: 0,
+                color: "#FFEAA7",
+              },
+              {
+                id: "6",
+                name: "Phone",
+                monthlyLimit: 0,
+                color: "#DDA0DD",
+              },
               {
                 id: "7",
                 name: "Subscriptions",
@@ -305,22 +357,42 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                 monthlyLimit: 0,
                 color: "#BB8FCE",
               },
-              { id: "10", name: "Food", monthlyLimit: 0, color: "#85C1E9" },
+              {
+                id: "10",
+                name: "Food",
+                monthlyLimit: 0,
+                color: "#85C1E9",
+              },
               {
                 id: "11",
                 name: "Transportation",
                 monthlyLimit: 0,
                 color: "#F8C471",
               },
-              { id: "12", name: "Health", monthlyLimit: 0, color: "#82E0AA" },
+              {
+                id: "12",
+                name: "Health",
+                monthlyLimit: 0,
+                color: "#82E0AA",
+              },
               {
                 id: "13",
                 name: "Entertainment",
                 monthlyLimit: 0,
                 color: "#F1948A",
               },
-              { id: "14", name: "Shopping", monthlyLimit: 0, color: "#85C1E9" },
-              { id: "15", name: "Business", monthlyLimit: 0, color: "#D7BDE2" },
+              {
+                id: "14",
+                name: "Shopping",
+                monthlyLimit: 0,
+                color: "#85C1E9",
+              },
+              {
+                id: "15",
+                name: "Business",
+                monthlyLimit: 0,
+                color: "#D7BDE2",
+              },
               {
                 id: "16",
                 name: "Other Expenses",
@@ -340,7 +412,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
               }
             });
 
-            // Save merged categories if new ones were added
+            // Only save if new categories were actually added
             if (mergedCategories.length > uniqueCategories.length) {
               await saveBudgetCategories(mergedCategories, user.uid);
               console.log("Added missing default categories");
@@ -601,18 +673,21 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
 
   const addCategory = async () => {
     if (!newCategoryName.trim() || !newCategoryLimit.trim()) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert(t("common.error"), t("budget_categories.fill_all_fields"));
       return;
     }
 
     if (!user?.uid) {
-      Alert.alert("Error", "User not authenticated");
+      Alert.alert(
+        t("common.error"),
+        t("budget_categories.user_not_authenticated")
+      );
       return;
     }
 
     const limit = parseFloat(newCategoryLimit);
     if (isNaN(limit) || limit < 0) {
-      Alert.alert("Error", "Please enter a valid amount (0 or greater)");
+      Alert.alert(t("common.error"), t("budget_categories.valid_amount"));
       return;
     }
 
@@ -630,7 +705,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       await saveBudgetCategories(updatedCategories, user.uid);
     } catch (error) {
       console.error("Error saving budget categories:", error);
-      Alert.alert("Error", "Failed to save budget categories");
+      Alert.alert(t("common.error"), t("budget_categories.failed_to_save"));
     }
 
     setNewCategoryName("");
@@ -640,18 +715,21 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
 
   const editCategory = async () => {
     if (!editingCategory || !tempCategoryLimit.trim()) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert(t("common.error"), t("budget_categories.fill_all_fields"));
       return;
     }
 
     if (!user?.uid) {
-      Alert.alert("Error", "User not authenticated");
+      Alert.alert(
+        t("common.error"),
+        t("budget_categories.user_not_authenticated")
+      );
       return;
     }
 
     const limit = parseFloat(tempCategoryLimit);
     if (isNaN(limit) || limit < 0) {
-      Alert.alert("Error", "Please enter a valid amount (0 or greater)");
+      Alert.alert(t("common.error"), t("budget_categories.valid_amount"));
       return;
     }
 
@@ -674,7 +752,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       await saveBudgetCategories(updatedCategories, user.uid);
     } catch (error) {
       console.error("Error saving budget categories:", error);
-      Alert.alert("Error", "Failed to save budget categories");
+      Alert.alert(t("common.error"), t("budget_categories.failed_to_save"));
     }
 
     setEditingCategory(null);
@@ -687,31 +765,34 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     const categoryToDelete = categories.find((cat) => cat.id === categoryId);
 
     if (!categoryToDelete) {
-      Alert.alert("Error", "Category not found");
+      Alert.alert(t("common.error"), t("budget_categories.category_not_found"));
       return;
     }
 
     // Prevent deletion of default categories
     if (isDefaultCategory(categoryToDelete.name)) {
       Alert.alert(
-        "Cannot Delete",
-        "Default categories cannot be deleted as they are essential for the app to function properly.",
-        [{ text: "OK", style: "default" }]
+        t("budget_categories.cannot_delete"),
+        t("budget_categories.default_categories_cannot_delete"),
+        [{ text: t("common.ok"), style: "default" }]
       );
       return;
     }
 
     Alert.alert(
-      "Delete Category",
-      "Are you sure you want to delete this category?",
+      t("budget_categories.delete_category"),
+      t("budget_categories.delete_category_confirm"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: async () => {
             if (!user?.uid) {
-              Alert.alert("Error", "User not authenticated");
+              Alert.alert(
+                t("common.error"),
+                t("budget_categories.user_not_authenticated")
+              );
               return;
             }
 
@@ -724,7 +805,10 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
               await saveBudgetCategories(updatedCategories, user.uid);
             } catch (error) {
               console.error("Error saving budget categories:", error);
-              Alert.alert("Error", "Failed to save budget categories");
+              Alert.alert(
+                t("common.error"),
+                t("budget_categories.failed_to_save")
+              );
             }
           },
         },
@@ -801,8 +885,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       >
         {/* Header */}
         <StandardHeader
-          title="Set Budget"
-          subtitle="Plan your monthly spending"
+          title={t("budget_categories.title")}
+          subtitle={t("budget_categories.subtitle")}
           showBackButton={true}
           onBack={() => navigation.goBack()}
           rightComponent={
@@ -860,7 +944,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                 month: "long",
                 year: "numeric",
               })}{" "}
-              Overview
+              {t("budget_categories.overview")}
             </Text>
             <TouchableOpacity
               onPress={() => setShowBudgetSettingsModal(true)}
@@ -897,7 +981,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   marginBottom: 8,
                 }}
               >
-                Starting Point
+                {t("budget_categories.starting_point")}
               </Text>
               <View
                 style={{
@@ -911,7 +995,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                 }}
               >
                 <Text style={{ fontSize: 16, color: colors.text }}>
-                  Total Income
+                  {t("budget_categories.total_income")}
                 </Text>
                 <Text
                   style={{
@@ -935,7 +1019,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   marginBottom: 8,
                 }}
               >
-                Automatic Allocations
+                {t("budget_categories.automatic_allocations")}
               </Text>
               <View
                 style={{
@@ -971,7 +1055,9 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                           : "line-through",
                       }}
                     >
-                      Savings ({savingsPercentage}% of income)
+                      {t("budget_categories.savings_percentage", {
+                        percentage: savingsPercentage,
+                      })}
                     </Text>
                   </View>
                   <Text
@@ -1016,7 +1102,9 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                           : "line-through",
                       }}
                     >
-                      Debt Payoff ({debtPayoffPercentage}% of income)
+                      {t("budget_categories.debt_payoff_percentage", {
+                        percentage: debtPayoffPercentage,
+                      })}
                     </Text>
                   </View>
                   <Text
@@ -1066,7 +1154,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                           : "line-through",
                       }}
                     >
-                      Goal Contributions
+                      {t("budget_categories.goal_contributions")}
                     </Text>
                   </View>
                   <Text
@@ -1098,7 +1186,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   marginBottom: 8,
                 }}
               >
-                Available for Categories
+                {t("budget_categories.available_for_categories")}
               </Text>
               <View
                 style={{
@@ -1120,7 +1208,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     color: colors.text,
                   }}
                 >
-                  Total Budget
+                  {t("budget_categories.total_budget")}
                 </Text>
                 <Text
                   style={{
@@ -1152,7 +1240,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     color: colors.textSecondary,
                   }}
                 >
-                  Allocated to Categories
+                  {t("budget_categories.allocated_to_categories")}
                 </Text>
                 <Text
                   style={{
@@ -1195,7 +1283,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Search categories..."
+              placeholder={t("budget_categories.search_placeholder")}
               placeholderTextColor={colors.textSecondary}
               style={{
                 flex: 1,
@@ -1269,7 +1357,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       color: colors.text,
                     }}
                   >
-                    {category.name}
+                    {translateCategoryName(category.name)}
                   </Text>
                   {isCategoryOverBudget(category) && (
                     <View
@@ -1337,7 +1425,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   }}
                 >
                   <Text style={{ fontSize: 18, color: colors.textSecondary }}>
-                    Monthly Limit
+                    {t("budget_categories.monthly_limit")}
                   </Text>
                   <Text
                     style={{
@@ -1356,7 +1444,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                         {((category.monthlyLimit / totalIncome) * 100).toFixed(
                           1
                         )}
-                        % of income)
+                        % {t("budget_categories.of_income")})
                       </Text>
                     )}
                   </Text>
@@ -1371,7 +1459,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   }}
                 >
                   <Text style={{ fontSize: 16, color: colors.textSecondary }}>
-                    Spent
+                    {t("budget_categories.spent")}
                   </Text>
                   <Text
                     style={{
@@ -1383,7 +1471,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     }}
                   >
                     {spending.actual === 0
-                      ? "No spending yet"
+                      ? t("budget_categories.no_spending_yet")
                       : `-$${spending.actual.toFixed(0)}`}
                   </Text>
                 </View>
@@ -1397,7 +1485,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   }}
                 >
                   <Text style={{ fontSize: 16, color: colors.textSecondary }}>
-                    Remaining
+                    {t("budget_categories.remaining")}
                   </Text>
                   <Text
                     style={{
@@ -1441,7 +1529,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     textAlign: "center",
                   }}
                 >
-                  {progressPercentage.toFixed(1)}% of budget used
+                  {progressPercentage.toFixed(1)}%{" "}
+                  {t("budget_categories.of_budget_used")}
                 </Text>
                 {isCategoryOverBudget(category) && (
                   <View
@@ -1561,7 +1650,9 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   textAlign: "center",
                 }}
               >
-                {editingCategory ? "Edit Category" : "Add New Category"}
+                {editingCategory
+                  ? t("budget_categories.edit_category")
+                  : t("budget_categories.add_new_category")}
               </Text>
 
               <View style={{ gap: 16 }}>
@@ -1585,7 +1676,9 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   <TextInput
                     value={newCategoryName}
                     onChangeText={setNewCategoryName}
-                    placeholder="e.g., Food & Dining"
+                    placeholder={t(
+                      "budget_categories.category_name_placeholder"
+                    )}
                     editable={
                       !editingCategory ||
                       !isDefaultCategory(editingCategory.name)
@@ -1643,8 +1736,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     }}
                   >
                     {availableAmount < 0
-                      ? "Over Budget"
-                      : "Available to Allocate"}
+                      ? t("budget_categories.over_budget")
+                      : t("budget_categories.available_to_allocate")}
                   </Text>
                   <Text
                     style={{
@@ -1666,7 +1759,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       marginBottom: 8,
                     }}
                   >
-                    Monthly Limit
+                    {t("budget_categories.monthly_limit")}
                   </Text>
                   <TextInput
                     value={
@@ -1679,7 +1772,9 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                         setNewCategoryLimit(text);
                       }
                     }}
-                    placeholder="0.00 (or 0 for no budget)"
+                    placeholder={t(
+                      "budget_categories.budget_amount_placeholder"
+                    )}
                     keyboardType="numeric"
                     style={{
                       backgroundColor: colors.surfaceSecondary,
@@ -1740,7 +1835,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       fontWeight: "600",
                     }}
                   >
-                    {editingCategory ? "Save" : "Add"}
+                    {editingCategory ? t("common.save") : t("common.add")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -1787,7 +1882,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   color: colors.text,
                 }}
               >
-                Budget Allocation Settings
+                {t("budget_categories.budget_allocation_settings")}
               </Text>
               <TouchableOpacity
                 onPress={() => setShowBudgetSettingsModal(false)}
@@ -1807,8 +1902,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                 lineHeight: 22,
               }}
             >
-              Choose which allocations to include in your total budget
-              calculation:
+              {t("budget_categories.choose_allocations_description")}
             </Text>
 
             <View style={{ gap: 16 }}>
@@ -1832,7 +1926,9 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       color: colors.text,
                     }}
                   >
-                    Include Savings ({savingsPercentage}%)
+                    {t("budget_categories.include_savings", {
+                      percentage: savingsPercentage,
+                    })}
                   </Text>
                   <Text
                     style={{
@@ -1889,7 +1985,9 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       color: colors.text,
                     }}
                   >
-                    Include Debt Payoff ({debtPayoffPercentage}%)
+                    {t("budget_categories.include_debt_payoff", {
+                      percentage: debtPayoffPercentage,
+                    })}
                   </Text>
                   <Text
                     style={{
@@ -1946,7 +2044,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       color: colors.text,
                     }}
                   >
-                    Include Goal Contributions
+                    {t("budget_categories.include_goal_contributions")}
                   </Text>
                   <Text
                     style={{
@@ -2003,7 +2101,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   marginBottom: 8,
                 }}
               >
-                Current Total Budget
+                {t("budget_categories.current_total_budget")}
               </Text>
               <Text
                 style={{

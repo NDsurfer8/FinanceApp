@@ -22,6 +22,8 @@ import {
   signInWithApple,
 } from "../services/auth";
 import * as AppleAuthentication from "expo-apple-authentication";
+import { useTranslation } from "../hooks/useTranslation";
+import { LanguageAwareText } from "../components/LanguageAwareText";
 
 interface SignUpScreenProps {
   onSignUp: () => void;
@@ -45,6 +47,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
   const [legalModalType, setLegalModalType] = useState<"privacy" | "terms">(
     "privacy"
   );
+  const { t } = useTranslation();
 
   // Functions to open Terms of Service and Privacy Policy
   const openTermsOfService = () => {
@@ -75,23 +78,23 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
 
   const validateForm = () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
-      Alert.alert("Error", "Please fill in all required fields");
+      Alert.alert(t("common.error"), t("auth.fill_all_required_fields"));
       return false;
     }
 
     if (!validateEmail(email)) {
-      Alert.alert("Error", "Please enter a valid email address");
+      Alert.alert(t("common.error"), t("auth.invalid_email"));
       return false;
     }
 
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
-      Alert.alert("Error", passwordValidation.message);
+      Alert.alert(t("common.error"), passwordValidation.message);
       return false;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
+      Alert.alert(t("common.error"), t("auth.passwords_do_not_match"));
       return false;
     }
 
@@ -109,9 +112,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
       onSignUp();
     } catch (error: any) {
       console.error("Sign up error:", error);
-      const errorMessage =
-        error.message || "An error occurred. Please try again.";
-      Alert.alert("Sign Up Failed", errorMessage);
+      const errorMessage = error.message || t("auth.signup_error");
+      Alert.alert(t("auth.signup_failed"), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +156,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               <View style={[styles.inputContainer, styles.halfWidth]}>
                 <TextInput
                   style={styles.input}
-                  placeholder="First Name"
+                  placeholder={t("auth.first_name")}
                   placeholderTextColor="#9ca3af"
                   value={firstName}
                   onChangeText={setFirstName}
@@ -171,7 +173,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 <TextInput
                   ref={lastNameRef}
                   style={styles.input}
-                  placeholder="Last Name"
+                  placeholder={t("auth.last_name")}
                   placeholderTextColor="#9ca3af"
                   value={lastName}
                   onChangeText={setLastName}
@@ -197,7 +199,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               <TextInput
                 ref={emailRef}
                 style={styles.input}
-                placeholder="Email"
+                placeholder={t("auth.email")}
                 placeholderTextColor="#9ca3af"
                 value={email}
                 onChangeText={setEmail}
@@ -223,7 +225,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               <TextInput
                 ref={passwordRef}
                 style={styles.input}
-                placeholder="Password"
+                placeholder={t("auth.password")}
                 placeholderTextColor="#9ca3af"
                 value={password}
                 onChangeText={setPassword}
@@ -259,7 +261,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               <TextInput
                 ref={confirmPasswordRef}
                 style={styles.input}
-                placeholder="Confirm Password"
+                placeholder={t("auth.confirm_password")}
                 placeholderTextColor="#9ca3af"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -327,9 +329,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                     } catch (error: any) {
                       console.error("Apple sign up error:", error);
                       const errorMessage =
-                        error.message ||
-                        "An error occurred with Apple Sign In. Please try again.";
-                      Alert.alert("Apple Sign In Failed", errorMessage);
+                        error.message || t("auth.apple_signin_error");
+                      Alert.alert(t("auth.apple_signin_failed"), errorMessage);
                     } finally {
                       setIsLoading(false);
                     }
@@ -384,8 +385,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
             </TouchableOpacity>
             <Text style={styles.modalTitle}>
               {legalModalType === "privacy"
-                ? "Privacy Policy"
-                : "Terms of Service"}
+                ? t("auth.privacy_policy")
+                : t("auth.terms_of_service")}
             </Text>
             <View style={styles.modalSpacer} />
           </View>

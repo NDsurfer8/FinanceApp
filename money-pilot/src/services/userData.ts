@@ -14,6 +14,13 @@ export interface UserProfile {
   updatedAt: number;
 }
 
+export interface BudgetCategory {
+  id: string;
+  name: string;
+  monthlyLimit: number;
+  color: string;
+}
+
 /**
  * Cleans data by removing undefined values before writing to Firebase
  * Firebase doesn't allow undefined values - they must be null or removed
@@ -3068,3 +3075,4 @@ export const updateBudgetStreak = async (
     throw error;
   }
 };
+

@@ -39,8 +39,8 @@ import {
 } from "../services/monthTransitionService";
 
 import { useTheme } from "../contexts/ThemeContext";
-import { useFriendlyMode } from "../contexts/FriendlyModeContext";
-import { translate } from "../services/translations";
+import { useTranslation } from "../hooks/useTranslation";
+import { LanguageAwareText } from "../components/LanguageAwareText";
 import { StandardHeader } from "../components/StandardHeader";
 import { CustomTrendChart } from "../components/CustomTrendChart";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
@@ -65,8 +65,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   } = useZeroLoading();
   const { goals, budgetSettings, refreshAssetsDebts } = useData();
   const { setupProgress, updateSetupProgress } = useSetup();
-  console.log("goals", goals);
-  console.log("budgetSettings", budgetSettings);
   const { isScrolling, handleScrollBegin, handleScrollEnd } =
     useScrollDetection();
 
@@ -94,14 +92,37 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     []
   );
   const { colors } = useTheme();
-  const { isFriendlyMode } = useFriendlyMode();
+  const { t } = useTranslation();
 
   // Generate personalized welcome message
   const getWelcomeMessage = () => {
-    const userName = user?.displayName || "User";
+    const userName = user?.displayName || t("common.user");
     return isNewUserState
-      ? `Welcome, ${userName}`
-      : `Welcome Back, ${userName}`;
+      ? t("dashboard.welcome_new", { name: userName })
+      : t("dashboard.welcome_back", { name: userName });
+  };
+
+  const getAvailableAmountModalContent = () => {
+    return `${t("dashboard.formula")}\n${t(
+      "dashboard.net_income_minus_savings",
+      { savingsPercent, debtPayoffPercent }
+    )}\n\n${t("dashboard.income_expenses")}\n${t(
+      "dashboard.gross_income"
+    )}     ${formatCurrency(monthlyIncome)}\n${t(
+      "dashboard.expenses"
+    )}         ${formatCurrency(
+      monthlyExpenses
+    )}\n─────────────────────────\n${t(
+      "dashboard.net_income"
+    )}       ${formatCurrency(netIncome)}\n\n${t("dashboard.allocations")}\n${t(
+      "dashboard.savings"
+    )}          ${formatCurrency(savingsAmount)}\n${t(
+      "dashboard.goal_contrib"
+    )}     ${formatCurrency(totalGoalContributions)}\n${t(
+      "dashboard.debt_payoff"
+    )}      ${formatCurrency(debtPayoffAmount)}\n─────────────────────────\n${t(
+      "dashboard.available"
+    )}        ${formatCurrency(availableAmount)}`;
   };
 
   const showInfoModalHandler = (
@@ -287,7 +308,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           id: "excellent-savings-rate",
           type: "success",
           icon: "trending-up",
-          title: "Excellent Discretionary Savings!",
+          title: t("dashboard.excellent_discretionary_savings"),
           message: `You have ${discretionarySavingsRate.toFixed(
             1
           )}% of your income available for additional savings`,
@@ -297,8 +318,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           id: "spending-more-than-income",
           type: "warning",
           icon: "alert-circle",
-          title: "Over Budget",
-          message: "Your expenses and allocations exceed your income",
+          title: t("dashboard.over_budget"),
+          message: t("dashboard.over_budget_message"),
         });
       }
     }
@@ -310,8 +331,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           id: "high-debt-ratio",
           type: "warning",
           icon: "card",
-          title: "High Debt Ratio",
-          message: `${debtToAssetRatio.toFixed(1)}% of assets are debt`,
+          title: t("dashboard.high_debt_ratio"),
+          message: t("dashboard.high_debt_ratio_message", {
+            ratio: debtToAssetRatio.toFixed(1),
+          }),
         });
       }
     }
@@ -321,8 +344,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         id: "active-month",
         type: "info",
         icon: "analytics",
-        title: "Active Month",
-        message: `${monthlyTransactions.length} transactions tracked`,
+        title: t("dashboard.active_month"),
+        message: t("dashboard.active_month_message", {
+          count: monthlyTransactions.length,
+        }),
       });
     }
 
@@ -332,30 +357,30 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         id: "emergency-fund-complete",
         type: "success",
         icon: "shield-checkmark",
-        title: "Emergency Fund Complete!",
-        message: `You have ${emergencyFundProgress.toFixed(
-          0
-        )}% of your 6-month target`,
+        title: t("dashboard.emergency_fund_complete"),
+        message: t("dashboard.emergency_fund_complete_message", {
+          progress: emergencyFundProgress.toFixed(0),
+        }),
       });
     } else if (emergencyFundProgress >= 50) {
       insights.push({
         id: "emergency-fund-progress",
         type: "info",
         icon: "shield",
-        title: "Emergency Fund Progress",
-        message: `${emergencyFundProgress.toFixed(
-          0
-        )}% of 6-month target ($${totalSavings.toLocaleString()})`,
+        title: t("dashboard.emergency_fund_progress"),
+        message: t("dashboard.emergency_fund_progress_message", {
+          progress: emergencyFundProgress.toFixed(0),
+        }),
       });
     } else if (emergencyFundProgress > 0) {
       insights.push({
         id: "build-emergency-fund",
         type: "warning",
         icon: "shield-outline",
-        title: "Build Emergency Fund",
-        message: `${emergencyFundProgress.toFixed(
-          0
-        )}% of 6-month target - keep saving!`,
+        title: t("dashboard.build_emergency_fund"),
+        message: t("dashboard.build_emergency_fund_message", {
+          progress: emergencyFundProgress.toFixed(0),
+        }),
       });
     }
 
@@ -370,30 +395,30 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           id: "high-recurring-commitments",
           type: "info",
           icon: "repeat",
-          title: "High Recurring Commitments",
-          message: `${recurringPercentage.toFixed(
-            0
-          )}% of your monthly finances are recurring - good predictability!`,
+          title: t("dashboard.high_recurring_commitments"),
+          message: t("dashboard.high_recurring_message", {
+            percentage: recurringPercentage.toFixed(0),
+          }),
         });
       } else if (recurringPercentage > 50) {
         insights.push({
           id: "moderate-recurring-commitments",
           type: "info",
           icon: "repeat",
-          title: "Moderate Recurring Commitments",
-          message: `${recurringPercentage.toFixed(
-            0
-          )}% of your monthly finances are recurring - balanced approach!`,
+          title: t("dashboard.moderate_recurring_commitments"),
+          message: t("dashboard.moderate_recurring_message", {
+            percentage: recurringPercentage.toFixed(0),
+          }),
         });
       } else if (recurringPercentage > 0) {
         insights.push({
           id: "low-recurring-commitments",
           type: "info",
           icon: "repeat",
-          title: "Low Recurring Commitments",
-          message: `${recurringPercentage.toFixed(
-            0
-          )}% of your monthly finances are recurring - flexible spending!`,
+          title: t("dashboard.low_recurring_commitments"),
+          message: t("dashboard.low_recurring_message", {
+            percentage: recurringPercentage.toFixed(0),
+          }),
         });
       }
     }
@@ -760,7 +785,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       >
         {/* Header */}
         <StandardHeader
-          title={translate("dashboard", isFriendlyMode)}
+          title={t("dashboard.title")}
           subtitle={getWelcomeMessage()}
           showBackButton={false}
           rightComponent={
@@ -1042,7 +1067,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   letterSpacing: -0.3,
                 }}
               >
-                Budget Snapshot
+                {t("dashboard.budget_snapshot")}
               </Text>
               <Text
                 style={{
@@ -1093,13 +1118,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       letterSpacing: 0.5,
                     }}
                   >
-                    {translate("income", isFriendlyMode)}
+                    {t("dashboard.monthly_income")}
                   </Text>
                   <TouchableOpacity
                     onPress={() => {
                       showInfoModalHandler(
-                        "Income Breakdown",
-                        "Income includes both actual transactions this month and recurring income (salary, rent, etc.) that automatically occurs each month.",
+                        t("dashboard.income_breakdown"),
+                        t("dashboard.income_breakdown_description"),
                         "trending-up",
                         colors.success
                       );
@@ -1172,13 +1197,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       letterSpacing: 0.5,
                     }}
                   >
-                    {translate("expenses", isFriendlyMode)}
+                    {t("dashboard.monthly_expenses")}
                   </Text>
                   <TouchableOpacity
                     onPress={() => {
                       showInfoModalHandler(
-                        "Expenses Breakdown",
-                        "Expenses include both actual transactions this month and recurring expenses (mortgage, utilities, etc.) that automatically occur each month.",
+                        t("dashboard.expenses_breakdown"),
+                        t("dashboard.expenses_breakdown_description"),
                         "trending-down",
                         colors.error
                       );
@@ -1255,27 +1280,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       letterSpacing: 0.5,
                     }}
                   >
-                    {translate("availableAmount", isFriendlyMode)}
+                    {t("dashboard.available_amount")}
                   </Text>
                   <TouchableOpacity
                     onPress={() => {
                       showInfoModalHandler(
-                        "Available Amount Calculation",
-                        `FORMULA\nNet Income - Savings (${savingsPercent}%) - Goal Contributions - Debt Payoff (${debtPayoffPercent}%)\n\nINCOME & EXPENSES\nGross Income:     ${formatCurrency(
-                          monthlyIncome
-                        )}\nExpenses:         ${formatCurrency(
-                          monthlyExpenses
-                        )}\n─────────────────────────\nNet Income:       ${formatCurrency(
-                          netIncome
-                        )}\n\nALLOCATIONS\nSavings:          ${formatCurrency(
-                          savingsAmount
-                        )}\nGoal Contrib:     ${formatCurrency(
-                          totalGoalContributions
-                        )}\nDebt Payoff:      ${formatCurrency(
-                          debtPayoffAmount
-                        )}\n─────────────────────────\nAvailable:        ${formatCurrency(
-                          availableAmount
-                        )}`,
+                        t("dashboard.available_amount_calculation"),
+                        getAvailableAmountModalContent(),
                         "calculator",
                         availableAmount >= 0 ? colors.warning : colors.error
                       );
@@ -1327,7 +1338,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               color: colors.text,
             }}
           >
-            Balance Sheet Snapshot
+            {t("dashboard.balance_sheet_snapshot")}
           </Text>
 
           <View style={{ alignItems: "center", marginBottom: 24 }}>
@@ -1342,7 +1353,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               {formatCurrency(netWorth)}
             </Text>
             <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-              {netWorth >= 0 ? "Positive net worth" : "Negative net worth"}
+              {netWorth >= 0
+                ? t("dashboard.positive_net_worth")
+                : t("dashboard.negative_net_worth")}
             </Text>
           </View>
 
@@ -1360,7 +1373,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   marginBottom: 4,
                 }}
               >
-                Total {translate("assets", isFriendlyMode)}
+                Total {t("dashboard.total_assets")}
               </Text>
               <Text
                 style={{
@@ -1380,7 +1393,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   marginBottom: 4,
                 }}
               >
-                Total {translate("liabilities", isFriendlyMode)}
+                Total {t("dashboard.total_liabilities")}
               </Text>
               <Text
                 style={{
@@ -1435,7 +1448,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   color: colors.text,
                 }}
               >
-                {translate("smartInsights", isFriendlyMode)}
+                {t("dashboard.smart_insights")}
               </Text>
             </View>
 
@@ -1506,8 +1519,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         {/* 6-Month Trend - Line Chart */}
         <HelpfulTooltip
           tooltipId="balance-sheet"
-          title="Your Net Worth"
-          description="This shows your total assets minus debts. Track how your net worth grows over time as you save and invest!"
+          title={t("dashboard.your_net_worth")}
+          description={t("dashboard.net_worth_description")}
           position="top"
           delay={2500}
         >
@@ -1532,7 +1545,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 color: colors.text,
               }}
             >
-              6-Month Trend (Last 6 Months)
+              {t("dashboard.six_month_trend")}
             </Text>
 
             <CustomTrendChart
@@ -1555,10 +1568,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   lineHeight: 16,
                 }}
               >
-                Chart shows the last 6 months ending with the current month.
-                Includes both actual transactions and recurring commitments.
-                Recurring amounts only appear for months after they were
-                created.
+                {t("dashboard.chart_description")}
               </Text>
             </View>
           </View>
