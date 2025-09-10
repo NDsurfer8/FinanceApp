@@ -735,7 +735,7 @@ ${user?.displayName || "VectorFi User"}`,
               <Text
                 style={[styles.contactText, { color: colors.textSecondary }]}
               >
-                Mon-Fri 9 AM - 6 PM EST
+                {t("help_support.business_hours")}
               </Text>
             </View>
             <View style={styles.contactItem}>
@@ -743,7 +743,7 @@ ${user?.displayName || "VectorFi User"}`,
               <Text
                 style={[styles.contactText, { color: colors.textSecondary }]}
               >
-                www.vectorfi.ai
+                {t("help_support.website")}
               </Text>
             </View>
           </View>
@@ -759,17 +759,17 @@ ${user?.displayName || "VectorFi User"}`,
           >
             <Ionicons name="warning" size={24} color="#f59e0b" />
             <Text style={[styles.emergencyTitle, { color: "#92400e" }]}>
-              Need Immediate Help?
+              {t("help_support.emergency_title")}
             </Text>
             <Text style={[styles.emergencyDescription, { color: "#92400e" }]}>
-              For urgent issues or account problems, contact us immediately.
+              {t("help_support.emergency_description")}
             </Text>
             <TouchableOpacity
               style={[styles.emergencyButton, { backgroundColor: "#f59e0b" }]}
               onPress={openSupportEmail}
             >
               <Text style={[styles.emergencyButtonText, { color: "#ffffff" }]}>
-                Contact Support Now
+                {t("help_support.contact_support_now")}
               </Text>
             </TouchableOpacity>
           </View>

@@ -30,6 +30,7 @@ import {
 } from "../services/settings";
 import { biometricAuthService } from "../services/biometricAuth";
 import { useTheme } from "../contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface PrivacySecurityScreenProps {
@@ -51,77 +52,77 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
-  const [settings, setSettings] = useState<SecuritySetting[]>([
-    {
-      id: "biometric-auth",
-      title: "Biometric Authentication",
-      description: "Use fingerprint or face ID to unlock the app",
-      icon: "finger-print",
-      type: "switch",
-      enabled: false,
-    },
-    {
-      id: "auto-lock",
-      title: "Auto-Lock",
-      description: "Automatically lock app after 5 minutes of inactivity",
-      icon: "lock-closed",
-      type: "switch",
-      enabled: true,
-    },
-    {
-      id: "data-encryption",
-      title: "Data Encryption",
-      description: "Encrypt all financial data on device",
-      icon: "shield-checkmark",
-      type: "switch",
-      enabled: true,
-    },
-    // {
-    //   id: "two-factor-auth",
-    //   title: "Two-Factor Authentication",
-    //   description: "Add an extra layer of security to your account",
-    //   icon: "key",
-    //   type: "button",
-    //   action: () => handleTwoFactorAuth(),
-    // },
-    {
-      id: "change-password",
-      title: "Change Password",
-      description: "Update your account password",
-      icon: "lock-open",
-      type: "button",
-      action: () => handleChangePassword(),
-    },
-    {
-      id: "login-history",
-      title: "Login History",
-      description: "View recent login activity",
-      icon: "time",
-      type: "button",
-      action: () => handleLoginHistory(),
-    },
-    {
-      id: "data-export",
-      title: "Export My Data",
-      description: "Download a copy of your financial data",
-      icon: "download",
-      type: "button",
-      action: () => handleDataExport(),
-    },
-    {
-      id: "delete-account",
-      title: "Delete Account",
-      description: "Permanently delete your account and all data",
-      icon: "trash",
-      type: "button",
-      action: () => handleDeleteAccount(),
-    },
-  ]);
+  const { t } = useTranslation();
+  const [settings, setSettings] = useState<SecuritySetting[]>([]);
 
   const [loading, setLoading] = useState(false);
 
+  // Initialize settings with translations
+  const initializeSettings = () => {
+    const defaultSettings: SecuritySetting[] = [
+      {
+        id: "biometric-auth",
+        title: t("privacy_security.biometric_authentication"),
+        description: t("privacy_security.biometric_authentication_description"),
+        icon: "finger-print",
+        type: "switch",
+        enabled: false,
+      },
+      {
+        id: "auto-lock",
+        title: t("privacy_security.auto_lock"),
+        description: t("privacy_security.auto_lock_description"),
+        icon: "lock-closed",
+        type: "switch",
+        enabled: true,
+      },
+      {
+        id: "data-encryption",
+        title: t("privacy_security.data_encryption"),
+        description: t("privacy_security.data_encryption_description"),
+        icon: "shield-checkmark",
+        type: "switch",
+        enabled: true,
+      },
+      {
+        id: "change-password",
+        title: t("privacy_security.change_password"),
+        description: t("privacy_security.change_password_description"),
+        icon: "lock-open",
+        type: "button",
+        action: () => handleChangePassword(),
+      },
+      {
+        id: "login-history",
+        title: t("privacy_security.login_history"),
+        description: t("privacy_security.login_history_description"),
+        icon: "time",
+        type: "button",
+        action: () => handleLoginHistory(),
+      },
+      {
+        id: "data-export",
+        title: t("privacy_security.export_my_data"),
+        description: t("privacy_security.export_my_data_description"),
+        icon: "download",
+        type: "button",
+        action: () => handleDataExport(),
+      },
+      {
+        id: "delete-account",
+        title: t("privacy_security.delete_account"),
+        description: t("privacy_security.delete_account_description"),
+        icon: "trash",
+        type: "button",
+        action: () => handleDeleteAccount(),
+      },
+    ];
+    setSettings(defaultSettings);
+  };
+
   // Load settings on component mount
   useEffect(() => {
+    initializeSettings();
     loadSettings();
   }, []);
 
@@ -170,9 +171,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             if (!isAvailable) {
               Alert.alert(
-                "Biometric Authentication Not Available",
-                "Your device doesn't support biometric authentication or it's not properly configured.",
-                [{ text: "OK" }]
+                t("privacy_security.biometric_not_available"),
+                t("privacy_security.biometric_not_available_message"),
+                [{ text: t("common.ok") }]
               );
               return;
             }
@@ -182,9 +183,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             if (!keysCreated) {
               Alert.alert(
-                "Setup Failed",
-                "Failed to set up biometric authentication. Please try again.",
-                [{ text: "OK" }]
+                t("privacy_security.setup_failed"),
+                t("privacy_security.setup_failed_message"),
+                [{ text: t("common.ok") }]
               );
               return;
             }
@@ -197,9 +198,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             if (!authResult.success) {
               Alert.alert(
-                "Authentication Failed",
-                "Biometric authentication failed. Please try again.",
-                [{ text: "OK" }]
+                t("privacy_security.authentication_failed"),
+                t("privacy_security.authentication_failed_message"),
+                [{ text: t("common.ok") }]
               );
               return;
             }
@@ -219,28 +220,30 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             await biometricAuthService.refreshStatus();
 
             Alert.alert(
-              "Biometric Authentication Enabled",
-              `${biometricAuthService.getBiometricTypeName()} has been enabled. You can now use biometric authentication to unlock the app.`,
-              [{ text: "OK" }]
+              t("privacy_security.biometric_enabled"),
+              t("privacy_security.biometric_enabled_message", {
+                type: biometricAuthService.getBiometricTypeName(),
+              }),
+              [{ text: t("common.ok") }]
             );
           } catch (error) {
             console.error("Error during biometric setup:", error);
             Alert.alert(
-              "Setup Error",
-              "An error occurred while setting up biometric authentication. Please try again.",
-              [{ text: "OK" }]
+              t("privacy_security.setup_error"),
+              t("privacy_security.setup_error_message"),
+              [{ text: t("common.ok") }]
             );
             return;
           }
         } else {
           // Disable biometric authentication
           Alert.alert(
-            "Disable Biometric Authentication",
-            "Are you sure you want to disable biometric authentication? You'll need to use your password to unlock the app.",
+            t("privacy_security.disable_biometric"),
+            t("privacy_security.disable_biometric_message"),
             [
-              { text: "Cancel", style: "cancel" },
+              { text: t("common.cancel"), style: "cancel" },
               {
-                text: "Disable",
+                text: t("privacy_security.disable"),
                 style: "destructive",
                 onPress: async () => {
                   await setBiometricAuthEnabled(false);
@@ -255,9 +258,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                   );
 
                   Alert.alert(
-                    "Biometric Authentication Disabled",
-                    "Biometric authentication has been disabled and keys have been removed.",
-                    [{ text: "OK" }]
+                    t("privacy_security.biometric_disabled"),
+                    t("privacy_security.biometric_disabled_message"),
+                    [{ text: t("common.ok") }]
                   );
                 },
               },
@@ -288,17 +291,20 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
         // Show confirmation for encryption toggle
         if (settingId === "data-encryption") {
           Alert.alert(
-            "Encryption Updated",
+            t("privacy_security.encryption_updated"),
             newEnabled
-              ? "Data encryption has been enabled. All new financial data will be encrypted."
-              : "Data encryption has been disabled. New data will not be encrypted.",
-            [{ text: "OK" }]
+              ? t("privacy_security.encryption_enabled_message")
+              : t("privacy_security.encryption_disabled_message"),
+            [{ text: t("common.ok") }]
           );
         }
       }
     } catch (error) {
       console.error("Error toggling setting:", error);
-      Alert.alert("Error", "Failed to update setting. Please try again.");
+      Alert.alert(
+        t("common.error"),
+        t("privacy_security.failed_to_update_setting")
+      );
     }
   };
 
@@ -312,28 +318,28 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
   const handleChangePassword = () => {
     Alert.prompt(
-      "Change Password",
-      "Enter your current password:",
+      t("privacy_security.change_password"),
+      t("privacy_security.enter_current_password"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Continue",
+          text: t("privacy_security.continue"),
           onPress: (currentPassword) => {
             if (currentPassword) {
               Alert.prompt(
-                "New Password",
-                "Enter your new password (minimum 6 characters):",
+                t("privacy_security.new_password"),
+                t("privacy_security.enter_new_password"),
                 [
-                  { text: "Cancel", style: "cancel" },
+                  { text: t("common.cancel"), style: "cancel" },
                   {
-                    text: "Update",
+                    text: t("privacy_security.update"),
                     onPress: (newPassword) => {
                       if (newPassword && newPassword.length >= 6) {
                         updateUserPassword(currentPassword, newPassword);
                       } else {
                         Alert.alert(
-                          "Error",
-                          "New password must be at least 6 characters long."
+                          t("common.error"),
+                          t("privacy_security.password_length_error")
                         );
                       }
                     },
@@ -363,14 +369,17 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
       );
       await reauthenticateWithCredential(user, credential);
       await updatePassword(user, newPassword);
-      Alert.alert("Success", "Password updated successfully!");
+      Alert.alert(
+        t("privacy_security.success"),
+        t("privacy_security.password_updated_successfully")
+      );
     } catch (error: any) {
       console.error("Error updating password:", error);
       Alert.alert(
-        "Error",
+        t("common.error"),
         error.code === "wrong-password"
-          ? "Current password is incorrect."
-          : "Failed to update password. Please try again."
+          ? t("privacy_security.current_password_incorrect")
+          : t("privacy_security.failed_to_update_password")
       );
     } finally {
       setLoading(false);
@@ -379,33 +388,33 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
   const handleLoginHistory = () => {
     Alert.alert(
-      "Login History",
-      `Last login: ${
+      t("privacy_security.login_history"),
+      `${t("privacy_security.last_login")}: ${
         user?.metadata?.lastSignInTime
           ? new Date(user.metadata.lastSignInTime).toLocaleString()
-          : "Unknown"
-      }\n\nAccount created: ${
+          : t("privacy_security.unknown")
+      }\n\n${t("privacy_security.account_created")}: ${
         user?.metadata?.creationTime
           ? new Date(user.metadata.creationTime).toLocaleString()
-          : "Unknown"
+          : t("privacy_security.unknown")
       }`,
-      [{ text: "OK" }]
+      [{ text: t("common.ok") }]
     );
   };
 
   const handleDataExport = () => {
     Alert.alert(
-      "Export Data",
-      "This feature will export all your financial data in a secure format. The export will be sent to your registered email address.",
+      t("privacy_security.export_data"),
+      t("privacy_security.export_data_message"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Export",
+          text: t("privacy_security.export"),
           onPress: () => {
             Alert.alert(
-              "Export Initiated",
-              "Your data export has been initiated. You will receive an email with your data within 24 hours.",
-              [{ text: "OK" }]
+              t("privacy_security.export_initiated"),
+              t("privacy_security.export_initiated_message"),
+              [{ text: t("common.ok") }]
             );
           },
         },
@@ -442,21 +451,24 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      "⚠️ PERMANENT ACCOUNT DELETION",
-      "This action CANNOT be undone. The following will be PERMANENTLY deleted:\n\n• All financial transactions\n• All bank account connections\n• All assets and debts\n• All financial goals\n• All budget settings\n• All shared finance groups\n• All AI chat history\n• All app settings and preferences\n• Your entire user profile\n\nThis data will be completely removed from our servers and cannot be recovered.",
+      t("privacy_security.permanent_account_deletion"),
+      t("privacy_security.permanent_account_deletion_message"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "I UNDERSTAND - DELETE EVERYTHING",
+          text: t("privacy_security.i_understand_delete_everything"),
           style: "destructive",
           onPress: () => {
             Alert.alert(
-              "🚨 FINAL WARNING - NO TURNING BACK",
-              "This is your LAST CHANCE to cancel. Once you proceed:\n\n✅ Your account will be PERMANENTLY deleted\n✅ ALL your financial data will be GONE FOREVER\n✅ You will lose access to ALL your information\n✅ This action CANNOT be reversed\n\nAre you absolutely certain you want to proceed?",
+              t("privacy_security.final_warning"),
+              t("privacy_security.final_warning_message"),
               [
-                { text: "CANCEL - Keep My Data", style: "cancel" },
                 {
-                  text: "YES - DELETE EVERYTHING NOW",
+                  text: t("privacy_security.cancel_keep_data"),
+                  style: "cancel",
+                },
+                {
+                  text: t("privacy_security.yes_delete_everything_now"),
                   style: "destructive",
                   onPress: () => confirmDeleteAccount(),
                 },
@@ -531,11 +543,11 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
         await deleteUser(user);
 
         Alert.alert(
-          "Account Deleted",
-          "Your account and all associated data have been permanently deleted.",
+          t("privacy_security.account_deleted"),
+          t("privacy_security.account_deleted_message"),
           [
             {
-              text: "OK",
+              text: t("common.ok"),
               onPress: () => {
                 // The user will be automatically logged out when the auth state changes
                 // due to the account being deleted
@@ -546,10 +558,10 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
       } catch (error: any) {
         console.error("Error deleting account:", error);
         Alert.alert(
-          "Error",
+          t("common.error"),
           error.code === "auth/requires-recent-login"
-            ? "Please sign out and sign back in, then try deleting your account again."
-            : "Failed to delete account. Please try again."
+            ? t("privacy_security.requires_recent_login")
+            : t("privacy_security.failed_to_delete_account")
         );
       } finally {
         setLoading(false);
@@ -557,12 +569,12 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
     } else {
       // For email/password users, require password verification
       Alert.prompt(
-        "Verify Password",
-        "Enter your password to confirm account deletion:",
+        t("privacy_security.verify_password"),
+        t("privacy_security.verify_password_message"),
         [
-          { text: "Cancel", style: "cancel" },
+          { text: t("common.cancel"), style: "cancel" },
           {
-            text: "Delete Account",
+            text: t("privacy_security.delete_account"),
             style: "destructive",
             onPress: async (password) => {
               if (password && user.email) {
@@ -586,11 +598,11 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                   await deleteUser(user);
 
                   Alert.alert(
-                    "Account Deleted",
-                    "Your account and all associated data have been permanently deleted.",
+                    t("privacy_security.account_deleted"),
+                    t("privacy_security.account_deleted_message"),
                     [
                       {
-                        text: "OK",
+                        text: t("common.ok"),
                         onPress: () => {
                           // The user will be automatically logged out when the auth state changes
                           // due to the account being deleted
@@ -601,10 +613,10 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                 } catch (error: any) {
                   console.error("Error deleting account:", error);
                   Alert.alert(
-                    "Error",
+                    t("common.error"),
                     error.code === "wrong-password"
-                      ? "Password is incorrect."
-                      : "Failed to delete account. Please try again."
+                      ? t("privacy_security.password_incorrect")
+                      : t("privacy_security.failed_to_delete_account")
                   );
                 } finally {
                   setLoading(false);
@@ -641,13 +653,13 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={[styles.title, { color: colors.text }]}>
-              Privacy & Security
+              {t("privacy_security.title")}
             </Text>
             <Text
               style={[styles.subtitle, { color: colors.textSecondary }]}
               numberOfLines={0}
             >
-              Manage your account security and data privacy
+              {t("privacy_security.subtitle")}
             </Text>
           </View>
         </View>
@@ -662,7 +674,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           <View style={styles.securityHeader}>
             <Ionicons name="shield-checkmark" size={24} color="#16a34a" />
             <Text style={[styles.securityTitle, { color: colors.text }]}>
-              Account Security
+              {t("privacy_security.account_security")}
             </Text>
           </View>
           <Text
@@ -672,32 +684,31 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             ]}
             numberOfLines={0}
           >
-            Your account is protected with industry-standard encryption and
-            security measures. Powered by Plaid • We never see your credentials.
+            {t("privacy_security.account_security_description")}
           </Text>
           <View style={styles.securityStats}>
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: "#16a34a" }]}>
-                Strong
+                {t("privacy_security.strong")}
               </Text>
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                Password
+                {t("privacy_security.password")}
               </Text>
             </View>
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: "#16a34a" }]}>
-                Enabled
+                {t("privacy_security.enabled")}
               </Text>
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                Encryption
+                {t("privacy_security.encryption")}
               </Text>
             </View>
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: "#16a34a" }]}>
-                Active
+                {t("privacy_security.active")}
               </Text>
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                Session
+                {t("privacy_security.session")}
               </Text>
             </View>
           </View>
@@ -706,7 +717,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
         {/* Security Settings */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Security Settings
+            {t("privacy_security.security_settings")}
           </Text>
 
           {settings.slice(0, 4).map((setting) => (
@@ -773,7 +784,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                         { color: colors.primary },
                       ]}
                     >
-                      {loading ? "Loading..." : "Manage"}
+                      {loading
+                        ? t("common.loading")
+                        : t("privacy_security.manage")}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -785,7 +798,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
         {/* Account Management */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Account Management
+            {t("privacy_security.account_management")}
           </Text>
 
           {settings.slice(4, 6).map((setting) => (
@@ -837,7 +850,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                   <Text
                     style={[styles.actionButtonText, { color: colors.primary }]}
                   >
-                    {loading ? "Loading..." : "Manage"}
+                    {loading
+                      ? t("common.loading")
+                      : t("privacy_security.manage")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -848,7 +863,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
         {/* Privacy & Legal */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Privacy & Legal
+            {t("privacy_security.privacy_legal")}
           </Text>
 
           <View
@@ -872,7 +887,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
               </View>
               <View style={styles.settingText}>
                 <Text style={[styles.settingTitle, { color: colors.text }]}>
-                  Privacy Policy
+                  {t("privacy_security.privacy_policy")}
                 </Text>
                 <Text
                   style={[
@@ -880,7 +895,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                     { color: colors.textSecondary },
                   ]}
                 >
-                  How we protect and use your data
+                  {t("privacy_security.privacy_policy_description")}
                 </Text>
               </View>
               <TouchableOpacity
@@ -897,7 +912,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                 <Text
                   style={[styles.actionButtonText, { color: colors.primary }]}
                 >
-                  View
+                  {t("privacy_security.view")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -920,7 +935,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
               </View>
               <View style={styles.settingText}>
                 <Text style={[styles.settingTitle, { color: colors.text }]}>
-                  Terms of Service
+                  {t("privacy_security.terms_of_service")}
                 </Text>
                 <Text
                   style={[
@@ -928,7 +943,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                     { color: colors.textSecondary },
                   ]}
                 >
-                  Our terms and conditions
+                  {t("privacy_security.terms_of_service_description")}
                 </Text>
               </View>
               <TouchableOpacity
@@ -945,7 +960,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                 <Text
                   style={[styles.actionButtonText, { color: colors.primary }]}
                 >
-                  View
+                  {t("privacy_security.view")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -955,7 +970,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
         {/* Danger Zone */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Danger Zone
+            {t("privacy_security.danger_zone")}
           </Text>
 
           <View
@@ -987,7 +1002,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                     { color: "#ef4444" },
                   ]}
                 >
-                  Delete Account
+                  {t("privacy_security.delete_account")}
                 </Text>
                 <Text
                   style={[
@@ -995,8 +1010,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                     { color: colors.textSecondary },
                   ]}
                 >
-                  ⚠️ Permanently delete your account and ALL data (transactions,
-                  goals, settings, everything)
+                  {t("privacy_security.delete_account_warning")}
                 </Text>
               </View>
             </View>
@@ -1010,7 +1024,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
               disabled={loading}
             >
               <Text style={[styles.deleteButtonText, { color: "#ef4444" }]}>
-                {loading ? "Loading..." : "Delete Account"}
+                {loading
+                  ? t("common.loading")
+                  : t("privacy_security.delete_account")}
               </Text>
             </TouchableOpacity>
           </View>
