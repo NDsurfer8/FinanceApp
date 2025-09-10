@@ -576,5 +576,13 @@
     },
     "delete": "Eliminar",
     "delete_custom_amount": "Eliminar Monto Personalizado"
+  },
+  "budget_overview": {
+    "title": "Resumen del Presupuesto",
+    "safe_to_spend": "Seguro para Gastar",
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "savings": "Ahorros ({{percentage}}%)",
+    "view_details": "Ver Detalles"
   }
 }

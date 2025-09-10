@@ -589,6 +589,14 @@
     "business": "Business",
     "other_expenses": "Other Expenses"
   },
+  "budget_overview": {
+    "title": "Budget Overview",
+    "safe_to_spend": "Safe to Spend",
+    "income": "Income",
+    "expenses": "Expenses",
+    "savings": "Savings ({{percentage}}%)",
+    "view_details": "View Details"
+  },
   "add_transaction": {
     "title": "Add Transaction",
     "edit_title": "Edit Transaction",

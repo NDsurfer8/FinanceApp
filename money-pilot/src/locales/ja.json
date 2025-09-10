@@ -585,5 +585,13 @@
     },
     "delete": "削除",
     "delete_custom_amount": "カスタム金額を削除"
+  },
+  "budget_overview": {
+    "title": "予算概要",
+    "safe_to_spend": "安全に支出可能",
+    "income": "収入",
+    "expenses": "支出",
+    "savings": "貯蓄 ({{percentage}}%)",
+    "view_details": "詳細を表示"
   }
 }

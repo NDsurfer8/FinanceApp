@@ -585,5 +585,13 @@
     },
     "delete": "Löschen",
     "delete_custom_amount": "Benutzerdefinierten Betrag Löschen"
+  },
+  "budget_overview": {
+    "title": "Budget-Übersicht",
+    "safe_to_spend": "Sicher zu Ausgeben",
+    "income": "Einkommen",
+    "expenses": "Ausgaben",
+    "savings": "Ersparnisse ({{percentage}}%)",
+    "view_details": "Details Anzeigen"
   }
 }

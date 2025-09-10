@@ -585,5 +585,13 @@
     },
     "delete": "हटाएं",
     "delete_custom_amount": "कस्टम राशि हटाएं"
+  },
+  "budget_overview": {
+    "title": "बजट अवलोकन",
+    "safe_to_spend": "खर्च करने के लिए सुरक्षित",
+    "income": "आय",
+    "expenses": "व्यय",
+    "savings": "बचत ({{percentage}}%)",
+    "view_details": "विवरण देखें"
   }
 }

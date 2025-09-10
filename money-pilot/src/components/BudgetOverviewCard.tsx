@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
+import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface BudgetOverviewCardProps {
@@ -46,6 +47,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
 
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
+  const { t } = useTranslation();
 
   // Animation and state for glow effects
   const [showSettingsGlow, setShowSettingsGlow] = useState(false);
@@ -213,7 +215,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
               color: colors.text,
             }}
           >
-            {translate("budget", isFriendlyMode)} Overview
+            {t("budget_overview.title")}
           </Text>
         </View>
 
@@ -284,7 +286,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
               marginBottom: 4,
             }}
           >
-            Safe to Spend
+            {t("budget_overview.safe_to_spend")}
           </Text>
           <Text
             style={{
@@ -383,7 +385,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
                   marginTop: 2,
                 }}
               >
-                Income
+                {t("budget_overview.income")}
               </Text>
             </View>
           </TouchableOpacity>
@@ -449,7 +451,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
                   marginTop: 2,
                 }}
               >
-                Expenses
+                {t("budget_overview.expenses")}
               </Text>
             </View>
           </TouchableOpacity>
@@ -473,7 +475,9 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
               fontWeight: "500",
             }}
           >
-            Savings ({safeSavingsPercentage}%)
+            {t("budget_overview.savings", {
+              percentage: safeSavingsPercentage,
+            })}
           </Text>
           <Text
             style={{
@@ -543,7 +547,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
               fontWeight: "600",
             }}
           >
-            View Details
+            {t("budget_overview.view_details")}
           </Text>
         </TouchableOpacity>
 

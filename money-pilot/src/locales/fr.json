@@ -585,5 +585,13 @@
     },
     "delete": "Supprimer",
     "delete_custom_amount": "Supprimer Montant Personnalisé"
+  },
+  "budget_overview": {
+    "title": "Aperçu du Budget",
+    "safe_to_spend": "Sûr de Dépenser",
+    "income": "Revenus",
+    "expenses": "Dépenses",
+    "savings": "Épargne ({{percentage}}%)",
+    "view_details": "Voir les Détails"
   }
 }

@@ -585,5 +585,13 @@
     },
     "delete": "Excluir",
     "delete_custom_amount": "Excluir Valor Personalizado"
+  },
+  "budget_overview": {
+    "title": "Visão Geral do Orçamento",
+    "safe_to_spend": "Seguro para Gastar",
+    "income": "Receitas",
+    "expenses": "Despesas",
+    "savings": "Poupanças ({{percentage}}%)",
+    "view_details": "Ver Detalhes"
   }
 }

@@ -585,5 +585,13 @@
     },
     "delete": "Удалить",
     "delete_custom_amount": "Удалить Пользовательскую Сумму"
+  },
+  "budget_overview": {
+    "title": "Обзор Бюджета",
+    "safe_to_spend": "Безопасно Тратить",
+    "income": "Доходы",
+    "expenses": "Расходы",
+    "savings": "Сбережения ({{percentage}}%)",
+    "view_details": "Просмотр Деталей"
   }
 }

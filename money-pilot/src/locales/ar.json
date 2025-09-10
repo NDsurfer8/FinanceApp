@@ -585,5 +585,13 @@
     },
     "delete": "حذف",
     "delete_custom_amount": "حذف المبلغ المخصص"
+  },
+  "budget_overview": {
+    "title": "نظرة عامة على الميزانية",
+    "safe_to_spend": "آمن للإنفاق",
+    "income": "الدخل",
+    "expenses": "المصروفات",
+    "savings": "الادخار ({{percentage}}%)",
+    "view_details": "عرض التفاصيل"
   }
 }
