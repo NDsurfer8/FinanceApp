@@ -65,7 +65,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const { t } = useTranslation();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, getCurrencySymbol } = useCurrency();
   const { transactions, updateDataOptimistically } = useZeroLoading();
   const { refreshRecurringTransactions, refreshTransactions } = useData();
   const [loading, setLoading] = useState(false);
@@ -1186,7 +1186,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                       fontWeight: "700",
                     }}
                   >
-                    $
+                    {getCurrencySymbol()}
                     {formatNumberWithCommas(monthlyEquivalentAmount.toFixed(2))}
                   </Text>
                   <Text
