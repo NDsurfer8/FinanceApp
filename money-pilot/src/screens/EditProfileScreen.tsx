@@ -19,6 +19,7 @@ import { updateProfile } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../services/firebase";
 import { useUser } from "../context/UserContext";
+import { useTranslation } from "react-i18next";
 
 interface EditProfileScreenProps {
   navigation: any;
@@ -30,6 +31,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
   const { user } = useAuth();
   const { colors } = useTheme();
   const { forceRefresh, updateUserImmediately } = useUser();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [photoURL, setPhotoURL] = useState(user?.photoURL || "");
@@ -43,8 +45,8 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
-          "Permission Required",
-          "Sorry, we need camera roll permissions to upload a profile photo."
+          t("edit_profile.permission_required"),
+          t("edit_profile.camera_roll_permission")
         );
         return;
       }
@@ -62,7 +64,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to pick image. Please try again.");
+      Alert.alert(t("common.error"), t("edit_profile.error_picking_image"));
     }
   };
 
@@ -72,8 +74,8 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
-          "Permission Required",
-          "Sorry, we need camera permissions to take a photo."
+          t("edit_profile.permission_required"),
+          t("edit_profile.camera_permission")
         );
         return;
       }
@@ -90,7 +92,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
       }
     } catch (error) {
       console.error("Error taking photo:", error);
-      Alert.alert("Error", "Failed to take photo. Please try again.");
+      Alert.alert(t("common.error"), t("edit_profile.error_taking_photo"));
     }
   };
 
@@ -164,11 +166,11 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
 
           // Ask user if they want to continue without the photo
           Alert.alert(
-            "Photo Upload Failed",
-            "The photo couldn't be uploaded. Would you like to save your profile without the photo?",
+            t("edit_profile.photo_upload_failed"),
+            t("edit_profile.photo_upload_failed_message"),
             [
               {
-                text: "Save Without Photo",
+                text: t("edit_profile.save_without_photo"),
                 onPress: async () => {
                   try {
                     await updateProfile(user, {
@@ -177,7 +179,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
                     });
                     Alert.alert(
                       t("common.success"),
-                      "Profile updated successfully!",
+                      t("edit_profile.profile_updated_successfully"),
                       [
                         {
                           text: t("common.ok"),
@@ -187,14 +189,17 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
                     );
                   } catch (profileError) {
                     console.error("Profile update failed:", profileError);
-                    Alert.alert("Error", "Failed to update profile name.");
+                    Alert.alert(
+                      t("common.error"),
+                      t("edit_profile.failed_to_update_profile_name")
+                    );
                   } finally {
                     setLoading(false);
                   }
                 },
               },
               {
-                text: "Cancel",
+                text: t("common.cancel"),
                 style: "cancel",
                 onPress: () => setLoading(false),
               },
@@ -229,17 +234,21 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
       await forceRefresh();
       // User data refresh completed
 
-      Alert.alert(t("common.success"), "Profile updated successfully!", [
-        {
-          text: t("common.ok"),
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      Alert.alert(
+        t("common.success"),
+        t("edit_profile.profile_updated_successfully"),
+        [
+          {
+            text: t("common.ok"),
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
     } catch (error: any) {
       console.error("Error updating profile:", error);
 
       // Show more specific error messages
-      let errorMessage = "Failed to update profile. Please try again.";
+      let errorMessage = t("edit_profile.failed_to_update_profile");
 
       if (error.message) {
         if (error.message.includes("Upload failed:")) {
@@ -251,35 +260,39 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
         }
       }
 
-      Alert.alert("Error", errorMessage);
+      Alert.alert(t("common.error"), errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const showPhotoOptions = () => {
-    Alert.alert("Profile Photo", "Choose an option", [
-      {
-        text: "Take Photo",
-        onPress: takePhoto,
-      },
-      {
-        text: "Choose from Library",
-        onPress: pickImage,
-      },
-      {
-        text: "Remove Photo",
-        onPress: () => {
-          setTempPhotoURL(null);
-          setPhotoURL("");
+    Alert.alert(
+      t("edit_profile.profile_photo_options"),
+      t("edit_profile.choose_option"),
+      [
+        {
+          text: t("edit_profile.take_photo"),
+          onPress: takePhoto,
         },
-        style: "destructive",
-      },
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-    ]);
+        {
+          text: t("edit_profile.choose_from_library"),
+          onPress: pickImage,
+        },
+        {
+          text: t("edit_profile.remove_photo"),
+          onPress: () => {
+            setTempPhotoURL(null);
+            setPhotoURL("");
+          },
+          style: "destructive",
+        },
+        {
+          text: t("common.cancel"),
+          style: "cancel",
+        },
+      ]
+    );
   };
 
   return (
@@ -319,7 +332,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
                 letterSpacing: -0.3,
               }}
             >
-              Edit Profile
+              {t("edit_profile.title")}
             </Text>
             <Text
               style={{
@@ -329,7 +342,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
                 fontWeight: "400",
               }}
             >
-              Update your profile information
+              {t("edit_profile.subtitle")}
             </Text>
           </View>
         </View>
@@ -353,7 +366,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
               marginBottom: 20,
             }}
           >
-            Profile Photo
+            {t("edit_profile.profile_photo")}
           </Text>
 
           <View style={{ alignItems: "center" }}>
@@ -397,7 +410,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
               }}
             >
               <Text style={{ color: colors.primary, fontWeight: "600" }}>
-                Change Photo
+                {t("edit_profile.change_photo")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -414,7 +427,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
               marginBottom: 8,
             }}
           >
-            Display Name
+            {t("edit_profile.display_name")}
           </Text>
           <TextInput
             style={{
@@ -428,7 +441,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
             }}
             value={displayName}
             onChangeText={setDisplayName}
-            placeholder="Enter your display name"
+            placeholder={t("edit_profile.display_name_placeholder")}
             placeholderTextColor={colors.textSecondary}
           />
         </View>
@@ -443,7 +456,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
               marginBottom: 8,
             }}
           >
-            Email Address
+            {t("edit_profile.email_address")}
           </Text>
           <View
             style={{
@@ -465,7 +478,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
               marginTop: 4,
             }}
           >
-            Email cannot be changed from this screen
+            {t("edit_profile.email_cannot_be_changed")}
           </Text>
         </View>
 
@@ -479,7 +492,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
               marginBottom: 8,
             }}
           >
-            Account Information
+            {t("edit_profile.account_information")}
           </Text>
           <View
             style={{
@@ -499,7 +512,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
               }}
             >
               <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                Member Since
+                {t("edit_profile.member_since")}
               </Text>
               <Text
                 style={{ fontSize: 14, fontWeight: "600", color: colors.text }}
@@ -513,7 +526,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
                         day: "numeric",
                       }
                     )
-                  : "Recently"}
+                  : t("edit_profile.recently")}
               </Text>
             </View>
             <View
@@ -524,7 +537,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
               }}
             >
               <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                Email Verified
+                {t("edit_profile.email_verified")}
               </Text>
               <View
                 style={{
@@ -543,7 +556,9 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
                     color: user?.emailVerified ? colors.success : colors.error,
                   }}
                 >
-                  {user?.emailVerified ? "Verified" : "Not Verified"}
+                  {user?.emailVerified
+                    ? t("edit_profile.verified")
+                    : t("edit_profile.not_verified")}
                 </Text>
               </View>
             </View>
@@ -578,7 +593,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
                 fontWeight: "600",
               }}
             >
-              Save Changes
+              {t("edit_profile.save_changes")}
             </Text>
           </TouchableOpacity>
         </View>
