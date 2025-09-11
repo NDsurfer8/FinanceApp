@@ -1050,5 +1050,29 @@
     "investment_account_values_sync": "Les valeurs des comptes d'investissement sont automatiquement synchronisées depuis votre banque",
     "error_loading_bank_transactions": "Erreur lors du chargement des transactions bancaires",
     "available": "Disponible"
+  },
+  "auto_budget_importer": {
+    "no_bank_connected": "Aucune Banque Connectée",
+    "connect_bank_description": "Connectez votre compte bancaire pour importer automatiquement les transactions dans votre budget.",
+    "close": "Fermer",
+    "importing_transactions": "Importation des Transactions...",
+    "saving": "Sauvegarde:",
+    "import": "Importer",
+    "current_month": "Mois Actuel",
+    "smart_import_summary": "Résumé d'Importation Intelligente",
+    "select_all": "Tout Sélectionner",
+    "deselect_all": "Tout Désélectionner",
+    "no_current_month_transactions": "Aucune Transaction du Mois Actuel",
+    "no_transactions_description": "Il n'y a pas de transactions bancaires du mois actuel à importer. Revenez quand vous aurez de nouvelles transactions !",
+    "income": "Revenus",
+    "expense": "Dépenses",
+    "saving_transactions": "Sauvegarde...",
+    "save_transactions": "Sauvegarder {{count}} Transaction",
+    "save_transactions_plural": "Sauvegarder {{count}} Transactions",
+    "import_failed": "Échec de l'Importation",
+    "import_failed_description": "Échec de l'importation des transactions. Cela pourrait être dû à :\n\n• Problèmes de connexion temporaires\n• Problèmes d'authentification\n• Maintenance du serveur\n\nVeuillez réessayer dans quelques instants.",
+    "error_saving_transactions": "Erreur",
+    "error_saving_description": "Échec de la sauvegarde des transactions. Veuillez vérifier votre connexion et réessayer.",
+    "s_remaining": "s restantes"
   }
 }

@@ -1050,5 +1050,29 @@
     "investment_account_values_sync": "निवेश खाते के मूल्य आपके बैंक से स्वचालित रूप से सिंक होते हैं",
     "error_loading_bank_transactions": "बैंक लेनदेन लोड करने में त्रुटि",
     "available": "उपलब्ध"
+  },
+  "auto_budget_importer": {
+    "no_bank_connected": "कोई बैंक जुड़ा नहीं",
+    "connect_bank_description": "अपने बैंक खाते को जोड़ें ताकि लेनदेन को अपने बजट में स्वचालित रूप से आयात किया जा सके।",
+    "close": "बंद करें",
+    "importing_transactions": "लेनदेन आयात कर रहे हैं...",
+    "saving": "सहेज रहे हैं:",
+    "import": "आयात करें",
+    "current_month": "वर्तमान महीना",
+    "smart_import_summary": "स्मार्ट आयात सारांश",
+    "select_all": "सभी चुनें",
+    "deselect_all": "सभी अचयनित करें",
+    "no_current_month_transactions": "वर्तमान महीने के कोई लेनदेन नहीं",
+    "no_transactions_description": "वर्तमान महीने के लिए कोई बैंक लेनदेन नहीं है। जब आपके पास नए लेनदेन हों तो वापस आएं!",
+    "income": "आय",
+    "expense": "व्यय",
+    "saving_transactions": "सहेज रहे हैं...",
+    "save_transactions": "{{count}} लेनदेन सहेजें",
+    "save_transactions_plural": "{{count}} लेनदेन सहेजें",
+    "import_failed": "आयात विफल",
+    "import_failed_description": "किसी भी लेनदेन को आयात करने में विफल। यह निम्न कारणों से हो सकता है:\n\n• अस्थायी कनेक्शन समस्याएं\n• प्रमाणीकरण समस्याएं\n• सर्वर रखरखाव\n\nकृपया कुछ क्षणों में पुनः प्रयास करें।",
+    "error_saving_transactions": "त्रुटि",
+    "error_saving_description": "लेनदेन सहेजने में विफल। कृपया अपना कनेक्शन जांचें और पुनः प्रयास करें।",
+    "s_remaining": "सेकंड शेष"
   }
 }

@@ -1050,5 +1050,29 @@
     "investment_account_values_sync": "投资账户价值会自动从您的银行同步",
     "error_loading_bank_transactions": "加载银行交易时出错",
     "available": "可用"
+  },
+  "auto_budget_importer": {
+    "no_bank_connected": "未连接银行",
+    "connect_bank_description": "连接您的银行账户以自动将交易导入到您的预算中。",
+    "close": "关闭",
+    "importing_transactions": "正在导入交易...",
+    "saving": "保存中:",
+    "import": "导入",
+    "current_month": "当前月份",
+    "smart_import_summary": "智能导入摘要",
+    "select_all": "全选",
+    "deselect_all": "取消全选",
+    "no_current_month_transactions": "无当前月份交易",
+    "no_transactions_description": "没有当前月份的银行交易可导入。当您有新交易时请回来查看！",
+    "income": "收入",
+    "expense": "支出",
+    "saving_transactions": "保存中...",
+    "save_transactions": "保存 {{count}} 笔交易",
+    "save_transactions_plural": "保存 {{count}} 笔交易",
+    "import_failed": "导入失败",
+    "import_failed_description": "导入交易失败。这可能是由于：\n\n• 临时连接问题\n• 身份验证问题\n• 服务器维护\n\n请稍后再试。",
+    "error_saving_transactions": "错误",
+    "error_saving_description": "保存交易失败。请检查您的连接并重试。",
+    "s_remaining": "秒剩余"
   }
 }

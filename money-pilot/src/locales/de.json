@@ -1050,5 +1050,29 @@
     "investment_account_values_sync": "Anlagekontenwerte werden automatisch von Ihrer Bank synchronisiert",
     "error_loading_bank_transactions": "Fehler beim Laden der Banktransaktionen",
     "available": "Verfügbar"
+  },
+  "auto_budget_importer": {
+    "no_bank_connected": "Keine Bank Verbunden",
+    "connect_bank_description": "Verbinden Sie Ihr Bankkonto, um Transaktionen automatisch in Ihr Budget zu importieren.",
+    "close": "Schließen",
+    "importing_transactions": "Transaktionen werden importiert...",
+    "saving": "Speichern:",
+    "import": "Importieren",
+    "current_month": "Aktueller Monat",
+    "smart_import_summary": "Intelligenter Import-Zusammenfassung",
+    "select_all": "Alle Auswählen",
+    "deselect_all": "Alle Abwählen",
+    "no_current_month_transactions": "Keine Transaktionen des Aktuellen Monats",
+    "no_transactions_description": "Es gibt keine Banktransaktionen für den aktuellen Monat zum Importieren. Schauen Sie später vorbei, wenn Sie neue Transaktionen haben!",
+    "income": "Einkommen",
+    "expense": "Ausgaben",
+    "saving_transactions": "Speichern...",
+    "save_transactions": "{{count}} Transaktion Speichern",
+    "save_transactions_plural": "{{count}} Transaktionen Speichern",
+    "import_failed": "Import Fehlgeschlagen",
+    "import_failed_description": "Fehler beim Importieren von Transaktionen. Dies könnte folgende Ursachen haben:\n\n• Temporäre Verbindungsprobleme\n• Authentifizierungsprobleme\n• Serverwartung\n\nBitte versuchen Sie es in wenigen Momenten erneut.",
+    "error_saving_transactions": "Fehler",
+    "error_saving_description": "Fehler beim Speichern der Transaktionen. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "s_remaining": "s verbleibend"
   }
 }

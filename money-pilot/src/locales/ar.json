@@ -1050,5 +1050,29 @@
     "investment_account_values_sync": "قيم حسابات الاستثمار تتم مزامنتها تلقائياً من بنكك",
     "error_loading_bank_transactions": "خطأ في تحميل المعاملات المصرفية",
     "available": "متاح"
+  },
+  "auto_budget_importer": {
+    "no_bank_connected": "لا يوجد بنك متصل",
+    "connect_bank_description": "قم بتوصيل حسابك المصرفي لاستيراد المعاملات تلقائياً إلى ميزانيتك.",
+    "close": "إغلاق",
+    "importing_transactions": "جاري استيراد المعاملات...",
+    "saving": "جاري الحفظ:",
+    "import": "استيراد",
+    "current_month": "الشهر الحالي",
+    "smart_import_summary": "ملخص الاستيراد الذكي",
+    "select_all": "تحديد الكل",
+    "deselect_all": "إلغاء تحديد الكل",
+    "no_current_month_transactions": "لا توجد معاملات للشهر الحالي",
+    "no_transactions_description": "لا توجد معاملات مصرفية للشهر الحالي للاستيراد. عد عندما يكون لديك معاملات جديدة!",
+    "income": "الدخل",
+    "expense": "المصروفات",
+    "saving_transactions": "جاري الحفظ...",
+    "save_transactions": "حفظ {{count}} معاملة",
+    "save_transactions_plural": "حفظ {{count}} معاملة",
+    "import_failed": "فشل الاستيراد",
+    "import_failed_description": "فشل في استيراد أي معاملات. قد يكون هذا بسبب:\n\n• مشاكل اتصال مؤقتة\n• مشاكل في المصادقة\n• صيانة الخادم\n\nيرجى المحاولة مرة أخرى خلال لحظات.",
+    "error_saving_transactions": "خطأ",
+    "error_saving_description": "فشل في حفظ المعاملات. يرجى التحقق من اتصالك والمحاولة مرة أخرى.",
+    "s_remaining": "ثانية متبقية"
   }
 }

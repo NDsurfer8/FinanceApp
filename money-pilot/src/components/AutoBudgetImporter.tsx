@@ -497,11 +497,11 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         // All failed
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         Alert.alert(
-          "Import Failed",
-          `Failed to import any transactions. This might be due to:\n\n• Temporary connection issues\n• Authentication problems\n• Server maintenance\n\nPlease try again in a few moments.`,
+          t("auto_budget_importer.import_failed"),
+          t("auto_budget_importer.import_failed_description"),
           [
             {
-              text: "OK",
+              text: t("common.ok"),
               onPress: () => onClose(),
             },
           ]
@@ -510,8 +510,8 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
     } catch (error) {
       console.error("Error saving transactions:", error);
       Alert.alert(
-        "Error",
-        "Failed to save transactions. Please check your connection and try again."
+        t("auto_budget_importer.error_saving_transactions"),
+        t("auto_budget_importer.error_saving_description")
       );
     } finally {
       setIsSaving(false);
@@ -577,7 +577,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                   textAlign: "center",
                 }}
               >
-                No Bank Connected
+                {t("auto_budget_importer.no_bank_connected")}
               </Text>
               <Text
                 style={{
@@ -587,8 +587,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                   lineHeight: 20,
                 }}
               >
-                Connect your bank account to automatically import transactions
-                into your budget.
+                {t("auto_budget_importer.connect_bank_description")}
               </Text>
             </View>
             <TouchableOpacity
@@ -607,7 +606,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                   fontSize: 16,
                 }}
               >
-                Close
+                {t("auto_budget_importer.close")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -663,7 +662,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                   textAlign: "center",
                 }}
               >
-                Importing Transactions...
+                {t("auto_budget_importer.importing_transactions")}
               </Text>
               <Text
                 style={{
@@ -683,7 +682,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                         (saveProgress.total - saveProgress.current)) /
                         1000
                     )}
-                    s remaining
+                    {t("auto_budget_importer.s_remaining")}
                   </Text>
                 )}
               </Text>
@@ -698,7 +697,8 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                   }}
                   numberOfLines={2}
                 >
-                  Saving: {saveProgress.currentTransaction}
+                  {t("auto_budget_importer.saving")}{" "}
+                  {saveProgress.currentTransaction}
                 </Text>
               )}
               <View
@@ -747,8 +747,10 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
               color: colors.text,
             }}
           >
-            Import{" "}
-            {selectedMonth ? formatMonth(selectedMonth) : "Current Month"}
+            {t("auto_budget_importer.import")}{" "}
+            {selectedMonth
+              ? formatMonth(selectedMonth)
+              : t("auto_budget_importer.current_month")}
           </Text>
           <View style={{ width: 40 }} />
         </View>
@@ -770,7 +772,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
               marginBottom: 8,
             }}
           >
-            Smart Import Summary
+            {t("auto_budget_importer.smart_import_summary")}
           </Text>
           <Text
             style={{
@@ -801,7 +803,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                   fontWeight: "600",
                 }}
               >
-                Select All
+                {t("auto_budget_importer.select_all")}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -824,7 +826,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                   fontWeight: "600",
                 }}
               >
-                Deselect All
+                {t("auto_budget_importer.deselect_all")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -856,7 +858,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                   textAlign: "center",
                 }}
               >
-                No Current Month Transactions
+                {t("auto_budget_importer.no_current_month_transactions")}
               </Text>
               <Text
                 style={{
@@ -865,8 +867,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                   lineHeight: 20,
                 }}
               >
-                There are no bank transactions for the current month to import.
-                Check back when you have new transactions!
+                {t("auto_budget_importer.no_transactions_description")}
               </Text>
             </View>
           ) : (
@@ -935,7 +936,9 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                               : colors.error,
                         }}
                       >
-                        {transaction.type === "income" ? "Income" : "Expense"}
+                        {transaction.type === "income"
+                          ? t("auto_budget_importer.income")
+                          : t("auto_budget_importer.expense")}
                       </Text>
                     </View>
                   </View>
@@ -1019,10 +1022,14 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
               }}
             >
               {isSaving
-                ? "Saving..."
-                : `Save ${selectedCount} Transaction${
-                    selectedCount !== 1 ? "s" : ""
-                  }`}
+                ? t("auto_budget_importer.saving_transactions")
+                : selectedCount === 1
+                ? t("auto_budget_importer.save_transactions", {
+                    count: selectedCount,
+                  })
+                : t("auto_budget_importer.save_transactions_plural", {
+                    count: selectedCount,
+                  })}
             </Text>
           </TouchableOpacity>
         </View>

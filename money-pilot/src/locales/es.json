@@ -1050,5 +1050,29 @@
     "investment_account_values_sync": "Los valores de las cuentas de inversión se sincronizan automáticamente desde tu banco",
     "error_loading_bank_transactions": "Error al cargar transacciones bancarias",
     "available": "Disponible"
+  },
+  "auto_budget_importer": {
+    "no_bank_connected": "Ningún Banco Conectado",
+    "connect_bank_description": "Conecta tu cuenta bancaria para importar automáticamente transacciones a tu presupuesto.",
+    "close": "Cerrar",
+    "importing_transactions": "Importando Transacciones...",
+    "saving": "Guardando:",
+    "import": "Importar",
+    "current_month": "Mes Actual",
+    "smart_import_summary": "Resumen de Importación Inteligente",
+    "select_all": "Seleccionar Todo",
+    "deselect_all": "Deseleccionar Todo",
+    "no_current_month_transactions": "Sin Transacciones del Mes Actual",
+    "no_transactions_description": "No hay transacciones bancarias del mes actual para importar. ¡Vuelve a revisar cuando tengas nuevas transacciones!",
+    "income": "Ingresos",
+    "expense": "Gastos",
+    "saving_transactions": "Guardando...",
+    "save_transactions": "Guardar {{count}} Transacción",
+    "save_transactions_plural": "Guardar {{count}} Transacciones",
+    "import_failed": "Importación Fallida",
+    "import_failed_description": "No se pudieron importar transacciones. Esto podría deberse a:\n\n• Problemas de conexión temporales\n• Problemas de autenticación\n• Mantenimiento del servidor\n\nPor favor, inténtalo de nuevo en unos momentos.",
+    "error_saving_transactions": "Error",
+    "error_saving_description": "Error al guardar transacciones. Por favor, verifica tu conexión e inténtalo de nuevo.",
+    "s_remaining": "s restantes"
   }
 }
