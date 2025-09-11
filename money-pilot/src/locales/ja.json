@@ -1071,7 +1071,12 @@
     "current_value": "現在の価値",
     "investment_account_values_sync": "投資口座の価値は銀行から自動的に同期されます",
     "error_loading_bank_transactions": "銀行取引の読み込みエラー",
-    "available": "利用可能"
+    "available": "利用可能",
+    "filter_by_bank": "銀行でフィルター",
+    "showing": "表示中",
+    "showing_all_banks": "すべての銀行を表示",
+    "filter": "フィルター",
+    "all_banks": "すべての銀行"
   },
   "auto_budget_importer": {
     "no_bank_connected": "銀行未接続",

@@ -20,6 +20,13 @@ import { plaidService } from "../services/plaid";
 import { plaidAssetDebtImporter } from "../services/plaidAssetDebtImporter";
 import { useTranslation } from "react-i18next";
 import { useCurrency } from "../contexts/CurrencyContext";
+import {
+  detectBankCurrency,
+  getBankCurrencyInfo,
+  formatBankAmount,
+  getUniqueBankCurrencies,
+  groupAccountsByCurrency,
+} from "../utils/bankCurrency";
 
 interface BankTransactionsScreenProps {
   navigation: any;
@@ -48,7 +55,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     const { user } = useAuth();
     const { colors } = useTheme();
     const { t } = useTranslation();
-  const { formatCurrency } = useCurrency();
+    const { formatCurrency } = useCurrency();
     const dataContext = useData();
     const {
       bankAccounts,
@@ -66,8 +73,114 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     const [isImporting, setIsImporting] = useState(false);
     const [dataRefreshKey, setDataRefreshKey] = useState(0);
 
+    // Bank account filtering state
+    const [selectedBankFilter, setSelectedBankFilter] = useState<string | null>(
+      null
+    );
+    const [showBankFilter, setShowBankFilter] = useState(false);
+
     // Use global state directly
     const displayBankAccounts = bankAccounts || [];
+
+    // Currency detection
+    const uniqueCurrencies = getUniqueBankCurrencies(displayBankAccounts);
+    const accountsByCurrency = groupAccountsByCurrency(displayBankAccounts);
+
+    // Bank filtering logic
+    const getUniqueBanks = () => {
+      const banks = new Set<string>();
+      displayBankAccounts.forEach((account: any) => {
+        if (account.institution) {
+          banks.add(account.institution);
+        }
+      });
+      const uniqueBanks = Array.from(banks);
+      console.log("🏦 Available banks:", uniqueBanks);
+      console.log("🏦 Total accounts:", displayBankAccounts.length);
+      return uniqueBanks;
+    };
+
+    const getFilteredAccounts = (accounts: any[]) => {
+      if (!selectedBankFilter) return accounts;
+      return accounts.filter(
+        (account: any) => account.institution === selectedBankFilter
+      );
+    };
+
+    const getFilteredTransactions = (transactions: any[]) => {
+      if (!selectedBankFilter) return transactions;
+      const filteredAccountIds = getFilteredAccounts(displayBankAccounts).map(
+        (account: any) => account.id
+      );
+      return transactions.filter((transaction: any) =>
+        filteredAccountIds.includes(transaction.account_id)
+      );
+    };
+
+    // Helper component to display totals by currency
+    const renderTotalsByCurrency = (
+      totalsByCurrency: Record<string, number>,
+      color: string
+    ) => {
+      const currencies = Object.keys(totalsByCurrency);
+      if (currencies.length === 1) {
+        // Single currency - display normally
+        const currency = currencies[0];
+        const amount = totalsByCurrency[currency];
+        return (
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "700",
+              color: color,
+            }}
+          >
+            {formatBankAmount(amount, { iso_currency_code: currency })}
+          </Text>
+        );
+      } else {
+        // Multiple currencies - display each currency
+        return (
+          <View style={{ alignItems: "flex-start" }}>
+            {currencies.map((currency) => {
+              const amount = totalsByCurrency[currency];
+              const currencyInfo = getBankCurrencyInfo({
+                iso_currency_code: currency,
+              });
+              return (
+                <View
+                  key={currency}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 2,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "700",
+                      color: color,
+                    }}
+                  >
+                    {formatBankAmount(amount, { iso_currency_code: currency })}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: colors.textSecondary,
+                      marginLeft: 4,
+                    }}
+                  >
+                    {currency}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        );
+      }
+    };
 
     // Safely filter and sanitize account data - handle real API data issues
     const safeBankAccounts = (displayBankAccounts || []).map(
@@ -89,33 +202,72 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     );
 
     // Filter accounts to only show checking/savings accounts (not loans)
-    const checkingAccounts = safeBankAccounts.filter(
-      (account: any) =>
-        account.type === "depository" &&
-        ["checking", "savings"].includes(account.subtype)
+    const checkingAccounts = getFilteredAccounts(
+      safeBankAccounts.filter(
+        (account: any) =>
+          account.type === "depository" &&
+          ["checking", "savings"].includes(account.subtype)
+      )
     );
 
     // Filter loan accounts from Plaid
-    const loanAccounts = safeBankAccounts.filter(
-      (account: any) => account.type === "loan"
+    const loanAccounts = getFilteredAccounts(
+      safeBankAccounts.filter((account: any) => account.type === "loan")
     );
 
     // Filter credit card accounts from Plaid
-    const creditCardAccounts = safeBankAccounts.filter(
-      (account: any) =>
-        account.type === "credit" && account.subtype === "credit card"
+    const creditCardAccounts = getFilteredAccounts(
+      safeBankAccounts.filter(
+        (account: any) =>
+          account.type === "credit" && account.subtype === "credit card"
+      )
     );
 
     // Filter investment accounts from Plaid
-    const investmentAccounts = safeBankAccounts.filter(
-      (account: any) =>
-        account.type === "investment" ||
-        ["401k", "ira", "brokerage", "cd", "mutual fund"].includes(
-          account.subtype
-        )
+    const investmentAccounts = getFilteredAccounts(
+      safeBankAccounts.filter(
+        (account: any) =>
+          account.type === "investment" ||
+          ["401k", "ira", "brokerage", "cd", "mutual fund"].includes(
+            account.subtype
+          )
+      )
     );
 
-    // Calculate total balances by account type
+    // Calculate total balances by account type and currency
+    const calculateTotalsByCurrency = (accounts: any[]) => {
+      const totals: Record<string, number> = {};
+      accounts.forEach((account) => {
+        const currency = detectBankCurrency(account);
+        if (!totals[currency]) {
+          totals[currency] = 0;
+        }
+        totals[currency] += account.balances?.current || 0;
+      });
+      return totals;
+    };
+
+    const calculateTotalsByCurrencyAbs = (accounts: any[]) => {
+      const totals: Record<string, number> = {};
+      accounts.forEach((account) => {
+        const currency = detectBankCurrency(account);
+        if (!totals[currency]) {
+          totals[currency] = 0;
+        }
+        totals[currency] += Math.abs(account.balances?.current || 0);
+      });
+      return totals;
+    };
+
+    const checkingTotalsByCurrency =
+      calculateTotalsByCurrency(checkingAccounts);
+    const creditCardTotalsByCurrency =
+      calculateTotalsByCurrencyAbs(creditCardAccounts);
+    const investmentTotalsByCurrency =
+      calculateTotalsByCurrency(investmentAccounts);
+    const loanTotalsByCurrency = calculateTotalsByCurrencyAbs(loanAccounts);
+
+    // Calculate total balances by account type (for backward compatibility)
     const totalCheckingBalance = checkingAccounts.reduce(
       (sum: number, account: any) => sum + (account.balances?.current || 0),
       0
@@ -263,6 +415,8 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
 
     // formatCurrency is now provided by useCurrency() hook
 
+    // Calculate total balance by currency
+    const totalBalanceByCurrency = calculateTotalsByCurrency(checkingAccounts);
     const totalBalance = checkingAccounts.reduce(
       (sum: number, account: any) => sum + (account.balances?.current || 0),
       0
@@ -285,6 +439,190 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
             onBack={() => navigation.goBack()}
             showBackButton={true}
           />
+
+          {/* Bank Filter Section - Show when bank is connected and multiple banks exist */}
+          {isBankConnected && getUniqueBanks().length > 1 && (
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 16,
+                padding: 20,
+                marginBottom: 16,
+                shadowColor: colors.shadow,
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 4,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: colors.text,
+                      marginBottom: 4,
+                    }}
+                  >
+                    {t("bank_transactions.filter_by_bank")}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                    }}
+                  >
+                    {selectedBankFilter
+                      ? `${t(
+                          "bank_transactions.showing"
+                        )}: ${selectedBankFilter}`
+                      : t("bank_transactions.showing_all_banks")}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setShowBankFilter(!showBankFilter)}
+                  style={{
+                    backgroundColor: colors.primary + "20",
+                    borderRadius: 8,
+                    padding: 8,
+                    flexDirection: "row",
+                    alignItems: "center",
+                  }}
+                >
+                  <Ionicons
+                    name="filter"
+                    size={16}
+                    color={colors.primary}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "600",
+                      color: colors.primary,
+                    }}
+                  >
+                    {t("bank_transactions.filter")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Bank Filter Options */}
+              {showBankFilter && (
+                <View
+                  style={{
+                    marginTop: 12,
+                    paddingTop: 12,
+                    borderTopWidth: 1,
+                    borderTopColor: colors.borderLight,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedBankFilter(null);
+                      setShowBankFilter(false);
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      borderRadius: 8,
+                      backgroundColor:
+                        selectedBankFilter === null
+                          ? colors.primary + "20"
+                          : "transparent",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <Ionicons
+                      name={
+                        selectedBankFilter === null
+                          ? "checkmark-circle"
+                          : "ellipse-outline"
+                      }
+                      size={16}
+                      color={
+                        selectedBankFilter === null
+                          ? colors.primary
+                          : colors.textSecondary
+                      }
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color:
+                          selectedBankFilter === null
+                            ? colors.primary
+                            : colors.text,
+                        fontWeight: selectedBankFilter === null ? "600" : "400",
+                      }}
+                    >
+                      {t("bank_transactions.all_banks")}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {getUniqueBanks().map((bank) => (
+                    <TouchableOpacity
+                      key={bank}
+                      onPress={() => {
+                        setSelectedBankFilter(bank);
+                        setShowBankFilter(false);
+                      }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 8,
+                        paddingHorizontal: 12,
+                        borderRadius: 8,
+                        backgroundColor:
+                          selectedBankFilter === bank
+                            ? colors.primary + "20"
+                            : "transparent",
+                        marginBottom: 4,
+                      }}
+                    >
+                      <Ionicons
+                        name={
+                          selectedBankFilter === bank
+                            ? "checkmark-circle"
+                            : "ellipse-outline"
+                        }
+                        size={16}
+                        color={
+                          selectedBankFilter === bank
+                            ? colors.primary
+                            : colors.textSecondary
+                        }
+                        style={{ marginRight: 8 }}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          color:
+                            selectedBankFilter === bank
+                              ? colors.primary
+                              : colors.text,
+                          fontWeight:
+                            selectedBankFilter === bank ? "600" : "400",
+                        }}
+                      >
+                        {bank}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
 
           {/* Account Summary Section - Show when bank is connected */}
           {isBankConnected && (
@@ -312,6 +650,79 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                 {t("bank_transactions.account_summary")}
               </Text>
 
+              {/* Currency Summary - Show when multiple currencies detected and viewing all banks */}
+              {uniqueCurrencies.length > 1 && !selectedBankFilter && (
+                <View
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 16,
+                    padding: 20,
+                    marginBottom: 16,
+                    shadowColor: colors.shadow,
+                    shadowOpacity: 0.08,
+                    shadowRadius: 12,
+                    shadowOffset: { width: 0, height: 4 },
+                    elevation: 4,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "600",
+                      color: colors.text,
+                      marginBottom: 8,
+                    }}
+                  >
+                    {t("bank_transactions.currencies_detected", {
+                      count: uniqueCurrencies.length,
+                    })}
+                  </Text>
+                  <View
+                    style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}
+                  >
+                    {uniqueCurrencies.map((currency) => {
+                      const currencyInfo = getBankCurrencyInfo({
+                        iso_currency_code: currency,
+                      });
+                      const accountsInCurrency =
+                        accountsByCurrency[currency] || [];
+                      return (
+                        <View
+                          key={currency}
+                          style={{
+                            backgroundColor: colors.background,
+                            borderRadius: 6,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            flexDirection: "row",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 11,
+                              fontWeight: "600",
+                              color: colors.text,
+                            }}
+                          >
+                            {currencyInfo.symbol} {currency}
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              color: colors.textSecondary,
+                              marginLeft: 4,
+                            }}
+                          >
+                            ({accountsInCurrency.length})
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
                 {/* Checking & Savings */}
                 {checkingAccounts.length > 0 && (
@@ -333,15 +744,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     >
                       {t("bank_transactions.checking_savings")}
                     </Text>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "700",
-                        color: colors.success,
-                      }}
-                    >
-                      {formatCurrency(totalCheckingBalance)}
-                    </Text>
+                    {renderTotalsByCurrency(
+                      checkingTotalsByCurrency,
+                      colors.success
+                    )}
                     <Text
                       style={{
                         fontSize: 10,
@@ -377,15 +783,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     >
                       {t("bank_transactions.credit_cards")}
                     </Text>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "700",
-                        color: colors.error,
-                      }}
-                    >
-                      {formatCurrency(totalCreditCardBalance)}
-                    </Text>
+                    {renderTotalsByCurrency(
+                      creditCardTotalsByCurrency,
+                      colors.error
+                    )}
                     <Text
                       style={{
                         fontSize: 10,
@@ -421,15 +822,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     >
                       {t("bank_transactions.investments")}
                     </Text>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "700",
-                        color: colors.success,
-                      }}
-                    >
-                      {formatCurrency(totalInvestmentBalance)}
-                    </Text>
+                    {renderTotalsByCurrency(
+                      investmentTotalsByCurrency,
+                      colors.success
+                    )}
                     <Text
                       style={{
                         fontSize: 10,
@@ -465,15 +861,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     >
                       {t("bank_transactions.loans")}
                     </Text>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "700",
-                        color: colors.error,
-                      }}
-                    >
-                      {formatCurrency(totalLoanBalance)}
-                    </Text>
+                    {renderTotalsByCurrency(loanTotalsByCurrency, colors.error)}
                     <Text
                       style={{
                         fontSize: 10,
@@ -640,16 +1028,71 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
               >
                 {t("bank_transactions.total_balance")}
               </Text>
-              <Text
-                style={{
-                  fontSize: 28,
-                  fontWeight: "800",
-                  color: totalBalance >= 0 ? colors.success : colors.error,
-                  letterSpacing: -0.5,
-                }}
-              >
-                {formatCurrency(totalBalance)}
-              </Text>
+              {(() => {
+                const currencies = Object.keys(totalBalanceByCurrency);
+                if (currencies.length === 1) {
+                  // Single currency - display normally
+                  const currency = currencies[0];
+                  const amount = totalBalanceByCurrency[currency];
+                  return (
+                    <Text
+                      style={{
+                        fontSize: 28,
+                        fontWeight: "800",
+                        color: amount >= 0 ? colors.success : colors.error,
+                        letterSpacing: -0.5,
+                      }}
+                    >
+                      {formatBankAmount(amount, {
+                        iso_currency_code: currency,
+                      })}
+                    </Text>
+                  );
+                } else {
+                  // Multiple currencies - display each currency
+                  return (
+                    <View style={{ alignItems: "flex-start" }}>
+                      {currencies.map((currency) => {
+                        const amount = totalBalanceByCurrency[currency];
+                        return (
+                          <View
+                            key={currency}
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              marginBottom: 4,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: 24,
+                                fontWeight: "800",
+                                color:
+                                  amount >= 0 ? colors.success : colors.error,
+                                letterSpacing: -0.5,
+                              }}
+                            >
+                              {formatBankAmount(amount, {
+                                iso_currency_code: currency,
+                              })}
+                            </Text>
+                            <Text
+                              style={{
+                                fontSize: 14,
+                                color: colors.textSecondary,
+                                marginLeft: 8,
+                                fontWeight: "600",
+                              }}
+                            >
+                              {currency}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  );
+                }
+              })()}
               <Text
                 style={{
                   fontSize: 12,
@@ -741,6 +1184,8 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         .toString()
                         .replace(/[^\x20-\x7E]/g, "")
                         .trim() || t("bank_transactions.checking")}
+                      {" • "}
+                      {detectBankCurrency(account)}
                     </Text>
                   </View>
                   <View style={{ alignItems: "flex-end" }}>
@@ -754,7 +1199,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                             : colors.error,
                       }}
                     >
-                      {formatCurrency(account.balances?.current || 0)}
+                      {formatBankAmount(
+                        account.balances?.current || 0,
+                        account
+                      )}
                     </Text>
                     <Text
                       style={{
@@ -764,7 +1212,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       }}
                     >
                       {t("bank_transactions.available")}:{" "}
-                      {formatCurrency(account.balances.available)}
+                      {formatBankAmount(account.balances.available, account)}
                     </Text>
                   </View>
                 </View>
@@ -867,7 +1315,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         color: "#dc2626",
                       }}
                     >
-                      {formatCurrency(Math.abs(account.balances?.current || 0))}
+                      {formatBankAmount(
+                        Math.abs(account.balances?.current || 0),
+                        account
+                      )}
                     </Text>
                     <Text
                       style={{
@@ -987,7 +1438,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         color: "#dc2626",
                       }}
                     >
-                      {formatCurrency(Math.abs(account.balances?.current || 0))}
+                      {formatBankAmount(
+                        Math.abs(account.balances?.current || 0),
+                        account
+                      )}
                     </Text>
                     <Text
                       style={{
@@ -1007,7 +1461,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         }}
                       >
                         {t("bank_transactions.limit")}:{" "}
-                        {formatCurrency(account.balances.limit)}
+                        {formatBankAmount(account.balances.limit, account)}
                       </Text>
                     )}
                   </View>
@@ -1123,7 +1577,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         color: colors.success,
                       }}
                     >
-                      {formatCurrency(account.balances?.current || 0)}
+                      {formatBankAmount(
+                        account.balances?.current || 0,
+                        account
+                      )}
                     </Text>
                     <Text
                       style={{

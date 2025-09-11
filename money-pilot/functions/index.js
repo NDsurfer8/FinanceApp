@@ -280,6 +280,7 @@ exports.getAccounts = onCall(
             balances: {
               available: 5000,
               current: 5000,
+              iso_currency_code: "USD",
             },
           },
           {
@@ -291,6 +292,7 @@ exports.getAccounts = onCall(
             balances: {
               available: 15000,
               current: 15000,
+              iso_currency_code: "USD",
             },
           },
           {
@@ -302,6 +304,7 @@ exports.getAccounts = onCall(
             balances: {
               available: 2500,
               current: 2500,
+              iso_currency_code: "USD",
             },
           },
         ],
@@ -321,6 +324,7 @@ exports.getAccounts = onCall(
             balances: {
               available: 3200,
               current: 3200,
+              iso_currency_code: "EUR",
             },
           },
           {
@@ -332,6 +336,7 @@ exports.getAccounts = onCall(
             balances: {
               available: 8500,
               current: 8500,
+              iso_currency_code: "EUR",
             },
           },
           {
@@ -343,6 +348,7 @@ exports.getAccounts = onCall(
             balances: {
               available: 1800,
               current: 1800,
+              iso_currency_code: "EUR",
             },
           },
         ],
@@ -362,6 +368,7 @@ exports.getAccounts = onCall(
             balances: {
               available: 2100,
               current: 2100,
+              iso_currency_code: "GBP",
             },
           },
           {
@@ -373,6 +380,7 @@ exports.getAccounts = onCall(
             balances: {
               available: 25000,
               current: 25000,
+              iso_currency_code: "GBP",
             },
           },
           {
@@ -384,6 +392,7 @@ exports.getAccounts = onCall(
             balances: {
               available: 15000,
               current: 15000,
+              iso_currency_code: "GBP",
             },
           },
         ],
@@ -450,6 +459,7 @@ exports.getTransactions = onCall(
             merchant_name: "Tech Corp Inc",
             category: ["Transfer", "Deposit"],
             pending: false,
+            iso_currency_code: "USD",
           },
           {
             transaction_id: "chase_transaction_2",
@@ -460,6 +470,7 @@ exports.getTransactions = onCall(
             merchant_name: "Downtown Apartments",
             category: ["Rent", "Housing"],
             pending: false,
+            iso_currency_code: "USD",
           },
           {
             transaction_id: "chase_transaction_3",
@@ -470,6 +481,7 @@ exports.getTransactions = onCall(
             merchant_name: "Whole Foods Market",
             category: ["Food and Drink", "Groceries"],
             pending: false,
+            iso_currency_code: "USD",
           },
           {
             transaction_id: "chase_transaction_4",
@@ -480,6 +492,7 @@ exports.getTransactions = onCall(
             merchant_name: "Shell",
             category: ["Transportation", "Gas"],
             pending: false,
+            iso_currency_code: "USD",
           },
           {
             transaction_id: "chase_transaction_5",
@@ -490,6 +503,7 @@ exports.getTransactions = onCall(
             merchant_name: "Pacific Gas & Electric",
             category: ["Utilities", "Electric"],
             pending: false,
+            iso_currency_code: "USD",
           },
         ],
         total_transactions: 5,
@@ -510,6 +524,7 @@ exports.getTransactions = onCall(
             merchant_name: "Design Studio LLC",
             category: ["Transfer", "Deposit"],
             pending: false,
+            iso_currency_code: "EUR",
           },
           {
             transaction_id: "boa_transaction_2",
@@ -520,6 +535,7 @@ exports.getTransactions = onCall(
             merchant_name: "Amazon",
             category: ["Shopping", "General"],
             pending: false,
+            iso_currency_code: "EUR",
           },
           {
             transaction_id: "boa_transaction_3",
@@ -530,6 +546,7 @@ exports.getTransactions = onCall(
             merchant_name: "Netflix",
             category: ["Entertainment", "Streaming"],
             pending: false,
+            iso_currency_code: "EUR",
           },
           {
             transaction_id: "boa_transaction_4",
@@ -540,6 +557,7 @@ exports.getTransactions = onCall(
             merchant_name: "Bistro Central",
             category: ["Food and Drink", "Restaurants"],
             pending: false,
+            iso_currency_code: "EUR",
           },
         ],
         total_transactions: 4,
@@ -560,6 +578,7 @@ exports.getTransactions = onCall(
             merchant_name: "Wells Fargo Investment",
             category: ["Transfer", "Investment"],
             pending: false,
+            iso_currency_code: "GBP",
           },
           {
             transaction_id: "wf_transaction_2",
@@ -570,6 +589,7 @@ exports.getTransactions = onCall(
             merchant_name: "Wells Fargo Auto",
             category: ["Loan", "Auto"],
             pending: false,
+            iso_currency_code: "GBP",
           },
           {
             transaction_id: "wf_transaction_3",
@@ -580,6 +600,7 @@ exports.getTransactions = onCall(
             merchant_name: "FitLife Gym",
             category: ["Health", "Fitness"],
             pending: false,
+            iso_currency_code: "GBP",
           },
         ],
         total_transactions: 3,

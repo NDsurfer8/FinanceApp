@@ -170,7 +170,13 @@
     "current_value": "Current Value",
     "investment_account_values_sync": "Investment account values are automatically synced from your bank",
     "error_loading_bank_transactions": "Error loading bank transactions",
-    "available": "Available"
+    "available": "Available",
+    "currencies_detected": "{{count}} currencies detected",
+    "filter_by_bank": "Filter by Bank",
+    "showing": "Showing",
+    "showing_all_banks": "Showing all banks",
+    "filter": "Filter",
+    "all_banks": "All Banks"
   },
   "auto_budget_importer": {
     "no_bank_connected": "No Bank Connected",

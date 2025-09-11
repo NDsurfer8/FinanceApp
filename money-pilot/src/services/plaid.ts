@@ -32,6 +32,8 @@ export interface PlaidAccount {
     available: number;
     current: number;
     limit?: number;
+    iso_currency_code?: string; // ISO 4217 currency code (e.g., "USD")
+    unofficial_currency_code?: string; // Unofficial currency code if ISO not available
   };
   institution?: string; // Bank name
   itemId?: string; // Plaid item ID
@@ -48,6 +50,8 @@ export interface PlaidTransaction {
   pending: boolean;
   institution?: string; // Bank name
   itemId?: string; // Plaid item ID
+  iso_currency_code?: string; // ISO 4217 currency code (e.g., "USD")
+  unofficial_currency_code?: string; // Unofficial currency code if ISO not available
 }
 
 export interface PlaidLinkResult {
@@ -959,6 +963,9 @@ class PlaidService {
               available: account.balances.available || 0,
               current: account.balances.current || 0,
               limit: account.balances.limit,
+              iso_currency_code: account.balances.iso_currency_code,
+              unofficial_currency_code:
+                account.balances.unofficial_currency_code,
             },
             // Add bank information to each account
             institution: connection.institution.name,

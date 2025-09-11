@@ -1071,7 +1071,12 @@
     "current_value": "القيمة الحالية",
     "investment_account_values_sync": "قيم حسابات الاستثمار تتم مزامنتها تلقائياً من بنكك",
     "error_loading_bank_transactions": "خطأ في تحميل المعاملات المصرفية",
-    "available": "متاح"
+    "available": "متاح",
+    "filter_by_bank": "تصفية حسب البنك",
+    "showing": "عرض",
+    "showing_all_banks": "عرض جميع البنوك",
+    "filter": "تصفية",
+    "all_banks": "جميع البنوك"
   },
   "auto_budget_importer": {
     "no_bank_connected": "لا يوجد بنك متصل",

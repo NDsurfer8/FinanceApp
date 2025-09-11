@@ -1071,7 +1071,12 @@
     "current_value": "当前价值",
     "investment_account_values_sync": "投资账户价值会自动从您的银行同步",
     "error_loading_bank_transactions": "加载银行交易时出错",
-    "available": "可用"
+    "available": "可用",
+    "filter_by_bank": "按银行筛选",
+    "showing": "显示",
+    "showing_all_banks": "显示所有银行",
+    "filter": "筛选",
+    "all_banks": "所有银行"
   },
   "auto_budget_importer": {
     "no_bank_connected": "未连接银行",

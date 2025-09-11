@@ -1071,7 +1071,12 @@
     "current_value": "Aktueller Wert",
     "investment_account_values_sync": "Anlagekontenwerte werden automatisch von Ihrer Bank synchronisiert",
     "error_loading_bank_transactions": "Fehler beim Laden der Banktransaktionen",
-    "available": "Verfügbar"
+    "available": "Verfügbar",
+    "filter_by_bank": "Nach Bank Filtern",
+    "showing": "Anzeigen",
+    "showing_all_banks": "Alle Banken anzeigen",
+    "filter": "Filter",
+    "all_banks": "Alle Banken"
   },
   "auto_budget_importer": {
     "no_bank_connected": "Keine Bank Verbunden",

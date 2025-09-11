@@ -1071,7 +1071,12 @@
     "current_value": "Текущая Стоимость",
     "investment_account_values_sync": "Стоимости инвестиционных счетов автоматически синхронизируются с вашим банком",
     "error_loading_bank_transactions": "Ошибка загрузки банковских транзакций",
-    "available": "Доступно"
+    "available": "Доступно",
+    "filter_by_bank": "Фильтр по Банку",
+    "showing": "Показать",
+    "showing_all_banks": "Показать все банки",
+    "filter": "Фильтр",
+    "all_banks": "Все Банки"
   },
   "auto_budget_importer": {
     "no_bank_connected": "Банк Не Подключен",

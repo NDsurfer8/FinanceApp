@@ -1071,7 +1071,12 @@
     "current_value": "वर्तमान मूल्य",
     "investment_account_values_sync": "निवेश खाते के मूल्य आपके बैंक से स्वचालित रूप से सिंक होते हैं",
     "error_loading_bank_transactions": "बैंक लेनदेन लोड करने में त्रुटि",
-    "available": "उपलब्ध"
+    "available": "उपलब्ध",
+    "filter_by_bank": "बैंक द्वारा फ़िल्टर करें",
+    "showing": "दिखा रहे हैं",
+    "showing_all_banks": "सभी बैंक दिखा रहे हैं",
+    "filter": "फ़िल्टर",
+    "all_banks": "सभी बैंक"
   },
   "auto_budget_importer": {
     "no_bank_connected": "कोई बैंक जुड़ा नहीं",
