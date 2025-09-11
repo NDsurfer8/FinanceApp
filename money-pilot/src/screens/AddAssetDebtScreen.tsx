@@ -178,11 +178,11 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
       }
 
       Alert.alert(
-        "Success",
+        t("common.success"),
         `${type === "asset" ? "Asset" : "Debt"} ${
           editMode ? "updated" : "saved"
         } successfully!`,
-        [{ text: "OK", onPress: () => navigation.goBack() }]
+        [{ text: t("common.ok"), onPress: () => navigation.goBack() }]
       );
     } catch (error) {
       console.error(
@@ -577,7 +577,9 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 }}
               >
                 {editMode ? t("common.update") : t("common.save")}{" "}
-                {type === "asset" ? t("add_asset_debt.asset") : t("add_asset_debt.debt")}
+                {type === "asset"
+                  ? t("add_asset_debt.asset")
+                  : t("add_asset_debt.debt")}
               </Text>
             </TouchableOpacity>
 
@@ -611,7 +613,10 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                     fontWeight: "700",
                   }}
                 >
-                  {t("common.delete")} {type === "asset" ? t("add_asset_debt.asset") : t("add_asset_debt.debt")}
+                  {t("common.delete")}{" "}
+                  {type === "asset"
+                    ? t("add_asset_debt.asset")
+                    : t("add_asset_debt.debt")}
                 </Text>
               </TouchableOpacity>
             )}

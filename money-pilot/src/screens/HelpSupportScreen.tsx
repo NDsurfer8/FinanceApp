@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -55,66 +55,72 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
     );
   };
 
-  const faqs: FAQItem[] = [
-    {
-      id: "1",
-      question: t("help_support.faq.add_transaction.question"),
-      answer: t("help_support.faq.add_transaction.answer"),
-      category: t("help_support.categories.getting_started"),
-    },
-    {
-      id: "2",
-      question: t("help_support.faq.generate_plans.question"),
-      answer: t("help_support.faq.generate_plans.answer"),
-      category: t("help_support.categories.ai_features"),
-    },
-    {
-      id: "3",
-      question: t("help_support.faq.setup_budget.question"),
-      answer: t("help_support.faq.setup_budget.answer"),
-      category: t("help_support.categories.budgeting"),
-    },
-    {
-      id: "4",
-      question: t("help_support.faq.share_finances.question"),
-      answer: t("help_support.faq.share_finances.answer"),
-      category: t("help_support.categories.shared_finance"),
-    },
-    {
-      id: "5",
-      question: t("help_support.faq.set_goals.question"),
-      answer: t("help_support.faq.set_goals.answer"),
-      category: t("help_support.categories.goals"),
-    },
-    {
-      id: "6",
-      question: t("help_support.faq.data_security.question"),
-      answer: t("help_support.faq.data_security.answer"),
-      category: t("help_support.categories.security"),
-    },
-    {
-      id: "7",
-      question: t("help_support.faq.export_data.question"),
-      answer: t("help_support.faq.export_data.answer"),
-      category: t("help_support.categories.data_management"),
-    },
-    {
-      id: "8",
-      question: t("help_support.faq.offline_use.question"),
-      answer: t("help_support.faq.offline_use.answer"),
-      category: t("help_support.categories.technical"),
-    },
-    {
-      id: "9",
-      question: t("help_support.faq.change_password.question"),
-      answer: t("help_support.faq.change_password.answer"),
-      category: t("help_support.categories.account"),
-    },
-  ];
+  const faqs: FAQItem[] = useMemo(
+    () => [
+      {
+        id: "1",
+        question: t("help_support.faq.add_transaction.question"),
+        answer: t("help_support.faq.add_transaction.answer"),
+        category: t("help_support.categories.getting_started"),
+      },
+      {
+        id: "2",
+        question: t("help_support.faq.generate_plans.question"),
+        answer: t("help_support.faq.generate_plans.answer"),
+        category: t("help_support.categories.ai_features"),
+      },
+      {
+        id: "3",
+        question: t("help_support.faq.setup_budget.question"),
+        answer: t("help_support.faq.setup_budget.answer"),
+        category: t("help_support.categories.budgeting"),
+      },
+      {
+        id: "4",
+        question: t("help_support.faq.share_finances.question"),
+        answer: t("help_support.faq.share_finances.answer"),
+        category: t("help_support.categories.shared_finance"),
+      },
+      {
+        id: "5",
+        question: t("help_support.faq.set_goals.question"),
+        answer: t("help_support.faq.set_goals.answer"),
+        category: t("help_support.categories.goals"),
+      },
+      {
+        id: "6",
+        question: t("help_support.faq.data_security.question"),
+        answer: t("help_support.faq.data_security.answer"),
+        category: t("help_support.categories.security"),
+      },
+      {
+        id: "7",
+        question: t("help_support.faq.export_data.question"),
+        answer: t("help_support.faq.export_data.answer"),
+        category: t("help_support.categories.data_management"),
+      },
+      {
+        id: "8",
+        question: t("help_support.faq.offline_use.question"),
+        answer: t("help_support.faq.offline_use.answer"),
+        category: t("help_support.categories.technical"),
+      },
+      {
+        id: "9",
+        question: t("help_support.faq.change_password.question"),
+        answer: t("help_support.faq.change_password.answer"),
+        category: t("help_support.categories.account"),
+      },
+    ],
+    [t]
+  );
 
-  const toggleFAQ = (faqId: string) => {
-    setExpandedFAQ(expandedFAQ === faqId ? null : faqId);
-  };
+  const toggleFAQ = useCallback(
+    (faqId: string) => {
+      setExpandedFAQ(expandedFAQ === faqId ? null : faqId);
+    },
+    [expandedFAQ]
+  );
 
   const openSupportEmail = async () => {
     try {
@@ -347,55 +353,61 @@ ${user?.displayName || "VectorFi User"}`,
     }
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "Getting Started":
-        return "rocket";
-      case "Budgeting":
-        return "wallet";
-      case "Shared Finance":
-        return "people";
-      case "Goals":
-        return "flag";
-      case "Security":
-        return "shield-checkmark";
-      case "Data Management":
-        return "cloud-download";
-      case "Technical":
-        return "settings";
-      case "Account":
-        return "person";
-      case "AI Features":
-        return "sparkles";
-      default:
-        return "help-circle";
-    }
-  };
+  const getCategoryIcon = useMemo(
+    () => (category: string) => {
+      switch (category) {
+        case "Getting Started":
+          return "rocket";
+        case "Budgeting":
+          return "wallet";
+        case "Shared Finance":
+          return "people";
+        case "Goals":
+          return "flag";
+        case "Security":
+          return "shield-checkmark";
+        case "Data Management":
+          return "cloud-download";
+        case "Technical":
+          return "settings";
+        case "Account":
+          return "person";
+        case "AI Features":
+          return "sparkles";
+        default:
+          return "help-circle";
+      }
+    },
+    []
+  );
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "Getting Started":
-        return "#6366f1";
-      case "Budgeting":
-        return "#10b981";
-      case "Shared Finance":
-        return "#f59e0b";
-      case "Goals":
-        return "#ef4444";
-      case "Security":
-        return "#8b5cf6";
-      case "Data Management":
-        return "#06b6d4";
-      case "Technical":
-        return "#6b7280";
-      case "Account":
-        return "#ec4899";
-      case "AI Features":
-        return "#8b5cf6";
-      default:
-        return "#6366f1";
-    }
-  };
+  const getCategoryColor = useMemo(
+    () => (category: string) => {
+      switch (category) {
+        case "Getting Started":
+          return "#6366f1";
+        case "Budgeting":
+          return "#10b981";
+        case "Shared Finance":
+          return "#f59e0b";
+        case "Goals":
+          return "#ef4444";
+        case "Security":
+          return "#8b5cf6";
+        case "Data Management":
+          return "#06b6d4";
+        case "Technical":
+          return "#6b7280";
+        case "Account":
+          return "#ec4899";
+        case "AI Features":
+          return "#8b5cf6";
+        default:
+          return "#6366f1";
+      }
+    },
+    []
+  );
 
   return (
     <SafeAreaView

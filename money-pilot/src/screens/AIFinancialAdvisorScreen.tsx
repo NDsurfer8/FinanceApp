@@ -1800,7 +1800,7 @@ Original Request: ${basePrompt}
       // Reset plan request state
       setIsPlanRequest(false);
 
-      Alert.alert("Success", "Plan saved to your account!");
+      Alert.alert(t("common.success"), "Plan saved to your account!");
     } catch (error) {
       console.error("Error saving plan from message:", error);
       Alert.alert("Error", "Failed to save plan. Please try again.");

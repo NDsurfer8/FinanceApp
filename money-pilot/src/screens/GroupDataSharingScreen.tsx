@@ -183,7 +183,7 @@ export default function GroupDataSharingScreen({
       await syncUserDataToGroup(user.uid, group.id!, settings, userData);
 
       Alert.alert(
-        "Success",
+        t("common.success"),
         `Your data has been synced to ${group.name}! You can manually sync again anytime you want to update the shared data.`
       );
       navigation.goBack();

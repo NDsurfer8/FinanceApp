@@ -231,7 +231,7 @@ export default function SharedFinanceScreen({
       setGroupName("");
       setGroupDescription("");
       setGroupType("couple");
-      Alert.alert("Success", "Group created successfully!");
+      Alert.alert(t("common.success"), "Group created successfully!");
     } catch (error) {
       console.error("Error creating group:", error);
       Alert.alert("Error", "Failed to create group. Please try again.");
@@ -263,7 +263,7 @@ export default function SharedFinanceScreen({
       setShowInviteModal(false);
       setInviteEmail("");
       setSelectedGroup(null);
-      Alert.alert("Success", "Invitation sent successfully!");
+      Alert.alert(t("common.success"), "Invitation sent successfully!");
     } catch (error) {
       console.error("Error sending invitation:", error);
       Alert.alert("Error", "Failed to send invitation. Please try again.");
@@ -369,7 +369,7 @@ export default function SharedFinanceScreen({
       // Reload invitations to remove the responded one
       await loadInvitations();
 
-      Alert.alert("Success", `Invitation ${status} successfully!`);
+      Alert.alert(t("common.success"), `Invitation ${status} successfully!`);
     } catch (error) {
       console.error("Error responding to invitation:", error);
       Alert.alert(

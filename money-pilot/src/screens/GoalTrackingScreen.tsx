@@ -294,7 +294,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           category: "savings",
           priority: "medium",
         });
-        Alert.alert("Success", "Goal updated successfully!");
+        Alert.alert(t("common.success"), "Goal updated successfully!");
       } else {
         // Create new goal
         const goal: FinancialGoal = {
@@ -338,7 +338,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           category: "savings",
           priority: "medium",
         });
-        Alert.alert("Success", "Goal added successfully!");
+        Alert.alert(t("common.success"), "Goal added successfully!");
       }
     } catch (error) {
       console.error("Error saving goal:", error);
@@ -376,7 +376,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
 
       await updateGoal(updatedGoal);
       await refreshInBackground(); // Reload goals from database
-      Alert.alert("Success", "Goal updated successfully!");
+      Alert.alert(t("common.success"), "Goal updated successfully!");
     } catch (error) {
       console.error("Error updating goal:", error);
       Alert.alert("Error", "Failed to update goal. Please try again.");
@@ -428,7 +428,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                   category: "savings",
                   priority: "medium",
                 });
-                Alert.alert("Success", "Goal deleted successfully!");
+                Alert.alert(t("common.success"), "Goal deleted successfully!");
               } catch (error) {
                 console.error("Error deleting goal:", error);
                 Alert.alert(
@@ -512,7 +512,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
 
       // Reload goals
       await refreshInBackground();
-      Alert.alert("Success", "Goal updated successfully!");
+      Alert.alert(t("common.success"), "Goal updated successfully!");
     } catch (error) {
       console.error("Error updating goal:", error);
       Alert.alert("Error", "Failed to update goal");

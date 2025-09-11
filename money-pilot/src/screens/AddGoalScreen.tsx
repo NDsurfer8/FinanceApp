@@ -204,8 +204,8 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
         // Update in database
         await updateGoal(updatedGoal);
 
-        Alert.alert("Success", "Goal updated successfully!", [
-          { text: "OK", onPress: () => navigation.goBack() },
+        Alert.alert(t("common.success"), "Goal updated successfully!", [
+          { text: t("common.ok"), onPress: () => navigation.goBack() },
         ]);
       } else {
         // Create new goal
@@ -238,8 +238,8 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
         );
         updateDataOptimistically({ goals: finalGoals });
 
-        Alert.alert("Success", "Goal saved successfully!", [
-          { text: "OK", onPress: () => navigation.goBack() },
+        Alert.alert(t("common.success"), "Goal saved successfully!", [
+          { text: t("common.ok"), onPress: () => navigation.goBack() },
         ]);
       }
     } catch (error) {
@@ -288,8 +288,8 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 // Delete from database
                 await removeGoal(user.uid, goal.id!);
 
-                Alert.alert("Success", "Goal deleted successfully!", [
-                  { text: "OK", onPress: () => navigation.goBack() },
+                Alert.alert(t("common.success"), "Goal deleted successfully!", [
+                  { text: t("common.ok"), onPress: () => navigation.goBack() },
                 ]);
               } catch (error) {
                 console.error("Error deleting goal:", error);

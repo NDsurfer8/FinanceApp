@@ -453,8 +453,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               refreshRecurringTransactions(),
             ]);
 
-            Alert.alert("Success", result.message, [
-              { text: "OK", onPress: () => navigation.goBack() },
+            Alert.alert(t("common.success"), result.message, [
+              { text: t("common.ok"), onPress: () => navigation.goBack() },
             ]);
           } else {
             Alert.alert("Error", result.message);
@@ -503,8 +503,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             // Only refresh recurring transactions to update limits, preserve optimistic transaction updates
             await refreshRecurringTransactions();
 
-            Alert.alert("Success", result.message, [
-              { text: "OK", onPress: () => navigation.goBack() },
+            Alert.alert(t("common.success"), result.message, [
+              { text: t("common.ok"), onPress: () => navigation.goBack() },
             ]);
           } else {
             Alert.alert("Error", result.message);
@@ -565,8 +565,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               refreshRecurringTransactions(),
             ]);
 
-            Alert.alert("Success", result.message, [
-              { text: "OK", onPress: () => navigation.goBack() },
+            Alert.alert(t("common.success"), result.message, [
+              { text: t("common.ok"), onPress: () => navigation.goBack() },
             ]);
           } else {
             Alert.alert("Error", result.message);
@@ -593,9 +593,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           await updateTransaction(updatedTransaction);
 
           Alert.alert(
-            "Success",
+            t("common.success"),
             t("add_transaction.success_transaction_updated"),
-            [{ text: "OK", onPress: () => navigation.goBack() }]
+            [{ text: t("common.ok"), onPress: () => navigation.goBack() }]
           );
         }
       } else if (formData.isRecurring) {
@@ -629,8 +629,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             refreshRecurringTransactions(),
           ]);
 
-          Alert.alert("Success", result.message, [
-            { text: "OK", onPress: () => navigation.goBack() },
+          Alert.alert(t("common.success"), result.message, [
+            { text: t("common.ok"), onPress: () => navigation.goBack() },
           ]);
         } else {
           Alert.alert("Error", result.message);
@@ -668,9 +668,11 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           await billReminderService.scheduleAllBillReminders(user.uid);
         }
 
-        Alert.alert("Success", t("add_transaction.success_transaction_saved"), [
-          { text: "OK", onPress: () => navigation.goBack() },
-        ]);
+        Alert.alert(
+          t("common.success"),
+          t("add_transaction.success_transaction_saved"),
+          [{ text: t("common.ok"), onPress: () => navigation.goBack() }]
+        );
       }
     } catch (error) {
       console.error("Error saving transaction:", error);
@@ -727,8 +729,8 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   refreshRecurringTransactions(),
                 ]);
 
-                Alert.alert("Success", result.message, [
-                  { text: "OK", onPress: () => navigation.goBack() },
+                Alert.alert(t("common.success"), result.message, [
+                  { text: t("common.ok"), onPress: () => navigation.goBack() },
                 ]);
               } else {
                 Alert.alert("Error", result.message);
@@ -813,8 +815,11 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                       refreshRecurringTransactions(),
                     ]);
 
-                    Alert.alert("Success", result.message, [
-                      { text: "OK", onPress: () => navigation.goBack() },
+                    Alert.alert(t("common.success"), result.message, [
+                      {
+                        text: t("common.ok"),
+                        onPress: () => navigation.goBack(),
+                      },
                     ]);
                   } else {
                     Alert.alert("Error", result.message);
@@ -868,9 +873,14 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   ]);
 
                   Alert.alert(
-                    "Success",
+                    t("common.success"),
                     t("add_transaction.success_transaction_deleted"),
-                    [{ text: "OK", onPress: () => navigation.goBack() }]
+                    [
+                      {
+                        text: t("common.ok"),
+                        onPress: () => navigation.goBack(),
+                      },
+                    ]
                   );
                 } catch (error) {
                   console.error("Error deleting transaction:", error);

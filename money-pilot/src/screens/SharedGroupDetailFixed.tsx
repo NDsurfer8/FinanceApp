@@ -130,7 +130,7 @@ export default function SharedGroupDetailFixed({
         // Reload the group data to show updated information
         await loadGroupData();
 
-        Alert.alert("Success", "Group data refreshed successfully!");
+        Alert.alert(t("common.success"), "Group data refreshed successfully!");
       } else {
         Alert.alert(
           "Info",
@@ -412,7 +412,7 @@ export default function SharedGroupDetailFixed({
       // Refresh all group data
       await loadGroupData();
 
-      Alert.alert("Success", "Group data refreshed successfully!");
+      Alert.alert(t("common.success"), "Group data refreshed successfully!");
     } catch (error) {
       console.error("Error refreshing group data:", error);
       Alert.alert("Error", "Failed to refresh group data. Please try again.");
@@ -438,7 +438,10 @@ export default function SharedGroupDetailFixed({
               // Leave the group
               await leaveGroup(groupId, user.uid);
 
-              Alert.alert("Success", "You have left the group successfully.");
+              Alert.alert(
+                t("common.success"),
+                "You have left the group successfully."
+              );
               navigation.goBack();
               onGroupLeft?.(groupId);
             } catch (error) {
@@ -486,7 +489,7 @@ export default function SharedGroupDetailFixed({
               await deleteSharedGroup(groupId, user.uid);
 
               Alert.alert(
-                "Success",
+                t("common.success"),
                 "Group deleted successfully. All shared data has been removed."
               );
 
@@ -552,7 +555,7 @@ export default function SharedGroupDetailFixed({
               await transferGroupOwnership(groupId, user.uid, newOwnerId);
 
               Alert.alert(
-                "Success",
+                t("common.success"),
                 `Ownership transferred to ${newOwnerName} successfully.`
               );
               await loadGroupData(); // Reload to show updated roles
@@ -598,7 +601,7 @@ export default function SharedGroupDetailFixed({
               await removeGroupMember(groupId, member.userId);
 
               Alert.alert(
-                "Success",
+                t("common.success"),
                 `${member.displayName} has been removed from the group.`
               );
               await loadGroupData(); // Reload to show updated members

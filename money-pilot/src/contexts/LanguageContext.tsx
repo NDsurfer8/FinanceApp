@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { loadLanguageOnDemand } from "../config/i18n";
 
 interface LanguageContextType {
   currentLanguage: string;
@@ -58,6 +59,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({
         savedLanguage &&
         availableLanguages.some((lang) => lang.code === savedLanguage)
       ) {
+        // Load language on demand if not already loaded
+        await loadLanguageOnDemand(savedLanguage);
         await i18n.changeLanguage(savedLanguage);
         setCurrentLanguage(savedLanguage);
       }
@@ -68,6 +71,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({
 
   const changeLanguage = async (language: string) => {
     try {
+      // Load language on demand if not already loaded
+      await loadLanguageOnDemand(language);
       await i18n.changeLanguage(language);
       setCurrentLanguage(language);
       await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, language);

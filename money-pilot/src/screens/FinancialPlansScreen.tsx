@@ -105,7 +105,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
             try {
               await deleteFinancialPlan(user.uid, planId);
               await loadPlans(); // Reload plans after deletion
-              Alert.alert("Success", "Plan deleted successfully");
+              Alert.alert(t("common.success"), "Plan deleted successfully");
             } catch (error) {
               console.error("Error deleting plan:", error);
               Alert.alert("Error", "Failed to delete plan");

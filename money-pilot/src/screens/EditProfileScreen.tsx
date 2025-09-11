@@ -175,9 +175,16 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
                       displayName: displayName.trim(),
                       photoURL: photoURL, // Keep existing photo
                     });
-                    Alert.alert("Success", "Profile updated successfully!", [
-                      { text: "OK", onPress: () => navigation.goBack() },
-                    ]);
+                    Alert.alert(
+                      t("common.success"),
+                      "Profile updated successfully!",
+                      [
+                        {
+                          text: t("common.ok"),
+                          onPress: () => navigation.goBack(),
+                        },
+                      ]
+                    );
                   } catch (profileError) {
                     console.error("Profile update failed:", profileError);
                     Alert.alert("Error", "Failed to update profile name.");
@@ -222,9 +229,9 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
       await forceRefresh();
       // User data refresh completed
 
-      Alert.alert("Success", "Profile updated successfully!", [
+      Alert.alert(t("common.success"), "Profile updated successfully!", [
         {
-          text: "OK",
+          text: t("common.ok"),
           onPress: () => navigation.goBack(),
         },
       ]);

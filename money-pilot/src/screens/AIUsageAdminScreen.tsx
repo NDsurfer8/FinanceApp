@@ -46,7 +46,7 @@ export const AIUsageAdminScreen: React.FC = () => {
     try {
       await aiUsageTracker.saveConfig(updates);
       setConfig((prev) => ({ ...prev, ...updates }));
-      Alert.alert("Success", "Configuration updated successfully!");
+      Alert.alert(t("common.success"), "Configuration updated successfully!");
     } catch (error) {
       console.error("Error updating config:", error);
       Alert.alert("Error", "Failed to update configuration");
@@ -67,7 +67,7 @@ export const AIUsageAdminScreen: React.FC = () => {
           onPress: async () => {
             try {
               await aiUsageTracker.resetUsage(user.uid);
-              Alert.alert("Success", "Usage reset successfully!");
+              Alert.alert(t("common.success"), "Usage reset successfully!");
             } catch (error) {
               console.error("Error resetting usage:", error);
               Alert.alert("Error", "Failed to reset usage");
@@ -101,7 +101,10 @@ export const AIUsageAdminScreen: React.FC = () => {
           break;
       }
       await loadConfig();
-      Alert.alert("Success", `Setup ${setupType} applied successfully!`);
+      Alert.alert(
+        t("common.success"),
+        `Setup ${setupType} applied successfully!`
+      );
     } catch (error) {
       console.error("Error applying setup:", error);
       Alert.alert("Error", "Failed to apply setup");

@@ -68,7 +68,7 @@ export default function GroupMembersScreen({
               await removeGroupMember(groupId, member.userId);
 
               Alert.alert(
-                "Success",
+                t("common.success"),
                 `${member.displayName} has been removed from the group.`
               );
               navigation.goBack();

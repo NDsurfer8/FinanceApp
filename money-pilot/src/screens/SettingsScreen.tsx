@@ -812,7 +812,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         letterSpacing: 0.5,
                       }}
                     >
-{t("settings.see_plans_pricing")}
+                      {t("settings.see_plans_pricing")}
                     </Text>
                   </View>
                 )}

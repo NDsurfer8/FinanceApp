@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -18,6 +18,8 @@ import { useTheme } from "../contexts/ThemeContext";
 import * as MailComposer from "expo-mail-composer";
 import * as StoreReview from "expo-store-review";
 import { useAuth } from "../hooks/useAuth";
+import { useTranslation } from "react-i18next";
+import { loadLanguageOnDemand } from "../config/i18n";
 
 interface AboutScreenProps {
   navigation: any;
@@ -26,9 +28,20 @@ interface AboutScreenProps {
 export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
   const appVersion = Constants.expoConfig?.version || "1.0.0";
   const buildNumber = Constants.expoConfig?.ios?.buildNumber || "1";
   const appName = Constants.expoConfig?.name || "VectorFi";
+
+  // Ensure language is loaded when component mounts
+  useEffect(() => {
+    const loadLanguage = async () => {
+      if (i18n.language && i18n.language !== "en") {
+        await loadLanguageOnDemand(i18n.language);
+      }
+    };
+    loadLanguage();
+  }, [i18n.language]);
 
   const openPrivacyPolicy = () => {
     navigation.navigate("PrivacyPolicy");
@@ -44,9 +57,9 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
 
       if (!isAvailable) {
         Alert.alert(
-          "Email Not Available",
-          "No email app is configured on this device. Please set up an email account in your device settings.",
-          [{ text: "OK" }]
+          t("about.email_not_available"),
+          t("about.email_not_available_message"),
+          [{ text: t("common.ok") }]
         );
         return;
       }
@@ -59,44 +72,40 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ navigation }) => {
 
       const emailContent = {
         recipients: ["support@vectorfi.ai"],
-        subject: "VectorFi Support Request",
-        body: `Hello VectorFi Support Team,
+        subject: t("about.email_subject"),
+        body: `${t("about.email_greeting")}
 
-I need help with the VectorFi app. Please provide assistance with my issue.
+${t("about.email_body")}
 
 ${userInfo}
 
-Issue Description:
-[Please describe your issue here]
+${t("about.email_issue_description")}:
+[${t("about.email_issue_placeholder")}]
 
-Device Information:
-- App Version: ${appVersion}
-- Platform: ${Platform.OS}
-- Device: ${Platform.OS === "ios" ? "iOS" : "Android"}
+${t("about.email_device_info")}:
+- ${t("about.email_app_version")}: ${appVersion}
+- ${t("about.email_platform")}: ${Platform.OS}
+- ${t("about.email_device")}: ${Platform.OS === "ios" ? "iOS" : "Android"}
 
-Thank you for your help!
+${t("about.email_thanks")}
 
-Best regards,
-${user?.displayName || "VectorFi User"}`,
+${t("about.email_best_regards")},
+${user?.displayName || t("about.email_user")}`,
         isHtml: false,
       };
 
       const result = await MailComposer.composeAsync(emailContent);
 
       if (result.status === MailComposer.MailComposerStatus.SENT) {
-        Alert.alert(
-          "Email Sent",
-          "Thank you for contacting us. We'll get back to you as soon as possible.",
-          [{ text: "OK" }]
-        );
+        Alert.alert(t("about.email_sent"), t("about.email_sent_message"), [
+          { text: t("common.ok") },
+        ]);
       }
     } catch (error) {
       console.error("Error opening email composer:", error);
-      Alert.alert(
-        "Error",
-        "Unable to open email composer. Please try again or contact us through other means.",
-        [{ text: "OK" }]
-      );
+      Alert.alert(t("common.error"), t("about.email_composer_error"), [
+        { text: t("common.ok") },
+      ]);
     }
   };
 
@@ -115,8 +124,8 @@ ${user?.displayName || "VectorFi User"}`,
       shareAppGeneral();
     } catch (error) {
       console.error("Error sharing app:", error);
-      Alert.alert("Error", "Unable to share the app. Please try again later.", [
-        { text: "OK" },
+      Alert.alert(t("common.error"), t("about.share_error"), [
+        { text: t("common.ok") },
       ]);
     }
   };
@@ -125,10 +134,10 @@ ${user?.displayName || "VectorFi User"}`,
     try {
       // Prepare share content
       const shareContent = {
-        title: "VectorFi - Take Control of Your Finances",
-        message: `Check out VectorFi - the smart finance app that helps you track expenses, set goals, and build wealth! 
+        title: t("about.share_title"),
+        message: `${t("about.share_message")}
 
-Download now and start your financial journey:
+${t("about.share_download")}:
 https://vectorfi.ai/
 
 #VectorFi #Finance #Budgeting #Investing`,
@@ -153,16 +162,15 @@ https://vectorfi.ai/
       // Fallback to a simpler share if the main one fails
       try {
         const simpleShare = {
-          message:
-            "Check out VectorFi - the smart finance app! https://vectorfi.ai/",
+          message: `${t("about.share_simple")} https://vectorfi.ai/`,
         };
         await Share.share(simpleShare);
       } catch (fallbackError) {
         console.error("Fallback share also failed:", fallbackError);
         Alert.alert(
-          "Sharing Unavailable",
-          "Sharing is not available on this device. You can copy the link manually: https://vectorfi.ai/",
-          [{ text: "OK" }]
+          t("about.sharing_unavailable"),
+          t("about.sharing_unavailable_message"),
+          [{ text: t("common.ok") }]
         );
       }
     }
@@ -175,9 +183,9 @@ https://vectorfi.ai/
 
       if (!isAvailable) {
         Alert.alert(
-          "Rating Not Available",
-          "App rating is not available at this time. Please try again later.",
-          [{ text: "OK" }]
+          t("about.rating_not_available"),
+          t("about.rating_not_available_message"),
+          [{ text: t("common.ok") }]
         );
         return;
       }
@@ -187,9 +195,9 @@ https://vectorfi.ai/
 
       if (!hasAction) {
         Alert.alert(
-          "Rating Not Available",
-          "App rating is not available at this time. Please try again later.",
-          [{ text: "OK" }]
+          t("about.rating_not_available"),
+          t("about.rating_not_available_message"),
+          [{ text: t("common.ok") }]
         );
         return;
       }
@@ -198,18 +206,14 @@ https://vectorfi.ai/
       await StoreReview.requestReview();
 
       // Show thank you message after requesting review
-      Alert.alert(
-        "Thank You!",
-        "Thank you for taking the time to rate VectorFi! Your feedback helps us improve the app.",
-        [{ text: "OK" }]
-      );
+      Alert.alert(t("about.thank_you"), t("about.thank_you_message"), [
+        { text: t("common.ok") },
+      ]);
     } catch (error) {
       console.error("Error requesting app review:", error);
-      Alert.alert(
-        "Error",
-        "Unable to open app rating. Please try again later.",
-        [{ text: "OK" }]
-      );
+      Alert.alert(t("common.error"), t("about.rating_error"), [
+        { text: t("common.ok") },
+      ]);
     }
   };
 
@@ -227,9 +231,11 @@ https://vectorfi.ai/
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View>
-            <Text style={[styles.title, { color: colors.text }]}>About</Text>
+            <Text style={[styles.title, { color: colors.text }]}>
+              {t("about.title")}
+            </Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Learn more about VectorFi
+              {t("about.subtitle")}
             </Text>
           </View>
         </View>
@@ -259,17 +265,17 @@ https://vectorfi.ai/
             {appName}
           </Text>
           <Text style={[styles.appTagline, { color: colors.textSecondary }]}>
-            Take control of your financial future
+            {t("about.app_tagline")}
           </Text>
           <Text style={[styles.appVersion, { color: colors.textSecondary }]}>
-            Version {appVersion} ({buildNumber})
+            {t("about.version")} {appVersion} ({buildNumber})
           </Text>
         </View>
 
         {/* App Description */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            About VectorFi
+            {t("about.about_vectorfi")}
           </Text>
           <View
             style={[
@@ -280,16 +286,12 @@ https://vectorfi.ai/
             <Text
               style={[styles.descriptionText, { color: colors.textSecondary }]}
             >
-              VectorFi is your comprehensive personal finance companion,
-              designed to help you track expenses, manage budgets, set financial
-              goals, and build wealth with confidence.
+              {t("about.description_1")}
             </Text>
             <Text
               style={[styles.descriptionText, { color: colors.textSecondary }]}
             >
-              Built with modern technology and security in mind, we prioritize
-              your financial data privacy while providing powerful tools to
-              achieve your financial dreams.
+              {t("about.description_2")}
             </Text>
           </View>
         </View>
@@ -297,7 +299,7 @@ https://vectorfi.ai/
         {/* Features */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Key Features
+            {t("about.key_features")}
           </Text>
           <View
             style={[
@@ -310,7 +312,7 @@ https://vectorfi.ai/
               <Text
                 style={[styles.featureText, { color: colors.textSecondary }]}
               >
-                Expense & Income Tracking
+                {t("about.feature_expense_tracking")}
               </Text>
             </View>
             <View style={styles.featureItem}>
@@ -318,7 +320,7 @@ https://vectorfi.ai/
               <Text
                 style={[styles.featureText, { color: colors.textSecondary }]}
               >
-                Smart Budget Management
+                {t("about.feature_budget_management")}
               </Text>
             </View>
             <View style={styles.featureItem}>
@@ -326,7 +328,7 @@ https://vectorfi.ai/
               <Text
                 style={[styles.featureText, { color: colors.textSecondary }]}
               >
-                Financial Goal Setting
+                {t("about.feature_goal_setting")}
               </Text>
             </View>
             <View style={styles.featureItem}>
@@ -334,7 +336,7 @@ https://vectorfi.ai/
               <Text
                 style={[styles.featureText, { color: colors.textSecondary }]}
               >
-                Asset & Debt Management
+                {t("about.feature_asset_debt_management")}
               </Text>
             </View>
             <View style={styles.featureItem}>
@@ -342,7 +344,7 @@ https://vectorfi.ai/
               <Text
                 style={[styles.featureText, { color: colors.textSecondary }]}
               >
-                Shared Finance Groups
+                {t("about.feature_shared_finance")}
               </Text>
             </View>
             <View style={styles.featureItem}>
@@ -350,7 +352,7 @@ https://vectorfi.ai/
               <Text
                 style={[styles.featureText, { color: colors.textSecondary }]}
               >
-                Real-time Notifications
+                {t("about.feature_notifications")}
               </Text>
             </View>
             <View style={styles.featureItem}>
@@ -358,7 +360,7 @@ https://vectorfi.ai/
               <Text
                 style={[styles.featureText, { color: colors.textSecondary }]}
               >
-                Secure Data Encryption
+                {t("about.feature_encryption")}
               </Text>
             </View>
             <View style={styles.featureItem}>
@@ -366,7 +368,7 @@ https://vectorfi.ai/
               <Text
                 style={[styles.featureText, { color: colors.textSecondary }]}
               >
-                Vectra AI Financial Assistant
+                {t("about.feature_ai_assistant")}
               </Text>
             </View>
           </View>
@@ -375,7 +377,7 @@ https://vectorfi.ai/
         {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Quick Actions
+            {t("about.quick_actions")}
           </Text>
 
           <TouchableOpacity
@@ -388,7 +390,7 @@ https://vectorfi.ai/
             <View style={styles.actionContent}>
               <Ionicons name="share-social" size={20} color={colors.primary} />
               <Text style={[styles.actionText, { color: colors.text }]}>
-                Share App
+                {t("about.share_app")}
               </Text>
             </View>
             <Ionicons
@@ -408,7 +410,7 @@ https://vectorfi.ai/
             <View style={styles.actionContent}>
               <Ionicons name="star" size={20} color="#f59e0b" />
               <Text style={[styles.actionText, { color: colors.text }]}>
-                Rate App
+                {t("about.rate_app")}
               </Text>
             </View>
             <Ionicons
@@ -428,7 +430,7 @@ https://vectorfi.ai/
             <View style={styles.actionContent}>
               <Ionicons name="mail" size={20} color={colors.primary} />
               <Text style={[styles.actionText, { color: colors.text }]}>
-                Contact Support
+                {t("about.contact_support")}
               </Text>
             </View>
             <Ionicons
@@ -448,7 +450,7 @@ https://vectorfi.ai/
             <View style={styles.actionContent}>
               <Ionicons name="globe" size={20} color={colors.primary} />
               <Text style={[styles.actionText, { color: colors.text }]}>
-                Visit Website
+                {t("about.visit_website")}
               </Text>
             </View>
             <Ionicons
@@ -482,7 +484,7 @@ https://vectorfi.ai/
         {/* Legal */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Legal
+            {t("about.legal")}
           </Text>
 
           <TouchableOpacity
@@ -495,7 +497,7 @@ https://vectorfi.ai/
             <View style={styles.legalContent}>
               <Ionicons name="document-text" size={20} color={colors.primary} />
               <Text style={[styles.legalText, { color: colors.text }]}>
-                Privacy Policy
+                {t("about.privacy_policy")}
               </Text>
             </View>
             <Ionicons
@@ -515,7 +517,7 @@ https://vectorfi.ai/
             <View style={styles.legalContent}>
               <Ionicons name="document" size={20} color={colors.primary} />
               <Text style={[styles.legalText, { color: colors.text }]}>
-                Terms of Service
+                {t("about.terms_of_service")}
               </Text>
             </View>
             <Ionicons
@@ -529,7 +531,7 @@ https://vectorfi.ai/
         {/* Developer Info */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Developer
+            {t("about.developer")}
           </Text>
           <View
             style={[
@@ -538,7 +540,7 @@ https://vectorfi.ai/
             ]}
           >
             <Text style={[styles.developerName, { color: colors.text }]}>
-              VectorFi Team
+              {t("about.developer_name")}
             </Text>
             <Text
               style={[
@@ -546,12 +548,12 @@ https://vectorfi.ai/
                 { color: colors.textSecondary },
               ]}
             >
-              Built with ❤️ using React Native and Expo
+              {t("about.developer_description")}
             </Text>
             <Text
               style={[styles.developerTech, { color: colors.textSecondary }]}
             >
-              React Native • Expo • TypeScript • Firebase
+              {t("about.developer_tech")}
             </Text>
           </View>
         </View>
@@ -561,10 +563,10 @@ https://vectorfi.ai/
           style={[styles.copyrightSection, { borderTopColor: colors.border }]}
         >
           <Text style={[styles.copyrightText, { color: colors.textSecondary }]}>
-            © {new Date().getFullYear()} VectorFi All rights reserved.
+            {t("about.copyright", { year: new Date().getFullYear() })}
           </Text>
           <Text style={[styles.copyrightText, { color: colors.textSecondary }]}>
-            Made with passion for financial empowerment.
+            {t("about.copyright_message")}
           </Text>
         </View>
       </ScrollView>
