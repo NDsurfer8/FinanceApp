@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useData } from "../contexts/DataContext";
+import { useTranslation } from "react-i18next";
 import { SharedGroup, getSharedGroup } from "../services/userData";
 import { syncUserDataToGroup } from "../services/sharedFinanceDataSync";
 import { StandardHeader } from "../components/StandardHeader";
@@ -46,8 +47,25 @@ export default function GroupDataSharingScreen({
   const { groupId } = route.params;
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const { transactions, assets, debts, goals, recurringTransactions } =
     useData();
+
+  // Helper function to translate group type
+  const translateGroupType = (type: string): string => {
+    switch (type) {
+      case "couple":
+        return t("shared_finance.couple");
+      case "family":
+        return t("shared_finance.family");
+      case "investment":
+        return t("shared_finance.investment");
+      case "business":
+        return t("shared_finance.business");
+      default:
+        return type;
+    }
+  };
   const [group, setGroup] = useState<SharedGroup | null>(null);
   const [settings, setSettings] = useState<GroupDataSharingSettings>({
     shareNetWorth: true,

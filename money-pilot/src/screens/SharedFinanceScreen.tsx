@@ -16,6 +16,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSubscription } from "../contexts/SubscriptionContext";
 import { usePaywall } from "../hooks/usePaywall";
+import { useTranslation } from "react-i18next";
 import {
   createSharedGroup,
   createInvitation,
@@ -43,7 +44,24 @@ export default function SharedFinanceScreen({
   const { user } = useAuth();
   const { hasPremiumAccess } = useSubscription();
   const { presentPaywall } = usePaywall();
+  const { t } = useTranslation();
   const [groups, setGroups] = useState<SharedGroup[]>([]);
+
+  // Helper function to translate group type
+  const translateGroupType = (type: string): string => {
+    switch (type) {
+      case "couple":
+        return t("shared_finance.couple");
+      case "family":
+        return t("shared_finance.family");
+      case "investment":
+        return t("shared_finance.investment");
+      case "business":
+        return t("shared_finance.business");
+      default:
+        return type;
+    }
+  };
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<SharedGroup | null>(null);
@@ -90,7 +108,10 @@ export default function SharedFinanceScreen({
       setGroups(userGroups);
     } catch (error) {
       console.error("Error loading shared groups:", error);
-      Alert.alert("Error", "Failed to load shared groups");
+      Alert.alert(
+        t("common.error"),
+        t("shared_finance.error_loading_shared_groups")
+      );
     } finally {
       setLoading(false);
     }
@@ -116,15 +137,15 @@ export default function SharedFinanceScreen({
     // Check if user has premium access for creating groups
     if (!hasPremiumAccess()) {
       Alert.alert(
-        "Premium Feature",
-        "Creating shared finance groups requires a premium subscription. Upgrade to start collaborating on your finances with family, partners, or business associates.",
+        t("shared_finance.premium_feature"),
+        t("shared_finance.premium_feature_message"),
         [
           {
-            text: "Cancel",
+            text: t("shared_finance.cancel"),
             style: "cancel",
           },
           {
-            text: "Upgrade",
+            text: t("shared_finance.upgrade"),
             onPress: () => presentPaywall(),
           },
         ]
@@ -231,10 +252,13 @@ export default function SharedFinanceScreen({
       setGroupName("");
       setGroupDescription("");
       setGroupType("couple");
-      Alert.alert(t("common.success"), "Group created successfully!");
+      Alert.alert(
+        t("common.success"),
+        t("shared_finance.group_created_successfully")
+      );
     } catch (error) {
       console.error("Error creating group:", error);
-      Alert.alert("Error", "Failed to create group. Please try again.");
+      Alert.alert(t("common.error"), t("shared_finance.error_creating_group"));
     }
   };
 
@@ -263,10 +287,16 @@ export default function SharedFinanceScreen({
       setShowInviteModal(false);
       setInviteEmail("");
       setSelectedGroup(null);
-      Alert.alert(t("common.success"), "Invitation sent successfully!");
+      Alert.alert(
+        t("common.success"),
+        t("shared_finance.invitation_sent_successfully")
+      );
     } catch (error) {
       console.error("Error sending invitation:", error);
-      Alert.alert("Error", "Failed to send invitation. Please try again.");
+      Alert.alert(
+        t("common.error"),
+        t("shared_finance.error_sending_invitation")
+      );
     }
   };
 
@@ -345,15 +375,15 @@ export default function SharedFinanceScreen({
 
         // Show data sharing prompt
         Alert.alert(
-          "Welcome to the group!",
-          "You can now configure what financial data to share with the group. Set up your sharing preferences to get started.",
+          t("shared_finance.welcome_to_group"),
+          t("shared_finance.configure_sharing_message"),
           [
             {
-              text: "Not Now",
+              text: t("shared_finance.not_now"),
               style: "cancel",
             },
             {
-              text: "Configure Sharing",
+              text: t("shared_finance.configure_sharing"),
               onPress: () =>
                 navigation.navigate("GroupDataSharing", {
                   groupId: invitation.groupId,
@@ -369,12 +399,17 @@ export default function SharedFinanceScreen({
       // Reload invitations to remove the responded one
       await loadInvitations();
 
-      Alert.alert(t("common.success"), `Invitation ${status} successfully!`);
+      Alert.alert(
+        t("common.success"),
+        status === "accepted"
+          ? t("shared_finance.invitation_accepted_successfully")
+          : t("shared_finance.invitation_declined_successfully")
+      );
     } catch (error) {
       console.error("Error responding to invitation:", error);
       Alert.alert(
-        "Error",
-        "Failed to respond to invitation. Please try again."
+        t("common.error"),
+        t("shared_finance.error_responding_to_invitation")
       );
     }
   };
@@ -405,11 +440,10 @@ export default function SharedFinanceScreen({
         <Ionicons name="people" size={48} color={colors.primary} />
       </View>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>
-        Start Sharing Finances
+        {t("shared_finance.start_sharing_finances")}
       </Text>
       <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-        Create a group to share net worth, income, and transactions with trusted
-        people
+        {t("shared_finance.create_group_description")}
       </Text>
       <TouchableOpacity
         style={[styles.emptyStateButton, { backgroundColor: colors.primary }]}
@@ -417,7 +451,7 @@ export default function SharedFinanceScreen({
       >
         <Ionicons name="add" size={20} color={colors.buttonText} />
         <Text style={[styles.createButtonText, { color: colors.buttonText }]}>
-          Create Your First Group
+          {t("shared_finance.create_first_group")}
         </Text>
         {!hasPremiumAccess() && (
           <Ionicons
@@ -459,7 +493,7 @@ export default function SharedFinanceScreen({
             ]}
           >
             <Text style={[styles.groupBadgeText, { color: colors.primary }]}>
-              {group.type}
+              {translateGroupType(group.type)}
             </Text>
           </View>
         </View>
@@ -468,7 +502,10 @@ export default function SharedFinanceScreen({
           <View style={styles.statItem}>
             <Ionicons name="people" size={16} color={colors.textSecondary} />
             <Text style={[styles.statText, { color: colors.textSecondary }]}>
-              {memberCount} member{memberCount !== 1 ? "s" : ""}
+              {memberCount}{" "}
+              {memberCount === 1
+                ? t("shared_finance.members")
+                : t("shared_finance.members_plural")}
             </Text>
           </View>
           <View style={styles.statItem}>
@@ -478,7 +515,7 @@ export default function SharedFinanceScreen({
               color={colors.textSecondary}
             />
             <Text style={[styles.statText, { color: colors.textSecondary }]}>
-              {isOwner ? "Owner" : "Member"}
+              {isOwner ? t("shared_finance.owner") : t("shared_finance.member")}
             </Text>
           </View>
         </View>
@@ -496,7 +533,7 @@ export default function SharedFinanceScreen({
           >
             <Ionicons name="person-add" size={16} color={colors.primary} />
             <Text style={[styles.actionButtonText, { color: colors.primary }]}>
-              Invite
+              {t("shared_finance.invite")}
             </Text>
           </TouchableOpacity>
 
@@ -511,7 +548,7 @@ export default function SharedFinanceScreen({
           >
             <Ionicons name="share" size={16} color={colors.warning} />
             <Text style={[styles.actionButtonText, { color: colors.warning }]}>
-              Share Data
+              {t("shared_finance.share_data")}
             </Text>
           </TouchableOpacity>
 
@@ -524,7 +561,7 @@ export default function SharedFinanceScreen({
           >
             <Ionicons name="open" size={16} color={colors.success} />
             <Text style={[styles.actionButtonText, { color: colors.success }]}>
-              Open
+              {t("shared_finance.open")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -542,7 +579,7 @@ export default function SharedFinanceScreen({
       >
         {/* Header */}
         <StandardHeader
-          title="Shared Finances"
+          title={t("shared_finance.title")}
           onBack={() => navigation.goBack()}
           rightComponent={
             <TouchableOpacity
@@ -586,7 +623,7 @@ export default function SharedFinanceScreen({
         {invitations.length > 0 && (
           <View style={styles.invitationsContainer}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Pending Invitations ({invitations.length})
+              {t("shared_finance.pending_invitations")} ({invitations.length})
             </Text>
             {invitations.map((invitation) => (
               <View
@@ -608,7 +645,7 @@ export default function SharedFinanceScreen({
                       { color: colors.textSecondary },
                     ]}
                   >
-                    Invited by {invitation.inviterName}
+                    {t("shared_finance.invited_by")} {invitation.inviterName}
                   </Text>
                   <Text
                     style={[
@@ -616,7 +653,7 @@ export default function SharedFinanceScreen({
                       { color: colors.textSecondary },
                     ]}
                   >
-                    Role: {invitation.role}
+                    {t("shared_finance.role")}: {invitation.role}
                   </Text>
                 </View>
                 <View style={styles.invitationActions}>
@@ -640,7 +677,7 @@ export default function SharedFinanceScreen({
                         { color: colors.success },
                       ]}
                     >
-                      Accept
+                      {t("shared_finance.accept")}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -656,7 +693,7 @@ export default function SharedFinanceScreen({
                     <Text
                       style={[styles.actionButtonText, { color: colors.error }]}
                     >
-                      Decline
+                      {t("shared_finance.decline")}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -671,7 +708,7 @@ export default function SharedFinanceScreen({
         ) : (
           <View style={styles.groupsContainer}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Your Groups ({groups.length})
+              {t("shared_finance.your_groups")} ({groups.length})
             </Text>
             {groups.map((group) => renderGroupCard(group))}
           </View>
@@ -691,7 +728,7 @@ export default function SharedFinanceScreen({
           >
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
-                Create New Group
+                {t("shared_finance.create_new_group")}
               </Text>
               <TouchableOpacity onPress={() => setShowCreateModal(false)}>
                 <Ionicons name="close" size={24} color={colors.textSecondary} />
@@ -707,7 +744,7 @@ export default function SharedFinanceScreen({
                   borderColor: colors.border,
                 },
               ]}
-              placeholder="Group name"
+              placeholder={t("shared_finance.group_name")}
               placeholderTextColor={colors.textSecondary}
               value={groupName}
               onChangeText={setGroupName}
@@ -722,7 +759,7 @@ export default function SharedFinanceScreen({
                   borderColor: colors.border,
                 },
               ]}
-              placeholder="Description (optional)"
+              placeholder={t("shared_finance.description_optional")}
               placeholderTextColor={colors.textSecondary}
               value={groupDescription}
               onChangeText={setGroupDescription}
@@ -732,18 +769,30 @@ export default function SharedFinanceScreen({
             {/* Group Type Selector */}
             <View style={styles.typeSelectorContainer}>
               <Text style={[styles.typeSelectorLabel, { color: colors.text }]}>
-                Group Type
+                {t("shared_finance.group_type")}
               </Text>
               <View style={styles.typeSelectorGrid}>
                 {[
-                  { type: "couple", label: "Couple", icon: "heart" },
-                  { type: "family", label: "Family", icon: "people" },
+                  {
+                    type: "couple",
+                    label: t("shared_finance.couple"),
+                    icon: "heart",
+                  },
+                  {
+                    type: "family",
+                    label: t("shared_finance.family"),
+                    icon: "people",
+                  },
                   {
                     type: "investment",
-                    label: "Investment",
+                    label: t("shared_finance.investment"),
                     icon: "trending-up",
                   },
-                  { type: "business", label: "Business", icon: "business" },
+                  {
+                    type: "business",
+                    label: t("shared_finance.business"),
+                    icon: "business",
+                  },
                 ].map((typeOption) => (
                   <TouchableOpacity
                     key={typeOption.type}
@@ -805,7 +854,7 @@ export default function SharedFinanceScreen({
               <Text
                 style={[styles.modalButtonText, { color: colors.buttonText }]}
               >
-                Create Group
+                {t("shared_finance.create_group")}
               </Text>
               {!hasPremiumAccess() && (
                 <Ionicons
@@ -833,7 +882,7 @@ export default function SharedFinanceScreen({
           >
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
-                Invite Member
+                {t("shared_finance.invite_member")}
               </Text>
               <TouchableOpacity onPress={() => setShowInviteModal(false)}>
                 <Ionicons name="close" size={24} color={colors.textSecondary} />
@@ -843,7 +892,8 @@ export default function SharedFinanceScreen({
             <Text
               style={[styles.modalSubtitle, { color: colors.textSecondary }]}
             >
-              Invite someone to join "{selectedGroup?.name}"
+              {t("shared_finance.invite_someone_to_join")} "
+              {selectedGroup?.name}"
             </Text>
 
             <TextInput
@@ -855,7 +905,7 @@ export default function SharedFinanceScreen({
                   borderColor: colors.border,
                 },
               ]}
-              placeholder="Email address"
+              placeholder={t("shared_finance.email_address")}
               placeholderTextColor={colors.textSecondary}
               value={inviteEmail}
               onChangeText={setInviteEmail}
@@ -879,7 +929,7 @@ export default function SharedFinanceScreen({
               <Text
                 style={[styles.modalButtonText, { color: colors.buttonText }]}
               >
-                Send Invitation
+                {t("shared_finance.send_invitation")}
               </Text>
             </TouchableOpacity>
           </View>

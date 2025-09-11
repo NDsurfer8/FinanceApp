@@ -62,23 +62,18 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
     // Convert category to snake_case for translation keys
     const categoryKey = category.toLowerCase().replace(/\s+/g, "_");
 
-    // Check if it's an income category
-    const incomeTranslation = t(
-      `transactions.income_categories.${categoryKey}`,
-      {
-        defaultValue: `transactions.income_categories.${categoryKey}`,
-      }
-    );
-    if (incomeTranslation !== `transactions.income_categories.${categoryKey}`) {
-      return incomeTranslation;
+    // Try expense categories first (most categories are expenses)
+    const expenseKey = `categories.${categoryKey}`;
+    const expenseTranslation = t(expenseKey, { defaultValue: "" });
+    if (expenseTranslation && expenseTranslation !== expenseKey) {
+      return expenseTranslation;
     }
 
-    // Check if it's an expense category
-    const expenseTranslation = t(`categories.${categoryKey}`, {
-      defaultValue: `categories.${categoryKey}`,
-    });
-    if (expenseTranslation !== `categories.${categoryKey}`) {
-      return expenseTranslation;
+    // Try income categories
+    const incomeKey = `transactions.income_categories.${categoryKey}`;
+    const incomeTranslation = t(incomeKey, { defaultValue: "" });
+    if (incomeTranslation && incomeTranslation !== incomeKey) {
+      return incomeTranslation;
     }
 
     // Return original category if no translation found
