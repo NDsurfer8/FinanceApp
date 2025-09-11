@@ -1074,5 +1074,9 @@
     "error_saving_transactions": "エラー",
     "error_saving_description": "取引の保存に失敗しました。接続を確認して再試行してください。",
     "s_remaining": "秒残り"
+  },
+  "transaction_list_card": {
+    "transactions": "取引",
+    "add_transaction": "{{title}}を追加"
   }
 }

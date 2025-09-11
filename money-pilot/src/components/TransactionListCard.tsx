@@ -158,7 +158,8 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                 marginTop: 2,
               }}
             >
-              {filteredTransactions.length} transactions •{" "}
+              {filteredTransactions.length}{" "}
+              {t("transaction_list_card.transactions")} •{" "}
               {formatCurrency(filteredTotalAmount)}
             </Text>
           </View>
@@ -449,7 +450,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                   marginLeft: 8,
                 }}
               >
-                {`Add ${title}`}
+                {t("transaction_list_card.add_transaction", { title })}
               </Text>
             </TouchableOpacity>
           </HelpfulTooltip>

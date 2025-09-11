@@ -195,6 +195,10 @@
     "error_saving_description": "Failed to save transactions. Please check your connection and try again.",
     "s_remaining": "s remaining"
   },
+  "transaction_list_card": {
+    "transactions": "transactions",
+    "add_transaction": "Add {{title}}"
+  },
   "navigation": {
     "dashboard": "Dashboard",
     "budget": "Budget",

@@ -1074,5 +1074,9 @@
     "error_saving_transactions": "Erreur",
     "error_saving_description": "Échec de la sauvegarde des transactions. Veuillez vérifier votre connexion et réessayer.",
     "s_remaining": "s restantes"
+  },
+  "transaction_list_card": {
+    "transactions": "transactions",
+    "add_transaction": "Ajouter {{title}}"
   }
 }

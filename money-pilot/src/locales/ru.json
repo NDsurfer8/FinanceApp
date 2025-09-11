@@ -1074,5 +1074,9 @@
     "error_saving_transactions": "Ошибка",
     "error_saving_description": "Не удалось сохранить транзакции. Пожалуйста, проверьте подключение и попробуйте снова.",
     "s_remaining": "с осталось"
+  },
+  "transaction_list_card": {
+    "transactions": "транзакции",
+    "add_transaction": "Добавить {{title}}"
   }
 }

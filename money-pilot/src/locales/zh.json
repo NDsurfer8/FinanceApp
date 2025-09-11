@@ -1074,5 +1074,9 @@
     "error_saving_transactions": "错误",
     "error_saving_description": "保存交易失败。请检查您的连接并重试。",
     "s_remaining": "秒剩余"
+  },
+  "transaction_list_card": {
+    "transactions": "交易",
+    "add_transaction": "添加{{title}}"
   }
 }

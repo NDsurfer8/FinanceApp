@@ -1074,5 +1074,9 @@
     "error_saving_transactions": "خطأ",
     "error_saving_description": "فشل في حفظ المعاملات. يرجى التحقق من اتصالك والمحاولة مرة أخرى.",
     "s_remaining": "ثانية متبقية"
+  },
+  "transaction_list_card": {
+    "transactions": "المعاملات",
+    "add_transaction": "إضافة {{title}}"
   }
 }

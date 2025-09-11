@@ -1074,5 +1074,9 @@
     "error_saving_transactions": "त्रुटि",
     "error_saving_description": "लेनदेन सहेजने में विफल। कृपया अपना कनेक्शन जांचें और पुनः प्रयास करें।",
     "s_remaining": "सेकंड शेष"
+  },
+  "transaction_list_card": {
+    "transactions": "लेनदेन",
+    "add_transaction": "{{title}} जोड़ें"
   }
 }

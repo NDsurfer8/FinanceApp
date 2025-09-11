@@ -1074,5 +1074,9 @@
     "error_saving_transactions": "Error",
     "error_saving_description": "Error al guardar transacciones. Por favor, verifica tu conexión e inténtalo de nuevo.",
     "s_remaining": "s restantes"
+  },
+  "transaction_list_card": {
+    "transactions": "transacciones",
+    "add_transaction": "Agregar {{title}}"
   }
 }
