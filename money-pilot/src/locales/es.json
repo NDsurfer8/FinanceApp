@@ -121,7 +121,22 @@
     "available": "Disponible:",
     "excellent_discretionary_savings_message": "Tienes {{rate}}% de tus ingresos disponibles para ahorros adicionales",
     "emergency_fund_complete": "¡Fondo de Emergencia Completo!",
-    "emergency_fund_complete_message": "Tienes {{progress}}% de tu objetivo de 6 meses"
+    "emergency_fund_complete_message": "Tienes {{progress}}% de tu objetivo de 6 meses",
+    "title": "Panel de Control",
+    "welcome_message": "¡Bienvenido de nuevo!",
+    "total_balance": "Saldo Total",
+    "monthly_income": "Ingresos Mensuales",
+    "monthly_expenses": "Gastos Mensuales",
+    "available_amount": "Cantidad Disponible",
+    "total_assets": "Activos",
+    "total_liabilities": "Pasivos",
+    "smart_insights": "Insights Inteligentes",
+    "savings_rate": "Tasa de Ahorro",
+    "budget_overview": "Resumen del Presupuesto",
+    "recent_transactions": "Transacciones Recientes",
+    "quick_actions": "Acciones Rápidas",
+    "financial_insights": "Insights Financieros",
+    "excellent_discretionary_savings": "¡Excelentes Ahorros Discrecionales!"
   },
   "budget": {
     "title": "Presupuesto",
@@ -162,7 +177,8 @@
     "no_transactions_selected": "No se Seleccionaron Transacciones",
     "select_at_least_one_transaction": "Por favor selecciona al menos una transacción para importar.",
     "partial_success": "Éxito Parcial",
-    "partial_success_message": "Se importaron {{saved}} transacciones exitosamente.\n\n{{failed}} transacciones fallaron al guardar (probablemente debido a problemas de conexión temporales).\n\nPuedes intentar importar las transacciones fallidas nuevamente."
+    "partial_success_message": "Se importaron {{saved}} transacciones exitosamente.\n\n{{failed}} transacciones fallaron al guardar (probablemente debido a problemas de conexión temporales).\n\nPuedes intentar importar las transacciones fallidas nuevamente.",
+    "net_worth": "Patrimonio Neto"
   },
   "transactions": {
     "title": "Transacciones",

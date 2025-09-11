@@ -130,7 +130,13 @@
     "available": "متاح:",
     "excellent_discretionary_savings_message": "لديك {{rate}}% من دخلك متاح للادخار الإضافي",
     "emergency_fund_complete": "صندوق الطوارئ مكتمل!",
-    "emergency_fund_complete_message": "لديك {{progress}}% من هدفك لمدة 6 أشهر"
+    "emergency_fund_complete_message": "لديك {{progress}}% من هدفك لمدة 6 أشهر",
+    "savings_rate": "معدل الادخار",
+    "budget_overview": "نظرة عامة على الميزانية",
+    "recent_transactions": "المعاملات الأخيرة",
+    "quick_actions": "إجراءات سريعة",
+    "financial_insights": "رؤى مالية",
+    "excellent_discretionary_savings": "مدخرات تقديرية ممتازة!"
   },
   "budget": {
     "title": "الميزانية",
@@ -171,7 +177,8 @@
     "no_transactions_selected": "لم يتم اختيار معاملات",
     "select_at_least_one_transaction": "يرجى اختيار معاملة واحدة على الأقل للاستيراد.",
     "partial_success": "نجاح جزئي",
-    "partial_success_message": "تم استيراد {{saved}} معاملة بنجاح.\n\n{{failed}} معاملة فشلت في الحفظ (ربما بسبب مشاكل اتصال مؤقتة).\n\nيمكنك محاولة استيراد المعاملات الفاشلة مرة أخرى."
+    "partial_success_message": "تم استيراد {{saved}} معاملة بنجاح.\n\n{{failed}} معاملة فشلت في الحفظ (ربما بسبب مشاكل اتصال مؤقتة).\n\nيمكنك محاولة استيراد المعاملات الفاشلة مرة أخرى.",
+    "net_worth": "صافي الثروة"
   },
   "transactions": {
     "title": "المعاملات",

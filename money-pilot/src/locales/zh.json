@@ -130,7 +130,13 @@
     "available": "可用:",
     "excellent_discretionary_savings_message": "您有{{rate}}%的收入可用于额外储蓄",
     "emergency_fund_complete": "应急基金完成！",
-    "emergency_fund_complete_message": "您已达到6个月目标的{{progress}}%"
+    "emergency_fund_complete_message": "您已达到6个月目标的{{progress}}%",
+    "savings_rate": "储蓄率",
+    "budget_overview": "预算概览",
+    "recent_transactions": "最近交易",
+    "quick_actions": "快速操作",
+    "financial_insights": "金融洞察",
+    "excellent_discretionary_savings": "优秀的可自由支配储蓄！"
   },
   "budget": {
     "title": "预算",
@@ -171,7 +177,8 @@
     "no_transactions_selected": "未选择交易",
     "select_at_least_one_transaction": "请至少选择一笔交易进行导入。",
     "partial_success": "部分成功",
-    "partial_success_message": "成功导入{{saved}}笔交易。\n\n{{failed}}笔交易保存失败（可能是由于临时连接问题）。\n\n您可以再次尝试导入失败的交易。"
+    "partial_success_message": "成功导入{{saved}}笔交易。\n\n{{failed}}笔交易保存失败（可能是由于临时连接问题）。\n\n您可以再次尝试导入失败的交易。",
+    "net_worth": "净资产"
   },
   "transactions": {
     "title": "交易",

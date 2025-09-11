@@ -130,7 +130,13 @@
     "available": "利用可能:",
     "excellent_discretionary_savings_message": "追加の貯蓄に利用可能な収入の{{rate}}%があります",
     "emergency_fund_complete": "緊急資金完了！",
-    "emergency_fund_complete_message": "6ヶ月目標の{{progress}}%を達成しています"
+    "emergency_fund_complete_message": "6ヶ月目標の{{progress}}%を達成しています",
+    "savings_rate": "貯蓄率",
+    "budget_overview": "予算概要",
+    "recent_transactions": "最近の取引",
+    "quick_actions": "クイックアクション",
+    "financial_insights": "金融インサイト",
+    "excellent_discretionary_savings": "素晴らしい裁量的貯蓄！"
   },
   "budget": {
     "title": "予算",
@@ -171,7 +177,8 @@
     "no_transactions_selected": "取引が選択されていません",
     "select_at_least_one_transaction": "インポートするために少なくとも1つの取引を選択してください。",
     "partial_success": "部分的成功",
-    "partial_success_message": "{{saved}}件の取引が正常にインポートされました。\n\n{{failed}}件の取引の保存に失敗しました（一時的な接続の問題が原因の可能性があります）。\n\n失敗した取引を再度インポートしてみることができます。"
+    "partial_success_message": "{{saved}}件の取引が正常にインポートされました。\n\n{{failed}}件の取引の保存に失敗しました（一時的な接続の問題が原因の可能性があります）。\n\n失敗した取引を再度インポートしてみることができます。",
+    "net_worth": "純資産"
   },
   "transactions": {
     "title": "取引",

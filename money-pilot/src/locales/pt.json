@@ -130,7 +130,13 @@
     "available": "Disponível:",
     "excellent_discretionary_savings_message": "Você tem {{rate}}% da sua renda disponível para poupanças adicionais",
     "emergency_fund_complete": "Fundo de Emergência Completo!",
-    "emergency_fund_complete_message": "Você tem {{progress}}% da sua meta de 6 meses"
+    "emergency_fund_complete_message": "Você tem {{progress}}% da sua meta de 6 meses",
+    "savings_rate": "Taxa de Poupança",
+    "budget_overview": "Visão Geral do Orçamento",
+    "recent_transactions": "Transações Recentes",
+    "quick_actions": "Ações Rápidas",
+    "financial_insights": "Insights Financeiros",
+    "excellent_discretionary_savings": "Excelente Poupança Discricionária!"
   },
   "budget": {
     "title": "Orçamento",
@@ -171,7 +177,8 @@
     "no_transactions_selected": "Nenhuma Transação Selecionada",
     "select_at_least_one_transaction": "Por favor, selecione pelo menos uma transação para importar.",
     "partial_success": "Sucesso Parcial",
-    "partial_success_message": "{{saved}} transações importadas com sucesso.\n\n{{failed}} transações falharam ao salvar (provavelmente devido a problemas de conexão temporários).\n\nVocê pode tentar importar as transações falhadas novamente."
+    "partial_success_message": "{{saved}} transações importadas com sucesso.\n\n{{failed}} transações falharam ao salvar (provavelmente devido a problemas de conexão temporários).\n\nVocê pode tentar importar as transações falhadas novamente.",
+    "net_worth": "Patrimônio Líquido"
   },
   "transactions": {
     "title": "Transações",

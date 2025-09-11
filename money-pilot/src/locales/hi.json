@@ -130,7 +130,13 @@
     "available": "उपलब्ध:",
     "excellent_discretionary_savings_message": "आपके पास अतिरिक्त बचत के लिए आपकी आय का {{rate}}% उपलब्ध है",
     "emergency_fund_complete": "आपातकालीन फंड पूरा!",
-    "emergency_fund_complete_message": "आपके पास 6 महीने के लक्ष्य का {{progress}}% है"
+    "emergency_fund_complete_message": "आपके पास 6 महीने के लक्ष्य का {{progress}}% है",
+    "savings_rate": "बचत दर",
+    "budget_overview": "बजट अवलोकन",
+    "recent_transactions": "हाल की लेनदेन",
+    "quick_actions": "त्वरित क्रियाएं",
+    "financial_insights": "वित्तीय अंतर्दृष्टि",
+    "excellent_discretionary_savings": "उत्कृष्ट विवेकाधीन बचत!"
   },
   "budget": {
     "title": "बजट",
@@ -171,7 +177,8 @@
     "no_transactions_selected": "कोई लेनदेन चयनित नहीं",
     "select_at_least_one_transaction": "कृपया आयात करने के लिए कम से कम एक लेनदेन चुनें।",
     "partial_success": "आंशिक सफलता",
-    "partial_success_message": "{{saved}} लेनदेन सफलतापूर्वक आयात किए गए।\n\n{{failed}} लेनदेन सहेजने में विफल (संभवतः अस्थायी कनेक्शन समस्याओं के कारण)।\n\nआप असफल लेनदेन को फिर से आयात करने का प्रयास कर सकते हैं।"
+    "partial_success_message": "{{saved}} लेनदेन सफलतापूर्वक आयात किए गए।\n\n{{failed}} लेनदेन सहेजने में विफल (संभवतः अस्थायी कनेक्शन समस्याओं के कारण)।\n\nआप असफल लेनदेन को फिर से आयात करने का प्रयास कर सकते हैं।",
+    "net_worth": "शुद्ध संपत्ति"
   },
   "transactions": {
     "title": "लेनदेन",

@@ -130,7 +130,13 @@
     "available": "Disponible:",
     "excellent_discretionary_savings_message": "Vous avez {{rate}}% de vos revenus disponibles pour des économies supplémentaires",
     "emergency_fund_complete": "Fonds d'urgence terminé !",
-    "emergency_fund_complete_message": "Vous avez {{progress}}% de votre objectif de 6 mois"
+    "emergency_fund_complete_message": "Vous avez {{progress}}% de votre objectif de 6 mois",
+    "savings_rate": "Taux d'Épargne",
+    "budget_overview": "Aperçu du Budget",
+    "recent_transactions": "Transactions Récentes",
+    "quick_actions": "Actions Rapides",
+    "financial_insights": "Insights Financiers",
+    "excellent_discretionary_savings": "Excellent Épargne Discrétionnaire !"
   },
   "budget": {
     "title": "Budget",
@@ -171,7 +177,8 @@
     "no_transactions_selected": "Aucune Transaction Sélectionnée",
     "select_at_least_one_transaction": "Veuillez sélectionner au moins une transaction à importer.",
     "partial_success": "Succès Partiel",
-    "partial_success_message": "{{saved}} transactions importées avec succès.\n\n{{failed}} transactions ont échoué à sauvegarder (probablement en raison de problèmes de connexion temporaires).\n\nVous pouvez essayer d'importer à nouveau les transactions échouées."
+    "partial_success_message": "{{saved}} transactions importées avec succès.\n\n{{failed}} transactions ont échoué à sauvegarder (probablement en raison de problèmes de connexion temporaires).\n\nVous pouvez essayer d'importer à nouveau les transactions échouées.",
+    "net_worth": "Patrimoine Net"
   },
   "transactions": {
     "title": "Transactions",

@@ -130,7 +130,13 @@
     "available": "Verfügbar:",
     "excellent_discretionary_savings_message": "Sie haben {{rate}}% Ihres Einkommens für zusätzliche Ersparnisse verfügbar",
     "emergency_fund_complete": "Notfallfonds abgeschlossen!",
-    "emergency_fund_complete_message": "Sie haben {{progress}}% Ihres 6-Monats-Ziels"
+    "emergency_fund_complete_message": "Sie haben {{progress}}% Ihres 6-Monats-Ziels",
+    "savings_rate": "Sparquote",
+    "budget_overview": "Budget-Übersicht",
+    "recent_transactions": "Aktuelle Transaktionen",
+    "quick_actions": "Schnellaktionen",
+    "financial_insights": "Finanzielle Erkenntnisse",
+    "excellent_discretionary_savings": "Ausgezeichnete Diskrete Ersparnisse!"
   },
   "budget": {
     "title": "Budget",
@@ -171,7 +177,8 @@
     "no_transactions_selected": "Keine Transaktionen Ausgewählt",
     "select_at_least_one_transaction": "Bitte wählen Sie mindestens eine Transaktion zum Importieren aus.",
     "partial_success": "Teilweiser Erfolg",
-    "partial_success_message": "{{saved}} Transaktionen erfolgreich importiert.\n\n{{failed}} Transaktionen konnten nicht gespeichert werden (wahrscheinlich aufgrund temporärer Verbindungsprobleme).\n\nSie können versuchen, die fehlgeschlagenen Transaktionen erneut zu importieren."
+    "partial_success_message": "{{saved}} Transaktionen erfolgreich importiert.\n\n{{failed}} Transaktionen konnten nicht gespeichert werden (wahrscheinlich aufgrund temporärer Verbindungsprobleme).\n\nSie können versuchen, die fehlgeschlagenen Transaktionen erneut zu importieren.",
+    "net_worth": "Nettovermögen"
   },
   "transactions": {
     "title": "Transaktionen",
