@@ -1025,8 +1025,6 @@ exports.aiChat = onCall(async (data, context) => {
 
     if (includeAudio && aiResponse) {
       try {
-        console.log(`Generating audio for response with voice: ${safeVoice}`);
-
         const audioResponse = await openaiClient.audio.speech.create({
           model: "tts-1", // Use tts-1 for faster generation, tts-1-hd for higher quality
           voice: safeVoice, // Use validated voice
@@ -1046,12 +1044,6 @@ exports.aiChat = onCall(async (data, context) => {
 
         // Calculate TTS cost (tts-1: $0.015 per 1K characters)
         audioCost = (aiResponse.length / 1000) * 0.015;
-
-        console.log(
-          `Audio generated successfully. Length: ${
-            audioBuffer.length
-          } bytes, Cost: $${audioCost.toFixed(4)}`
-        );
       } catch (audioError) {
         console.error("TTS generation error:", audioError);
         // Don't fail the entire request if TTS fails
