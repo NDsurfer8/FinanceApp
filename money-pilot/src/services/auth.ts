@@ -10,6 +10,7 @@ import {
   sendEmailVerification,
   OAuthProvider,
   signInWithCredential,
+  fetchSignInMethodsForEmail,
 } from "firebase/auth";
 import { auth } from "./firebase";
 import { saveUserProfile, UserProfile } from "./userData";
@@ -34,6 +35,20 @@ export const isAppleAuthAvailable = async (): Promise<boolean> => {
     return await AppleAuthentication.isAvailableAsync();
   } catch (error) {
     console.error("Error checking Apple Auth availability:", error);
+    return false;
+  }
+};
+
+// Check if email already exists (prevents duplicates)
+export const checkEmailExists = async (email: string): Promise<boolean> => {
+  try {
+    const methods = await fetchSignInMethodsForEmail(
+      auth,
+      email.toLowerCase().trim()
+    );
+    return methods.length > 0;
+  } catch (error) {
+    console.error("Error checking email existence:", error);
     return false;
   }
 };
@@ -206,9 +221,9 @@ export const signInWithApple = async (): Promise<UserData> => {
     // This handles both new users and returning users seamlessly
     const userProfile: UserProfile = {
       uid: user.uid,
-      email: credential.email || user.email || "apple-user@example.com",
+      email: credential.email || user.email || null, // Don't use fake email, use null
       displayName: displayName || "Apple User",
-      createdAt: Date.now(),
+      createdAt: Date.now(), // Use current timestamp to avoid 2025 issue
       updatedAt: Date.now(),
     };
 
@@ -299,9 +314,39 @@ export const signUp = async (
   displayName?: string
 ): Promise<UserData> => {
   try {
+    // Normalize email to prevent case-sensitive duplicates
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if email already exists to prevent duplicates
+    const emailExists = await checkEmailExists(normalizedEmail);
+    if (emailExists) {
+      throw {
+        code: "auth/email-already-in-use",
+        message:
+          "An account with this email already exists. Please sign in instead.",
+      } as AuthErrorType;
+    }
+
+    // Validate email format
+    if (!validateEmail(normalizedEmail)) {
+      throw {
+        code: "auth/invalid-email",
+        message: "Please enter a valid email address.",
+      } as AuthErrorType;
+    }
+
+    // Validate password
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      throw {
+        code: "auth/weak-password",
+        message: passwordValidation.message,
+      } as AuthErrorType;
+    }
+
     const userCredential = await createUserWithEmailAndPassword(
       auth,
-      email,
+      normalizedEmail,
       password
     );
 
@@ -310,24 +355,25 @@ export const signUp = async (
     // Update display name if provided
     if (displayName) {
       await updateProfile(user, {
-        displayName: displayName,
+        displayName: displayName.trim(),
       });
     }
 
-    // Save user profile to database
+    // Save user profile to database with proper timestamp
     if (user.email) {
       const userProfile: UserProfile = {
         uid: user.uid,
-        email: user.email,
-        displayName: user.displayName || displayName || "User",
-        createdAt: Date.now(),
+        email: user.email.toLowerCase().trim(), // Ensure normalized email
+        displayName: user.displayName || displayName?.trim() || "User",
+        createdAt: Date.now(), // Use current timestamp to avoid 2025 issue
         updatedAt: Date.now(),
       };
 
       try {
         await saveUserProfile(userProfile);
+        console.log("✅ User profile saved successfully:", user.uid);
       } catch (dbError) {
-        console.error("Error saving user profile to database:", dbError);
+        console.error("❌ Error saving user profile to database:", dbError);
         // Don't throw here - auth was successful, just database save failed
       }
     }
@@ -340,12 +386,37 @@ export const signUp = async (
   } catch (error) {
     console.error("Firebase auth error:", error);
     const authError = error as AuthError;
+
+    // Handle specific error cases with better messages
+    let errorMessage = "An error occurred during sign up";
+
+    switch (authError.code) {
+      case "auth/email-already-in-use":
+        errorMessage =
+          "An account with this email already exists. Please sign in instead.";
+        break;
+      case "auth/invalid-email":
+        errorMessage = "Please enter a valid email address.";
+        break;
+      case "auth/weak-password":
+        errorMessage =
+          "Password is too weak. Please choose a stronger password.";
+        break;
+      case "auth/operation-not-allowed":
+        errorMessage =
+          "Email/password accounts are not enabled. Please contact support.";
+        break;
+      case "auth/network-request-failed":
+        errorMessage =
+          "Network error. Please check your internet connection and try again.";
+        break;
+      default:
+        errorMessage = authError.message || errorMessage;
+    }
+
     throw {
       code: authError.code || "unknown",
-      message:
-        getAuthErrorMessage(authError.code) ||
-        authError.message ||
-        "An error occurred during sign up",
+      message: errorMessage,
     } as AuthErrorType;
   }
 };
@@ -356,6 +427,17 @@ export const signIn = async (
   password: string
 ): Promise<UserData> => {
   try {
+    // Normalize email to prevent case-sensitive issues
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Validate email format
+    if (!validateEmail(normalizedEmail)) {
+      throw {
+        code: "auth/invalid-email",
+        message: "Please enter a valid email address.",
+      } as AuthErrorType;
+    }
+
     // Check network connectivity first
     const isConnected = await checkNetworkConnectivity();
     if (!isConnected) {
@@ -374,7 +456,7 @@ export const signIn = async (
         try {
           await currentUser.reload();
           // If reload succeeds, user might already be signed in
-          if (currentUser.email === email) {
+          if (currentUser.email?.toLowerCase() === normalizedEmail) {
             return {
               uid: currentUser.uid,
               email: currentUser.email,
@@ -388,7 +470,7 @@ export const signIn = async (
 
       const userCredential = await signInWithEmailAndPassword(
         auth,
-        email,
+        normalizedEmail,
         password
       );
 
@@ -404,14 +486,38 @@ export const signIn = async (
     console.error("Firebase auth error:", error);
     const authError = error as AuthError;
 
+    // Handle specific error cases with better messages
+    let errorMessage = "An error occurred during sign in";
+
+    switch (authError.code) {
+      case "auth/user-not-found":
+        errorMessage =
+          "No account found with this email address. Please sign up first.";
+        break;
+      case "auth/wrong-password":
+        errorMessage = "Incorrect password. Please try again.";
+        break;
+      case "auth/invalid-email":
+        errorMessage = "Please enter a valid email address.";
+        break;
+      case "auth/user-disabled":
+        errorMessage =
+          "This account has been disabled. Please contact support.";
+        break;
+      case "auth/too-many-requests":
+        errorMessage = "Too many failed attempts. Please try again later.";
+        break;
+      case "auth/network-request-failed":
+        errorMessage =
+          "Network error. Please check your internet connection and try again.";
+        break;
+      default:
+        errorMessage = authError.message || errorMessage;
+    }
+
     // Handle network errors specifically
     if (authError.code === "auth/network-request-failed") {
       console.warn("Network error during sign in, this might be temporary");
-      throw {
-        code: "auth/network-request-failed",
-        message:
-          "Network error. Please check your internet connection and try again.",
-      } as AuthErrorType;
     }
 
     // Handle specific invalid credential errors
@@ -429,10 +535,7 @@ export const signIn = async (
 
     throw {
       code: authError.code || "unknown",
-      message:
-        getAuthErrorMessage(authError.code) ||
-        authError.message ||
-        "An error occurred during sign in",
+      message: errorMessage,
     } as AuthErrorType;
   }
 };
@@ -630,10 +733,31 @@ export const validatePassword = (
   isValid: boolean;
   message: string;
 } => {
-  if (password.length < 6) {
+  if (password.length < 8) {
     return {
       isValid: false,
-      message: "Password must be at least 6 characters long.",
+      message: "Password must be at least 8 characters long.",
+    };
+  }
+
+  if (password.length > 128) {
+    return {
+      isValid: false,
+      message: "Password must be less than 128 characters.",
+    };
+  }
+
+  // Check for at least one uppercase, lowercase, number, and special character
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+    return {
+      isValid: false,
+      message:
+        "Password must contain at least one uppercase letter, lowercase letter, number, and special character.",
     };
   }
 

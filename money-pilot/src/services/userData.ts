@@ -8,7 +8,7 @@ import {
 
 export interface UserProfile {
   uid: string;
-  email: string;
+  email: string | null;
   displayName: string;
   createdAt: number;
   updatedAt: number;
@@ -89,15 +89,6 @@ export interface DataSharingSettings {
   shareAssets: boolean;
   shareDebts: boolean;
   shareGoals: boolean;
-}
-
-export interface UserProfile {
-  uid: string;
-  email: string;
-  displayName: string;
-  createdAt: number;
-  updatedAt: number;
-  dataSharingSettings?: DataSharingSettings;
 }
 
 export interface Transaction {
@@ -3075,4 +3066,3 @@ export const updateBudgetStreak = async (
     throw error;
   }
 };
-
