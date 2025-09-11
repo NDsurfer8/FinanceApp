@@ -23,6 +23,7 @@ import { StandardHeader } from "../components/StandardHeader";
 import { AutoBudgetImporter } from "../components/AutoBudgetImporter";
 import { BudgetOverviewCard } from "../components/BudgetOverviewCard";
 import { TransactionListCard } from "../components/TransactionListCard";
+import { BankFilterCard } from "../components/BankFilterCard";
 import { BudgetSettingsModal } from "../components/BudgetSettingsModal";
 import { HelpfulTooltip } from "../components/HelpfulTooltip";
 import {
@@ -92,6 +93,9 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const [seenOverBudgetCategories, setSeenOverBudgetCategories] = useState<
     Map<string, Set<string>>
   >(new Map());
+
+  // Bank filter state
+  const [selectedBankSource, setSelectedBankSource] = useState<string>("all");
   const monthPickerScrollRef = useRef<ScrollView>(null);
   const lastMonthRef = useRef<string>("");
   const { colors } = useTheme();
@@ -209,6 +213,27 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       transactionDate.getFullYear() === selectedMonth.getFullYear()
     );
   });
+
+  // Apply bank/source filtering
+  const bankFilteredTransactions = selectedMonthTransactions.filter(
+    (transaction) => {
+      if (selectedBankSource === "all") return true;
+
+      if (selectedBankSource === "manual") {
+        return !transaction.isAutoImported;
+      }
+
+      if (selectedBankSource === "auto-imported") {
+        return transaction.isAutoImported === true;
+      }
+
+      // Filter by specific institution
+      return (
+        transaction.isAutoImported &&
+        transaction.sourceInstitution === selectedBankSource
+      );
+    }
+  );
 
   // Combine actual transactions with projected recurring transactions for the selected month
   // The transactionService already handles duplicates, so we just filter by type
@@ -1105,13 +1130,20 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           </View>
         )}
 
+        {/* Bank Filter Card */}
+        <BankFilterCard
+          transactions={selectedMonthTransactions}
+          selectedSource={selectedBankSource}
+          onSourceChange={setSelectedBankSource}
+        />
+
         {/* Income Section */}
 
         <TransactionListCard
           title={t("budget.income")}
           icon="trending-up"
           iconColor={colors.success}
-          transactions={selectedMonthTransactions.filter(
+          transactions={bankFilteredTransactions.filter(
             (t) => t.type === "income"
           )}
           projectedTransactions={projectedTransactions.filter(
@@ -1138,7 +1170,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           title={t("budget.expenses")}
           icon="trending-down"
           iconColor={colors.error}
-          transactions={selectedMonthTransactions.filter(
+          transactions={bankFilteredTransactions.filter(
             (t) => t.type === "expense"
           )}
           projectedTransactions={projectedTransactions.filter(
