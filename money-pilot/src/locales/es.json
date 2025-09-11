@@ -20,7 +20,8 @@
     "on": "Activado",
     "off": "Desactivado",
     "user": "Usuario",
-    "premium": "Premium"
+    "premium": "Premium",
+    "skip": "Skip"
   },
   "auth": {
     "login": "Iniciar Sesión",
@@ -917,5 +918,32 @@
     "thank_you": "¡Gracias!",
     "thank_you_message": "¡Gracias por tomarte el tiempo de calificar VectorFi! Tu feedback nos ayuda a mejorar la app.",
     "rating_error": "No se puede abrir la calificación de la app. Por favor intenta de nuevo más tarde."
+  },
+  "intro": {
+    "slide1": {
+      "title": "Bienvenido a VectorFi",
+      "text": "Conoce a Vectra, tu entrenador financiero personal de IA. Una vez conectado, Vectra comprende de forma segura tus finanzas y las traduce en consejos prácticos, ayudándote a ahorrar más, gastar sabiamente y mantenerte en el camino hacia tus objetivos."
+    },
+    "slide2": {
+      "title": "Conecta de Forma Segura con Plaid",
+      "text": "Vincula tus cuentas bancarias en segundos con la tecnología Plaid confiable por las principales aplicaciones financieras."
+    },
+    "slide3": {
+      "title": "Tus Gastos, Explicados",
+      "text": "Vectra convierte tus transacciones en ideas claras y accionables, no solo datos, sino ideas inteligentes que puedes usar hoy."
+    },
+    "slide4": {
+      "title": "Ahorra para lo que Importa",
+      "text": "Establece objetivos y observa cómo tu progreso se actualiza automáticamente a medida que cambian tus gastos."
+    },
+    "slide5": {
+      "title": "Pronostica tus Finanzas",
+      "text": "Comprende cómo las decisiones de hoy afectan el mañana con proyecciones en tiempo real e ideas de 'seguro para gastar'."
+    },
+    "slide6": {
+      "title": "Tu Seguridad es Primero",
+      "text": "Inicio de sesión biométrico + encriptación de grado bancario mantienen tus datos seguros en todo momento."
+    },
+    "ai_disclaimer": "⚠️ Los consejos de IA son solo para fines informativos. Consulta a profesionales calificados para decisiones financieras."
   }
 }

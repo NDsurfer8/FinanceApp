@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet, Dimensions, Image } from "react-native";
 import AppIntroSlider from "react-native-app-intro-slider";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import { loadLanguageOnDemand } from "../config/i18n";
 
 const { width, height } = Dimensions.get("window");
 
@@ -62,46 +64,47 @@ const SecurityGraphic = () => (
   />
 );
 
-const slides: IntroSlide[] = [
+// Function to create slides with translations
+const createSlides = (t: (key: string) => string): IntroSlide[] => [
   {
     key: "1",
-    title: "Welcome to VectorFi",
-    text: "Meet Vectra, your personal AI financial coach. Once connected, Vectra securely understands your finances and translates them into practical advice—helping you save more, spend wisely, and stay on track toward your goals.",
+    title: t("intro.slide1.title"),
+    text: t("intro.slide1.text"),
     icon: "chatbubble-ellipses",
     backgroundColor: "#ffffff",
   },
   {
     key: "2",
-    title: "Connect Securely with Plaid",
-    text: "Link your bank accounts in seconds with Plaid technology trusted by leading finance apps.",
+    title: t("intro.slide2.title"),
+    text: t("intro.slide2.text"),
     icon: "shield-checkmark",
     backgroundColor: "#ffffff",
   },
   {
     key: "3",
-    title: "Your Spending, Explained",
-    text: "Vectra turns your transactions into clear, actionable insights - not just data, but smart insights you can use today.",
+    title: t("intro.slide3.title"),
+    text: t("intro.slide3.text"),
     icon: "analytics",
     backgroundColor: "#ffffff",
   },
   {
     key: "4",
-    title: "Save for What Matters",
-    text: "Set goals and watch your progress update automatically as your spending changes.",
+    title: t("intro.slide4.title"),
+    text: t("intro.slide4.text"),
     icon: "trophy",
     backgroundColor: "#ffffff",
   },
   {
     key: "5",
-    title: "Forecast Your Finances",
-    text: "Understand how today's choices affect tomorrow with real-time projections and 'safe to spend' insights.",
+    title: t("intro.slide5.title"),
+    text: t("intro.slide5.text"),
     icon: "trending-up",
     backgroundColor: "#ffffff",
   },
   {
     key: "6",
-    title: "Your Security Comes First",
-    text: "Biometric login + bank-grade encryption keep your data safe at all times.",
+    title: t("intro.slide6.title"),
+    text: t("intro.slide6.text"),
     icon: "lock-closed",
     backgroundColor: "#ffffff",
   },
@@ -114,6 +117,20 @@ interface IntroSliderScreenProps {
 export const IntroSliderScreen: React.FC<IntroSliderScreenProps> = ({
   onDone,
 }) => {
+  const { t, i18n } = useTranslation();
+
+  // Ensure language is loaded on demand
+  useEffect(() => {
+    const loadLanguage = async () => {
+      if (i18n.language && i18n.language !== "en") {
+        await loadLanguageOnDemand(i18n.language);
+      }
+    };
+    loadLanguage();
+  }, [i18n.language]);
+
+  // Create slides with translations
+  const slides = createSlides(t);
   const renderItem = ({ item }: { item: IntroSlide }) => {
     const renderCustomGraphic = () => {
       switch (item.key) {
@@ -144,8 +161,7 @@ export const IntroSliderScreen: React.FC<IntroSliderScreenProps> = ({
         {item.key === "1" && (
           <View style={styles.disclaimerContainer}>
             <Text style={styles.disclaimerText}>
-              ⚠️ AI advice is for informational purposes only. Consult qualified
-              professionals for financial decisions.
+              {t("intro.ai_disclaimer")}
             </Text>
           </View>
         )}
@@ -172,7 +188,7 @@ export const IntroSliderScreen: React.FC<IntroSliderScreenProps> = ({
   const renderSkipButton = () => {
     return (
       <View style={styles.skipButton}>
-        <Text style={styles.skipText}>Skip</Text>
+        <Text style={styles.skipText}>{t("common.skip")}</Text>
       </View>
     );
   };

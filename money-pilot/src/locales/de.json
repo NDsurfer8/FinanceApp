@@ -20,7 +20,8 @@
     "on": "An",
     "off": "Aus",
     "user": "Benutzer",
-    "premium": "Premium"
+    "premium": "Premium",
+    "skip": "Skip"
   },
   "auth": {
     "login": "Login",
@@ -926,5 +927,32 @@
     "thank_you": "Vielen Dank!",
     "thank_you_message": "Vielen Dank, dass Sie sich die Zeit genommen haben, VectorFi zu bewerten! Ihr Feedback hilft uns, die App zu verbessern.",
     "rating_error": "App-Bewertung kann nicht geöffnet werden. Bitte versuchen Sie es später erneut."
+  },
+  "intro": {
+    "slide1": {
+      "title": "Willkommen bei VectorFi",
+      "text": "Lernen Sie Vectra kennen, Ihren persönlichen KI-Finanzcoach. Einmal verbunden, versteht Vectra Ihre Finanzen sicher und übersetzt sie in praktische Ratschläge - hilft Ihnen, mehr zu sparen, klug auszugeben und auf Kurs zu Ihren Zielen zu bleiben."
+    },
+    "slide2": {
+      "title": "Sicher mit Plaid Verbinden",
+      "text": "Verbinden Sie Ihre Bankkonten in Sekunden mit der von führenden Finanz-Apps vertrauten Plaid-Technologie."
+    },
+    "slide3": {
+      "title": "Ihre Ausgaben, Erklärt",
+      "text": "Vectra verwandelt Ihre Transaktionen in klare, umsetzbare Erkenntnisse - nicht nur Daten, sondern intelligente Erkenntnisse, die Sie heute nutzen können."
+    },
+    "slide4": {
+      "title": "Sparen für das, was Zählt",
+      "text": "Setzen Sie Ziele und beobachten Sie, wie sich Ihr Fortschritt automatisch aktualisiert, wenn sich Ihre Ausgaben ändern."
+    },
+    "slide5": {
+      "title": "Prognostizieren Sie Ihre Finanzen",
+      "text": "Verstehen Sie, wie sich die heutigen Entscheidungen auf morgen auswirken mit Echtzeit-Prognosen und 'sicher auszugeben'-Erkenntnissen."
+    },
+    "slide6": {
+      "title": "Ihre Sicherheit Kommt Zuerst",
+      "text": "Biometrische Anmeldung + Bank-Level-Verschlüsselung halten Ihre Daten jederzeit sicher."
+    },
+    "ai_disclaimer": "⚠️ KI-Beratung dient nur zu Informationszwecken. Konsultieren Sie qualifizierte Fachkräfte für Finanzentscheidungen."
   }
 }

@@ -20,7 +20,8 @@
     "on": "On",
     "off": "Off",
     "user": "User",
-    "premium": "Premium"
+    "premium": "Premium",
+    "skip": "Skip"
   },
   "auth": {
     "login": "Login",
@@ -52,6 +53,33 @@
     "privacy_policy": "Privacy Policy",
     "terms_of_service": "Terms of Service",
     "enter_your_email": "Enter your email"
+  },
+  "intro": {
+    "slide1": {
+      "title": "Welcome to VectorFi",
+      "text": "Meet Vectra, your personal AI financial coach. Once connected, Vectra securely understands your finances and translates them into practical advice—helping you save more, spend wisely, and stay on track toward your goals."
+    },
+    "slide2": {
+      "title": "Connect Securely with Plaid",
+      "text": "Link your bank accounts in seconds with Plaid technology trusted by leading finance apps."
+    },
+    "slide3": {
+      "title": "Your Spending, Explained",
+      "text": "Vectra turns your transactions into clear, actionable insights - not just data, but smart insights you can use today."
+    },
+    "slide4": {
+      "title": "Save for What Matters",
+      "text": "Set goals and watch your progress update automatically as your spending changes."
+    },
+    "slide5": {
+      "title": "Forecast Your Finances",
+      "text": "Understand how today's choices affect tomorrow with real-time projections and 'safe to spend' insights."
+    },
+    "slide6": {
+      "title": "Your Security Comes First",
+      "text": "Biometric login + bank-grade encryption keep your data safe at all times."
+    },
+    "ai_disclaimer": "⚠️ AI advice is for informational purposes only. Consult qualified professionals for financial decisions."
   },
   "navigation": {
     "dashboard": "Dashboard",

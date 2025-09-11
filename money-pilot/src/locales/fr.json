@@ -20,7 +20,8 @@
     "on": "Activé",
     "off": "Désactivé",
     "user": "Utilisateur",
-    "premium": "Premium"
+    "premium": "Premium",
+    "skip": "Skip"
   },
   "auth": {
     "login": "Login",
@@ -926,5 +927,32 @@
     "thank_you": "Merci !",
     "thank_you_message": "Merci d'avoir pris le temps de noter VectorFi ! Vos commentaires nous aident à améliorer l'app.",
     "rating_error": "Impossible d'ouvrir la note de l'app. Veuillez réessayer plus tard."
+  },
+  "intro": {
+    "slide1": {
+      "title": "Bienvenue sur VectorFi",
+      "text": "Rencontrez Vectra, votre coach financier personnel IA. Une fois connecté, Vectra comprend de manière sécurisée vos finances et les traduit en conseils pratiques, vous aidant à épargner plus, dépenser sagement et rester sur la bonne voie vers vos objectifs."
+    },
+    "slide2": {
+      "title": "Connectez-vous en Toute Sécurité avec Plaid",
+      "text": "Liez vos comptes bancaires en quelques secondes avec la technologie Plaid de confiance par les principales applications financières."
+    },
+    "slide3": {
+      "title": "Vos Dépenses, Expliquées",
+      "text": "Vectra transforme vos transactions en insights clairs et exploitables - pas seulement des données, mais des insights intelligents que vous pouvez utiliser aujourd'hui."
+    },
+    "slide4": {
+      "title": "Épargnez pour ce qui Compte",
+      "text": "Définissez des objectifs et regardez votre progression se mettre à jour automatiquement à mesure que vos dépenses changent."
+    },
+    "slide5": {
+      "title": "Prévoyez vos Finances",
+      "text": "Comprenez comment les choix d'aujourd'hui affectent demain avec des projections en temps réel et des insights 'sûrs à dépenser'."
+    },
+    "slide6": {
+      "title": "Votre Sécurité en Premier",
+      "text": "Connexion biométrique + chiffrement de niveau bancaire gardent vos données sécurisées à tout moment."
+    },
+    "ai_disclaimer": "⚠️ Les conseils IA sont à des fins informatives uniquement. Consultez des professionnels qualifiés pour les décisions financières."
   }
 }
