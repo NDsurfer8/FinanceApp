@@ -89,9 +89,7 @@ function getPlaidClient(clientId, secret) {
       },
     });
     globalPlaidClient = new PlaidApi(configuration);
-    console.log("Plaid client created successfully");
   } else {
-    console.log("Using existing Plaid client");
   }
   return globalPlaidClient;
 }
@@ -1009,10 +1007,6 @@ exports.aiChat = onCall(async (data, context) => {
 
     // Select optimal model based on request complexity
     const modelConfig = selectOptimalModel(message, isPlanRequestFlag);
-
-    console.log(
-      `Selected model: ${modelConfig.model} - Reason: ${modelConfig.reason}`
-    );
 
     const response = await openaiClient.chat.completions.create({
       model: modelConfig.model,

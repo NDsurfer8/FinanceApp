@@ -472,7 +472,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   useFocusEffect(
     React.useCallback(() => {
       if (isBankConnected && user?.uid) {
-        console.log("🔄 BudgetScreen: Screen focused, refreshing bank data");
         refreshBankData(false); // Use cache if available, but refresh if stale
       }
     }, [isBankConnected, user?.uid, refreshBankData])

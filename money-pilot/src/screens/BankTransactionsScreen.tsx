@@ -95,8 +95,6 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
         }
       });
       const uniqueBanks = Array.from(banks);
-      console.log("🏦 Available banks:", uniqueBanks);
-      console.log("🏦 Total accounts:", displayBankAccounts.length);
       return uniqueBanks;
     };
 
@@ -295,13 +293,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
       if (!user?.uid || !isBankConnected) return;
 
       try {
-        console.log(
-          "🔄 BankTransactionsScreen: Refreshing bank data via DataContext"
-        );
         await refreshBankData(forceRefresh);
-        console.log(
-          "✅ BankTransactionsScreen: Bank data refreshed successfully"
-        );
       } catch (error) {
         console.error(
           "❌ BankTransactionsScreen: Failed to refresh bank data:",
@@ -321,9 +313,6 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
 
         // Refresh bank data when screen loads
         if (isBankConnected) {
-          console.log(
-            "🔄 BankTransactionsScreen: Refreshing bank data on load"
-          );
           refreshBankDataLocal();
         }
       }
@@ -333,9 +322,6 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     useFocusEffect(
       React.useCallback(() => {
         if (user?.uid && isBankConnected) {
-          console.log(
-            "🔄 BankTransactionsScreen: Screen focused, refreshing bank data"
-          );
           refreshBankDataLocal();
         }
       }, [user?.uid, isBankConnected])

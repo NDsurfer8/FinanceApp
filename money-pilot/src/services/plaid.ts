@@ -360,9 +360,6 @@ class PlaidService {
 
     if (isTestMode) {
       // For test mode, we'll bypass Plaid Link entirely and simulate a successful connection
-      console.log(
-        "PlaidService: Test mode detected - bypassing Plaid Link for App Store review"
-      );
       // Return a special marker that indicates test mode
       return "TEST_MODE_BYPASS";
     }
@@ -431,7 +428,6 @@ class PlaidService {
         await destroy();
       } catch (error) {
         // Ignore errors if no session exists
-        console.log("No existing session to destroy");
       }
 
       // Create new Link session
@@ -442,7 +438,6 @@ class PlaidService {
       });
 
       this.isLinkInitialized = true;
-      console.log("Plaid Link session created successfully");
     } catch (error) {
       console.error("Error creating Plaid Link session:", error);
       throw error;
@@ -461,15 +456,11 @@ class PlaidService {
         );
       }
 
-      console.log("Opening Plaid Link...");
-
       await open({
         onSuccess: (success: LinkSuccess) => {
           onSuccess(success);
         },
         onExit: (exit: LinkExit) => {
-          console.log("Plaid Link exit:", exit);
-
           // Enhanced error handling
           if (exit.error) {
             console.error("Plaid Link error:", exit.error);
@@ -510,9 +501,6 @@ class PlaidService {
       // Check if we've exceeded maximum Link flow attempts
       if (this.linkFlowAttemptCount >= this.MAX_LINK_FLOW_ATTEMPTS) {
         const waitTime = Math.ceil(this.LINK_FLOW_RESET_TIME / 1000);
-        console.log(
-          `🚨 Too many Link flow attempts (${this.linkFlowAttemptCount}/${this.MAX_LINK_FLOW_ATTEMPTS}). Please wait ${waitTime} seconds.`
-        );
         throw new Error(
           `Too many connection attempts. Please wait ${waitTime} seconds and try again.`
         );
@@ -522,9 +510,6 @@ class PlaidService {
       if (timeSinceLastLinkFlow < this.LINK_FLOW_DEBOUNCE) {
         const waitTime = Math.ceil(
           (this.LINK_FLOW_DEBOUNCE - timeSinceLastLinkFlow) / 1000
-        );
-        console.log(
-          `⏳ Link flow rate limited: Please wait ${waitTime} seconds before trying again`
         );
         throw new Error(`Please wait ${waitTime} seconds before trying again`);
       }
@@ -540,10 +525,6 @@ class PlaidService {
 
       // Check if we're in test mode and should bypass Plaid Link
       if (linkToken === "TEST_MODE_BYPASS") {
-        console.log(
-          "PlaidService: Test mode - simulating successful bank connection"
-        );
-
         // Simulate a successful Plaid Link result for Chase Bank
         const mockSuccess: LinkSuccess = {
           publicToken: "test_public_token",
@@ -645,25 +626,12 @@ class PlaidService {
 
       if (publicToken === "test_public_token") {
         // Use test tokens for Apple App Store review
-        console.log(
-          "PlaidService: Test mode detected - using test tokens for App Store review"
-        );
 
         // For test mode, we'll cycle through different banks to simulate multiple connections
         // First, check how many banks are already connected
         await this.loadConnectionsFromFirebase();
         const existingConnections = this.getAllConnections();
         const connectionCount = existingConnections.length;
-
-        // Debug logging for test mode (commented out to prevent infinite loops)
-        // console.log("Test mode debug:", {
-        //   connectionCount,
-        //   existingConnections: existingConnections.map((c) => ({
-        //     itemId: c.itemId,
-        //     institution: c.institution.name,
-        //     accessToken: c.accessToken.substring(0, 20) + "...",
-        //   })),
-        // });
 
         // Cycle through different test banks based on connection count
         if (connectionCount === 0) {
@@ -682,12 +650,11 @@ class PlaidService {
           itemId = "test_item_id_22222";
           // console.log("Test mode: Selecting Wells Fargo (third bank)");
         } else {
-          // Additional banks: Cycle back to Chase with different ID
+          // Additional banks: Use timestamp-based ID to ensure uniqueness
           accessToken = "test_access_token_12345";
-          itemId = `test_item_id_${Date.now()}`;
-          // console.log(
-          //   "Test mode: Cycling back to Chase Bank (additional bank)"
-          // );
+          itemId = `test_item_id_${Date.now()}_${Math.random()
+            .toString(36)
+            .substr(2, 9)}`;
         }
       } else {
         // Exchange public token for access token using Firebase Cloud Function
@@ -796,17 +763,6 @@ class PlaidService {
           // Alternative location for institution_name
           institutionName = metadata.institution_name;
         }
-
-        // Debug logging for production troubleshooting
-        console.log("PlaidService: Institution metadata:", {
-          institutionName,
-          metadataInstitution: metadata?.institution,
-          hasInstitutionName: !!metadata?.institution?.name,
-          hasInstitutionId: !!metadata?.institution?.institution_id,
-          hasMetadataInstitutionId: !!metadata?.institution_id,
-          hasMetadataInstitutionName: !!metadata?.institution_name,
-          fullMetadata: metadata,
-        });
       }
 
       const connection: PlaidConnection = {
@@ -870,8 +826,6 @@ class PlaidService {
   // Test method to verify Link pattern implementation
   async testPlaidLinkFlow(): Promise<boolean> {
     try {
-      console.log("Testing Plaid Link flow...");
-
       // Test link token creation
       const linkToken = await this.initializePlaidLink();
       // console.log("✅ Link token created successfully");
@@ -987,9 +941,6 @@ class PlaidService {
             connection
           );
           if (tokenRefreshed) {
-            console.log(
-              `🔄 Token refreshed for ${connection.institution.name}, retrying accounts request`
-            );
             // Retry this specific bank's accounts
             try {
               const result = await getAccounts({
@@ -1024,9 +975,6 @@ class PlaidService {
 
       // Log summary of results
       if (successfulBanks.length > 0) {
-        console.log(
-          `✅ Successfully fetched accounts from: ${successfulBanks.join(", ")}`
-        );
       }
       if (failedBanks.length > 0) {
         console.warn(
@@ -1056,10 +1004,6 @@ class PlaidService {
         error?.message?.includes("access_token_invalid") ||
         error?.message?.includes("connection expired")
       ) {
-        console.log(
-          `🔄 Token error detected for ${connection.institution.name}, marking as disconnected`
-        );
-
         // Mark this connection as disconnected
         connection.status = "disconnected";
         await this.saveConnectionToFirebase(connection);
@@ -1157,9 +1101,6 @@ class PlaidService {
           connection
         );
         if (tokenRefreshed) {
-          console.log(
-            `🔄 Token refreshed for ${connection.institution.name}, retrying transactions request`
-          );
           try {
             const bankTransactions = await this._fetchTransactionsForConnection(
               connection,
@@ -1210,26 +1151,12 @@ class PlaidService {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
 
-        console.log(
-          `🔄 Retry attempt ${attempt + 1} for ${
-            connection.institution.name
-          }: Error message: "${errorMessage}"`
-        );
-
         // Check for rate limit errors
         if (
           errorMessage.includes("RATE_LIMIT") ||
           errorMessage.includes("rate limit")
         ) {
-          console.log(
-            `🚨 Rate limit detected for ${connection.institution.name}, implementing exponential backoff`
-          );
           const backoffTime = Math.min(30000 * Math.pow(2, attempt), 300000); // Max 5 minutes
-          console.log(
-            `🔄 Rate limit backoff: waiting ${backoffTime}ms (attempt ${
-              attempt + 1
-            }/${this.MAX_RETRIES})`
-          );
           await new Promise((resolve) => setTimeout(resolve, backoffTime));
           continue;
         }
@@ -1247,13 +1174,6 @@ class PlaidService {
           const delay =
             this.RETRY_DELAYS[attempt] ||
             this.RETRY_DELAYS[this.RETRY_DELAYS.length - 1];
-          console.log(
-            `🔄 Product not ready for ${
-              connection.institution.name
-            }, retrying in ${delay}ms (attempt ${attempt + 1}/${
-              this.MAX_RETRIES
-            })`
-          );
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
@@ -1308,10 +1228,6 @@ class PlaidService {
       });
 
       const { transactions } = result.data as { transactions: any[] };
-
-      console.log(
-        `📊 Plaid API: Received ${transactions.length} transactions from Firebase function`
-      );
 
       return transactions.map((transaction) => ({
         id: transaction.transaction_id,
@@ -1387,9 +1303,6 @@ class PlaidService {
         error?.code === "PERMISSION_DENIED" ||
         error?.message?.includes("Permission denied")
       ) {
-        console.log(
-          "PlaidService: User account no longer exists, clearing bank connection state"
-        );
         this.connections.clear();
         return false;
       }
@@ -1810,11 +1723,6 @@ class PlaidService {
       throw new Error("Too many rate limit errors. Please try again later.");
     }
 
-    console.log(
-      `🔄 RATE_LIMIT backoff: waiting ${
-        this.rateLimitBackoffTime / 1000
-      }s (attempt ${this.rateLimitAttempts}/3)`
-    );
     await new Promise((resolve) =>
       setTimeout(resolve, this.rateLimitBackoffTime)
     );
@@ -2008,9 +1916,6 @@ class PlaidService {
 
       // Only update if we have actual changes
       if (!updates || Object.keys(updates).length === 0) {
-        console.log(
-          "PlaidService: No updates to apply, skipping Firebase write"
-        );
         return;
       }
 

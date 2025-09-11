@@ -169,6 +169,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       // Disconnect from Plaid service - this will trigger callbacks that refresh data
       await plaidService.disconnectBank(itemId);
 
+      // Clear cached bank data from AsyncStorage to prevent stale data
+      const keysToClear = [
+        "bankTransactions",
+        "bankRecurringSuggestions",
+        "bankAccounts",
+        "bankDataLastUpdated",
+        "selectedBankAccount",
+      ];
+
+      for (const key of keysToClear) {
+        await AsyncStorage.removeItem(key);
+      }
+
       // The bankConnectedCallback will automatically call refreshBankData(true)
       // which will fetch fresh data from the API for remaining connected banks
     } catch (error) {
@@ -516,9 +529,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               if (isInitialFetch && retryCount < maxRetries - 1) {
                 retryCount++;
                 const retryDelay = baseRetryDelay * Math.pow(2, retryCount - 1);
-                console.log(
-                  `🔄 No transactions received but banks are connected, retrying in ${retryDelay}ms (attempt ${retryCount}/${maxRetries})`
-                );
                 await new Promise((resolve) => setTimeout(resolve, retryDelay));
                 continue; // Continue the retry loop
               }
@@ -548,9 +558,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               retryCount++;
               // Exponential backoff: 2s, 4s, 8s, 16s, 32s
               const retryDelay = baseRetryDelay * Math.pow(2, retryCount - 1);
-              console.log(
-                `🔄 Plaid data not ready yet, retrying in ${retryDelay}ms (attempt ${retryCount}/${maxRetries})`
-              );
               await new Promise((resolve) => setTimeout(resolve, retryDelay));
               continue;
             } else {

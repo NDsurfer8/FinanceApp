@@ -65,14 +65,12 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
         createdAt: existingData.createdAt || profile.createdAt, // Preserve original creation time
         updatedAt: Date.now(),
       });
-      console.log("User profile updated:", profile.uid);
     } else {
       // User doesn't exist, create new profile
       await set(userRef, {
         ...profile,
         updatedAt: Date.now(),
       });
-      console.log("New user profile created:", profile.uid);
     }
   } catch (error) {
     console.error("Error saving user profile:", error);
@@ -1735,7 +1733,6 @@ export const getGroupSharedData = async (
       error?.code === "PERMISSION_DENIED" ||
       error?.message?.includes("Permission denied")
     ) {
-      console.log("User account no longer exists, returning empty shared data");
       return {
         assets: [],
         debts: [],
@@ -1914,9 +1911,6 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
         sharedGroupsError?.code === "PERMISSION_DENIED" ||
         sharedGroupsError?.message?.includes("Permission denied")
       ) {
-        console.log(
-          "User account already deleted, skipping shared groups cleanup"
-        );
       } else {
         console.error("Could not access shared groups:", sharedGroupsError);
       }
@@ -1939,9 +1933,6 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
               await remove(
                 ref(db, `sharedFinanceData/${groupId}/members/${userId}`)
               );
-              console.log(
-                `✅ Removed shared finance data for user ${userId} from group ${groupId}`
-              );
             }
           } catch (sharedDataError) {
             console.error(
@@ -1958,9 +1949,6 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
         sharedDataError?.code === "PERMISSION_DENIED" ||
         sharedDataError?.message?.includes("Permission denied")
       ) {
-        console.log(
-          "User account already deleted, skipping shared finance data cleanup"
-        );
       } else {
         console.error("Could not access shared finance data:", sharedDataError);
       }
@@ -2000,9 +1988,6 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
         invitationsError?.code === "PERMISSION_DENIED" ||
         invitationsError?.message?.includes("Permission denied")
       ) {
-        console.log(
-          "User account already deleted, skipping invitations cleanup"
-        );
       } else {
         console.error("Could not access invitations:", invitationsError);
       }
@@ -2118,10 +2103,6 @@ export const updateRecurringTransaction = async (
       ...transactionToUpdate,
       updatedAt: Date.now(),
     });
-
-    console.log(
-      "Recurring transaction updated successfully under user collection"
-    );
   } catch (error) {
     console.error("Error updating recurring transaction:", error);
     throw new Error("Failed to update recurring transaction");
@@ -2147,9 +2128,6 @@ export const deleteRecurringTransaction = async (
 
     // Delete the recurring transaction
     await remove(recurringTransactionRef);
-    console.log(
-      "Recurring transaction deleted successfully from user collection"
-    );
 
     // Optionally clean up any actual transactions that reference this recurring transaction
     // This is optional - you might want to keep historical data
@@ -2226,10 +2204,6 @@ export const skipRecurringTransactionForMonth = async (
       skippedMonths,
       updatedAt: Date.now(),
     });
-
-    console.log(
-      `Skipped recurring transaction for month: ${monthKey} in user collection`
-    );
   } catch (error) {
     console.error("Error skipping recurring transaction for month:", error);
     throw new Error("Failed to skip recurring transaction for month");
@@ -2605,8 +2579,6 @@ export const transferGroupOwnership = async (
       ownerId: newOwnerId,
       updatedAt: Date.now(),
     });
-
-    console.log("Group ownership transferred successfully");
   } catch (error) {
     console.error("Error transferring group ownership:", error);
     throw error;
