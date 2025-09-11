@@ -57,6 +57,34 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
+  // Helper function to translate category names
+  const translateCategory = (category: string): string => {
+    // Convert category to snake_case for translation keys
+    const categoryKey = category.toLowerCase().replace(/\s+/g, "_");
+
+    // Check if it's an income category
+    const incomeTranslation = t(
+      `transactions.income_categories.${categoryKey}`,
+      {
+        defaultValue: `transactions.income_categories.${categoryKey}`,
+      }
+    );
+    if (incomeTranslation !== `transactions.income_categories.${categoryKey}`) {
+      return incomeTranslation;
+    }
+
+    // Check if it's an expense category
+    const expenseTranslation = t(`categories.${categoryKey}`, {
+      defaultValue: `categories.${categoryKey}`,
+    });
+    if (expenseTranslation !== `categories.${categoryKey}`) {
+      return expenseTranslation;
+    }
+
+    // Return original category if no translation found
+    return category;
+  };
+
   // Get all transactions including projected ones
   const allTransactions = useMemo(() => {
     const baseTransactions = [...transactions];
@@ -231,7 +259,9 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                             : colors.textSecondary,
                       }}
                     >
-                      {category === "all" ? t("transactions.all") : category}
+                      {category === "all"
+                        ? t("transactions.all")
+                        : translateCategory(category)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -262,7 +292,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                           textTransform: "capitalize",
                         }}
                       >
-                        {category}
+                        {translateCategory(category)}
                       </Text>
                       <Text
                         style={{
