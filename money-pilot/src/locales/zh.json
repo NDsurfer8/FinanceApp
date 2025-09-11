@@ -1133,7 +1133,9 @@
     "import_failed_description": "导入交易失败。这可能是由于：\n\n• 临时连接问题\n• 身份验证问题\n• 服务器维护\n\n请稍后再试。",
     "error_saving_transactions": "错误",
     "error_saving_description": "保存交易失败。请检查您的连接并重试。",
-    "s_remaining": "秒剩余"
+    "s_remaining": "秒剩余",
+    "filter_by_bank": "按银行筛选",
+    "all_banks": "所有银行"
   },
   "transaction_list_card": {
     "transactions": "交易",

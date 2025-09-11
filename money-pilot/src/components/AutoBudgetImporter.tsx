@@ -47,7 +47,8 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
   onDataRefresh,
 }) => {
   const { user } = useAuth();
-  const { bankTransactions, transactions, isBankConnected } = useData();
+  const { bankTransactions, transactions, isBankConnected, connectedBanks } =
+    useData();
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { formatCurrency, selectedCurrency } = useCurrency();
@@ -88,6 +89,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
   >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedBankFilter, setSelectedBankFilter] = useState<string>("all");
   const [saveProgress, setSaveProgress] = useState({
     current: 0,
     total: 0,
@@ -340,10 +342,16 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
       const targetMonthTransactions = bankTransactions.filter(
         (transaction: any) => {
           const transactionDate = new Date(transaction.date);
-          return (
+          const isCorrectMonth =
             transactionDate.getMonth() === targetMonthNumber &&
-            transactionDate.getFullYear() === targetYear
-          );
+            transactionDate.getFullYear() === targetYear;
+
+          // Apply bank filter
+          const isCorrectBank =
+            selectedBankFilter === "all" ||
+            transaction.institution === selectedBankFilter;
+
+          return isCorrectMonth && isCorrectBank;
         }
       );
 
@@ -373,7 +381,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
 
       setCategorizedTransactions(categorized);
     }
-  }, [isVisible, bankTransactions, selectedMonth]);
+  }, [isVisible, bankTransactions, selectedMonth, selectedBankFilter]);
 
   const toggleTransactionSelection = (transactionId: string) => {
     setCategorizedTransactions((prev) =>
@@ -790,6 +798,91 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
           >
             {totalCount} current month transactions • {selectedCount} selected
           </Text>
+
+          {/* Bank Filter */}
+          {connectedBanks.length > 1 && (
+            <View style={{ marginBottom: 16 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: colors.text,
+                  marginBottom: 8,
+                }}
+              >
+                {t("auto_budget_importer.filter_by_bank")}
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginBottom: 8 }}
+              >
+                <TouchableOpacity
+                  onPress={() => setSelectedBankFilter("all")}
+                  style={{
+                    backgroundColor:
+                      selectedBankFilter === "all"
+                        ? colors.primary
+                        : colors.card,
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                    marginRight: 8,
+                    borderWidth: 1,
+                    borderColor:
+                      selectedBankFilter === "all"
+                        ? colors.primary
+                        : colors.border,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color:
+                        selectedBankFilter === "all" ? "white" : colors.text,
+                      fontSize: 14,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {t("auto_budget_importer.all_banks")}
+                  </Text>
+                </TouchableOpacity>
+                {connectedBanks.map((bank: any) => (
+                  <TouchableOpacity
+                    key={bank.name}
+                    onPress={() => setSelectedBankFilter(bank.name)}
+                    style={{
+                      backgroundColor:
+                        selectedBankFilter === bank.name
+                          ? colors.primary
+                          : colors.card,
+                      paddingHorizontal: 16,
+                      paddingVertical: 8,
+                      borderRadius: 20,
+                      marginRight: 8,
+                      borderWidth: 1,
+                      borderColor:
+                        selectedBankFilter === bank.name
+                          ? colors.primary
+                          : colors.border,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color:
+                          selectedBankFilter === bank.name
+                            ? "white"
+                            : colors.text,
+                        fontSize: 14,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {bank.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
 
           <View style={{ flexDirection: "row", gap: 12 }}>
             <TouchableOpacity

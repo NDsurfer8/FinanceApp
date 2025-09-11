@@ -1133,7 +1133,9 @@
     "import_failed_description": "取引のインポートに失敗しました。これは以下の理由が考えられます：\n\n• 一時的な接続の問題\n• 認証の問題\n• サーバーメンテナンス\n\nしばらくしてから再試行してください。",
     "error_saving_transactions": "エラー",
     "error_saving_description": "取引の保存に失敗しました。接続を確認して再試行してください。",
-    "s_remaining": "秒残り"
+    "s_remaining": "秒残り",
+    "filter_by_bank": "銀行でフィルター",
+    "all_banks": "すべての銀行"
   },
   "transaction_list_card": {
     "transactions": "取引",

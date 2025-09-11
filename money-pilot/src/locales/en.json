@@ -200,7 +200,9 @@
     "import_failed_description": "Failed to import any transactions. This might be due to:\n\n• Temporary connection issues\n• Authentication problems\n• Server maintenance\n\nPlease try again in a few moments.",
     "error_saving_transactions": "Error",
     "error_saving_description": "Failed to save transactions. Please check your connection and try again.",
-    "s_remaining": "s remaining"
+    "s_remaining": "s remaining",
+    "filter_by_bank": "Filter by Bank",
+    "all_banks": "All Banks"
   },
   "transaction_list_card": {
     "transactions": "transactions",

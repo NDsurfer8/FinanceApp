@@ -1136,7 +1136,9 @@
     "import_failed_description": "No se pudieron importar transacciones. Esto podría deberse a:\n\n• Problemas de conexión temporales\n• Problemas de autenticación\n• Mantenimiento del servidor\n\nPor favor, inténtalo de nuevo en unos momentos.",
     "error_saving_transactions": "Error",
     "error_saving_description": "Error al guardar transacciones. Por favor, verifica tu conexión e inténtalo de nuevo.",
-    "s_remaining": "s restantes"
+    "s_remaining": "s restantes",
+    "filter_by_bank": "Filtrar por Banco",
+    "all_banks": "Todos los Bancos"
   },
   "transaction_list_card": {
     "transactions": "transacciones",

@@ -1133,7 +1133,9 @@
     "import_failed_description": "Fehler beim Importieren von Transaktionen. Dies könnte folgende Ursachen haben:\n\n• Temporäre Verbindungsprobleme\n• Authentifizierungsprobleme\n• Serverwartung\n\nBitte versuchen Sie es in wenigen Momenten erneut.",
     "error_saving_transactions": "Fehler",
     "error_saving_description": "Fehler beim Speichern der Transaktionen. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
-    "s_remaining": "s verbleibend"
+    "s_remaining": "s verbleibend",
+    "filter_by_bank": "Nach Bank filtern",
+    "all_banks": "Alle Banken"
   },
   "transaction_list_card": {
     "transactions": "Transaktionen",

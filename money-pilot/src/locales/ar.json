@@ -1133,7 +1133,9 @@
     "import_failed_description": "فشل في استيراد أي معاملات. قد يكون هذا بسبب:\n\n• مشاكل اتصال مؤقتة\n• مشاكل في المصادقة\n• صيانة الخادم\n\nيرجى المحاولة مرة أخرى خلال لحظات.",
     "error_saving_transactions": "خطأ",
     "error_saving_description": "فشل في حفظ المعاملات. يرجى التحقق من اتصالك والمحاولة مرة أخرى.",
-    "s_remaining": "ثانية متبقية"
+    "s_remaining": "ثانية متبقية",
+    "filter_by_bank": "تصفية حسب البنك",
+    "all_banks": "جميع البنوك"
   },
   "transaction_list_card": {
     "transactions": "المعاملات",
