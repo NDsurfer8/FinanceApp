@@ -106,6 +106,11 @@ export interface Transaction {
   updatedAt?: number;
   // Flag to distinguish actual vs projected transactions
   isProjected?: boolean;
+  // Source information for auto-imported transactions (backwards compatible)
+  sourceAccountId?: string; // Plaid account_id for auto-imported transactions
+  sourceInstitution?: string; // Bank name for auto-imported transactions
+  sourceItemId?: string; // Plaid item_id for auto-imported transactions
+  isAutoImported?: boolean; // Flag to distinguish manual vs auto-imported transactions
 }
 
 export interface Asset {

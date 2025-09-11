@@ -441,6 +441,11 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             date: new Date(transaction.date).getTime(),
             type: transaction.type,
             createdAt: Date.now(),
+            // Preserve source account information for filtering
+            sourceAccountId: transaction.originalTransaction?.account_id,
+            sourceInstitution: transaction.originalTransaction?.institution,
+            sourceItemId: transaction.originalTransaction?.itemId,
+            isAutoImported: true,
           };
 
           await saveTransaction(newTransaction);
@@ -714,9 +719,9 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
               >
                 <View
                   style={{
-                    width: `{formatCurrency(
+                    width: `${
                       (saveProgress.current / saveProgress.total) * 100
-                    )}%`,
+                    }%`,
                     height: "100%",
                     backgroundColor: colors.primary,
                     borderRadius: 2,

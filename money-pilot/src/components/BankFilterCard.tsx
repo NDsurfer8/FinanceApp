@@ -27,21 +27,28 @@ export const BankFilterCard: React.FC<BankFilterCardProps> = ({
   // Get unique transaction sources
   const transactionSources = useMemo(() => {
     const sources = getUniqueTransactionSources(transactions);
+
+    // Translate the source names
+    const translatedSources = sources.map((source) => {
+      if (source.type === "manual") {
+        return { ...source, name: t("transactions.manual_entries") };
+      }
+      if (source.type === "auto-imported") {
+        return { ...source, name: t("transactions.auto_imported") };
+      }
+      return source; // Bank names don't need translation
+    });
+
     return [
       { id: "all", name: t("transactions.all"), type: "all" as const },
-      ...sources,
+      ...translatedSources,
     ];
   }, [transactions, t]);
 
   // Get display name for selected source
   const getSelectedSourceName = () => {
-    if (selectedSource === "all") return t("transactions.all");
     const source = transactionSources.find((s) => s.id === selectedSource);
-    if (!source) return t("transactions.all");
-
-    if (source.type === "manual") return t("transactions.manual_entries");
-    if (source.type === "auto-imported") return t("transactions.auto_imported");
-    return source.name;
+    return source ? source.name : t("transactions.all");
   };
 
   const hasMultipleSources = transactionSources.length > 1;
@@ -160,13 +167,7 @@ export const BankFilterCard: React.FC<BankFilterCardProps> = ({
                         : colors.textSecondary,
                   }}
                 >
-                  {source.id === "all"
-                    ? t("transactions.all")
-                    : source.type === "manual"
-                    ? t("transactions.manual_entries")
-                    : source.type === "auto-imported"
-                    ? t("transactions.auto_imported")
-                    : source.name}
+                  {source.name}
                 </Text>
               </TouchableOpacity>
             ))}
