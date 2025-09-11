@@ -365,7 +365,9 @@
     "about": "О Приложении",
     "ai_usage_admin": "Администратор Использования ИИ",
     "logout": "Выйти",
-    "see_plans_pricing": "Посмотреть Планы и Цены"
+    "see_plans_pricing": "Посмотреть Планы и Цены",
+    "premium_plaid_description": "Premium + Plaid: Просматривайте, маркируйте и управляйте своим бюджетом.",
+    "renews": "Продлевается:"
   },
   "premium": {
     "title": "Премиум Функции",

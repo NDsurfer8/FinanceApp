@@ -365,7 +365,9 @@
     "about": "アプリについて",
     "ai_usage_admin": "AI使用管理",
     "logout": "ログアウト",
-    "see_plans_pricing": "プランと価格を見る"
+    "see_plans_pricing": "プランと価格を見る",
+    "premium_plaid_description": "Premium + Plaid: 予算を確認、ラベル付け、管理します。",
+    "renews": "更新:"
   },
   "premium": {
     "title": "プレミアム機能",

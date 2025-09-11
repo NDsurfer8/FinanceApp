@@ -365,7 +365,9 @@
     "about": "Über",
     "ai_usage_admin": "KI-Nutzungs-Administrator",
     "logout": "Abmelden",
-    "see_plans_pricing": "Pläne und Preise Anzeigen"
+    "see_plans_pricing": "Pläne und Preise Anzeigen",
+    "premium_plaid_description": "Premium + Plaid: Überprüfen, kennzeichnen und verwalten Sie Ihr Budget.",
+    "renews": "Verlängert:"
   },
   "premium": {
     "title": "Premium-Funktionen",

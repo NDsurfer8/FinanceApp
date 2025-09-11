@@ -365,7 +365,9 @@
     "about": "Sobre",
     "ai_usage_admin": "Administrador de Uso de IA",
     "logout": "Sair",
-    "see_plans_pricing": "Ver Planos e Preços"
+    "see_plans_pricing": "Ver Planos e Preços",
+    "premium_plaid_description": "Premium + Plaid: Revise, rotule e gerencie seu orçamento.",
+    "renews": "Renova:"
   },
   "premium": {
     "title": "Recursos Premium",

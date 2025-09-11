@@ -726,7 +726,9 @@
     "about": "About",
     "ai_usage_admin": "AI Usage Admin",
     "logout": "Logout",
-    "see_plans_pricing": "See Plans & Pricing"
+    "see_plans_pricing": "See Plans & Pricing",
+    "premium_plaid_description": "Premium + Plaid: Review, label and manage your budget.",
+    "renews": "Renews:"
   },
   "categories": {
     "rent": "Rent",

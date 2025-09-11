@@ -365,7 +365,9 @@
     "about": "के बारे में",
     "ai_usage_admin": "AI उपयोग प्रशासक",
     "logout": "लॉग आउट",
-    "see_plans_pricing": "योजनाएं और मूल्य देखें"
+    "see_plans_pricing": "योजनाएं और मूल्य देखें",
+    "premium_plaid_description": "Premium + Plaid: अपने बजट की समीक्षा, लेबलिंग और प्रबंधन करें।",
+    "renews": "नवीकरण:"
   },
   "premium": {
     "title": "प्रीमियम सुविधाएं",

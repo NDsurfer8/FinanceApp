@@ -365,7 +365,9 @@
     "about": "关于",
     "ai_usage_admin": "AI使用管理",
     "logout": "退出登录",
-    "see_plans_pricing": "查看计划和定价"
+    "see_plans_pricing": "查看计划和定价",
+    "premium_plaid_description": "Premium + Plaid: 审查、标记和管理您的预算。",
+    "renews": "续订:"
   },
   "premium": {
     "title": "高级功能",

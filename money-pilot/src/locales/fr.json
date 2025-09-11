@@ -365,7 +365,9 @@
     "about": "À Propos",
     "ai_usage_admin": "Administrateur d'Usage IA",
     "logout": "Déconnexion",
-    "see_plans_pricing": "Voir les Plans et Tarifs"
+    "see_plans_pricing": "Voir les Plans et Tarifs",
+    "premium_plaid_description": "Premium + Plaid: Examinez, étiquetez et gérez votre budget.",
+    "renews": "Renouvelle:"
   },
   "premium": {
     "title": "Fonctionnalités Premium",

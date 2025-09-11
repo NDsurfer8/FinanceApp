@@ -738,7 +738,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           {subscriptionStatus?.isPremium ? (
             <View>
               <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-                Premium + Plaid: Review, label and manage your budget.
+                {t("settings.premium_plaid_description")}
               </Text>
               {subscriptionStatus.expirationDate && (
                 <Text
@@ -748,7 +748,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     marginTop: 4,
                   }}
                 >
-                  Renews:{" "}
+                  {t("settings.renews")}:{" "}
                   {subscriptionStatus.expirationDate.toLocaleDateString()}
                 </Text>
               )}
