@@ -964,5 +964,32 @@
       "text": "Connexion biométrique + chiffrement de niveau bancaire gardent vos données sécurisées à tout moment."
     },
     "ai_disclaimer": "⚠️ Les conseils IA sont à des fins informatives uniquement. Consultez des professionnels qualifiés pour les décisions financières."
+  },
+  "setup_wizard": {
+    "header_title": "Commençons !",
+    "step_counter": "Étape {{current}} sur {{total}}",
+    "step1": {
+      "title": "Suivez vos dépenses",
+      "description": "Ajoutez des revenus et des dépenses manuellement — ou connectez votre banque pour importer automatiquement les transactions et recevoir des alertes."
+    },
+    "step2": {
+      "title": "Construisez votre budget",
+      "description": "Dans Budget, appuyez sur l'engrenage dans Aperçu pour définir les limites de catégorie et le montant sûr à dépenser."
+    },
+    "step3": {
+      "title": "Définissez un objectif",
+      "description": "Créez votre premier objectif (ex., voyage en Espagne) et choisissez une date cible."
+    },
+    "step4": {
+      "title": "Ajoutez des actifs et dettes",
+      "description": "Enregistrez les économies, investissements, prêts et cartes pour suivre votre patrimoine net."
+    },
+    "step5": {
+      "title": "Demandez à Vectra",
+      "description": "Obtenez des conseils clairs et exploitables basés sur vos données (ex., \"Suis-je financièrement prêt à acheter une maison ?\")."
+    },
+    "complete_setup": "Terminer la Configuration",
+    "next_step": "Étape Suivante",
+    "skip_for_now": "Ignorer pour l'Instant"
   }
 }

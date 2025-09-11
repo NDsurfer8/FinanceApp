@@ -955,5 +955,32 @@
       "text": "Inicio de sesión biométrico + encriptación de grado bancario mantienen tus datos seguros en todo momento."
     },
     "ai_disclaimer": "⚠️ Los consejos de IA son solo para fines informativos. Consulta a profesionales calificados para decisiones financieras."
+  },
+  "setup_wizard": {
+    "header_title": "¡Empecemos!",
+    "step_counter": "Paso {{current}} de {{total}}",
+    "step1": {
+      "title": "Rastrea tus gastos",
+      "description": "Agrega ingresos y gastos manualmente — o conecta tu banco para importar transacciones automáticamente y recibir alertas."
+    },
+    "step2": {
+      "title": "Construye tu presupuesto",
+      "description": "En Presupuesto, toca el engranaje en Resumen para establecer límites de categoría y gasto seguro."
+    },
+    "step3": {
+      "title": "Establece una meta",
+      "description": "Crea tu primera meta (ej., viaje a España) y elige una fecha objetivo."
+    },
+    "step4": {
+      "title": "Agrega activos y deudas",
+      "description": "Registra ahorros, inversiones, préstamos y tarjetas para rastrear tu patrimonio neto."
+    },
+    "step5": {
+      "title": "Pregunta a Vectra",
+      "description": "Obtén consejos claros y accionables basados en tus datos (ej., \"¿Estoy financieramente listo para comprar una casa?\")."
+    },
+    "complete_setup": "Completar Configuración",
+    "next_step": "Siguiente Paso",
+    "skip_for_now": "Omitir por Ahora"
   }
 }

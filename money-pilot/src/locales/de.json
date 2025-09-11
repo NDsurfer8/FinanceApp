@@ -964,5 +964,32 @@
       "text": "Biometrische Anmeldung + Bank-Level-Verschlüsselung halten Ihre Daten jederzeit sicher."
     },
     "ai_disclaimer": "⚠️ KI-Beratung dient nur zu Informationszwecken. Konsultieren Sie qualifizierte Fachkräfte für Finanzentscheidungen."
+  },
+  "setup_wizard": {
+    "header_title": "Lass uns anfangen!",
+    "step_counter": "Schritt {{current}} von {{total}}",
+    "step1": {
+      "title": "Verfolgen Sie Ihre Ausgaben",
+      "description": "Fügen Sie Einnahmen und Ausgaben manuell hinzu — oder verknüpfen Sie Ihre Bank für automatischen Import von Transaktionen und Benachrichtigungen."
+    },
+    "step2": {
+      "title": "Erstellen Sie Ihr Budget",
+      "description": "Tippen Sie in Budget auf das Zahnrad in Übersicht, um Kategoriegrenzen und sicheres Ausgeben festzulegen."
+    },
+    "step3": {
+      "title": "Setzen Sie ein Ziel",
+      "description": "Erstellen Sie Ihr erstes Ziel (z.B. Spanien-Reise) und wählen Sie ein Zieldatum."
+    },
+    "step4": {
+      "title": "Fügen Sie Vermögenswerte und Schulden hinzu",
+      "description": "Protokollieren Sie Ersparnisse, Investitionen, Kredite und Karten, um Ihr Nettovermögen zu verfolgen."
+    },
+    "step5": {
+      "title": "Fragen Sie Vectra",
+      "description": "Erhalten Sie klare, umsetzbare Tipps basierend auf Ihren Daten (z.B., \"Bin ich finanziell bereit, ein Haus zu kaufen?\")."
+    },
+    "complete_setup": "Setup Abschließen",
+    "next_step": "Nächster Schritt",
+    "skip_for_now": "Jetzt Überspringen"
   }
 }

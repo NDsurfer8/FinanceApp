@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
+import { loadLanguageOnDemand } from "../config/i18n";
 
 interface SetupWizardProps {
   onComplete: () => void;
@@ -13,41 +15,48 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
   onSkip,
 }) => {
   const { colors } = useTheme();
+  const { t, i18n } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
 
+  // Ensure language is loaded on demand
+  useEffect(() => {
+    const loadLanguage = async () => {
+      if (i18n.language && i18n.language !== "en") {
+        await loadLanguageOnDemand(i18n.language);
+      }
+    };
+    loadLanguage();
+  }, [i18n.language]);
+
+  // Create steps with translations
   const steps = [
     {
-      title: "Track your spending",
-      description:
-        "Add income and expenses manually — or link your bank to auto-import transactions and get alerts.",
+      title: t("setup_wizard.step1.title"),
+      description: t("setup_wizard.step1.description"),
       icon: "pie-chart-outline" as keyof typeof Ionicons.glyphMap,
       action: "setBudget",
     },
     {
-      title: "Build your budget",
-      description:
-        "In Budget, tap the gear in Overview to set category limits and safe-to-spend.",
+      title: t("setup_wizard.step2.title"),
+      description: t("setup_wizard.step2.description"),
       icon: "settings-outline" as keyof typeof Ionicons.glyphMap,
       action: "setBudget",
     },
     {
-      title: "Set a goal",
-      description:
-        "Create your first goal (e.g., Spain trip) and choose a target date.",
+      title: t("setup_wizard.step3.title"),
+      description: t("setup_wizard.step3.description"),
       icon: "flag-outline" as keyof typeof Ionicons.glyphMap,
       action: "setGoal",
     },
     {
-      title: "Add assets & debts",
-      description:
-        "Log savings, investments, loans, and cards to track your net worth.",
+      title: t("setup_wizard.step4.title"),
+      description: t("setup_wizard.step4.description"),
       icon: "briefcase-outline" as keyof typeof Ionicons.glyphMap,
       action: "addAssetsDebts",
     },
     {
-      title: "Ask Vectra",
-      description:
-        'Get clear, actionable tips based on your data (e.g., "Am I financially ready to buy a house?").',
+      title: t("setup_wizard.step5.title"),
+      description: t("setup_wizard.step5.description"),
       icon: "chatbubble-ellipses-outline" as keyof typeof Ionicons.glyphMap,
       action: "askAI",
     },
@@ -65,10 +74,13 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>
-          Let's Get You Started!
+          {t("setup_wizard.header_title")}
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Step {currentStep + 1} of {steps.length}
+          {t("setup_wizard.step_counter", {
+            current: currentStep + 1,
+            total: steps.length,
+          })}
         </Text>
       </View>
 
@@ -108,7 +120,9 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
           onPress={handleStepComplete}
         >
           <Text style={styles.buttonText}>
-            {currentStep === steps.length - 1 ? "Complete Setup" : "Next Step"}
+            {currentStep === steps.length - 1
+              ? t("setup_wizard.complete_setup")
+              : t("setup_wizard.next_step")}
           </Text>
         </TouchableOpacity>
 
@@ -117,7 +131,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
           onPress={onSkip}
         >
           <Text style={[styles.skipText, { color: colors.textSecondary }]}>
-            Skip for Now
+            {t("setup_wizard.skip_for_now")}
           </Text>
         </TouchableOpacity>
       </View>

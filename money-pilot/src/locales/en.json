@@ -91,6 +91,33 @@
     },
     "ai_disclaimer": "⚠️ AI advice is for informational purposes only. Consult qualified professionals for financial decisions."
   },
+  "setup_wizard": {
+    "header_title": "Let's Get You Started!",
+    "step_counter": "Step {{current}} of {{total}}",
+    "step1": {
+      "title": "Track your spending",
+      "description": "Add income and expenses manually — or link your bank to auto-import transactions and get alerts."
+    },
+    "step2": {
+      "title": "Build your budget",
+      "description": "In Budget, tap the gear in Overview to set category limits and safe-to-spend."
+    },
+    "step3": {
+      "title": "Set a goal",
+      "description": "Create your first goal (e.g., Spain trip) and choose a target date."
+    },
+    "step4": {
+      "title": "Add assets & debts",
+      "description": "Log savings, investments, loans, and cards to track your net worth."
+    },
+    "step5": {
+      "title": "Ask Vectra",
+      "description": "Get clear, actionable tips based on your data (e.g., \"Am I financially ready to buy a house?\")."
+    },
+    "complete_setup": "Complete Setup",
+    "next_step": "Next Step",
+    "skip_for_now": "Skip for Now"
+  },
   "navigation": {
     "dashboard": "Dashboard",
     "budget": "Budget",
