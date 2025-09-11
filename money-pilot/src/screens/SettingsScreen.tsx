@@ -1080,6 +1080,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <View
               style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
             >
+              <Text style={{ color: colors.textSecondary, marginRight: 8 }}>
+                {" "}
+              </Text>
               <LanguageAwareText
                 style={{
                   color: colors.textSecondary,
