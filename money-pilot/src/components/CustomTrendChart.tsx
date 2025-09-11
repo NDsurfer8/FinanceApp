@@ -24,14 +24,15 @@ interface CustomTrendChartProps {
 // Utility function to format large numbers with K, M, B suffixes
 const formatLargeNumber = (
   num: number,
-  formatCurrency: (amount: number) => string
+  formatCurrency: (amount: number) => string,
+  getCurrencySymbol: () => string
 ): string => {
   if (num >= 1000000000) {
-    return `$${(num / 1000000000).toFixed(1)}B`;
+    return `${getCurrencySymbol()}${(num / 1000000000).toFixed(1)}B`;
   } else if (num >= 1000000) {
-    return `$${(num / 1000000).toFixed(1)}M`;
+    return `${getCurrencySymbol()}${(num / 1000000).toFixed(1)}M`;
   } else if (num >= 1000) {
-    return `$${(num / 1000).toFixed(1)}K`;
+    return `${getCurrencySymbol()}${(num / 1000).toFixed(1)}K`;
   } else {
     return `${formatCurrency(Math.round(num))}`;
   }
@@ -41,7 +42,7 @@ export const CustomTrendChart: React.FC<CustomTrendChartProps> = React.memo(
   ({ incomeData, expensesData, netWorthData, height = 280 }) => {
     const { colors } = useTheme();
     const { t } = useTranslation();
-    const { formatCurrency } = useCurrency();
+    const { formatCurrency, getCurrencySymbol } = useCurrency();
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
@@ -247,7 +248,11 @@ export const CustomTrendChart: React.FC<CustomTrendChartProps> = React.memo(
                   fontWeight: "600",
                 }}
               >
-                {formatLargeNumber(Math.round(value), formatCurrency)}
+                {formatLargeNumber(
+                  Math.round(value),
+                  formatCurrency,
+                  getCurrencySymbol
+                )}
               </Text>
             </React.Fragment>
           );
