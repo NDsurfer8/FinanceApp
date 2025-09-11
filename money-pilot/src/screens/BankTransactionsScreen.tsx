@@ -18,6 +18,7 @@ import { useSubscription } from "../contexts/SubscriptionContext";
 import { usePaywall } from "../hooks/usePaywall";
 import { plaidService } from "../services/plaid";
 import { plaidAssetDebtImporter } from "../services/plaidAssetDebtImporter";
+import { useTranslation } from "react-i18next";
 
 interface BankTransactionsScreenProps {
   navigation: any;
@@ -45,6 +46,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
   try {
     const { user } = useAuth();
     const { colors } = useTheme();
+    const { t } = useTranslation();
     const dataContext = useData();
     const {
       bankAccounts,
@@ -72,7 +74,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
         name:
           typeof account.name === "string"
             ? account.name.replace(/[^\x20-\x7E]/g, "") // Remove non-ASCII characters
-            : "Unknown Account",
+            : t("bank_transactions.unknown_account"),
         mask:
           typeof account.mask === "string"
             ? account.mask.replace(/[^\x20-\x7E]/g, "") // Remove non-ASCII characters
@@ -151,7 +153,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
           "❌ BankTransactionsScreen: Failed to refresh bank data:",
           error
         );
-        Alert.alert("Error", "Failed to refresh bank data. Please try again.");
+        Alert.alert(
+          t("common.error"),
+          t("bank_transactions.failed_to_refresh")
+        );
       }
     };
 
@@ -229,22 +234,25 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
         }
 
         Alert.alert(
-          "Auto-Import Complete!",
-          `Successfully imported: ${result.importedAssets.length} assets and ${result.importedDebts.length} debts. Navigate to Assets and Debts to see your imported items!`,
+          t("bank_transactions.auto_import_complete"),
+          t("bank_transactions.successfully_imported", {
+            assets: result.importedAssets.length,
+            debts: result.importedDebts.length,
+          }),
           [
             {
-              text: "View Assets & Debts",
+              text: t("bank_transactions.view_assets_debts"),
               onPress: () => navigation.goBack(),
             },
-            { text: "OK" },
+            { text: t("common.ok") },
           ]
         );
       } catch (error) {
         console.error("Error during auto-import:", error);
         Alert.alert(
-          "Import Error",
-          "There was an error importing your accounts. Please try again.",
-          [{ text: "OK" }]
+          t("bank_transactions.import_error"),
+          t("bank_transactions.import_error_message"),
+          [{ text: t("common.ok") }]
         );
       } finally {
         setIsImporting(false);
@@ -275,8 +283,8 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
         >
           {/* Header */}
           <StandardHeader
-            title="Accounts Overview"
-            subtitle="Real-time from your connected accounts"
+            title={t("bank_transactions.title")}
+            subtitle={t("bank_transactions.subtitle")}
             onBack={() => navigation.goBack()}
             showBackButton={true}
           />
@@ -304,7 +312,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   marginBottom: 16,
                 }}
               >
-                Account Summary
+                {t("bank_transactions.account_summary")}
               </Text>
 
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
@@ -326,7 +334,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         marginBottom: 4,
                       }}
                     >
-                      Checking & Savings
+                      {t("bank_transactions.checking_savings")}
                     </Text>
                     <Text
                       style={{
@@ -344,8 +352,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         marginTop: 2,
                       }}
                     >
-                      {checkingAccounts.length} account
-                      {checkingAccounts.length !== 1 ? "s" : ""}
+                      {checkingAccounts.length}{" "}
+                      {checkingAccounts.length === 1
+                        ? t("bank_transactions.account")
+                        : t("bank_transactions.accounts")}
                     </Text>
                   </View>
                 )}
@@ -368,7 +378,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         marginBottom: 4,
                       }}
                     >
-                      Credit Cards
+                      {t("bank_transactions.credit_cards")}
                     </Text>
                     <Text
                       style={{
@@ -386,8 +396,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         marginTop: 2,
                       }}
                     >
-                      {creditCardAccounts.length} account
-                      {creditCardAccounts.length !== 1 ? "s" : ""}
+                      {creditCardAccounts.length}{" "}
+                      {creditCardAccounts.length === 1
+                        ? t("bank_transactions.account")
+                        : t("bank_transactions.accounts")}
                     </Text>
                   </View>
                 )}
@@ -410,7 +422,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         marginBottom: 4,
                       }}
                     >
-                      Investments
+                      {t("bank_transactions.investments")}
                     </Text>
                     <Text
                       style={{
@@ -428,8 +440,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         marginTop: 2,
                       }}
                     >
-                      {investmentAccounts.length} account
-                      {investmentAccounts.length !== 1 ? "s" : ""}
+                      {investmentAccounts.length}{" "}
+                      {investmentAccounts.length === 1
+                        ? t("bank_transactions.account")
+                        : t("bank_transactions.accounts")}
                     </Text>
                   </View>
                 )}
@@ -452,7 +466,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         marginBottom: 4,
                       }}
                     >
-                      Loans
+                      {t("bank_transactions.loans")}
                     </Text>
                     <Text
                       style={{
@@ -470,8 +484,10 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         marginTop: 2,
                       }}
                     >
-                      {loanAccounts.length} account
-                      {loanAccounts.length !== 1 ? "s" : ""}
+                      {loanAccounts.length}{" "}
+                      {loanAccounts.length === 1
+                        ? t("bank_transactions.account")
+                        : t("bank_transactions.accounts")}
                     </Text>
                   </View>
                 )}
@@ -517,7 +533,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   textAlign: "center",
                 }}
               >
-                Connect Your Bank
+                {t("bank_transactions.connect_your_bank")}
               </Text>
               <Text
                 style={{
@@ -528,9 +544,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   lineHeight: 20,
                 }}
               >
-                Upgrade to Premium to connect your bank account and
-                automatically sync transactions, balances, and account
-                information.
+                {t("bank_transactions.connect_your_bank_description")}
               </Text>
               <TouchableOpacity
                 onPress={presentPaywall}
@@ -552,7 +566,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     color: colors.buttonText,
                   }}
                 >
-                  Get Premium
+                  {t("bank_transactions.get_premium")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -589,7 +603,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   marginBottom: 8,
                 }}
               >
-                Connect Your Bank Account
+                {t("bank_transactions.connect_bank_account")}
               </Text>
               <Text
                 style={{
@@ -599,8 +613,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   lineHeight: 20,
                 }}
               >
-                Go to Settings to connect your bank account and view your
-                transactions here.
+                {t("bank_transactions.go_to_settings_description")}
               </Text>
             </View>
           )}
@@ -628,7 +641,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   marginBottom: 6,
                 }}
               >
-                Total Balance
+                {t("bank_transactions.total_balance")}
               </Text>
               <Text
                 style={{
@@ -647,8 +660,13 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   marginTop: 2,
                 }}
               >
-                Across {checkingAccounts.length} account
-                {checkingAccounts.length !== 1 ? "s" : ""}
+                {checkingAccounts.length === 1
+                  ? t("bank_transactions.across_accounts", {
+                      count: checkingAccounts.length,
+                    })
+                  : t("bank_transactions.across_accounts_plural", {
+                      count: checkingAccounts.length,
+                    })}
               </Text>
             </View>
           )}
@@ -676,7 +694,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   color: colors.text,
                 }}
               >
-                Account Balances
+                {t("bank_transactions.account_balances")}
               </Text>
               {checkingAccounts.map((account: any) => (
                 <View
@@ -706,7 +724,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       {(account.name || "")
                         .toString()
                         .replace(/[^\x20-\x7E]/g, "")
-                        .trim() || "Checking Account"}
+                        .trim() || t("bank_transactions.checking_account")}
                     </Text>
                     <Text
                       style={{
@@ -725,7 +743,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       {(account.subtype || "")
                         .toString()
                         .replace(/[^\x20-\x7E]/g, "")
-                        .trim() || "Checking"}
+                        .trim() || t("bank_transactions.checking")}
                     </Text>
                   </View>
                   <View style={{ alignItems: "flex-end" }}>
@@ -748,7 +766,8 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         marginTop: 2,
                       }}
                     >
-                      Available: {formatCurrency(account.balances.available)}
+                      {t("bank_transactions.available")}:{" "}
+                      {formatCurrency(account.balances.available)}
                     </Text>
                   </View>
                 </View>
@@ -791,7 +810,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     color: colors.text,
                   }}
                 >
-                  Connected Loan Accounts
+                  {t("bank_transactions.connected_loan_accounts")}
                 </Text>
               </View>
 
@@ -822,7 +841,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       {(account.name || "")
                         .toString()
                         .replace(/[^\x20-\x7E]/g, "")
-                        .trim() || "Loan Account"}
+                        .trim() || t("bank_transactions.loan_account")}
                     </Text>
                     <Text
                       style={{
@@ -835,7 +854,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       {(account.subtype || "")
                         .toString()
                         .replace(/[^\x20-\x7E]/g, "")
-                        .trim() || "Loan"}{" "}
+                        .trim() || t("bank_transactions.loan")}{" "}
                       • ****
                       {(account.mask || "")
                         .toString()
@@ -860,7 +879,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         marginTop: 2,
                       }}
                     >
-                      Remaining Balance
+                      {t("bank_transactions.remaining_balance")}
                     </Text>
                   </View>
                 </View>
@@ -874,7 +893,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   fontStyle: "italic",
                 }}
               >
-                Connected loan accounts are automatically synced from your bank
+                {t("bank_transactions.connected_loan_accounts_sync")}
               </Text>
             </View>
           )}
@@ -914,7 +933,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     color: colors.text,
                   }}
                 >
-                  Connected Credit Cards
+                  {t("bank_transactions.connected_credit_cards")}
                 </Text>
               </View>
 
@@ -946,7 +965,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       {(account.name || "")
                         .toString()
                         .replace(/[^\x20-\x7E]/g, "")
-                        .trim() || "Credit Card"}
+                        .trim() || t("bank_transactions.credit_card")}
                     </Text>
                     <Text
                       style={{
@@ -956,7 +975,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       }}
                       numberOfLines={1}
                     >
-                      Credit Card • ****
+                      {t("bank_transactions.credit_card")} • ****
                       {(account.mask || "")
                         .toString()
                         .replace(/[^\x20-\x7E]/g, "")
@@ -980,7 +999,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         marginTop: 2,
                       }}
                     >
-                      Current Balance
+                      {t("bank_transactions.current_balance")}
                     </Text>
                     {account.balances?.limit && (
                       <Text
@@ -990,7 +1009,8 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                           marginTop: 1,
                         }}
                       >
-                        Limit: {formatCurrency(account.balances.limit)}
+                        {t("bank_transactions.limit")}:{" "}
+                        {formatCurrency(account.balances.limit)}
                       </Text>
                     )}
                   </View>
@@ -1005,7 +1025,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   fontStyle: "italic",
                 }}
               >
-                Credit card balances are automatically synced from your bank
+                {t("bank_transactions.credit_card_balances_sync")}
               </Text>
             </View>
           )}
@@ -1045,7 +1065,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     color: colors.text,
                   }}
                 >
-                  Connected Investment Accounts
+                  {t("bank_transactions.connected_investment_accounts")}
                 </Text>
               </View>
 
@@ -1077,7 +1097,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       {(account.name || "")
                         .toString()
                         .replace(/[^\x20-\x7E]/g, "")
-                        .trim() || "Investment Account"}
+                        .trim() || t("bank_transactions.investment_account")}
                     </Text>
                     <Text
                       style={{
@@ -1090,7 +1110,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       {(account.subtype || "")
                         .toString()
                         .replace(/[^\x20-\x7E]/g, "")
-                        .trim() || "Investment"}{" "}
+                        .trim() || t("bank_transactions.investment")}{" "}
                       • ****
                       {(account.mask || "")
                         .toString()
@@ -1115,7 +1135,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         marginTop: 2,
                       }}
                     >
-                      Current Value
+                      {t("bank_transactions.current_value")}
                     </Text>
                   </View>
                 </View>
@@ -1129,8 +1149,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                   fontStyle: "italic",
                 }}
               >
-                Investment account values are automatically synced from your
-                bank
+                {t("bank_transactions.investment_account_values_sync")}
               </Text>
             </View>
           )}
@@ -1170,7 +1189,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                       color: colors.primary,
                     }}
                   >
-                    Auto-Import Assets & Debts
+                    {t("bank_transactions.auto_import_assets_debts")}
                   </Text>
                 </View>
 
@@ -1182,9 +1201,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                     lineHeight: 20,
                   }}
                 >
-                  Your connected accounts can automatically populate the Assets
-                  & Debts screen. Credit cards and loans appear as debts, while
-                  investment accounts appear as assets.
+                  {t("bank_transactions.auto_import_description")}
                 </Text>
 
                 <View style={{ flexDirection: "row", gap: 12 }}>
@@ -1208,7 +1225,9 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         fontWeight: "600",
                       }}
                     >
-                      {isImporting ? "Importing..." : "Auto-Import Now"}
+                      {isImporting
+                        ? t("bank_transactions.importing")
+                        : t("bank_transactions.auto_import_now")}
                     </Text>
                   </TouchableOpacity>
 
@@ -1231,7 +1250,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         fontWeight: "600",
                       }}
                     >
-                      View Assets & Debts
+                      {t("bank_transactions.view_assets_debts")}
                     </Text>
                   </TouchableOpacity>
                 </View>
