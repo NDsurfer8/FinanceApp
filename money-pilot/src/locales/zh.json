@@ -503,7 +503,20 @@
     "entertainment": "娱乐",
     "shopping": "购物",
     "business": "商务",
-    "other_expenses": "其他费用"
+    "other_expenses": "其他费用",
+    "salary": "工资",
+    "va_disability": "VA残疾",
+    "social_security": "社会保障",
+    "freelance": "自由职业",
+    "investment": "投资",
+    "rental_income": "租金收入",
+    "side_hustle": "副业",
+    "bonus": "奖金",
+    "commission": "佣金",
+    "tips": "小费",
+    "gift": "礼物",
+    "refund": "退款",
+    "other_income": "其他收入"
   },
   "add_asset_debt": {
     "fill_all_fields": "请填写所有必填字段",

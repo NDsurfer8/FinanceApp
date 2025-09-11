@@ -503,7 +503,20 @@
     "entertainment": "मनोरंजन",
     "shopping": "खरीदारी",
     "business": "व्यवसाय",
-    "other_expenses": "अन्य खर्च"
+    "other_expenses": "अन्य खर्च",
+    "salary": "वेतन",
+    "va_disability": "VA विकलांगता",
+    "social_security": "सामाजिक सुरक्षा",
+    "freelance": "फ्रीलांस",
+    "investment": "निवेश",
+    "rental_income": "किराया आय",
+    "side_hustle": "साइड हसल",
+    "bonus": "बोनस",
+    "commission": "कमीशन",
+    "tips": "टिप्स",
+    "gift": "उपहार",
+    "refund": "रिफंड",
+    "other_income": "अन्य आय"
   },
   "add_asset_debt": {
     "fill_all_fields": "कृपया सभी आवश्यक फ़ील्ड भरें",

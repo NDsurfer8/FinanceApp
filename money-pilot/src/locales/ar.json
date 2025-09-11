@@ -503,7 +503,20 @@
     "entertainment": "ترفيه",
     "shopping": "تسوق",
     "business": "أعمال",
-    "other_expenses": "مصاريف أخرى"
+    "other_expenses": "مصاريف أخرى",
+    "salary": "راتب",
+    "va_disability": "إعاقة VA",
+    "social_security": "الضمان الاجتماعي",
+    "freelance": "العمل الحر",
+    "investment": "الاستثمار",
+    "rental_income": "دخل الإيجار",
+    "side_hustle": "العمل الجانبي",
+    "bonus": "مكافأة",
+    "commission": "عمولة",
+    "tips": "إكرامية",
+    "gift": "هدية",
+    "refund": "استرداد",
+    "other_income": "دخل آخر"
   },
   "add_asset_debt": {
     "fill_all_fields": "يرجى ملء جميع الحقول المطلوبة",

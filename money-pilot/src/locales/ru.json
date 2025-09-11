@@ -503,7 +503,20 @@
     "entertainment": "Развлечения",
     "shopping": "Покупки",
     "business": "Бизнес",
-    "other_expenses": "Прочие Расходы"
+    "other_expenses": "Прочие Расходы",
+    "salary": "Зарплата",
+    "va_disability": "VA Инвалидность",
+    "social_security": "Социальное Обеспечение",
+    "freelance": "Фриланс",
+    "investment": "Инвестиции",
+    "rental_income": "Доход от Аренды",
+    "side_hustle": "Подработка",
+    "bonus": "Бонус",
+    "commission": "Комиссия",
+    "tips": "Чаевые",
+    "gift": "Подарок",
+    "refund": "Возврат",
+    "other_income": "Другой Доход"
   },
   "add_asset_debt": {
     "fill_all_fields": "Пожалуйста, заполните все обязательные поля",

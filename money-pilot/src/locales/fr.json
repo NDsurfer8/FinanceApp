@@ -503,7 +503,20 @@
     "entertainment": "Divertissement",
     "shopping": "Shopping",
     "business": "Affaires",
-    "other_expenses": "Autres Dépenses"
+    "other_expenses": "Autres Dépenses",
+    "salary": "Salaire",
+    "va_disability": "Invalidité VA",
+    "social_security": "Sécurité Sociale",
+    "freelance": "Freelance",
+    "investment": "Investissement",
+    "rental_income": "Revenus Locatifs",
+    "side_hustle": "Travail Supplémentaire",
+    "bonus": "Prime",
+    "commission": "Commission",
+    "tips": "Pourboires",
+    "gift": "Cadeau",
+    "refund": "Remboursement",
+    "other_income": "Autres Revenus"
   },
   "add_asset_debt": {
     "fill_all_fields": "Veuillez remplir tous les champs obligatoires",

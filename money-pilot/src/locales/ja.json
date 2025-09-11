@@ -503,7 +503,20 @@
     "entertainment": "エンターテイメント",
     "shopping": "ショッピング",
     "business": "ビジネス",
-    "other_expenses": "その他の費用"
+    "other_expenses": "その他の費用",
+    "salary": "給与",
+    "va_disability": "VA障害年金",
+    "social_security": "社会保障",
+    "freelance": "フリーランス",
+    "investment": "投資",
+    "rental_income": "賃貸収入",
+    "side_hustle": "サイドハッスル",
+    "bonus": "ボーナス",
+    "commission": "コミッション",
+    "tips": "チップ",
+    "gift": "ギフト",
+    "refund": "返金",
+    "other_income": "その他の収入"
   },
   "add_asset_debt": {
     "fill_all_fields": "すべての必須フィールドを入力してください",
