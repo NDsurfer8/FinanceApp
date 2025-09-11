@@ -17,7 +17,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { saveTransaction } from "../services/userData";
-import { formatCurrency } from "../utils/formatNumber";
+import { formatAmountWithoutSymbol } from "../utils/filteredCurrency";
 import { mapPlaidCategoryToBudgetCategory } from "../utils/plaidCategoryMapping";
 
 interface AutoBudgetImporterProps {
@@ -50,7 +50,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
   const { bankTransactions, transactions, isBankConnected } = useData();
   const { colors } = useTheme();
   const { t } = useTranslation();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, selectedCurrency } = useCurrency();
 
   // Helper function to format month
   const formatMonth = (date: Date) => {
@@ -963,7 +963,11 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                       }}
                     >
                       {transaction.type === "income" ? "+" : "-"}
-                      {formatCurrency(transaction.amount)}
+                      {formatAmountWithoutSymbol(
+                        transaction.amount,
+                        null, // No filtered currency in auto-import
+                        selectedCurrency
+                      )}
                     </Text>
                     <Ionicons
                       name={

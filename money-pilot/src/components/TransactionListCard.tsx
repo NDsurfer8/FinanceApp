@@ -11,16 +11,11 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { HelpfulTooltip } from "./HelpfulTooltip";
-
-interface Transaction {
-  id: string;
-  description: string;
-  amount: number;
-  category: string;
-  date: number;
-  type: "income" | "expense";
-  recurringTransactionId?: string;
-}
+import { Transaction } from "../services/userData";
+import {
+  formatAmountWithFilteredCurrency,
+  formatAmountWithoutSymbol,
+} from "../utils/filteredCurrency";
 
 interface TransactionListCardProps {
   title: string;
@@ -35,6 +30,7 @@ interface TransactionListCardProps {
   isFutureMonth?: boolean;
   formatDate: (date: number) => string;
   isRecurringTransaction: (transaction: Transaction) => boolean;
+  filteredCurrency?: string | null;
 }
 
 export const TransactionListCard: React.FC<TransactionListCardProps> = ({
@@ -50,10 +46,11 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
   isFutureMonth = false,
   formatDate,
   isRecurringTransaction,
+  filteredCurrency = null,
 }) => {
   const { colors } = useTheme();
   const { t } = useTranslation();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, selectedCurrency } = useCurrency();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
@@ -183,7 +180,12 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
             >
               {filteredTransactions.length}{" "}
               {t("transaction_list_card.transactions")} •{" "}
-              {formatCurrency(filteredTotalAmount)}
+              {formatAmountWithFilteredCurrency(
+                filteredTotalAmount,
+                filteredCurrency,
+                selectedCurrency
+              )}
+              {filteredCurrency && ` (${filteredCurrency})`}
             </Text>
           </View>
         </View>
@@ -289,20 +291,35 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                       >
                         {translateCategory(category)}
                       </Text>
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          fontWeight: "600",
-                          color: colors.text,
-                        }}
-                      >
-                        {formatCurrency(
-                          categoryTransactions.reduce(
-                            (sum, t) => sum + t.amount,
-                            0
-                          )
+                      <View style={{ alignItems: "flex-end" }}>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            fontWeight: "600",
+                            color: colors.text,
+                          }}
+                        >
+                          {formatAmountWithFilteredCurrency(
+                            categoryTransactions.reduce(
+                              (sum, t) => sum + t.amount,
+                              0
+                            ),
+                            filteredCurrency,
+                            selectedCurrency
+                          )}
+                        </Text>
+                        {filteredCurrency && (
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              color: colors.textSecondary,
+                              marginTop: 2,
+                            }}
+                          >
+                            {filteredCurrency}
+                          </Text>
                         )}
-                      </Text>
+                      </View>
                     </View>
 
                     {categoryTransactions.map((transaction, index) => (
@@ -381,7 +398,11 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                             }}
                           >
                             {transaction.type === "income" ? "+" : "-"}
-                            {formatCurrency(transaction.amount)}
+                            {formatAmountWithoutSymbol(
+                              transaction.amount,
+                              filteredCurrency,
+                              selectedCurrency
+                            )}
                           </Text>
                         </View>
                       </TouchableOpacity>

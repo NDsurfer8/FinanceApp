@@ -8,17 +8,22 @@ import {
   TransactionSource,
 } from "../utils/transactionFilters";
 import { Transaction } from "../services/userData";
+import { PlaidAccount } from "../services/plaid";
 
 interface BankFilterCardProps {
   transactions: Transaction[];
   selectedSource: string;
   onSourceChange: (source: string) => void;
+  onCurrencyChange?: (currencyCode: string | null) => void;
+  bankAccounts?: PlaidAccount[];
 }
 
 export const BankFilterCard: React.FC<BankFilterCardProps> = ({
   transactions,
   selectedSource,
   onSourceChange,
+  onCurrencyChange,
+  bankAccounts = [],
 }) => {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -51,11 +56,40 @@ export const BankFilterCard: React.FC<BankFilterCardProps> = ({
     return source ? source.name : t("transactions.all");
   };
 
-  const hasMultipleSources = transactionSources.length > 1;
   const hasAutoImported = transactions.some((t) => t.isAutoImported);
 
-  // Don't render if no sources are available
-  if (!hasMultipleSources && !hasAutoImported) {
+  // Get currency for selected bank
+  const getSelectedBankCurrency = () => {
+    if (
+      selectedSource === "all" ||
+      selectedSource === "manual" ||
+      selectedSource === "auto-imported"
+    ) {
+      return null; // Use user's default currency
+    }
+
+    // Find the bank account for the selected institution
+    const bankAccount = bankAccounts.find(
+      (account) => account.institution === selectedSource
+    );
+
+    // Return the currency code from the bank account
+    return (
+      bankAccount?.balances?.iso_currency_code ||
+      bankAccount?.balances?.unofficial_currency_code ||
+      null
+    );
+  };
+
+  // Notify parent of currency change
+  React.useEffect(() => {
+    if (onCurrencyChange) {
+      onCurrencyChange(getSelectedBankCurrency());
+    }
+  }, [selectedSource, onCurrencyChange]);
+
+  // Only render if there are auto-imported transactions
+  if (!hasAutoImported) {
     return null;
   }
 

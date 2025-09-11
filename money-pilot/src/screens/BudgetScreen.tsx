@@ -57,6 +57,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   // Bank data from global context
   const {
     bankTransactions,
+    bankAccounts,
     isBankConnected,
     bankConnectionError,
     setBankConnectionError,
@@ -96,6 +97,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
   // Bank filter state
   const [selectedBankSource, setSelectedBankSource] = useState<string>("all");
+  const [filteredCurrency, setFilteredCurrency] = useState<string | null>(null);
   const monthPickerScrollRef = useRef<ScrollView>(null);
   const lastMonthRef = useRef<string>("");
   const { colors } = useTheme();
@@ -1135,6 +1137,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           transactions={selectedMonthTransactions}
           selectedSource={selectedBankSource}
           onSourceChange={setSelectedBankSource}
+          onCurrencyChange={setFilteredCurrency}
+          bankAccounts={bankAccounts}
         />
 
         {/* Income Section */}
@@ -1162,6 +1166,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           isFutureMonth={isFutureMonth}
           formatDate={formatDate}
           isRecurringTransaction={isRecurringTransaction}
+          filteredCurrency={filteredCurrency}
         />
 
         {/* Expenses Section */}
@@ -1189,6 +1194,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           isFutureMonth={isFutureMonth}
           formatDate={formatDate}
           isRecurringTransaction={isRecurringTransaction}
+          filteredCurrency={filteredCurrency}
         />
 
         {/* Budget Settings Modal */}
