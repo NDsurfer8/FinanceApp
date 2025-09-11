@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
+import { useTranslation } from "react-i18next";
 import {
   SharedGroup,
   getSharedGroup,
@@ -44,6 +45,7 @@ export default function SharedGroupDetailFixed({
 }: SharedGroupDetailProps) {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { transactions, assets, debts, goals, recurringTransactions } =
     useData();
   const { groupId, onGroupDeleted, onGroupLeft } = route.params;
@@ -130,16 +132,16 @@ export default function SharedGroupDetailFixed({
         // Reload the group data to show updated information
         await loadGroupData();
 
-        Alert.alert(t("common.success"), "Group data refreshed successfully!");
-      } else {
         Alert.alert(
-          "Info",
-          "No sharing settings found. Please configure your sharing preferences first."
+          t("common.success"),
+          t("group_detail.group_data_refreshed")
         );
+      } else {
+        Alert.alert(t("common.info"), t("group_detail.no_sharing_settings"));
       }
     } catch (error) {
       console.error("Error refreshing group data:", error);
-      Alert.alert("Error", "Failed to refresh group data. Please try again.");
+      Alert.alert(t("common.error"), t("group_detail.error_refreshing_group"));
     } finally {
       setLoading(false);
     }
@@ -627,8 +629,8 @@ export default function SharedGroupDetailFixed({
 
   const renderHeader = () => (
     <StandardHeader
-      title={group?.name || "Group Details"}
-      subtitle={`${group?.members.length} people sharing finances`}
+      title={group?.name || t("group_detail.title")}
+      subtitle={t("group_detail.subtitle", { count: group?.members.length })}
       onBack={() => navigation.goBack()}
       rightComponent={
         <TouchableOpacity
@@ -660,7 +662,7 @@ export default function SharedGroupDetailFixed({
             >
               <Ionicons name="people" size={20} color={colors.primary} />
               <Text style={[styles.optionText, { color: colors.text }]}>
-                Manage Members
+                {t("group_detail.manage_members")}
               </Text>
             </TouchableOpacity>
 
@@ -674,7 +676,7 @@ export default function SharedGroupDetailFixed({
                 color={colors.primary}
               />
               <Text style={[styles.optionText, { color: colors.text }]}>
-                Transfer Ownership
+                {t("group_detail.transfer_ownership")}
               </Text>
             </TouchableOpacity>
 
@@ -684,7 +686,7 @@ export default function SharedGroupDetailFixed({
             >
               <Ionicons name="trash" size={20} color={colors.error} />
               <Text style={[styles.optionText, { color: colors.error }]}>
-                Delete Group
+                {t("group_detail.delete_group")}
               </Text>
             </TouchableOpacity>
           </>
@@ -697,7 +699,7 @@ export default function SharedGroupDetailFixed({
           >
             <Ionicons name="exit" size={20} color={colors.warning} />
             <Text style={[styles.optionText, { color: colors.warning }]}>
-              Leave Group
+              {t("group_detail.leave_group")}
             </Text>
           </TouchableOpacity>
         )}
@@ -708,7 +710,7 @@ export default function SharedGroupDetailFixed({
         >
           <Ionicons name="close" size={20} color={colors.textSecondary} />
           <Text style={[styles.optionText, { color: colors.textSecondary }]}>
-            Close
+            {t("group_detail.close")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -724,10 +726,10 @@ export default function SharedGroupDetailFixed({
         </View>
         <View style={styles.cardTitleSection}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>
-            Shared Net Worth
+            {t("group_detail.shared_net_worth")}
           </Text>
           <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-            Combined assets and debts
+            {t("group_detail.combined_assets_debts")}
           </Text>
         </View>
       </View>
@@ -746,7 +748,7 @@ export default function SharedGroupDetailFixed({
             {formatCurrency(Math.abs(groupData.netWorth))}
           </Text>
           <Text style={[styles.netWorthLabel, { color: colors.textSecondary }]}>
-            Total Net Worth (Current)
+            {t("group_detail.total_net_worth_current")}
           </Text>
         </View>
 
@@ -755,7 +757,7 @@ export default function SharedGroupDetailFixed({
             <Text
               style={[styles.breakdownLabel, { color: colors.textSecondary }]}
             >
-              Assets
+              {t("group_detail.assets")}
             </Text>
             <Text style={[styles.breakdownAmount, { color: colors.success }]}>
               {formatCurrency(groupData.assets)}
@@ -765,7 +767,7 @@ export default function SharedGroupDetailFixed({
             <Text
               style={[styles.breakdownLabel, { color: colors.textSecondary }]}
             >
-              Debts
+              {t("group_detail.debts")}
             </Text>
             <Text style={[styles.breakdownAmount, { color: colors.error }]}>
               {formatCurrency(groupData.debts)}
@@ -786,10 +788,10 @@ export default function SharedGroupDetailFixed({
         </View>
         <View style={styles.cardTitleSection}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>
-            Monthly Income
+            {t("group_detail.monthly_income")}
           </Text>
           <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-            Combined monthly earnings
+            {t("group_detail.combined_monthly_earnings")}
           </Text>
         </View>
       </View>
@@ -800,7 +802,7 @@ export default function SharedGroupDetailFixed({
             {formatCurrency(groupData.monthlyIncome)}
           </Text>
           <Text style={[styles.incomeLabel, { color: colors.textSecondary }]}>
-            Total Monthly Income (Current)
+            {t("group_detail.total_monthly_income_current")}
           </Text>
         </View>
 
@@ -843,7 +845,7 @@ export default function SharedGroupDetailFixed({
             ))
           ) : (
             <Text style={[styles.noDataText, { color: colors.textSecondary }]}>
-              No income data available
+              {t("group_detail.no_income_data_available")}
             </Text>
           )}
         </View>
@@ -861,10 +863,10 @@ export default function SharedGroupDetailFixed({
         </View>
         <View style={styles.cardTitleSection}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>
-            Recent Transactions
+            {t("group_detail.recent_transactions")}
           </Text>
           <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-            Shared spending and income
+            {t("group_detail.shared_spending_income")}
           </Text>
         </View>
         {groupData.recentTransactions.length > 5 && (
@@ -873,7 +875,9 @@ export default function SharedGroupDetailFixed({
             onPress={() => setShowAllTransactions(!showAllTransactions)}
           >
             <Text style={[styles.viewAllText, { color: colors.primary }]}>
-              {showAllTransactions ? "Show Less" : "View All"}
+              {showAllTransactions
+                ? t("group_detail.show_less")
+                : t("group_detail.view_all")}
             </Text>
           </TouchableOpacity>
         )}
@@ -966,7 +970,7 @@ export default function SharedGroupDetailFixed({
           </>
         ) : (
           <Text style={[styles.noDataText, { color: colors.textSecondary }]}>
-            No transactions available
+            {t("group_detail.no_transactions_available")}
           </Text>
         )}
       </View>
@@ -983,10 +987,10 @@ export default function SharedGroupDetailFixed({
         </View>
         <View style={styles.cardTitleSection}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>
-            Group Members
+            {t("group_detail.group_members")}
           </Text>
           <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-            {group?.members.length} people sharing finances
+            {t("group_detail.subtitle", { count: group?.members.length })}
           </Text>
         </View>
       </View>
@@ -1023,7 +1027,7 @@ export default function SharedGroupDetailFixed({
               <Text
                 style={[styles.memberStatusText, { color: colors.success }]}
               >
-                Active
+                {t("group_detail.active")}
               </Text>
             </View>
           </View>
@@ -1039,7 +1043,7 @@ export default function SharedGroupDetailFixed({
       >
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-            Loading group data...
+            {t("group_detail.loading_group_data")}
           </Text>
         </View>
       </SafeAreaView>

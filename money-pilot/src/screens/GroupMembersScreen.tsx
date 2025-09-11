@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import { SharedGroup, removeGroupMember } from "../services/userData";
 import { StandardHeader } from "../components/StandardHeader";
 
@@ -32,6 +33,7 @@ export default function GroupMembersScreen({
   const { groupId, group } = route.params;
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [removingMember, setRemovingMember] = useState<string | null>(null);
 
   const isOwner = group?.members?.some(
@@ -44,19 +46,22 @@ export default function GroupMembersScreen({
     // Don't allow removing yourself
     if (member.userId === user.uid) {
       Alert.alert(
-        "Cannot Remove Self",
-        "You cannot remove yourself from the group. Use 'Leave Group' instead."
+        t("group_detail.cannot_remove_self"),
+        t("group_detail.cannot_remove_self_message")
       );
       return;
     }
 
     Alert.alert(
-      "Remove Member",
-      `Are you sure you want to remove ${member.displayName} from "${group.name}"?`,
+      t("group_detail.remove_member"),
+      t("group_detail.remove_member_confirmation", {
+        memberName: member.displayName,
+        groupName: group.name,
+      }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Remove Member",
+          text: t("group_detail.remove_member"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -69,14 +74,16 @@ export default function GroupMembersScreen({
 
               Alert.alert(
                 t("common.success"),
-                `${member.displayName} has been removed from the group.`
+                t("group_detail.member_removed_successfully", {
+                  memberName: member.displayName,
+                })
               );
               navigation.goBack();
             } catch (error) {
               console.error("Error removing member:", error);
               Alert.alert(
-                "Error",
-                "Failed to remove member. Please try again."
+                t("common.error"),
+                t("group_detail.error_removing_member")
               );
             } finally {
               setRemovingMember(null);
@@ -105,7 +112,9 @@ export default function GroupMembersScreen({
             {member.displayName}
           </Text>
           <Text style={[styles.memberRole, { color: colors.textSecondary }]}>
-            {member.role === "owner" ? "👑 Owner" : "👤 Member"}
+            {member.role === "owner"
+              ? t("group_members.owner")
+              : t("group_members.member")}
           </Text>
           <Text style={[styles.memberEmail, { color: colors.textTertiary }]}>
             {member.email}
@@ -125,7 +134,9 @@ export default function GroupMembersScreen({
         >
           <Ionicons name="trash" size={16} color={colors.error} />
           <Text style={[styles.removeButtonText, { color: colors.error }]}>
-            {removingMember === member.userId ? "Removing..." : "Remove"}
+            {removingMember === member.userId
+              ? t("group_members.removing")
+              : t("group_members.remove")}
           </Text>
         </TouchableOpacity>
       )}
@@ -137,7 +148,7 @@ export default function GroupMembersScreen({
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <StandardHeader
-        title="Group Members"
+        title={t("group_members.title")}
         onBack={() => navigation.goBack()}
       />
 
@@ -147,7 +158,9 @@ export default function GroupMembersScreen({
             {group.name}
           </Text>
           <Text style={[styles.memberCount, { color: colors.textSecondary }]}>
-            {group.members?.length || 0} members
+            {t("group_members.members_count", {
+              count: group.members?.length || 0,
+            })}
           </Text>
         </View>
 
@@ -155,7 +168,7 @@ export default function GroupMembersScreen({
           {group.members?.map(renderMember) || (
             <View style={styles.emptyState}>
               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                No members found
+                {t("group_members.no_members_found")}
               </Text>
             </View>
           )}
@@ -165,7 +178,7 @@ export default function GroupMembersScreen({
           <View style={styles.ownerNote}>
             <Ionicons name="information-circle" size={20} color={colors.info} />
             <Text style={[styles.ownerNoteText, { color: colors.info }]}>
-              As the group owner, you can remove members and manage the group.
+              {t("group_members.owner_note")}
             </Text>
           </View>
         )}
