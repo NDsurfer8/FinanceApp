@@ -143,10 +143,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>
-              Join VectorFi to start tracking your finances
-            </Text>
+            <Text style={styles.title}>{t("auth.create_account")}</Text>
+            <Text style={styles.subtitle}>{t("auth.join_vectorfi")}</Text>
           </View>
 
           {/* Sign Up Form */}
@@ -296,16 +294,20 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
               disabled={isLoading}
             >
               {isLoading ? (
-                <Text style={styles.signUpButtonText}>Creating Account...</Text>
+                <Text style={styles.signUpButtonText}>
+                  {t("auth.creating_account")}
+                </Text>
               ) : (
-                <Text style={styles.signUpButtonText}>Create Account</Text>
+                <Text style={styles.signUpButtonText}>
+                  {t("auth.create_account")}
+                </Text>
               )}
             </TouchableOpacity>
 
             {/* Divider */}
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>{t("auth.or")}</Text>
               <View style={styles.dividerLine} />
             </View>
 
@@ -359,9 +361,11 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
 
             {/* Login Link */}
             <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Already have an account? </Text>
+              <Text style={styles.loginText}>
+                {t("auth.already_have_account")}{" "}
+              </Text>
               <TouchableOpacity onPress={onBackToLogin}>
-                <Text style={styles.loginLink}>Sign In</Text>
+                <Text style={styles.loginLink}>{t("auth.sign_in")}</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -31,7 +31,7 @@
     "password": "Contraseña",
     "first_name": "Nombre",
     "last_name": "Apellido",
-    "confirm_password": "Confirmar Contraseña",
+    "confirm_password": "Confirmar contraseña",
     "forgot_password": "¿Olvidaste tu contraseña?",
     "create_account": "Crear Cuenta",
     "already_have_account": "¿Ya tienes una cuenta?",
@@ -52,7 +52,17 @@
     "apple_signin_failed": "Error de Apple Sign In",
     "privacy_policy": "Política de Privacidad",
     "terms_of_service": "Términos de Servicio",
-    "enter_your_email": "Ingresa tu correo electrónico"
+    "enter_your_email": "Ingresa tu correo electrónico",
+    "sign_up": "Registrarse",
+    "sign_in": "Iniciar Sesión",
+    "signing_in": "Iniciando sesión...",
+    "or": "o",
+    "continue_with_apple": "Continuar con Apple",
+    "app_tagline": "Toma el control de tus finanzas",
+    "by_continuing": "Al continuar, aceptas nuestros",
+    "creating_account": "Creando Cuenta...",
+    "back_to_login": "Volver al Inicio de Sesión",
+    "join_vectorfi": "Únete a VectorFi para comenzar a rastrear tus finanzas"
   },
   "navigation": {
     "dashboard": "Panel",

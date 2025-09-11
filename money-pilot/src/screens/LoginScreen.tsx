@@ -133,7 +133,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               />
             </View>
             <Text style={styles.title}>VectorFi</Text>
-            <Text style={styles.subtitle}>Take control of your finances</Text>
+            <Text style={styles.subtitle}>{t("auth.app_tagline")}</Text>
           </View>
 
           {/* Login Form */}
@@ -202,7 +202,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               onPress={handleForgotPassword}
               disabled={isLoading}
             >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              <Text style={styles.forgotPasswordText}>
+                {t("auth.forgot_password")}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -214,16 +216,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               disabled={isLoading}
             >
               {isLoading ? (
-                <Text style={styles.loginButtonText}>Signing In...</Text>
+                <Text style={styles.loginButtonText}>
+                  {t("auth.signing_in")}
+                </Text>
               ) : (
-                <Text style={styles.loginButtonText}>Sign In</Text>
+                <Text style={styles.loginButtonText}>{t("auth.sign_in")}</Text>
               )}
             </TouchableOpacity>
 
             {/* Divider */}
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>{t("auth.or")}</Text>
               <View style={styles.dividerLine} />
             </View>
 
@@ -257,7 +261,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             {/* Privacy Policy Disclaimer */}
             <View style={styles.disclaimerContainer}>
               <Text style={styles.disclaimerText}>
-                By continuing, you agree to our{" "}
+                {t("auth.by_continuing")}{" "}
                 <Text
                   style={styles.disclaimerLink}
                   onPress={openTermsOfService}
@@ -274,9 +278,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
             {/* Sign Up Link */}
             <View style={styles.signUpContainer}>
-              <Text style={styles.signUpText}>Don't have an account? </Text>
+              <Text style={styles.signUpText}>
+                {t("auth.dont_have_account")}{" "}
+              </Text>
               <TouchableOpacity onPress={onSignUp}>
-                <Text style={styles.signUpLink}>Sign Up</Text>
+                <Text style={styles.signUpLink}>{t("auth.sign_up")}</Text>
               </TouchableOpacity>
             </View>
           </View>
