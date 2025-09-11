@@ -102,7 +102,10 @@ export default function GroupDataSharingScreen({
       }
     } catch (error) {
       console.error("Error loading group data:", error);
-      Alert.alert("Error", "Failed to load group information");
+      Alert.alert(
+        t("common.error"),
+        t("group_data_sharing.error_loading_group")
+      );
     } finally {
       setLoadingGroup(false);
     }
@@ -202,12 +205,12 @@ export default function GroupDataSharingScreen({
 
       Alert.alert(
         t("common.success"),
-        `Your data has been synced to ${group.name}! You can manually sync again anytime you want to update the shared data.`
+        t("group_data_sharing.success_sync", { groupName: group.name })
       );
       navigation.goBack();
     } catch (error) {
       console.error("❌ Error syncing data:", error);
-      Alert.alert("Error", "Failed to sync data. Please try again.");
+      Alert.alert(t("common.error"), t("group_data_sharing.error_sync_data"));
     } finally {
       setIsLoading(false);
     }
@@ -256,7 +259,7 @@ export default function GroupDataSharingScreen({
       >
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-            Loading group...
+            {t("group_data_sharing.loading_group")}
           </Text>
         </View>
       </SafeAreaView>
@@ -270,7 +273,7 @@ export default function GroupDataSharingScreen({
       >
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: colors.error }]}>
-            Group not found
+            {t("group_data_sharing.group_not_found")}
           </Text>
         </View>
       </SafeAreaView>
@@ -286,7 +289,7 @@ export default function GroupDataSharingScreen({
         showsVerticalScrollIndicator={false}
       >
         <StandardHeader
-          title={`Share Data with ${group.name}`}
+          title={t("group_data_sharing.title", { groupName: group.name })}
           onBack={() => navigation.goBack()}
         />
         <View style={[styles.groupInfo, { backgroundColor: colors.surface }]}>
@@ -299,19 +302,20 @@ export default function GroupDataSharingScreen({
             {group.description}
           </Text>
           <Text style={[styles.groupType, { color: colors.primary }]}>
-            Type: {group.type}
+            {t("shared_finance.group_type")}: {translateGroupType(group.type)}
           </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            What to Share with This Group
+            {t("group_data_sharing.what_to_share")}
           </Text>
           <Text
             style={[styles.sectionDescription, { color: colors.textSecondary }]}
           >
-            Choose which financial information you want to share with{" "}
-            {group.name} members. Your data will be synced when you save.
+            {t("group_data_sharing.choose_information", {
+              groupName: group.name,
+            })}
           </Text>
         </View>
 
@@ -323,57 +327,57 @@ export default function GroupDataSharingScreen({
         >
           {renderSettingItem(
             "shareNetWorth",
-            "Net Worth",
-            "Share your current net worth with this group",
+            t("group_data_sharing.net_worth"),
+            t("group_data_sharing.net_worth_description"),
             "trending-up"
           )}
 
           {renderSettingItem(
             "shareMonthlyIncome",
-            "Monthly Income",
-            "Share your monthly income amounts",
+            t("group_data_sharing.monthly_income"),
+            t("group_data_sharing.monthly_income_description"),
             "cash"
           )}
 
           {renderSettingItem(
             "shareMonthlyExpenses",
-            "Monthly Expenses",
-            "Share your monthly expense amounts",
+            t("group_data_sharing.monthly_expenses"),
+            t("group_data_sharing.monthly_expenses_description"),
             "card"
           )}
 
           {renderSettingItem(
             "shareTransactions",
-            "Recent Transactions",
-            "Share your transaction history",
+            t("group_data_sharing.recent_transactions"),
+            t("group_data_sharing.recent_transactions_description"),
             "list"
           )}
 
           {renderSettingItem(
             "shareRecurringTransactions",
-            "Recurring Transactions",
-            "Share your recurring bills and income",
+            t("group_data_sharing.recurring_transactions"),
+            t("group_data_sharing.recurring_transactions_description"),
             "repeat"
           )}
 
           {renderSettingItem(
             "shareAssets",
-            "Assets",
-            "Share your asset details",
+            t("group_data_sharing.assets"),
+            t("group_data_sharing.assets_description"),
             "home"
           )}
 
           {renderSettingItem(
             "shareDebts",
-            "Debts",
-            "Share your debt information",
+            t("group_data_sharing.debts"),
+            t("group_data_sharing.debts_description"),
             "warning"
           )}
 
           {renderSettingItem(
             "shareGoals",
-            "Financial Goals",
-            "Share your savings and investment goals",
+            t("group_data_sharing.financial_goals"),
+            t("group_data_sharing.financial_goals_description"),
             "flag"
           )}
         </View>
@@ -385,8 +389,7 @@ export default function GroupDataSharingScreen({
             <Ionicons name="information-circle" size={20} color={colors.info} />
           </View>
           <Text style={[styles.infoText, { color: colors.info }]}>
-            Your data will be synced to {group.name} when you save. You can sync
-            again anytime to update the shared data.
+            {t("group_data_sharing.sync_info", { groupName: group.name })}
           </Text>
         </View>
       </ScrollView>
@@ -407,7 +410,9 @@ export default function GroupDataSharingScreen({
           disabled={isLoading}
         >
           <Text style={[styles.saveButtonText, { color: colors.buttonText }]}>
-            {isLoading ? "Syncing..." : "Save & Sync Data"}
+            {isLoading
+              ? t("group_data_sharing.syncing")
+              : t("group_data_sharing.save_sync_data")}
           </Text>
         </TouchableOpacity>
       </View>
