@@ -1218,5 +1218,32 @@
     "member": "👤 Membre",
     "removing": "Suppression...",
     "remove": "Supprimer"
+  },
+  "financial_plans": {
+    "title": "Plans Financiers",
+    "subtitle": "Voir et exporter les plans financiers",
+    "loading_plans": "Chargement de vos plans financiers...",
+    "error_loading_plans": "Échec du chargement des plans financiers",
+    "invalid_plan_data": "Données de plan invalides",
+    "share_not_available": "Fonctionnalité de partage non disponible",
+    "error_exporting_plan": "Échec de l'exportation du plan",
+    "delete_plan": "Supprimer le Plan",
+    "delete_plan_confirmation": "Êtes-vous sûr de vouloir supprimer ce plan financier ? Cette action ne peut pas être annulée.",
+    "plan_deleted_successfully": "Plan supprimé avec succès",
+    "error_deleting_plan": "Échec de la suppression du plan",
+    "unknown_date": "Date Inconnue",
+    "unknown_time": "Heure Inconnue",
+    "no_plans_yet": "Aucun Plan Financier Encore",
+    "create_first_plan_description": "Créez votre premier plan financier en demandant à Vectra, votre conseiller financier IA, de \"créer un plan financier\"",
+    "create_plan_with_ai": "Créer un Plan avec l'IA",
+    "your_plans": "Vos Plans Financiers ({{count}})",
+    "tap_to_export": "Touchez n'importe quel plan pour l'exporter en CSV",
+    "created": "Créé",
+    "at": "à",
+    "export": "Exporter",
+    "monthly_budget": "Budget Mensuel",
+    "total_debt": "Dette Totale",
+    "goals": "Objectifs",
+    "recommendations": "Recommandations"
   }
 }

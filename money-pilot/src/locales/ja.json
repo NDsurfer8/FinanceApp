@@ -1218,5 +1218,32 @@
     "member": "👤 メンバー",
     "removing": "削除中...",
     "remove": "削除"
+  },
+  "financial_plans": {
+    "title": "ファイナンシャルプラン",
+    "subtitle": "ファイナンシャルプランの表示とエクスポート",
+    "loading_plans": "ファイナンシャルプランを読み込み中...",
+    "error_loading_plans": "ファイナンシャルプランの読み込みに失敗しました",
+    "invalid_plan_data": "無効なプランデータ",
+    "share_not_available": "共有機能が利用できません",
+    "error_exporting_plan": "プランのエクスポートに失敗しました",
+    "delete_plan": "プランを削除",
+    "delete_plan_confirmation": "このファイナンシャルプランを削除してもよろしいですか？この操作は元に戻せません。",
+    "plan_deleted_successfully": "プランが正常に削除されました",
+    "error_deleting_plan": "プランの削除に失敗しました",
+    "unknown_date": "不明な日付",
+    "unknown_time": "不明な時刻",
+    "no_plans_yet": "まだファイナンシャルプランがありません",
+    "create_first_plan_description": "AIファイナンシャルアドバイザーのVectraに「ファイナンシャルプランを作成」と依頼して、最初のファイナンシャルプランを作成してください",
+    "create_plan_with_ai": "AIでプランを作成",
+    "your_plans": "あなたのファイナンシャルプラン（{{count}}）",
+    "tap_to_export": "任意のプランをタップしてCSVとしてエクスポート",
+    "created": "作成日",
+    "at": "時刻",
+    "export": "エクスポート",
+    "monthly_budget": "月次予算",
+    "total_debt": "総債務",
+    "goals": "目標",
+    "recommendations": "推奨事項"
   }
 }

@@ -1219,5 +1219,32 @@
     "thank_you": "Thank You!",
     "thank_you_message": "Thank you for taking the time to rate VectorFi! Your feedback helps us improve the app.",
     "rating_error": "Unable to open app rating. Please try again later."
+  },
+  "financial_plans": {
+    "title": "Financial Plans",
+    "subtitle": "View and export financial plans",
+    "loading_plans": "Loading your financial plans...",
+    "error_loading_plans": "Failed to load financial plans",
+    "invalid_plan_data": "Invalid plan data",
+    "share_not_available": "Share functionality not available",
+    "error_exporting_plan": "Failed to export plan",
+    "delete_plan": "Delete Plan",
+    "delete_plan_confirmation": "Are you sure you want to delete this financial plan? This action cannot be undone.",
+    "plan_deleted_successfully": "Plan deleted successfully",
+    "error_deleting_plan": "Failed to delete plan",
+    "unknown_date": "Unknown Date",
+    "unknown_time": "Unknown Time",
+    "no_plans_yet": "No Financial Plans Yet",
+    "create_first_plan_description": "Create your first financial plan by asking Vectra, your AI financial advisor, to \"create a financial plan\"",
+    "create_plan_with_ai": "Create Plan with AI",
+    "your_plans": "Your Financial Plans ({{count}})",
+    "tap_to_export": "Tap any plan to export as CSV",
+    "created": "Created",
+    "at": "at",
+    "export": "Export",
+    "monthly_budget": "Monthly Budget",
+    "total_debt": "Total Debt",
+    "goals": "Goals",
+    "recommendations": "Recommendations"
   }
 }

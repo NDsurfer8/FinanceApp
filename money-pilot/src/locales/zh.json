@@ -1218,5 +1218,32 @@
     "member": "👤 成员",
     "removing": "移除中...",
     "remove": "移除"
+  },
+  "financial_plans": {
+    "title": "财务计划",
+    "subtitle": "查看和导出财务计划",
+    "loading_plans": "正在加载您的财务计划...",
+    "error_loading_plans": "加载财务计划失败",
+    "invalid_plan_data": "无效的计划数据",
+    "share_not_available": "分享功能不可用",
+    "error_exporting_plan": "导出计划失败",
+    "delete_plan": "删除计划",
+    "delete_plan_confirmation": "您确定要删除此财务计划吗？此操作无法撤销。",
+    "plan_deleted_successfully": "计划删除成功",
+    "error_deleting_plan": "删除计划失败",
+    "unknown_date": "未知日期",
+    "unknown_time": "未知时间",
+    "no_plans_yet": "还没有财务计划",
+    "create_first_plan_description": "通过要求您的AI财务顾问Vectra\"创建财务计划\"来创建您的第一个财务计划",
+    "create_plan_with_ai": "使用AI创建计划",
+    "your_plans": "您的财务计划（{{count}}）",
+    "tap_to_export": "点击任意计划以CSV格式导出",
+    "created": "创建于",
+    "at": "时间",
+    "export": "导出",
+    "monthly_budget": "月度预算",
+    "total_debt": "总债务",
+    "goals": "目标",
+    "recommendations": "建议"
   }
 }

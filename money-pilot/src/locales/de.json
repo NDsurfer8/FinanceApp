@@ -1218,5 +1218,32 @@
     "member": "👤 Mitglied",
     "removing": "Entfernen...",
     "remove": "Entfernen"
+  },
+  "financial_plans": {
+    "title": "Finanzpläne",
+    "subtitle": "Finanzpläne anzeigen und exportieren",
+    "loading_plans": "Ihre Finanzpläne werden geladen...",
+    "error_loading_plans": "Fehler beim Laden der Finanzpläne",
+    "invalid_plan_data": "Ungültige Plandaten",
+    "share_not_available": "Freigabefunktion nicht verfügbar",
+    "error_exporting_plan": "Fehler beim Exportieren des Plans",
+    "delete_plan": "Plan Löschen",
+    "delete_plan_confirmation": "Sind Sie sicher, dass Sie diesen Finanzplan löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "plan_deleted_successfully": "Plan erfolgreich gelöscht",
+    "error_deleting_plan": "Fehler beim Löschen des Plans",
+    "unknown_date": "Unbekanntes Datum",
+    "unknown_time": "Unbekannte Zeit",
+    "no_plans_yet": "Noch Keine Finanzpläne",
+    "create_first_plan_description": "Erstellen Sie Ihren ersten Finanzplan, indem Sie Vectra, Ihren KI-Finanzberater, bitten, \"einen Finanzplan zu erstellen\"",
+    "create_plan_with_ai": "Plan mit KI Erstellen",
+    "your_plans": "Ihre Finanzpläne ({{count}})",
+    "tap_to_export": "Tippen Sie auf einen Plan, um ihn als CSV zu exportieren",
+    "created": "Erstellt",
+    "at": "um",
+    "export": "Exportieren",
+    "monthly_budget": "Monatsbudget",
+    "total_debt": "Gesamtschulden",
+    "goals": "Ziele",
+    "recommendations": "Empfehlungen"
   }
 }

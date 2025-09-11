@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 import {
   getFinancialPlans,
   deleteFinancialPlan,
@@ -31,6 +32,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
   }, [navigation]);
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [plans, setPlans] = useState<FinancialPlan[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,7 +50,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
       setPlans(Array.isArray(userPlans) ? userPlans : []);
     } catch (error) {
       console.error("Error loading financial plans:", error);
-      Alert.alert("Error", "Failed to load financial plans");
+      Alert.alert(t("common.error"), t("financial_plans.error_loading_plans"));
       setPlans([]); // Set empty array on error
     } finally {
       setLoading(false);
@@ -59,7 +61,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
     try {
       // Validate plan data
       if (!plan || !plan.csvData || !plan.name) {
-        Alert.alert("Error", "Invalid plan data");
+        Alert.alert(t("common.error"), t("financial_plans.invalid_plan_data"));
         return;
       }
 
@@ -70,7 +72,10 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
 
       // Check if Share API is available
       if (!Share || typeof Share.share !== "function") {
-        Alert.alert("Error", "Share functionality not available");
+        Alert.alert(
+          t("common.error"),
+          t("financial_plans.share_not_available")
+        );
         return;
       }
 
@@ -80,7 +85,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
       });
     } catch (error) {
       console.error("Error exporting plan:", error);
-      Alert.alert("Error", "Failed to export plan");
+      Alert.alert(t("common.error"), t("financial_plans.error_exporting_plan"));
     }
   };
 
@@ -88,27 +93,33 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
     if (!user || !planId) return;
 
     Alert.alert(
-      "Delete Plan",
-      "Are you sure you want to delete this financial plan? This action cannot be undone.",
+      t("financial_plans.delete_plan"),
+      t("financial_plans.delete_plan_confirmation"),
       [
         {
-          text: "Cancel",
+          text: t("common.cancel"),
           style: "cancel",
           onPress: () => {
             // No loading state to reset in this screen
           },
         },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: async () => {
             try {
               await deleteFinancialPlan(user.uid, planId);
               await loadPlans(); // Reload plans after deletion
-              Alert.alert(t("common.success"), "Plan deleted successfully");
+              Alert.alert(
+                t("common.success"),
+                t("financial_plans.plan_deleted_successfully")
+              );
             } catch (error) {
               console.error("Error deleting plan:", error);
-              Alert.alert("Error", "Failed to delete plan");
+              Alert.alert(
+                t("common.error"),
+                t("financial_plans.error_deleting_plan")
+              );
             }
           },
         },
@@ -119,24 +130,24 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
   const formatDate = (timestamp: number) => {
     try {
       if (!timestamp || isNaN(timestamp)) {
-        return "Unknown Date";
+        return t("financial_plans.unknown_date");
       }
       return new Date(timestamp).toLocaleDateString();
     } catch (error) {
       console.error("Error formatting date:", error);
-      return "Unknown Date";
+      return t("financial_plans.unknown_date");
     }
   };
 
   const formatTime = (timestamp: number) => {
     try {
       if (!timestamp || isNaN(timestamp)) {
-        return "Unknown Time";
+        return t("financial_plans.unknown_time");
       }
       return new Date(timestamp).toLocaleTimeString();
     } catch (error) {
       console.error("Error formatting time:", error);
-      return "Unknown Time";
+      return t("financial_plans.unknown_time");
     }
   };
 
@@ -151,7 +162,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
         <View style={styles.loadingContent}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>
-            Loading your financial plans...
+            {t("financial_plans.loading_plans")}
           </Text>
         </View>
       </View>
@@ -166,8 +177,8 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
       >
         {/* Header */}
         <StandardHeader
-          title="Financial Plans"
-          subtitle="View and export financial plans"
+          title={t("financial_plans.title")}
+          subtitle={t("financial_plans.subtitle")}
           onBack={() => navigation.goBack()}
           showBackButton={true}
         />
@@ -179,13 +190,12 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
               color={colors.textSecondary}
             />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              No Financial Plans Yet
+              {t("financial_plans.no_plans_yet")}
             </Text>
             <Text
               style={[styles.emptySubtitle, { color: colors.textSecondary }]}
             >
-              Create your first financial plan by asking Vectra, your AI
-              financial advisor, to "create a financial plan"
+              {t("financial_plans.create_first_plan_description")}
             </Text>
             <TouchableOpacity
               style={[
@@ -196,7 +206,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
             >
               <Ionicons name="chatbubble-ellipses" size={20} color="white" />
               <Text style={styles.createPlanButtonText}>
-                Create Plan with AI
+                {t("financial_plans.create_plan_with_ai")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -204,12 +214,12 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
           <>
             <View style={styles.plansHeader}>
               <Text style={[styles.plansTitle, { color: colors.text }]}>
-                Your Financial Plans ({plans.length})
+                {t("financial_plans.your_plans", { count: plans.length })}
               </Text>
               <Text
                 style={[styles.plansSubtitle, { color: colors.textSecondary }]}
               >
-                Tap any plan to export as CSV
+                {t("financial_plans.tap_to_export")}
               </Text>
             </View>
 
@@ -243,7 +253,8 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
                           { color: colors.textSecondary },
                         ]}
                       >
-                        Created: {formatDate(plan.createdAt)} at{" "}
+                        {t("financial_plans.created")}:{" "}
+                        {formatDate(plan.createdAt)} {t("financial_plans.at")}{" "}
                         {formatTime(plan.createdAt)}
                       </Text>
                     </View>
@@ -260,7 +271,9 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
                           size={20}
                           color="white"
                         />
-                        <Text style={styles.actionButtonText}>Export</Text>
+                        <Text style={styles.actionButtonText}>
+                          {t("financial_plans.export")}
+                        </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[
@@ -290,7 +303,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
                           { color: colors.textSecondary },
                         ]}
                       >
-                        Monthly Budget
+                        {t("financial_plans.monthly_budget")}
                       </Text>
                       <Text
                         style={[styles.summaryValue, { color: colors.text }]}
@@ -307,7 +320,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
                           { color: colors.textSecondary },
                         ]}
                       >
-                        Total Debt
+                        {t("financial_plans.total_debt")}
                       </Text>
                       <Text
                         style={[styles.summaryValue, { color: colors.text }]}
@@ -324,7 +337,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
                           { color: colors.textSecondary },
                         ]}
                       >
-                        Goals
+                        {t("financial_plans.goals")}
                       </Text>
                       <Text
                         style={[styles.summaryValue, { color: colors.text }]}
@@ -339,7 +352,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
                           { color: colors.textSecondary },
                         ]}
                       >
-                        Recommendations
+                        {t("financial_plans.recommendations")}
                       </Text>
                       <Text
                         style={[styles.summaryValue, { color: colors.text }]}
