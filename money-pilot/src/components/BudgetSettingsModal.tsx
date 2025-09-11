@@ -334,7 +334,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                 {expensesPercentage > 0 && (
                   <View
                     style={{
-                      width: `{formatCurrency(expensesPercentage)}%` as any,
+                      width: `${expensesPercentage}%` as any,
                       backgroundColor: "#dc2626", // Dark red for expenses
                       height: 24,
                     }}

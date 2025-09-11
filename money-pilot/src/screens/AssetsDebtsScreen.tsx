@@ -816,8 +816,8 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 }}
               >
                 {assets.length}{" "}
-                {t("assets_debts.item", { count: assets.length })} • $
-                {assetTotal.toLocaleString()}
+                {t("assets_debts.item", { count: assets.length })} •{" "}
+                {formatCurrency(assetTotal)}
               </Text>
             </View>
             <Ionicons

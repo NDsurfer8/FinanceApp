@@ -5,6 +5,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface BudgetOverviewCardProps {
@@ -48,6 +49,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
 
   // Animation and state for glow effects
   const [showSettingsGlow, setShowSettingsGlow] = useState(false);
@@ -295,11 +297,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
               color: colors.warning,
             }}
           >
-            $
-            {safeRemainingBalance.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
+            {formatCurrency(safeRemainingBalance)}
           </Text>
         </View>
         <View
@@ -372,11 +370,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
                   marginTop: 4,
                 }}
               >
-                $
-                {safeTotalIncome.toLocaleString(undefined, {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })}
+                {formatCurrency(safeTotalIncome)}
               </Text>
               <Text
                 style={{
@@ -438,11 +432,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
                   marginTop: 4,
                 }}
               >
-                $
-                {safeTotalExpenses.toLocaleString(undefined, {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })}
+                {formatCurrency(safeTotalExpenses)}
               </Text>
               <Text
                 style={{
@@ -486,11 +476,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
               color: colors.success,
             }}
           >
-            $
-            {safeSavingsAmount.toLocaleString(undefined, {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            })}
+            {formatCurrency(safeSavingsAmount)}
           </Text>
         </View>
         <View

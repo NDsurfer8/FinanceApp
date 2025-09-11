@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 
 const { width } = Dimensions.get("window");
 
@@ -22,6 +23,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
   ({ assets, debts, title }) => {
     const { colors } = useTheme();
     const { t } = useTranslation();
+    const { formatCurrency } = useCurrency();
     const totalAssets = assets.reduce((sum, asset) => sum + asset.balance, 0);
     const totalDebts = debts.reduce((sum, debt) => sum + debt.balance, 0);
     const netWorth = totalAssets - totalDebts;
@@ -55,7 +57,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                   {t("assets_debts.total_assets")}
                 </Text>
                 <Text style={[styles.summaryValue, { color: colors.success }]}>
-                  ${totalAssets.toLocaleString()}
+                  {formatCurrency(totalAssets)}
                 </Text>
               </View>
               <View style={styles.summaryItem}>
@@ -65,7 +67,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                   {t("assets_debts.total_debt")}
                 </Text>
                 <Text style={[styles.summaryValue, { color: colors.error }]}>
-                  ${totalDebts.toLocaleString()}
+                  {formatCurrency(totalDebts)}
                 </Text>
               </View>
             </View>
@@ -82,7 +84,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                   { color: netWorth >= 0 ? colors.success : colors.error },
                 ]}
               >
-                ${Math.abs(netWorth).toLocaleString()}
+                {formatCurrency(Math.abs(netWorth))}
                 {netWorth < 0 ? ` (${t("assets_debts.negative")})` : ""}
               </Text>
             </View>
@@ -143,7 +145,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                       <Text
                         style={[styles.breakdownValue, { color: colors.text }]}
                       >
-                        ${asset.balance.toLocaleString()}
+                        {formatCurrency(asset.balance)}
                       </Text>
                     </View>
                     <View
@@ -196,7 +198,7 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                       <Text
                         style={[styles.breakdownValue, { color: colors.text }]}
                       >
-                        ${debt.balance.toLocaleString()}
+                        {formatCurrency(debt.balance)}
                       </Text>
                     </View>
                     <View

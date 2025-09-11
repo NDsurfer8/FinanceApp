@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { StandardHeader } from "../components/StandardHeader";
 import { useData } from "../contexts/DataContext";
 import { useAuth } from "../hooks/useAuth";
@@ -35,6 +36,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
 }) => {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const { user } = useAuth();
   const route = useRoute();
 
@@ -1004,7 +1006,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     color: colors.success,
                   }}
                 >
-                  ${totalIncome.toLocaleString()}
+                  {formatCurrency(totalIncome)}
                 </Text>
               </View>
             </View>
@@ -1072,7 +1074,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                         : "line-through",
                     }}
                   >
-                    {includeSavings ? "-" : ""}${savingsAmount.toLocaleString()}
+                    {includeSavings ? "-" : ""}
+                    {formatCurrency(savingsAmount)}
                   </Text>
                 </View>
 
@@ -1119,8 +1122,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                         : "line-through",
                     }}
                   >
-                    {includeDebtPayoff ? "-" : ""}$
-                    {debtPayoffAmount.toLocaleString()}
+                    {includeDebtPayoff ? "-" : ""}
+                    {formatCurrency(debtPayoffAmount)}
                   </Text>
                 </View>
 
@@ -1169,8 +1172,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                         : "line-through",
                     }}
                   >
-                    {includeGoalContributions ? "-" : ""}$
-                    {monthlyGoalsContribution.toLocaleString()}
+                    {includeGoalContributions ? "-" : ""}
+                    {formatCurrency(monthlyGoalsContribution)}
                   </Text>
                 </View>
               </View>
@@ -1217,7 +1220,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     color: colors.primary,
                   }}
                 >
-                  ${totalBudget.toLocaleString()}
+                  {formatCurrency(totalBudget)}
                 </Text>
               </View>
 
@@ -1249,10 +1252,9 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     color: colors.text,
                   }}
                 >
-                  $
-                  {categories
-                    .reduce((sum, cat) => sum + cat.monthlyLimit, 0)
-                    .toLocaleString()}
+                  {formatCurrency(
+                    categories.reduce((sum, cat) => sum + cat.monthlyLimit, 0)
+                  )}
                 </Text>
               </View>
             </View>
@@ -1434,7 +1436,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       color: colors.text,
                     }}
                   >
-                    ${category.monthlyLimit.toLocaleString()}
+                    {formatCurrency(category.monthlyLimit)}
                     {totalIncome > 0 && (
                       <Text
                         style={{ fontSize: 14, color: colors.textSecondary }}
@@ -1472,7 +1474,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   >
                     {spending.actual === 0
                       ? t("budget_categories.no_spending_yet")
-                      : `-$${spending.actual.toFixed(0)}`}
+                      : `-${formatCurrency(spending.actual)}`}
                   </Text>
                 </View>
 
@@ -1494,7 +1496,9 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       color: remaining >= 0 ? colors.success : colors.error,
                     }}
                   >
-                    {remaining >= 0 ? `$${remaining.toFixed(0)}` : "$0"}
+                    {remaining >= 0
+                      ? formatCurrency(remaining)
+                      : formatCurrency(0)}
                   </Text>
                 </View>
               </View>
@@ -1551,8 +1555,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                         fontWeight: "600",
                       }}
                     >
-                      ⚠️ Over budget by $
-                      {(spending.actual - category.monthlyLimit).toFixed(0)}
+                      ⚠️ Over budget by{" "}
+                      {formatCurrency(spending.actual - category.monthlyLimit)}
                     </Text>
                   </View>
                 )}
@@ -1747,7 +1751,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                         availableAmount < 0 ? colors.error : colors.success,
                     }}
                   >
-                    ${availableAmount.toLocaleString()}
+                    {formatCurrency(availableAmount)}
                   </Text>
                 </View>
 
@@ -1937,7 +1941,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       marginTop: 2,
                     }}
                   >
-                    ${savingsAmount.toLocaleString()}/month
+                    {formatCurrency(savingsAmount)}/month
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -1996,7 +2000,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       marginTop: 2,
                     }}
                   >
-                    ${debtPayoffAmount.toLocaleString()}/month
+                    {formatCurrency(debtPayoffAmount)}/month
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -2053,7 +2057,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       marginTop: 2,
                     }}
                   >
-                    ${monthlyGoalsContribution.toLocaleString()}/month
+                    {formatCurrency(monthlyGoalsContribution)}/month
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -2110,7 +2114,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   color: colors.primary,
                 }}
               >
-                ${totalBudget.toLocaleString()}
+                {formatCurrency(totalBudget)}
               </Text>
             </View>
           </View>
