@@ -678,7 +678,7 @@
     "income": "دخل",
     "description": "الوصف",
     "description_placeholder": "أدخل الوصف",
-    "amount": "المبلغ $",
+    "amount": "المبلغ",
     "amount_placeholder": "0.00",
     "category": "الفئة",
     "date": "التاريخ",

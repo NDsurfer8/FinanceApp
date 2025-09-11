@@ -678,7 +678,7 @@
     "income": "Receita",
     "description": "Descrição",
     "description_placeholder": "Digite a descrição",
-    "amount": "Valor $",
+    "amount": "Valor",
     "amount_placeholder": "0.00",
     "category": "Categoria",
     "date": "Data",

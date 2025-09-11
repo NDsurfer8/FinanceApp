@@ -678,7 +678,7 @@
     "income": "Einkommen",
     "description": "Beschreibung",
     "description_placeholder": "Beschreibung eingeben",
-    "amount": "Betrag $",
+    "amount": "Betrag",
     "amount_placeholder": "0.00",
     "category": "Kategorie",
     "date": "Datum",

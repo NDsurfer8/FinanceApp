@@ -678,7 +678,7 @@
     "income": "収入",
     "description": "説明",
     "description_placeholder": "説明を入力",
-    "amount": "金額 $",
+    "amount": "金額",
     "amount_placeholder": "0.00",
     "category": "カテゴリ",
     "date": "日付",

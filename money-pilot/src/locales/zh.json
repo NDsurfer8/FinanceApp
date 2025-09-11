@@ -678,7 +678,7 @@
     "income": "收入",
     "description": "描述",
     "description_placeholder": "输入描述",
-    "amount": "金额 $",
+    "amount": "金额",
     "amount_placeholder": "0.00",
     "category": "类别",
     "date": "日期",

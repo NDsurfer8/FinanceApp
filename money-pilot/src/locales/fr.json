@@ -681,7 +681,7 @@
     "income": "Revenu",
     "description": "Description",
     "description_placeholder": "Entrez la description",
-    "amount": "Montant $",
+    "amount": "Montant",
     "amount_placeholder": "0.00",
     "category": "Catégorie",
     "date": "Date",

@@ -1133,7 +1133,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              {t("add_transaction.amount")}
+              {getCurrencySymbol()} {t("add_transaction.amount")}
             </Text>
             <TextInput
               style={{

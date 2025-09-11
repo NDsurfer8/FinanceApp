@@ -678,7 +678,7 @@
     "income": "Доход",
     "description": "Описание",
     "description_placeholder": "Введите описание",
-    "amount": "Сумма $",
+    "amount": "Сумма",
     "amount_placeholder": "0.00",
     "category": "Категория",
     "date": "Дата",

@@ -1154,7 +1154,7 @@
     "income": "Income",
     "description": "Description",
     "description_placeholder": "Enter description",
-    "amount": "$ Amount",
+    "amount": "Amount",
     "amount_placeholder": "0.00",
     "category": "Category",
     "date": "Date",
