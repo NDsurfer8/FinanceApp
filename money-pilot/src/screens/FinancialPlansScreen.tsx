@@ -13,6 +13,7 @@ import {
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 import {
   getFinancialPlans,
   deleteFinancialPlan,
@@ -33,6 +34,7 @@ export const FinancialPlansScreen: React.FC<{ navigation: any }> = ({
   const { user } = useAuth();
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const [plans, setPlans] = useState<FinancialPlan[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -369,7 +369,12 @@
     "logout": "Abmelden",
     "see_plans_pricing": "Pläne und Preise Anzeigen",
     "premium_plaid_description": "Premium + Plaid: Überprüfen, kennzeichnen und verwalten Sie Ihr Budget.",
-    "renews": "Verlängert:"
+    "renews": "Verlängert:",
+    "currency": "Währung",
+    "select_currency": "Währung Auswählen",
+    "search_currencies": "Währungen suchen...",
+    "no_currencies_found": "Keine Währungen gefunden",
+    "currency_change_failed": "Währungswechsel fehlgeschlagen. Bitte versuchen Sie es erneut."
   },
   "premium": {
     "title": "Premium-Funktionen",

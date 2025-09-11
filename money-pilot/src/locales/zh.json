@@ -369,7 +369,12 @@
     "logout": "退出登录",
     "see_plans_pricing": "查看计划和定价",
     "premium_plaid_description": "Premium + Plaid: 审查、标记和管理您的预算。",
-    "renews": "续订:"
+    "renews": "续订:",
+    "currency": "货币",
+    "select_currency": "选择货币",
+    "search_currencies": "搜索货币...",
+    "no_currencies_found": "未找到货币",
+    "currency_change_failed": "货币更改失败。请重试。"
   },
   "premium": {
     "title": "高级功能",

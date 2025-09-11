@@ -369,7 +369,12 @@
     "logout": "تسجيل الخروج",
     "see_plans_pricing": "عرض الخطط والأسعار",
     "premium_plaid_description": "Premium + Plaid: راجع ووسم وأدر ميزانيتك.",
-    "renews": "تجديد:"
+    "renews": "تجديد:",
+    "currency": "العملة",
+    "select_currency": "اختر العملة",
+    "search_currencies": "البحث عن العملات...",
+    "no_currencies_found": "لم يتم العثور على عملات",
+    "currency_change_failed": "فشل في تغيير العملة. يرجى المحاولة مرة أخرى."
   },
   "premium": {
     "title": "الميزات المميزة",

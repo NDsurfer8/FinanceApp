@@ -23,7 +23,7 @@ export const removeCommas = (value: string): string => {
   return value.replace(/,/g, "");
 };
 
-// Utility function to format currency with commas
+// Utility function to format currency with commas (DEPRECATED - use currency.ts instead)
 export const formatCurrency = (value: string): string => {
   const formatted = formatNumberWithCommas(value);
   return formatted ? `$${formatted}` : "";

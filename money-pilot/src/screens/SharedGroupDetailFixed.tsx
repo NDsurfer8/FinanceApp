@@ -13,6 +13,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 import {
   SharedGroup,
   getSharedGroup,
@@ -46,6 +47,7 @@ export default function SharedGroupDetailFixed({
   const { colors } = useTheme();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const { transactions, assets, debts, goals, recurringTransactions } =
     useData();
   const { groupId, onGroupDeleted, onGroupLeft } = route.params;
@@ -308,7 +310,11 @@ export default function SharedGroupDetailFixed({
             );
             for (const transaction of memberData.transactions) {
               console.log(
-                `Transaction: ${transaction.description}, Amount: ${transaction.amount}, Type: ${transaction.type}`
+                `Transaction: ${
+                  transaction.description
+                }, Amount: ${formatCurrency(transaction.amount)}, Type: ${
+                  transaction.type
+                }`
               );
               allTransactions.push({
                 id: transaction.id || "",
@@ -334,7 +340,9 @@ export default function SharedGroupDetailFixed({
             );
             for (const recurring of memberData.recurringTransactions) {
               console.log(
-                `Recurring: ${recurring.name}, Amount: ${recurring.amount}, Type: ${recurring.type}`
+                `Recurring: ${recurring.name}, Amount: ${formatCurrency(
+                  recurring.amount
+                )}, Type: ${recurring.type}`
               );
               allTransactions.push({
                 id: recurring.id || "",
@@ -402,12 +410,7 @@ export default function SharedGroupDetailFixed({
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
+  // formatCurrency is now provided by useCurrency() hook
 
   const handleRefreshGroup = async () => {
     try {

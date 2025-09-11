@@ -15,6 +15,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useData } from "../contexts/DataContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { saveTransaction } from "../services/userData";
 import { formatCurrency } from "../utils/formatNumber";
 import { mapPlaidCategoryToBudgetCategory } from "../utils/plaidCategoryMapping";
@@ -49,6 +50,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
   const { bankTransactions, transactions, isBankConnected } = useData();
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
 
   // Helper function to format month
   const formatMonth = (date: Date) => {
@@ -712,9 +714,9 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
               >
                 <View
                   style={{
-                    width: `${
+                    width: `{formatCurrency(
                       (saveProgress.current / saveProgress.total) * 100
-                    }%`,
+                    )}%`,
                     height: "100%",
                     backgroundColor: colors.primary,
                     borderRadius: 2,
@@ -956,7 +958,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                       }}
                     >
                       {transaction.type === "income" ? "+" : "-"}
-                      {formatCurrency(String(transaction.amount))}
+                      {formatCurrency(transaction.amount)}
                     </Text>
                     <Ionicons
                       name={

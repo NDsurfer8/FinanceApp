@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { View, Text, Dimensions, Animated } from "react-native";
 import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 
 const { width } = Dimensions.get("window");
 const CHART_WIDTH = width - 80;
@@ -21,7 +22,10 @@ interface CustomTrendChartProps {
 }
 
 // Utility function to format large numbers with K, M, B suffixes
-const formatLargeNumber = (num: number): string => {
+const formatLargeNumber = (
+  num: number,
+  formatCurrency: (amount: number) => string
+): string => {
   if (num >= 1000000000) {
     return `$${(num / 1000000000).toFixed(1)}B`;
   } else if (num >= 1000000) {
@@ -29,7 +33,7 @@ const formatLargeNumber = (num: number): string => {
   } else if (num >= 1000) {
     return `$${(num / 1000).toFixed(1)}K`;
   } else {
-    return `$${Math.round(num).toLocaleString()}`;
+    return `${formatCurrency(Math.round(num))}`;
   }
 };
 
@@ -37,6 +41,7 @@ export const CustomTrendChart: React.FC<CustomTrendChartProps> = React.memo(
   ({ incomeData, expensesData, netWorthData, height = 280 }) => {
     const { colors } = useTheme();
     const { t } = useTranslation();
+    const { formatCurrency } = useCurrency();
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
@@ -242,7 +247,7 @@ export const CustomTrendChart: React.FC<CustomTrendChartProps> = React.memo(
                   fontWeight: "600",
                 }}
               >
-                {formatLargeNumber(Math.round(value))}
+                {formatLargeNumber(Math.round(value), formatCurrency)}
               </Text>
             </React.Fragment>
           );
@@ -318,7 +323,7 @@ export const CustomTrendChart: React.FC<CustomTrendChartProps> = React.memo(
                 fontWeight: "600",
               }}
             >
-{t("dashboard.income")}
+              {t("dashboard.income")}
             </Text>
           </View>
 
@@ -344,7 +349,7 @@ export const CustomTrendChart: React.FC<CustomTrendChartProps> = React.memo(
                 fontWeight: "600",
               }}
             >
-{t("dashboard.expenses")}
+              {t("dashboard.expenses")}
             </Text>
           </View>
 
@@ -370,7 +375,7 @@ export const CustomTrendChart: React.FC<CustomTrendChartProps> = React.memo(
                 fontWeight: "700",
               }}
             >
-{t("dashboard.net_worth")}
+              {t("dashboard.net_worth")}
             </Text>
           </View>
         </View>

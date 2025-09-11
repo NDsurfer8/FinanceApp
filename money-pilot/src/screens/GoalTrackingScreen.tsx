@@ -20,6 +20,7 @@ import { useTransactionLimits } from "../hooks/useTransactionLimits";
 import { usePaywall } from "../hooks/usePaywall";
 import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { StandardHeader } from "../components/StandardHeader";
 import {
   saveGoal,
@@ -73,6 +74,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
   });
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
 
   // Animation for glow effect when no goals
   const glowAnim = React.useRef(new Animated.Value(0)).current;
@@ -166,9 +168,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     }
   }, [route.params, navigation]);
 
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString()}`;
-  };
+  // formatCurrency is now provided by useCurrency() hook
 
   const formatDate = (dateString: string) => {
     const date = createLocalDate(dateString);

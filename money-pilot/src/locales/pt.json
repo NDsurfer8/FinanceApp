@@ -369,7 +369,12 @@
     "logout": "Sair",
     "see_plans_pricing": "Ver Planos e Preços",
     "premium_plaid_description": "Premium + Plaid: Revise, rotule e gerencie seu orçamento.",
-    "renews": "Renova:"
+    "renews": "Renova:",
+    "currency": "Moeda",
+    "select_currency": "Selecionar Moeda",
+    "search_currencies": "Pesquisar moedas...",
+    "no_currencies_found": "Nenhuma moeda encontrada",
+    "currency_change_failed": "Falha ao alterar moeda. Tente novamente."
   },
   "premium": {
     "title": "Recursos Premium",

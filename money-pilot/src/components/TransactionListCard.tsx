@@ -9,6 +9,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { HelpfulTooltip } from "./HelpfulTooltip";
 
 interface Transaction {
@@ -32,7 +33,6 @@ interface TransactionListCardProps {
   onTransactionPress: (transaction: Transaction) => void;
   onAddTransaction: () => void;
   isFutureMonth?: boolean;
-  formatCurrency: (amount: number) => string;
   formatDate: (date: number) => string;
   isRecurringTransaction: (transaction: Transaction) => boolean;
 }
@@ -48,12 +48,12 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
   onTransactionPress,
   onAddTransaction,
   isFutureMonth = false,
-  formatCurrency,
   formatDate,
   isRecurringTransaction,
 }) => {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 

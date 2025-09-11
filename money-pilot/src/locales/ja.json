@@ -369,7 +369,12 @@
     "logout": "ログアウト",
     "see_plans_pricing": "プランと価格を見る",
     "premium_plaid_description": "Premium + Plaid: 予算を確認、ラベル付け、管理します。",
-    "renews": "更新:"
+    "renews": "更新:",
+    "currency": "通貨",
+    "select_currency": "通貨を選択",
+    "search_currencies": "通貨を検索...",
+    "no_currencies_found": "通貨が見つかりません",
+    "currency_change_failed": "通貨の変更に失敗しました。もう一度お試しください。"
   },
   "premium": {
     "title": "プレミアム機能",

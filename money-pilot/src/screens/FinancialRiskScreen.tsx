@@ -12,6 +12,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { StandardHeader } from "../components/StandardHeader";
 import { gradeRatio, fmt } from "../utils/ratioGrading";
 import {
@@ -31,6 +32,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
   const { user } = useAuth();
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const [assets, setAssets] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -168,9 +170,7 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
       ? Infinity
       : 0;
 
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString()}`;
-  };
+  // formatCurrency is now provided by useCurrency() hook
 
   const formatPercentage = (percentage: number) => {
     return `${percentage.toFixed(1)}%`;

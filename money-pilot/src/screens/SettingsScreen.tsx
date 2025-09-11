@@ -30,8 +30,10 @@ import { useScrollDetection } from "../hooks/useScrollDetection";
 import { HelpfulTooltip } from "../components/HelpfulTooltip";
 import { useTranslation } from "react-i18next";
 import { LanguageSelector } from "../components/LanguageSelector";
+import { CurrencySelector } from "../components/CurrencySelector";
 import { useLanguage } from "../contexts/LanguageContext";
 import { LanguageAwareText } from "../components/LanguageAwareText";
+import { useCurrency } from "../contexts/CurrencyContext";
 
 interface SettingsScreenProps {
   onLogout?: () => void;
@@ -50,7 +52,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { presentPaywall } = usePaywall();
   const [showTooltips, setShowTooltips] = useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [showCurrencySelector, setShowCurrencySelector] = useState(false);
   const { currentLanguage, availableLanguages } = useLanguage();
+  const { selectedCurrency, availableCurrencies, formatCurrency } =
+    useCurrency();
   const { t } = useTranslation();
 
   // Load tooltips setting from AsyncStorage
@@ -1104,6 +1109,53 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </View>
           </TouchableOpacity>
 
+          {/* Currency Selector */}
+          <TouchableOpacity
+            style={[
+              styles.settingItem,
+              { borderBottomColor: colors.borderLight },
+            ]}
+            onPress={() => setShowCurrencySelector(true)}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="cash"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text }]}>
+                {t("settings.currency")}
+              </Text>
+            </View>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+            >
+              <Text style={{ color: colors.textSecondary, marginRight: 8 }}>
+                {" "}
+              </Text>
+              <LanguageAwareText
+                style={{
+                  color: colors.textSecondary,
+                  marginRight: 8,
+                  fontSize: 14,
+                  flex: 1,
+                }}
+                maxLines={1}
+              >
+                {availableCurrencies.find(
+                  (currency) => currency.code === selectedCurrency
+                )?.name || "US Dollar"}{" "}
+                ({selectedCurrency})
+              </LanguageAwareText>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.textSecondary}
+              />
+            </View>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[
               styles.settingItem,
@@ -1366,6 +1418,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       <LanguageSelector
         visible={showLanguageSelector}
         onClose={() => setShowLanguageSelector(false)}
+      />
+
+      {/* Currency Selector Modal */}
+      <CurrencySelector
+        visible={showCurrencySelector}
+        onClose={() => setShowCurrencySelector(false)}
       />
     </SafeAreaView>
   );

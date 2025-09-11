@@ -18,6 +18,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useSelectedMonth } from "../contexts/SelectedMonthContext";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { StandardHeader } from "../components/StandardHeader";
 import { AutoBudgetImporter } from "../components/AutoBudgetImporter";
 import { BudgetOverviewCard } from "../components/BudgetOverviewCard";
@@ -95,6 +96,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const lastMonthRef = useRef<string>("");
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
 
   // Load budget categories and check for over-budget items
   const loadBudgetCategories = async () => {
@@ -482,12 +484,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   };
 
   // Utility functions
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  };
+  // formatCurrency is now provided by useCurrency() hook
 
   const formatDate = (date: number) => {
     return timestampToDateString(date);
@@ -1131,7 +1128,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           }
           onAddTransaction={handleAddIncome}
           isFutureMonth={isFutureMonth}
-          formatCurrency={formatCurrency}
           formatDate={formatDate}
           isRecurringTransaction={isRecurringTransaction}
         />
@@ -1159,7 +1155,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           }
           onAddTransaction={handleAddExpense}
           isFutureMonth={isFutureMonth}
-          formatCurrency={formatCurrency}
           formatDate={formatDate}
           isRecurringTransaction={isRecurringTransaction}
         />
@@ -1220,7 +1215,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           hasUnsavedChanges={hasUnsavedChanges}
           netIncome={totalIncome}
           totalExpenses={totalExpenses}
-          formatCurrency={formatCurrency}
           goals={goals}
           onGoalContributionChange={async (goalId, contribution) => {
             // Update the goal's monthly contribution

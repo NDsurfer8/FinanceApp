@@ -40,6 +40,7 @@ import {
 
 import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "../hooks/useTranslation";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { LanguageAwareText } from "../components/LanguageAwareText";
 import { StandardHeader } from "../components/StandardHeader";
 import { CustomTrendChart } from "../components/CustomTrendChart";
@@ -93,6 +94,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   );
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
 
   // Generate personalized welcome message
   const getWelcomeMessage = () => {
@@ -769,9 +771,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     }));
   }, [trendData, user, assets, debts, transactions, recurringTransactions]);
 
-  const formatCurrency = (amount: number) => {
-    return `$${Math.round(amount).toLocaleString()}`;
-  };
+  // formatCurrency is now provided by useCurrency() hook
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>

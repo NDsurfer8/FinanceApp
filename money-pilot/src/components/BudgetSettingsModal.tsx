@@ -13,6 +13,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 
 interface Goal {
   id: string;
@@ -35,7 +36,6 @@ interface BudgetSettingsModalProps {
   hasUnsavedChanges: boolean;
   netIncome: number;
   totalExpenses: number;
-  formatCurrency: (amount: number) => string;
   goals?: Goal[];
   onGoalContributionChange?: (goalId: string, contribution: number) => void;
 }
@@ -51,13 +51,13 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
   hasUnsavedChanges,
   netIncome,
   totalExpenses,
-  formatCurrency,
   goals = [],
   onGoalContributionChange,
 }) => {
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const [localSavings, setLocalSavings] = useState(savingsPercentage);
   const [localDebt, setLocalDebt] = useState(debtPayoffPercentage);
   const [localGoals, setLocalGoals] = useState<Goal[]>(goals);
@@ -334,7 +334,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                 {expensesPercentage > 0 && (
                   <View
                     style={{
-                      width: `${expensesPercentage}%` as any,
+                      width: `{formatCurrency(expensesPercentage)}%` as any,
                       backgroundColor: "#dc2626", // Dark red for expenses
                       height: 24,
                     }}

@@ -369,7 +369,12 @@
     "logout": "Déconnexion",
     "see_plans_pricing": "Voir les Plans et Tarifs",
     "premium_plaid_description": "Premium + Plaid: Examinez, étiquetez et gérez votre budget.",
-    "renews": "Renouvelle:"
+    "renews": "Renouvelle:",
+    "currency": "Devise",
+    "select_currency": "Sélectionner la Devise",
+    "search_currencies": "Rechercher des devises...",
+    "no_currencies_found": "Aucune devise trouvée",
+    "currency_change_failed": "Échec du changement de devise. Veuillez réessayer."
   },
   "premium": {
     "title": "Fonctionnalités Premium",

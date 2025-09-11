@@ -369,7 +369,12 @@
     "logout": "Выйти",
     "see_plans_pricing": "Посмотреть Планы и Цены",
     "premium_plaid_description": "Premium + Plaid: Просматривайте, маркируйте и управляйте своим бюджетом.",
-    "renews": "Продлевается:"
+    "renews": "Продлевается:",
+    "currency": "Валюта",
+    "select_currency": "Выбрать Валюту",
+    "search_currencies": "Поиск валют...",
+    "no_currencies_found": "Валюты не найдены",
+    "currency_change_failed": "Не удалось изменить валюту. Попробуйте еще раз."
   },
   "premium": {
     "title": "Премиум Функции",

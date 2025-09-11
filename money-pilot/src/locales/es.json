@@ -369,7 +369,12 @@
     "logout": "Cerrar Sesión",
     "see_plans_pricing": "Ver Planes y Precios",
     "premium_plaid_description": "Premium + Plaid: Revisa, etiqueta y gestiona tu presupuesto.",
-    "renews": "Renueva:"
+    "renews": "Renueva:",
+    "currency": "Moneda",
+    "select_currency": "Seleccionar Moneda",
+    "search_currencies": "Buscar monedas...",
+    "no_currencies_found": "No se encontraron monedas",
+    "currency_change_failed": "Error al cambiar la moneda. Inténtalo de nuevo."
   },
   "premium": {
     "title": "Características Premium",

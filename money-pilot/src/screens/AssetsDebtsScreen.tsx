@@ -19,6 +19,7 @@ import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { StandardHeader } from "../components/StandardHeader";
 import { getAssetTypeLabel } from "../utils/assetMigration";
 import { useData } from "../contexts/DataContext";
@@ -49,6 +50,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
   const [showAddModal, setShowAddModal] = useState(false);
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const { hasPremiumAccess } = useSubscription();
   const { presentPaywall } = usePaywall();
 
@@ -443,7 +445,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               adjustsFontSizeToFit={true}
               minimumFontScale={0.7}
             >
-              ${asset.balance.toLocaleString()}
+              {formatCurrency(asset.balance)}
             </Text>
             <Ionicons
               name="chevron-forward"
@@ -535,7 +537,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                   fontFamily: fontFamily.regular,
                 }}
               >
-                ${debt.payment}/mo
+                {formatCurrency(debt.payment)}/mo
               </Text>
             </View>
           </View>
@@ -558,7 +560,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               adjustsFontSizeToFit={true}
               minimumFontScale={0.7}
             >
-              ${debt.balance.toLocaleString()}
+              {formatCurrency(debt.balance)}
             </Text>
             <Ionicons
               name="chevron-forward"
@@ -613,7 +615,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
               fontFamily: fontFamily.bold,
             }}
           >
-            ${Math.abs(netWorth).toLocaleString()}
+            {formatCurrency(Math.abs(netWorth))}
           </Text>
         </View>
 
@@ -870,7 +872,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                         color: colors.success,
                       }}
                     >
-                      ${assetTotal.toLocaleString()}
+                      {formatCurrency(assetTotal)}
                     </Text>
                   </View>
                 </>
@@ -936,7 +938,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 }}
               >
                 {debts.length} {t("assets_debts.item", { count: debts.length })}{" "}
-                • ${totalDebt.toLocaleString()}
+                • {formatCurrency(totalDebt)}
               </Text>
             </View>
             <Ionicons
@@ -991,7 +993,7 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                         color: colors.error,
                       }}
                     >
-                      ${totalDebt.toLocaleString()}
+                      {formatCurrency(totalDebt)}
                     </Text>
                   </View>
                 </>

@@ -46,6 +46,7 @@ import { VectraAvatar } from "../components/VectraAvatar";
 import { sendBackendAIFeedback } from "../services/backendAI";
 import { Audio } from "expo-av";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 
 // Voice options for TTS
 const VOICE_OPTIONS = [
@@ -281,6 +282,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
   const { hideChatbot, showChatbot } = useChatbot();
   const { hasPremiumAccess } = useSubscription();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const {
     transactions,
     assets,
@@ -990,9 +992,11 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       // Check cache for common questions (cache for 1 hour) - user-specific
       const cacheKey = `${user?.uid || "anonymous"}_${userMessage.text
         .toLowerCase()
-        .trim()}_${snapshot.netIncome}_${snapshot.monthlySavingsAmount}_${
+        .trim()}_${snapshot.netIncome}_${
+        snapshot.monthlySavingsAmount
+      }_{formatCurrency(
         snapshot.totalMonthlyGoalContributions
-      }`;
+      )}`;
       const cachedResponse = responseCache[cacheKey];
       const cacheAge = Date.now() - (cachedResponse?.timestamp || 0);
       const isCacheValid = cachedResponse && cacheAge < 3600000; // 1 hour
@@ -1863,7 +1867,11 @@ Original Request: ${basePrompt}
         if (match) {
           const item = match[1].trim();
           const value = match[2].trim();
-          csvRows.push(`"${currentSection}","${item}","${value}",""`);
+          csvRows.push(
+            `"${currentSection}","${item}","${formatCurrency(
+              parseFloat(value)
+            )}",""`
+          );
         }
       }
 

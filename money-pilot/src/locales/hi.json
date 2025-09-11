@@ -369,7 +369,12 @@
     "logout": "लॉग आउट",
     "see_plans_pricing": "योजनाएं और मूल्य देखें",
     "premium_plaid_description": "Premium + Plaid: अपने बजट की समीक्षा, लेबलिंग और प्रबंधन करें।",
-    "renews": "नवीकरण:"
+    "renews": "नवीकरण:",
+    "currency": "मुद्रा",
+    "select_currency": "मुद्रा चुनें",
+    "search_currencies": "मुद्राएं खोजें...",
+    "no_currencies_found": "कोई मुद्रा नहीं मिली",
+    "currency_change_failed": "मुद्रा बदलने में विफल। कृपया पुनः प्रयास करें।"
   },
   "premium": {
     "title": "प्रीमियम सुविधाएं",

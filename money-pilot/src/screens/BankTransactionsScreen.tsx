@@ -19,6 +19,7 @@ import { usePaywall } from "../hooks/usePaywall";
 import { plaidService } from "../services/plaid";
 import { plaidAssetDebtImporter } from "../services/plaidAssetDebtImporter";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 
 interface BankTransactionsScreenProps {
   navigation: any;
@@ -47,6 +48,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
     const { user } = useAuth();
     const { colors } = useTheme();
     const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
     const dataContext = useData();
     const {
       bankAccounts,
@@ -259,12 +261,7 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
       }
     };
 
-    const formatCurrency = (amount: number) => {
-      return `$${Math.abs(amount).toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`;
-    };
+    // formatCurrency is now provided by useCurrency() hook
 
     const totalBalance = checkingAccounts.reduce(
       (sum: number, account: any) => sum + (account.balances?.current || 0),

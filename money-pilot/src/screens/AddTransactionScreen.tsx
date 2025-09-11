@@ -19,6 +19,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { useTranslation } from "react-i18next";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { StandardHeader } from "../components/StandardHeader";
 import { useZeroLoading } from "../hooks/useZeroLoading";
 import { useData } from "../contexts/DataContext";
@@ -64,6 +65,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const { colors } = useTheme();
   const { isFriendlyMode } = useFriendlyMode();
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const { transactions, updateDataOptimistically } = useZeroLoading();
   const { refreshRecurringTransactions, refreshTransactions } = useData();
   const [loading, setLoading] = useState(false);
