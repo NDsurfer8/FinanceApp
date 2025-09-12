@@ -2424,7 +2424,7 @@ Original Request: ${basePrompt}
                 paddingVertical: 8,
               }}
               placeholder={t("ai_chat.input_placeholder")}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
               value={inputText}
               onChangeText={setInputText}
               multiline

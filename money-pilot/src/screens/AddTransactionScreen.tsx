@@ -1125,7 +1125,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 setFormData({ ...formData, description: text })
               }
               placeholder={t("add_transaction.description_placeholder")}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
             />
           </View>
 
@@ -1157,7 +1157,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 setFormData({ ...formData, amount: cleanValue });
               }}
               placeholder={t("add_transaction.amount_placeholder")}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
               keyboardType="numeric"
             />
 

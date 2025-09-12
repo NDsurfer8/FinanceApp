@@ -164,7 +164,7 @@ export const CurrencySelector: React.FC<CurrencySelectorProps> = ({
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
             placeholder={t("settings.search_currencies")}
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.inputPlaceholder}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />

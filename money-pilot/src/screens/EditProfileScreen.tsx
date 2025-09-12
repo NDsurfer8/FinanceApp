@@ -442,7 +442,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
             value={displayName}
             onChangeText={setDisplayName}
             placeholder={t("edit_profile.display_name_placeholder")}
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.inputPlaceholder}
           />
         </View>
 

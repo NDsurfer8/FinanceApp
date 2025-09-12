@@ -350,7 +350,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 backgroundColor: colors.card,
               }}
               placeholder={t("goals.goal_description_placeholder")}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
             />
@@ -448,7 +448,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 backgroundColor: colors.card,
               }}
               placeholder="0.00"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
               value={formatNumberWithCommas(formData.targetAmount)}
               onChangeText={(text) => {
                 const cleanValue = removeCommas(text);
@@ -481,7 +481,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 backgroundColor: colors.card,
               }}
               placeholder="0.00"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
               value={formatNumberWithCommas(formData.currentAmount)}
               onChangeText={(text) => {
                 const cleanValue = removeCommas(text);
@@ -514,7 +514,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 backgroundColor: colors.card,
               }}
               placeholder="0.00"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
               value={formatNumberWithCommas(formData.monthlyContribution)}
               onChangeText={(text) => {
                 const cleanValue = removeCommas(text);

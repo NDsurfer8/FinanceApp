@@ -636,7 +636,7 @@ export const NotificationSettingsScreen: React.FC<
                   }}
                   keyboardType="numeric"
                   placeholder="500"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={colors.inputPlaceholder}
                 />
               </View>
             </View>
@@ -672,7 +672,7 @@ export const NotificationSettingsScreen: React.FC<
                   }}
                   keyboardType="numeric"
                   placeholder="1000"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={colors.inputPlaceholder}
                 />
               </View>
             </View>
@@ -706,7 +706,7 @@ export const NotificationSettingsScreen: React.FC<
                   }}
                   keyboardType="numeric"
                   placeholder="500"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={colors.inputPlaceholder}
                 />
               </View>
             </View>

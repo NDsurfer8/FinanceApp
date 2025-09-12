@@ -737,7 +737,7 @@ export default function SharedFinanceScreen({
                 },
               ]}
               placeholder={t("shared_finance.group_name")}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
               value={groupName}
               onChangeText={setGroupName}
             />
@@ -752,7 +752,7 @@ export default function SharedFinanceScreen({
                 },
               ]}
               placeholder={t("shared_finance.description_optional")}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
               value={groupDescription}
               onChangeText={setGroupDescription}
               multiline
@@ -898,7 +898,7 @@ export default function SharedFinanceScreen({
                 },
               ]}
               placeholder={t("shared_finance.email_address")}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
               value={inviteEmail}
               onChangeText={setInviteEmail}
               keyboardType="email-address"

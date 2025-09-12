@@ -220,7 +220,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                 marginBottom: 12,
               }}
               placeholder={t("transactions.search_transactions")}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />

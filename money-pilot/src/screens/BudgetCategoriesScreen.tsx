@@ -1282,7 +1282,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder={t("budget_categories.search_placeholder")}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
               style={{
                 flex: 1,
                 fontSize: 16,
@@ -1700,7 +1700,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       borderWidth: 1,
                       borderColor: colors.border,
                     }}
-                    placeholderTextColor={colors.textSecondary}
+                    placeholderTextColor={colors.inputPlaceholder}
                     returnKeyType="next"
                     blurOnSubmit={false}
                     onFocus={handleInputFocus}
@@ -1785,7 +1785,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       borderWidth: 1,
                       borderColor: colors.border,
                     }}
-                    placeholderTextColor={colors.textSecondary}
+                    placeholderTextColor={colors.inputPlaceholder}
                   />
                 </View>
               </View>

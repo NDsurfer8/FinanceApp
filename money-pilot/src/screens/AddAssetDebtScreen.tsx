@@ -330,7 +330,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   ? t("add_asset_debt.asset_name_placeholder")
                   : t("add_asset_debt.debt_name_placeholder")
               }
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
             />
@@ -361,7 +361,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                 backgroundColor: colors.card,
               }}
               placeholder={t("add_asset_debt.amount_placeholder")}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.inputPlaceholder}
               value={formatNumberWithCommas(formData.balance)}
               onChangeText={(text) => {
                 const cleanValue = removeCommas(text);
@@ -497,7 +497,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   backgroundColor: colors.card,
                 }}
                 placeholder={t("add_asset_debt.amount_placeholder")}
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={colors.inputPlaceholder}
                 value={formData.rate}
                 onChangeText={(text) =>
                   setFormData({ ...formData, rate: text })
@@ -531,7 +531,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   backgroundColor: colors.card,
                 }}
                 placeholder={t("add_asset_debt.amount_placeholder")}
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={colors.inputPlaceholder}
                 value={formatNumberWithCommas(formData.payment)}
                 onChangeText={(text) => {
                   const cleanValue = removeCommas(text);

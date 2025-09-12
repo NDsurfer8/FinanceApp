@@ -1200,7 +1200,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       setNewGoal({ ...newGoal, name: text })
                     }
                     placeholder={t("goals.goal_description_placeholder")}
-                    placeholderTextColor={colors.textSecondary}
+                    placeholderTextColor={colors.inputPlaceholder}
                   />
                 </View>
 
@@ -1290,7 +1290,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     }}
                     keyboardType="decimal-pad"
                     placeholder={t("goals.target_amount_placeholder")}
-                    placeholderTextColor={colors.textSecondary}
+                    placeholderTextColor={colors.inputPlaceholder}
                   />
                 </View>
 
@@ -1323,7 +1323,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     }}
                     keyboardType="decimal-pad"
                     placeholder={t("goals.current_amount_placeholder")}
-                    placeholderTextColor={colors.textSecondary}
+                    placeholderTextColor={colors.inputPlaceholder}
                   />
                 </View>
 
@@ -1359,7 +1359,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     }}
                     keyboardType="decimal-pad"
                     placeholder={t("goals.monthly_contribution_placeholder")}
-                    placeholderTextColor={colors.textSecondary}
+                    placeholderTextColor={colors.inputPlaceholder}
                   />
                 </View>
 
