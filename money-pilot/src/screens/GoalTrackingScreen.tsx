@@ -821,6 +821,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                           marginBottom: 4,
                           letterSpacing: -0.5,
                         }}
+                        numberOfLines={2}
+                        ellipsizeMode="tail"
                       >
                         {goal.name}
                       </Text>
@@ -830,6 +832,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                           color: colors.textSecondary,
                           fontWeight: "500",
                         }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
                       >
                         {category?.label}
                       </Text>
@@ -853,6 +857,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                             goal.priority as keyof typeof priorityColors
                           ]
                         }30`,
+                        maxWidth: 80,
                       }}
                     >
                       <Text
@@ -866,6 +871,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                           textTransform: "uppercase",
                           letterSpacing: 0.5,
                         }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
                       >
                         {t(`goals.priorities.${goal.priority}`)}
                       </Text>
@@ -969,7 +976,13 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     padding: 16,
                   }}
                 >
-                  <View style={{ alignItems: "center", flex: 1 }}>
+                  <View
+                    style={{
+                      alignItems: "center",
+                      flex: 1,
+                      paddingHorizontal: 4,
+                    }}
+                  >
                     <Text
                       style={{
                         fontSize: 12,
@@ -978,7 +991,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         fontWeight: "600",
                         textTransform: "uppercase",
                         letterSpacing: 0.5,
+                        textAlign: "center",
                       }}
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
                     >
                       {t("goals.target")}
                     </Text>
@@ -988,12 +1004,21 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         fontWeight: "800",
                         color: colors.text,
                         letterSpacing: -0.3,
+                        textAlign: "center",
                       }}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
                     >
                       {formatCurrency(goal.targetAmount)}
                     </Text>
                   </View>
-                  <View style={{ alignItems: "center", flex: 1 }}>
+                  <View
+                    style={{
+                      alignItems: "center",
+                      flex: 1,
+                      paddingHorizontal: 4,
+                    }}
+                  >
                     <Text
                       style={{
                         fontSize: 12,
@@ -1002,7 +1027,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         fontWeight: "600",
                         textTransform: "uppercase",
                         letterSpacing: 0.5,
+                        textAlign: "center",
                       }}
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
                     >
                       {t("goals.monthly")}
                     </Text>
@@ -1012,12 +1040,21 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         fontWeight: "800",
                         color: colors.success,
                         letterSpacing: -0.3,
+                        textAlign: "center",
                       }}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
                     >
                       {formatCurrency(goal.monthlyContribution)}
                     </Text>
                   </View>
-                  <View style={{ alignItems: "center", flex: 1 }}>
+                  <View
+                    style={{
+                      alignItems: "center",
+                      flex: 1,
+                      paddingHorizontal: 4,
+                    }}
+                  >
                     <Text
                       style={{
                         fontSize: 12,
@@ -1026,7 +1063,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         fontWeight: "600",
                         textTransform: "uppercase",
                         letterSpacing: 0.5,
+                        textAlign: "center",
                       }}
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
                     >
                       {t("goals.time_left")}
                     </Text>
@@ -1036,7 +1076,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         fontWeight: "800",
                         color: colors.warning,
                         letterSpacing: -0.3,
+                        textAlign: "center",
                       }}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
                     >
                       {calculateTimeRemaining(goal)}
                     </Text>
@@ -1062,7 +1105,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                       fontWeight: "600",
                       textTransform: "uppercase",
                       letterSpacing: 0.5,
+                      textAlign: "center",
                     }}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
                   >
                     {t("goals.target_achievement_date")}
                   </Text>
@@ -1188,6 +1234,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                               : colors.surfaceSecondary,
                           marginRight: 8,
                           minWidth: 80,
+                          maxWidth: 120,
                           alignItems: "center",
                         }}
                         onPress={() =>
@@ -1202,7 +1249,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                                 : colors.text,
                             fontSize: 14,
                             fontWeight: "500",
+                            textAlign: "center",
                           }}
+                          numberOfLines={2}
+                          ellipsizeMode="tail"
                         >
                           {category.label}
                         </Text>
@@ -1338,6 +1388,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                               ? priorityColors[priority]
                               : colors.surfaceSecondary,
                           alignItems: "center",
+                          minHeight: 48,
                         }}
                         onPress={() =>
                           setNewGoal({
@@ -1354,7 +1405,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                                 : colors.text,
                             fontWeight: "600",
                             textTransform: "capitalize",
+                            textAlign: "center",
                           }}
+                          numberOfLines={2}
+                          ellipsizeMode="tail"
                         >
                           {t(`goals.priorities.${priority}`)}
                         </Text>
