@@ -28,6 +28,7 @@ export interface RecurringTransactionTemplate {
   userId: string;
   createdAt: number;
   updatedAt: number;
+  totalOccurrences?: number;
 }
 
 export class TransactionActionsService {
@@ -181,6 +182,7 @@ export class TransactionActionsService {
       userId,
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      totalOccurrences: 0, // Initialize count of generated transactions
     };
   }
 

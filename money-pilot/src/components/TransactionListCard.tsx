@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { HelpfulTooltip } from "./HelpfulTooltip";
 import { TransactionStatusBadge } from "./TransactionStatusBadge";
-import { Transaction } from "../services/userData";
+import { Transaction, RecurringTransaction } from "../services/userData";
 import { transactionMatchingService } from "../services/transactionMatching";
 import { useAuth } from "../hooks/useAuth";
 import { ref, update } from "firebase/database";
@@ -29,6 +29,7 @@ interface TransactionListCardProps {
   iconColor: string;
   transactions: Transaction[];
   projectedTransactions?: Transaction[];
+  recurringTransactions?: RecurringTransaction[];
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onTransactionPress: (transaction: Transaction) => void;
@@ -57,7 +58,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
 }) => {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { refreshTransactions } = useData();
+  const { refreshTransactions, refreshRecurringTransactions } = useData();
   const { t } = useTranslation();
   const { formatCurrency, selectedCurrency } = useCurrency();
 
@@ -75,6 +76,31 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
 
     // Use originalFrequency for display, fallback to frequency if originalFrequency not available
     return recurringTx?.originalFrequency || recurringTx?.frequency || null;
+  };
+
+  // Check if a recurring transaction should show Mark Paid button
+  const shouldShowMarkPaidButton = (transaction: Transaction): boolean => {
+    // For actual transactions: show if it's a recurring expense that's not paid
+    if (transaction.id && !transaction.id.startsWith("projected-")) {
+      return (
+        !!transaction.recurringTransactionId &&
+        !transaction.status &&
+        transaction.type === "expense"
+      );
+    }
+
+    // For projected transactions: show if it's a recurring expense in the current month
+    if (transaction.id?.startsWith("projected-")) {
+      const currentDate = new Date();
+      const transactionDate = new Date(transaction.date);
+
+      // TESTING: Show for all projected transactions (not just current month)
+      return (
+        !!transaction.recurringTransactionId && transaction.type === "expense"
+      );
+    }
+
+    return false;
   };
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -391,22 +417,81 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                           }}
                         >
                           <TransactionStatusBadge transaction={transaction} />
-                          {transaction.recurringTransactionId &&
-                            !transaction.status &&
-                            transaction.type === "expense" && (
-                              <TouchableOpacity
-                                style={{
-                                  backgroundColor: "#6b7280",
-                                  paddingHorizontal: 8,
-                                  paddingVertical: 4,
-                                  borderRadius: 6,
-                                  marginTop: 4,
-                                  opacity: 0.7,
-                                }}
-                                onPress={async () => {
-                                  if (user && transaction.id) {
-                                    try {
-                                      // Mark as paid manually
+                          {shouldShowMarkPaidButton(transaction) && (
+                            <TouchableOpacity
+                              style={{
+                                backgroundColor: "#6b7280",
+                                paddingHorizontal: 8,
+                                paddingVertical: 4,
+                                borderRadius: 6,
+                                marginTop: 4,
+                                opacity: 0.7,
+                              }}
+                              onPress={async () => {
+                                if (user) {
+                                  try {
+                                    // Check if this is a projected transaction or actual transaction
+                                    if (
+                                      transaction.id?.startsWith("projected-")
+                                    ) {
+                                      // For projected transactions: create the actual transaction and mark as paid
+                                      const { saveTransaction } = await import(
+                                        "../services/userData"
+                                      );
+
+                                      const actualTransaction = {
+                                        description: transaction.description,
+                                        amount: transaction.amount,
+                                        type: transaction.type,
+                                        category: transaction.category,
+                                        date: transaction.date, // Use the projected transaction's date
+                                        userId: user.uid,
+                                        recurringTransactionId:
+                                          transaction.recurringTransactionId,
+                                        // Don't set isManual: true since we want it marked as paid immediately
+                                        // isManual: true would trigger markAsPending() in saveTransaction
+                                        status: "paid" as const,
+                                        matchedAt: Date.now(),
+                                        createdAt: Date.now(),
+                                      };
+
+                                      const transactionId =
+                                        await saveTransaction(
+                                          actualTransaction
+                                        );
+                                      console.log(
+                                        `✅ Created and marked projected transaction as paid: ${transactionId}`
+                                      );
+
+                                      // Update the recurring transaction's totalOccurrences
+                                      if (transaction.recurringTransactionId) {
+                                        const recurringRef = ref(
+                                          db,
+                                          `users/${user.uid}/recurringTransactions/${transaction.recurringTransactionId}`
+                                        );
+                                        const { get, update } = await import(
+                                          "firebase/database"
+                                        );
+                                        const recurringSnapshot = await get(
+                                          recurringRef
+                                        );
+
+                                        if (recurringSnapshot.exists()) {
+                                          const recurringTx =
+                                            recurringSnapshot.val();
+                                          await update(recurringRef, {
+                                            totalOccurrences:
+                                              (recurringTx.totalOccurrences ||
+                                                0) + 1,
+                                            lastGeneratedDate: Date.now(),
+                                          });
+                                          console.log(
+                                            `✅ Updated totalOccurrences for recurring transaction ${transaction.recurringTransactionId}`
+                                          );
+                                        }
+                                      }
+                                    } else if (transaction.id) {
+                                      // For actual transactions: just mark as paid
                                       const transactionRef = ref(
                                         db,
                                         `users/${user.uid}/transactions/${transaction.id}`
@@ -418,29 +503,31 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                                       console.log(
                                         `✅ Manually marked transaction ${transaction.id} as paid`
                                       );
-
-                                      // Refresh transactions to update UI
-                                      await refreshTransactions();
-                                    } catch (error) {
-                                      console.error(
-                                        "Error marking as paid:",
-                                        error
-                                      );
                                     }
+
+                                    // Refresh transactions and recurring transactions to update UI
+                                    await refreshTransactions();
+                                    await refreshRecurringTransactions();
+                                  } catch (error) {
+                                    console.error(
+                                      "Error marking as paid:",
+                                      error
+                                    );
                                   }
+                                }
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  color: "#f3f4f6",
+                                  fontSize: 10,
+                                  fontWeight: "500",
                                 }}
                               >
-                                <Text
-                                  style={{
-                                    color: "#f3f4f6",
-                                    fontSize: 10,
-                                    fontWeight: "500",
-                                  }}
-                                >
-                                  Mark Paid
-                                </Text>
-                              </TouchableOpacity>
-                            )}
+                                Mark Paid
+                              </Text>
+                            </TouchableOpacity>
+                          )}
                         </View>
                         <View
                           style={{
