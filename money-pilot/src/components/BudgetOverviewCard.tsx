@@ -563,7 +563,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
             onPress={handleSettingsPress}
             style={{
               width: 60,
-              height: 60,
+              height: 50,
               backgroundColor: colors.surfaceSecondary,
               padding: 12,
               borderRadius: 12,
