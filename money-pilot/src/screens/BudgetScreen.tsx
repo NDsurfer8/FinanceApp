@@ -136,36 +136,13 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         );
       });
 
-      const categoryRecurring = recurringTransactions.filter((rt) => {
-        if (
-          rt.type !== "expense" ||
-          !rt.isActive ||
-          rt.category !== category.name
-        ) {
-          return false;
-        }
-
-        // Check if this recurring transaction has been marked as paid in the selected month
-        // If it has, we should count the individual transaction instead, not the recurring template
-        const hasPaidTransaction = categoryTransactions.some((transaction) => {
-          return (
-            transaction.recurringTransactionId === rt.id &&
-            transaction.status === "paid"
-          );
-        });
-
-        // Only include this recurring transaction if it hasn't been marked as paid
-        return !hasPaidTransaction;
-      });
-
-      const actualSpending =
-        categoryTransactions.reduce((sum, t) => sum + t.amount, 0) +
-        categoryRecurring.reduce((sum, rt) => {
-          let monthlyAmount = rt.amount;
-          if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
-          else if (rt.frequency === "biweekly") monthlyAmount = rt.amount * 2;
-          return sum + monthlyAmount;
-        }, 0);
+      // Note: We no longer count recurring transactions in budget categories
+      // Budget categories should only show money that has actually been spent
+      // Recurring transactions are projected/planned spending, not actual spending
+      const actualSpending = categoryTransactions.reduce(
+        (sum, t) => sum + t.amount,
+        0
+      );
 
       // Only show badge if category is over budget AND user hasn't seen it yet for this month
       const monthSeenCategories =

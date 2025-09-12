@@ -598,72 +598,15 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
 
   const getCategorySpending = (categoryName: string) => {
     // Get actual spending from transactions in this category
+    // Only count actual transactions that have been paid/spent
     const actualSpending = monthlyTransactions
       .filter((t) => t.category.toLowerCase() === categoryName.toLowerCase())
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Get actual spending from recurring transactions in this category
-    // Only count recurring transactions that haven't been marked as paid
-    const actualRecurringSpending = recurringTransactions
-      .filter((t) => {
-        // Only include recurring expenses that are active in the selected month
-        if (t.type !== "expense" || !t.isActive) return false;
-        if (t.category.toLowerCase() !== categoryName.toLowerCase())
-          return false;
-
-        // Check if the recurring transaction was created before or during the selected month
-        const startDate = new Date(t.startDate || t.date);
-        const startMonth = startDate.getMonth();
-        const startYear = startDate.getFullYear();
-
-        // If start date is after the selected month, exclude it
-        if (
-          startYear > targetYear ||
-          (startYear === targetYear && startMonth > targetMonth)
-        ) {
-          return false;
-        }
-
-        // If there's an end date, check if the selected month is before the end date
-        if (t.endDate) {
-          const endDate = new Date(t.endDate);
-          const endMonth = endDate.getMonth();
-          const endYear = endDate.getFullYear();
-
-          // If selected month is after the end date, exclude it
-          if (
-            targetYear > endYear ||
-            (targetYear === endYear && targetMonth > endMonth)
-          ) {
-            return false;
-          }
-        }
-
-        // Check if this recurring transaction has been marked as paid in the selected month
-        // If it has, we should count the individual transaction instead, not the recurring template
-        const hasPaidTransaction = monthlyTransactions.some((transaction) => {
-          return (
-            transaction.recurringTransactionId === t.id &&
-            transaction.status === "paid" &&
-            transaction.category.toLowerCase() === categoryName.toLowerCase()
-          );
-        });
-
-        // Only include this recurring transaction if it hasn't been marked as paid
-        return !hasPaidTransaction;
-      })
-      .reduce((sum: number, rt: any) => {
-        let monthlyAmount = rt.amount;
-        if (rt.frequency === "weekly") {
-          monthlyAmount = rt.amount * 4;
-        } else if (rt.frequency === "biweekly") {
-          monthlyAmount = rt.amount * 2;
-        }
-        return sum + monthlyAmount;
-      }, 0);
-
-    // Total actual spending = one-time transactions + recurring transactions (only unmarked ones)
-    const totalActualSpending = actualSpending + actualRecurringSpending;
+    // Note: We no longer count recurring transactions in budget categories
+    // Budget categories should only show money that has actually been spent
+    // Recurring transactions are projected/planned spending, not actual spending
+    const totalActualSpending = actualSpending;
 
     // Get the budget limit for this category
     const category = categories.find(
