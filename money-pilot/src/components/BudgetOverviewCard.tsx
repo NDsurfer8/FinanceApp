@@ -576,7 +576,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
           >
             <Ionicons
               name="settings-outline"
-              size={20}
+              size={24}
               color={colors.buttonPrimary}
             />
             {props.hasOverBudgetItems && (
