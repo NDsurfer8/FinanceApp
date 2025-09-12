@@ -779,32 +779,12 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             borderBottomColor: colors.border,
           }}
         >
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "700",
-              color: colors.text,
-              marginBottom: 8,
-            }}
-          >
-            {t("auto_budget_importer.smart_import_summary")}
-          </Text>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              marginBottom: 16,
-              fontSize: 14,
-            }}
-          >
-            {totalCount} current month transactions • {selectedCount} selected
-          </Text>
-
           {/* Bank Filter */}
           {connectedBanks.length > 1 && (
             <View style={{ marginBottom: 16 }}>
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: 18,
                   fontWeight: "600",
                   color: colors.text,
                   marginBottom: 8,
@@ -815,7 +795,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={{ marginBottom: 8 }}
+                style={{ marginBottom: 0, height: 40 }}
               >
                 <TouchableOpacity
                   onPress={() => setSelectedBankFilter("all")}
@@ -828,7 +808,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                     paddingVertical: 12,
                     borderRadius: 20,
                     marginRight: 8,
-                    borderWidth: 1,
+                    borderWidth: 0,
                     borderColor:
                       selectedBankFilter === "all"
                         ? colors.primary
