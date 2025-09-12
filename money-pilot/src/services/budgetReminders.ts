@@ -5,6 +5,7 @@ import {
   getUserGoals,
 } from "./userData";
 import * as Notifications from "expo-notifications";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export interface BudgetReminder {
   id: string;
@@ -28,6 +29,18 @@ export class BudgetReminderService {
   // Schedule all budget reminders for a user
   async scheduleAllBudgetReminders(userId: string): Promise<void> {
     try {
+      // Check if budget reminders are enabled before scheduling
+      const budgetRemindersEnabled = await AsyncStorage.getItem(
+        `notification_budget-reminders`
+      );
+      const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
+
+      if (!isBudgetRemindersEnabled) {
+        // If not enabled, just cancel existing reminders and return
+        await this.cancelAllBudgetReminders();
+        return;
+      }
+
       // Get user's transactions, budget settings, and goals
       const [transactions, budgetSettings, goals] = await Promise.all([
         getUserTransactions(userId),

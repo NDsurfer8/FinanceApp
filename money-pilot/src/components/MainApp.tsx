@@ -243,7 +243,15 @@ export const MainApp: React.FC = () => {
     if (!user) return;
 
     try {
-      await billReminderService.scheduleAllBillReminders(user.uid);
+      // Check if bill reminders are enabled before scheduling
+      const billRemindersEnabled = await AsyncStorage.getItem(
+        `notification_bill-reminders`
+      );
+      const isBillRemindersEnabled = billRemindersEnabled === "true";
+
+      if (isBillRemindersEnabled) {
+        await billReminderService.scheduleAllBillReminders(user.uid);
+      }
     } catch (error) {
       console.error("Error setting up bill reminders:", error);
     }

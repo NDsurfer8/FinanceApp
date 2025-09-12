@@ -110,6 +110,16 @@ export class NotificationService {
     }
   }
 
+  // Check permissions without requesting them
+  async checkPermissions(): Promise<boolean> {
+    if (Device.isDevice) {
+      const { status } = await Notifications.getPermissionsAsync();
+      return status === "granted";
+    } else {
+      return false;
+    }
+  }
+
   // Request permissions
   async requestPermissions(): Promise<boolean> {
     if (Device.isDevice) {
@@ -453,6 +463,16 @@ export class NotificationService {
     accountName: string,
     currentBalance: number
   ): Promise<string> {
+    // Check if low balance alerts are enabled before scheduling
+    const lowBalanceAlertsEnabled = await AsyncStorage.getItem(
+      `notification_low-balance-alerts`
+    );
+    const isLowBalanceAlertsEnabled = lowBalanceAlertsEnabled === "true";
+
+    if (!isLowBalanceAlertsEnabled) {
+      return ""; // Return empty string if not enabled
+    }
+
     // Schedule for tomorrow at 9 AM to avoid immediate panic
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -476,6 +496,16 @@ export class NotificationService {
     currentAmount: number,
     targetDate: Date
   ): Promise<string[]> {
+    // Check if goal reminders are enabled before scheduling
+    const goalRemindersEnabled = await AsyncStorage.getItem(
+      `notification_goal-reminders`
+    );
+    const isGoalRemindersEnabled = goalRemindersEnabled === "true";
+
+    if (!isGoalRemindersEnabled) {
+      return []; // Return empty array if not enabled
+    }
+
     const progress = ((currentAmount / targetAmount) * 100).toFixed(1);
     const notificationIds: string[] = [];
 

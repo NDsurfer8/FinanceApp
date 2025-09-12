@@ -53,6 +53,13 @@ export const NotificationSettingsScreen: React.FC<
     loadSavedSettings();
   }, []);
 
+  // Re-check permissions when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      checkPermissions();
+    }, [])
+  );
+
   const loadSavedSettings = async () => {
     try {
       // Loading saved settings
@@ -271,7 +278,8 @@ export const NotificationSettingsScreen: React.FC<
   };
 
   const checkPermissions = async () => {
-    const hasPermission = await notificationService.requestPermissions();
+    const hasPermission = await notificationService.checkPermissions();
+    console.log("Notification permissions status:", hasPermission);
     setPermissionGranted(hasPermission);
   };
 

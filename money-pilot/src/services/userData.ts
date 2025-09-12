@@ -482,10 +482,17 @@ export const saveTransaction = async (
     // Auto-update shared groups
     await updateSharedGroupsForUser(transaction.userId);
 
-    // Schedule bill reminders for the new transaction
+    // Schedule bill reminders for the new transaction (only if enabled)
     try {
-      const { billReminderService } = await import("./billReminders");
-      await billReminderService.scheduleAllBillReminders(transaction.userId);
+      const billRemindersEnabled = await AsyncStorage.getItem(
+        `notification_bill-reminders`
+      );
+      const isBillRemindersEnabled = billRemindersEnabled === "true";
+
+      if (isBillRemindersEnabled) {
+        const { billReminderService } = await import("./billReminders");
+        await billReminderService.scheduleAllBillReminders(transaction.userId);
+      }
     } catch (error) {
       console.error("Error updating bill reminders:", error);
     }
@@ -663,10 +670,17 @@ export const removeTransaction = async (
     // Auto-update shared groups
     await updateSharedGroupsForUser(userId);
 
-    // Schedule bill reminders after removing transaction
+    // Schedule bill reminders after removing transaction (only if enabled)
     try {
-      const { billReminderService } = await import("./billReminders");
-      await billReminderService.scheduleAllBillReminders(userId);
+      const billRemindersEnabled = await AsyncStorage.getItem(
+        `notification_bill-reminders`
+      );
+      const isBillRemindersEnabled = billRemindersEnabled === "true";
+
+      if (isBillRemindersEnabled) {
+        const { billReminderService } = await import("./billReminders");
+        await billReminderService.scheduleAllBillReminders(userId);
+      }
     } catch (error) {
       console.error("Error updating bill reminders:", error);
     }
@@ -696,10 +710,17 @@ export const updateTransaction = async (
     // Auto-update shared groups
     await updateSharedGroupsForUser(transaction.userId);
 
-    // Schedule bill reminders for the updated transaction
+    // Schedule bill reminders for the updated transaction (only if enabled)
     try {
-      const { billReminderService } = await import("./billReminders");
-      await billReminderService.scheduleAllBillReminders(transaction.userId);
+      const billRemindersEnabled = await AsyncStorage.getItem(
+        `notification_bill-reminders`
+      );
+      const isBillRemindersEnabled = billRemindersEnabled === "true";
+
+      if (isBillRemindersEnabled) {
+        const { billReminderService } = await import("./billReminders");
+        await billReminderService.scheduleAllBillReminders(transaction.userId);
+      }
     } catch (error) {
       console.error("Error updating bill reminders:", error);
     }

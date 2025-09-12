@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
 import { translate } from "../services/translations";
@@ -663,9 +664,16 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         );
         updateDataOptimistically({ transactions: finalTransactions });
 
-        // Refresh bill reminders when a new transaction is added
+        // Refresh bill reminders when a new transaction is added (only if enabled)
         if (user) {
-          await billReminderService.scheduleAllBillReminders(user.uid);
+          const billRemindersEnabled = await AsyncStorage.getItem(
+            `notification_bill-reminders`
+          );
+          const isBillRemindersEnabled = billRemindersEnabled === "true";
+
+          if (isBillRemindersEnabled) {
+            await billReminderService.scheduleAllBillReminders(user.uid);
+          }
         }
 
         Alert.alert(
