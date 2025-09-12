@@ -572,8 +572,6 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
               borderWidth: 1,
               borderColor: colors.border,
               borderStyle: "dashed",
-              flexDirection: "row",
-              gap: 8,
             }}
           >
             <Ionicons
@@ -581,15 +579,6 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
               size={20}
               color={colors.buttonPrimary}
             />
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "600",
-                color: colors.buttonPrimary,
-              }}
-            >
-              {t("budget.spend_limits")}
-            </Text>
             {props.hasOverBudgetItems && (
               <View
                 style={{
