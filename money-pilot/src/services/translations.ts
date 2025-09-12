@@ -422,17 +422,12 @@ export const definitions: Record<keyof FinancialTranslations, string> = {
   excellent: "Outstanding financial health.",
 };
 
-export const getTranslations = (
-  isFriendlyMode: boolean
-): FinancialTranslations => {
-  return isFriendlyMode ? friendlyTranslations : standardTranslations;
+export const getTranslations = (): FinancialTranslations => {
+  return standardTranslations;
 };
 
-export const translate = (
-  term: keyof FinancialTranslations,
-  isFriendlyMode: boolean
-): string => {
-  const translations = getTranslations(isFriendlyMode);
+export const translate = (term: keyof FinancialTranslations): string => {
+  const translations = getTranslations();
   const result = translations[term] || term;
   return result;
 };

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
-import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { useTranslation } from "react-i18next";
 import { useCurrency } from "../contexts/CurrencyContext";
@@ -47,7 +46,6 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
   } = props;
 
   const { colors } = useTheme();
-  const { isFriendlyMode } = useFriendlyMode();
   const { t } = useTranslation();
   const { formatCurrency } = useCurrency();
 

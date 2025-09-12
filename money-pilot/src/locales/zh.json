@@ -583,13 +583,6 @@
   "help_support": {
     "title": "帮助和支持",
     "subtitle": "获取帮助并找到答案",
-    "accessibility": "无障碍功能",
-    "friendly_mode": "友好模式",
-    "friendly_mode_description": "将金融术语翻译成友好、易懂的语言",
-    "friendly_mode_enabled": "友好模式已启用",
-    "friendly_mode_disabled": "友好模式已禁用",
-    "friendly_mode_enabled_message": "金融术语现在将以友好、易懂的语言显示。",
-    "friendly_mode_disabled_message": "金融术语现在将以标准语言显示。",
     "quick_support": "快速支持",
     "email_support": "邮件支持",
     "email_support_description": "通过邮件获取帮助",

@@ -21,7 +21,6 @@ import { usePaywall } from "../hooks/usePaywall";
 import { useSubscription } from "../contexts/SubscriptionContext";
 import { plaidService, PlaidAccount } from "../services/plaid";
 import { useTheme } from "../contexts/ThemeContext";
-import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { useChatbot } from "../contexts/ChatbotContext";
 import { useData } from "../contexts/DataContext";
 import { AIUsageAdminScreen } from "./AIUsageAdminScreen";
@@ -90,7 +89,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   };
   const { subscriptionStatus, isEligibleForIntroOffer } = useSubscription();
   const { isDark, toggleTheme, colors } = useTheme();
-  const { isFriendlyMode } = useFriendlyMode();
   const { isVisible: isChatbotVisible, toggleChatbot } = useChatbot();
   const {
     refreshBankData,
@@ -469,24 +467,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               onPress={() => navigation.navigate("EditProfile")}
               activeOpacity={0.7}
             >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Ionicons
-                  name="create-outline"
-                  size={18}
-                  color={colors.text}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "600",
-                    color: colors.text,
-                    letterSpacing: 0.3,
-                  }}
-                >
-                  {t("common.edit")}
-                </Text>
-              </View>
+              <Ionicons name="create-outline" size={18} color={colors.text} />
             </TouchableOpacity>
           </View>
 

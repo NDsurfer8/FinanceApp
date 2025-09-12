@@ -586,13 +586,6 @@
   "help_support": {
     "title": "Ayuda y Soporte",
     "subtitle": "Obtén ayuda y encuentra respuestas",
-    "accessibility": "Accesibilidad",
-    "friendly_mode": "Modo Amigable",
-    "friendly_mode_description": "Traduce términos financieros a un lenguaje amigable y fácil de entender",
-    "friendly_mode_enabled": "Modo Amigable Activado",
-    "friendly_mode_disabled": "Modo Amigable Desactivado",
-    "friendly_mode_enabled_message": "Los términos financieros ahora se mostrarán en un lenguaje amigable y fácil de entender.",
-    "friendly_mode_disabled_message": "Los términos financieros ahora se mostrarán en lenguaje estándar.",
     "quick_support": "Soporte Rápido",
     "email_support": "Soporte por Email",
     "email_support_description": "Obtén ayuda por email",

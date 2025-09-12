@@ -583,13 +583,6 @@
   "help_support": {
     "title": "सहायता और समर्थन",
     "subtitle": "सहायता प्राप्त करें और उत्तर खोजें",
-    "accessibility": "पहुंच योग्यता",
-    "friendly_mode": "मित्रवत मोड",
-    "friendly_mode_description": "वित्तीय शब्दों को मित्रवत, समझने में आसान भाषा में अनुवाद करें",
-    "friendly_mode_enabled": "मित्रवत मोड सक्षम",
-    "friendly_mode_disabled": "मित्रवत मोड अक्षम",
-    "friendly_mode_enabled_message": "वित्तीय शब्द अब मित्रवत, समझने में आसान भाषा में दिखाए जाएंगे।",
-    "friendly_mode_disabled_message": "वित्तीय शब्द अब मानक भाषा में दिखाए जाएंगे।",
     "quick_support": "त्वरित सहायता",
     "email_support": "ईमेल सहायता",
     "email_support_description": "ईमेल के माध्यम से सहायता प्राप्त करें",

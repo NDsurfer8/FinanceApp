@@ -16,7 +16,6 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext";
-import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { translate } from "../services/translations";
 import { useTranslation } from "react-i18next";
 import { useCurrency } from "../contexts/CurrencyContext";
@@ -63,7 +62,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
-  const { isFriendlyMode } = useFriendlyMode();
   const { t } = useTranslation();
   const { formatCurrency, getCurrencySymbol } = useCurrency();
   const { transactions, updateDataOptimistically } = useZeroLoading();

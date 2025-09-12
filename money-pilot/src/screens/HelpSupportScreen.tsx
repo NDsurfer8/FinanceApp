@@ -16,7 +16,6 @@ import { useTheme } from "../contexts/ThemeContext";
 import * as MailComposer from "expo-mail-composer";
 import { useAuth } from "../hooks/useAuth";
 
-import { useFriendlyMode } from "../contexts/FriendlyModeContext";
 import { useTranslation } from "react-i18next";
 
 interface HelpSupportScreenProps {
@@ -37,23 +36,6 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
   const { user } = useAuth();
   const { t } = useTranslation();
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
-  const { isFriendlyMode, setIsFriendlyMode } = useFriendlyMode();
-
-  // Handle friendly mode toggle
-  const handleFriendlyModeToggle = async (value: boolean) => {
-    setIsFriendlyMode(value);
-
-    // Show confirmation message
-    Alert.alert(
-      value
-        ? t("help_support.friendly_mode_enabled")
-        : t("help_support.friendly_mode_disabled"),
-      value
-        ? t("help_support.friendly_mode_enabled_message")
-        : t("help_support.friendly_mode_disabled_message"),
-      [{ text: t("common.ok") }]
-    );
-  };
 
   const faqs: FAQItem[] = useMemo(
     () => [
@@ -429,54 +411,6 @@ ${user?.displayName || "VectorFi User"}`,
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               {t("help_support.subtitle")}
             </Text>
-          </View>
-        </View>
-
-        {/* Friendly Mode Toggle */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            {t("help_support.accessibility")}
-          </Text>
-
-          <View
-            style={[
-              styles.settingCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <View style={styles.settingRow}>
-              <View style={styles.settingInfo}>
-                <View
-                  style={[
-                    styles.settingIcon,
-                    { backgroundColor: colors.surfaceSecondary },
-                  ]}
-                >
-                  <Ionicons name="school" size={20} color="#6366f1" />
-                </View>
-                <View style={styles.settingText}>
-                  <Text style={[styles.settingTitle, { color: colors.text }]}>
-                    {t("help_support.friendly_mode")}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.settingDescription,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    {t("help_support.friendly_mode_description")}
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={isFriendlyMode}
-                onValueChange={handleFriendlyModeToggle}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor={
-                  isFriendlyMode ? colors.buttonText : colors.surfaceSecondary
-                }
-              />
-            </View>
           </View>
         </View>
 

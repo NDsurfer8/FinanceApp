@@ -629,13 +629,6 @@
   "help_support": {
     "title": "Help & Support",
     "subtitle": "Get help and find answers",
-    "accessibility": "Accessibility",
-    "friendly_mode": "Friendly Mode",
-    "friendly_mode_description": "Translate financial terms into friendly, easy-to-understand language",
-    "friendly_mode_enabled": "Friendly Mode Enabled",
-    "friendly_mode_disabled": "Friendly Mode Disabled",
-    "friendly_mode_enabled_message": "Financial terms will now be shown in friendly, easy-to-understand language.",
-    "friendly_mode_disabled_message": "Financial terms will now be shown in standard language.",
     "quick_support": "Quick Support",
     "email_support": "Email Support",
     "email_support_description": "Get help via email",

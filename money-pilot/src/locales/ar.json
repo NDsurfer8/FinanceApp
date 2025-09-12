@@ -583,13 +583,6 @@
   "help_support": {
     "title": "المساعدة والدعم",
     "subtitle": "احصل على المساعدة واعثر على الإجابات",
-    "accessibility": "إمكانية الوصول",
-    "friendly_mode": "الوضع الودود",
-    "friendly_mode_description": "ترجم المصطلحات المالية إلى لغة ودودة وسهلة الفهم",
-    "friendly_mode_enabled": "تم تفعيل الوضع الودود",
-    "friendly_mode_disabled": "تم إلغاء تفعيل الوضع الودود",
-    "friendly_mode_enabled_message": "ستظهر المصطلحات المالية الآن بلغة ودودة وسهلة الفهم.",
-    "friendly_mode_disabled_message": "ستظهر المصطلحات المالية الآن باللغة القياسية.",
     "quick_support": "الدعم السريع",
     "email_support": "دعم البريد الإلكتروني",
     "email_support_description": "احصل على المساعدة عبر البريد الإلكتروني",
