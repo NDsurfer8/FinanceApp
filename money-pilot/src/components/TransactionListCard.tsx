@@ -94,9 +94,15 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
       const currentDate = new Date();
       const transactionDate = new Date(transaction.date);
 
-      // TESTING: Show for all projected transactions (not just current month)
+      // Show only for current month (not future months)
+      const isCurrentMonth =
+        transactionDate.getMonth() === currentDate.getMonth() &&
+        transactionDate.getFullYear() === currentDate.getFullYear();
+
       return (
-        !!transaction.recurringTransactionId && transaction.type === "expense"
+        !!transaction.recurringTransactionId &&
+        transaction.type === "expense" &&
+        isCurrentMonth
       );
     }
 
@@ -444,7 +450,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                                         amount: transaction.amount,
                                         type: transaction.type,
                                         category: transaction.category,
-                                        date: transaction.date, // Use the projected transaction's date
+                                        date: Date.now(), // Use current date when marked as paid
                                         userId: user.uid,
                                         recurringTransactionId:
                                           transaction.recurringTransactionId,

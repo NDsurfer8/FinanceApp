@@ -65,6 +65,12 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
     const bankName = bankTransaction.name?.toLowerCase() || "";
 
     return transactions.some((budgetTransaction: any) => {
+      // First check: if this budget transaction was created from this bank transaction
+      if (budgetTransaction.bankTransactionId === bankTransaction.id) {
+        return true;
+      }
+
+      // Second check: traditional matching by amount, date, and name
       const budgetDate = new Date(budgetTransaction.date);
       const budgetAmount = Math.abs(budgetTransaction.amount);
       const budgetName = budgetTransaction.description?.toLowerCase() || "";
@@ -381,7 +387,13 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
 
       setCategorizedTransactions(categorized);
     }
-  }, [isVisible, bankTransactions, selectedMonth, selectedBankFilter]);
+  }, [
+    isVisible,
+    bankTransactions,
+    transactions,
+    selectedMonth,
+    selectedBankFilter,
+  ]);
 
   const toggleTransactionSelection = (transactionId: string) => {
     setCategorizedTransactions((prev) =>
@@ -484,6 +496,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             console.log(
               `Transaction ${transaction.name} matched with manual entry, not saved as separate transaction`
             );
+            savedCount++; // Count matched transactions as processed
           }
 
           // Small delay to prevent overwhelming the server and show progress
