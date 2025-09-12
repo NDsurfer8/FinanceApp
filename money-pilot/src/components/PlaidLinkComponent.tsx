@@ -521,42 +521,6 @@ export const PlaidLinkComponent: React.FC<PlaidLinkComponentProps> = ({
             : t("plaid.connect_bank")}
         </Text>
       </TouchableOpacity>
-
-      {/* Disconnect All Button (only show if multiple banks) */}
-      {isBankConnected && connectedBanks.length > 1 && (
-        <TouchableOpacity
-          onPress={() => handleDisconnectBank()}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingVertical: 12,
-            paddingHorizontal: 16,
-            backgroundColor: colors.surfaceSecondary,
-            borderRadius: 12,
-            marginTop: 8,
-            borderWidth: 1,
-            borderColor: colors.error + "40",
-          }}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name="close-circle"
-            size={18}
-            color={colors.error || "#F44336"}
-            style={{ marginRight: 8 }}
-          />
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: "500",
-              color: colors.error || "#F44336",
-            }}
-          >
-            {t("plaid.disconnect_all_banks")}
-          </Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };

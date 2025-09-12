@@ -825,7 +825,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                         ? colors.primary
                         : colors.card,
                     paddingHorizontal: 16,
-                    paddingVertical: 8,
+                    paddingVertical: 12,
                     borderRadius: 20,
                     marginRight: 8,
                     borderWidth: 1,
@@ -856,7 +856,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                           ? colors.primary
                           : colors.card,
                       paddingHorizontal: 16,
-                      paddingVertical: 8,
+                      paddingVertical: 12,
                       borderRadius: 20,
                       marginRight: 8,
                       borderWidth: 1,

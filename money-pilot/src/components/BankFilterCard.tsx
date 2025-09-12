@@ -181,10 +181,11 @@ export const BankFilterCard: React.FC<BankFilterCardProps> = ({
                   setShowSourceFilter(false);
                 }}
                 style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 16,
+                  paddingHorizontal: 11,
+                  paddingVertical: 11,
+                  borderRadius: 25,
                   marginRight: 8,
+                  marginTop: 8,
                   backgroundColor:
                     selectedSource === source.id
                       ? colors.primary
