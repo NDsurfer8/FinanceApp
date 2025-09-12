@@ -1031,23 +1031,23 @@
     "step_counter": "Schritt {{current}} von {{total}}",
     "step1": {
       "title": "Verfolgen Sie Ihre Ausgaben",
-      "description": "Fügen Sie Einnahmen und Ausgaben manuell hinzu — oder verknüpfen Sie Ihre Bank für automatischen Import von Transaktionen und Benachrichtigungen."
+      "description": "Verknüpfen Sie Ihre Bank für automatische Verfolgung — oder fügen Sie Ausgaben manuell hinzu. Beides ist einfach!"
     },
     "step2": {
       "title": "Erstellen Sie Ihr Budget",
-      "description": "Tippen Sie in Budget auf das Zahnrad in Übersicht, um Kategoriegrenzen und sicheres Ausgeben festzulegen."
+      "description": "Setzen Sie Grenzen für Kategorien und sehen Sie Ihr sicheres Ausgabegeld in Echtzeit."
     },
     "step3": {
       "title": "Setzen Sie ein Ziel",
-      "description": "Erstellen Sie Ihr erstes Ziel (z.B. Spanien-Reise) und wählen Sie ein Zieldatum."
+      "description": "Wählen Sie etwas Spaßiges (wie eine Spanien-Reise ✈️) und setzen Sie ein Zieldatum."
     },
     "step4": {
       "title": "Fügen Sie Vermögenswerte und Schulden hinzu",
-      "description": "Protokollieren Sie Ersparnisse, Investitionen, Kredite und Karten, um Ihr Nettovermögen zu verfolgen."
+      "description": "Fügen Sie Ersparnisse, Kredite und Karten hinzu, um Ihr wahres Nettovermögen zu sehen."
     },
     "step5": {
-      "title": "Fragen Sie Vectra",
-      "description": "Erhalten Sie klare, umsetzbare Tipps basierend auf Ihren Daten (z.B., \"Bin ich finanziell bereit, ein Haus zu kaufen?\")."
+      "title": "Lernen Sie Vectra kennen",
+      "description": "Ihr KI-Finanzcoach. Fragen Sie alles — von \"Bin ich bereit, ein Haus zu kaufen?\" bis \"Wie viel kann ich diesen Monat sparen?\""
     },
     "complete_setup": "Setup Abschließen",
     "next_step": "Nächster Schritt",

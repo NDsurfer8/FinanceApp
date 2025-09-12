@@ -1031,23 +1031,23 @@
     "step_counter": "Paso {{current}} de {{total}}",
     "step1": {
       "title": "Rastrea tus gastos",
-      "description": "Agrega ingresos y gastos manualmente — o conecta tu banco para importar transacciones automáticamente y recibir alertas."
+      "description": "Conecta tu banco para seguimiento automático — o agrega gastos manualmente. ¡Fácil de cualquier manera!"
     },
     "step2": {
       "title": "Construye tu presupuesto",
-      "description": "En Presupuesto, toca el engranaje en Resumen para establecer límites de categoría y gasto seguro."
+      "description": "Establece límites para categorías y ve tu dinero seguro para gastar en tiempo real."
     },
     "step3": {
       "title": "Establece una meta",
-      "description": "Crea tu primera meta (ej., viaje a España) y elige una fecha objetivo."
+      "description": "Elige algo divertido (como un viaje a España ✈️) y establece una fecha objetivo."
     },
     "step4": {
       "title": "Agrega activos y deudas",
-      "description": "Registra ahorros, inversiones, préstamos y tarjetas para rastrear tu patrimonio neto."
+      "description": "Incluye ahorros, préstamos y tarjetas para ver tu verdadero patrimonio neto."
     },
     "step5": {
-      "title": "Pregunta a Vectra",
-      "description": "Obtén consejos claros y accionables basados en tus datos (ej., \"¿Estoy financieramente listo para comprar una casa?\")."
+      "title": "Conoce a Vectra",
+      "description": "Tu entrenador financiero de IA. Pregunta cualquier cosa — desde \"¿Estoy listo para comprar una casa?\" hasta \"¿Cuánto puedo ahorrar este mes?\""
     },
     "complete_setup": "Completar Configuración",
     "next_step": "Siguiente Paso",

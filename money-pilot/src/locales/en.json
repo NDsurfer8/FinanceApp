@@ -99,24 +99,24 @@
     "header_title": "Let's Get You Started!",
     "step_counter": "Step {{current}} of {{total}}",
     "step1": {
-      "title": "Track your spending",
-      "description": "Add income and expenses manually — or link your bank to auto-import transactions and get alerts."
+      "title": "Track Your Spending",
+      "description": "Link your bank for automatic tracking — or add expenses manually. Easy either way!"
     },
     "step2": {
-      "title": "Build your budget",
-      "description": "In Budget, tap the gear in Overview to set category limits and safe-to-spend."
+      "title": "Build Your Budget",
+      "description": "Set limits for categories and see your safe-to-spend in real time."
     },
     "step3": {
-      "title": "Set a goal",
-      "description": "Create your first goal (e.g., Spain trip) and choose a target date."
+      "title": "Set a Goal",
+      "description": "Pick something fun (like a Spain trip ✈️) and set a target date."
     },
     "step4": {
-      "title": "Add assets & debts",
-      "description": "Log savings, investments, loans, and cards to track your net worth."
+      "title": "Add Assets & Debts",
+      "description": "Include savings, loans, and cards to see your true net worth."
     },
     "step5": {
-      "title": "Ask Vectra",
-      "description": "Get clear, actionable tips based on your data (e.g., \"Am I financially ready to buy a house?\")."
+      "title": "Meet Vectra",
+      "description": "Your AI money coach. Ask anything — from \"Am I ready to buy a house?\" to \"How much can I save this month?\""
     },
     "complete_setup": "Complete Setup",
     "next_step": "Next Step",

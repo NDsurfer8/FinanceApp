@@ -1031,23 +1031,23 @@
     "step_counter": "步骤 {{current}} / {{total}}",
     "step1": {
       "title": "追踪您的支出",
-      "description": "手动添加收入和支出 — 或连接您的银行以自动导入交易并接收提醒。"
+      "description": "连接您的银行进行自动追踪 — 或手动添加支出。两种方式都很简单！"
     },
     "step2": {
       "title": "建立您的预算",
-      "description": "在预算中，点击概览中的齿轮来设置类别限制和安全支出。"
+      "description": "为类别设置限制，实时查看您的安全支出金额。"
     },
     "step3": {
       "title": "设定目标",
-      "description": "创建您的第一个目标（例如，西班牙之旅）并选择目标日期。"
+      "description": "选择一些有趣的事情（比如西班牙之旅✈️）并设定目标日期。"
     },
     "step4": {
       "title": "添加资产和债务",
-      "description": "记录储蓄、投资、贷款和卡片以追踪您的净资产。"
+      "description": "包括储蓄、贷款和卡片，以查看您的真实净资产。"
     },
     "step5": {
-      "title": "询问Vectra",
-      "description": "基于您的数据获得清晰、可行的建议（例如，“我是否在经济上准备好买房？”）。"
+      "title": "认识Vectra",
+      "description": "您的AI理财教练。问任何问题 — 从"我准备好买房了吗？"到"我这个月能存多少钱？""
     },
     "complete_setup": "完成设置",
     "next_step": "下一步",
