@@ -569,6 +569,7 @@
     "asset_name_placeholder": "例：預金口座",
     "debt_name_placeholder": "例：クレジットカード",
     "current_balance": "現在の残高",
+    "value": "価値",
     "outstanding_balance": "未払い残高",
     "amount_placeholder": "0.00",
     "asset_type": "資産タイプ",

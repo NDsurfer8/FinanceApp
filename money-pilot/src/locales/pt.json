@@ -569,6 +569,7 @@
     "asset_name_placeholder": "ex., Conta Poupança",
     "debt_name_placeholder": "ex., Cartão de Crédito",
     "current_balance": "Saldo Atual",
+    "value": "Valor",
     "outstanding_balance": "Saldo Pendente",
     "amount_placeholder": "0.00",
     "asset_type": "Tipo de Ativo",

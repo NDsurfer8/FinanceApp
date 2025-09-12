@@ -569,6 +569,7 @@
     "asset_name_placeholder": "z.B. Sparkonto",
     "debt_name_placeholder": "z.B. Kreditkarte",
     "current_balance": "Aktueller Saldo",
+    "value": "Wert",
     "outstanding_balance": "Ausstehender Saldo",
     "amount_placeholder": "0.00",
     "asset_type": "Vermögenstyp",

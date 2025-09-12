@@ -569,6 +569,7 @@
     "asset_name_placeholder": "например, Сберегательный счет",
     "debt_name_placeholder": "например, Кредитная карта",
     "current_balance": "Текущий Баланс",
+    "value": "Стоимость",
     "outstanding_balance": "Непогашенный Баланс",
     "amount_placeholder": "0.00",
     "asset_type": "Тип Актива",

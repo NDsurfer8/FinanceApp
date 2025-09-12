@@ -569,6 +569,7 @@
     "asset_name_placeholder": "مثال: حساب التوفير",
     "debt_name_placeholder": "مثال: بطاقة ائتمان",
     "current_balance": "الرصيد الحالي",
+    "value": "القيمة",
     "outstanding_balance": "الرصيد المستحق",
     "amount_placeholder": "0.00",
     "asset_type": "نوع الأصل",

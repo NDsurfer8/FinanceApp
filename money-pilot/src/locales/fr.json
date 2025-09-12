@@ -569,6 +569,7 @@
     "asset_name_placeholder": "ex., Compte Épargne",
     "debt_name_placeholder": "ex., Carte de Crédit",
     "current_balance": "Solde Actuel",
+    "value": "Valeur",
     "outstanding_balance": "Solde Impayé",
     "amount_placeholder": "0.00",
     "asset_type": "Type d'Actif",

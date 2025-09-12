@@ -569,6 +569,7 @@
     "asset_name_placeholder": "ej., Cuenta de Ahorros",
     "debt_name_placeholder": "ej., Tarjeta de Crédito",
     "current_balance": "Saldo Actual",
+    "value": "Valor",
     "outstanding_balance": "Saldo Pendiente",
     "amount_placeholder": "0.00",
     "asset_type": "Tipo de Activo",

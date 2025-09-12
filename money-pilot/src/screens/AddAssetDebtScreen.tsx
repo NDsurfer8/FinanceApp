@@ -347,7 +347,12 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
               }}
             >
               {type === "asset"
-                ? t("add_asset_debt.current_balance")
+                ? formData.assetType === "investment" ||
+                  formData.assetType === "real_estate" ||
+                  formData.assetType === "vehicle" ||
+                  formData.assetType === "other"
+                  ? t("add_asset_debt.value")
+                  : t("add_asset_debt.current_balance")
                 : t("add_asset_debt.outstanding_balance")}
             </Text>
             <TextInput

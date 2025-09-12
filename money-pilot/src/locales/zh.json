@@ -569,6 +569,7 @@
     "asset_name_placeholder": "例如：储蓄账户",
     "debt_name_placeholder": "例如：信用卡",
     "current_balance": "当前余额",
+    "value": "价值",
     "outstanding_balance": "未偿余额",
     "amount_placeholder": "0.00",
     "asset_type": "资产类型",

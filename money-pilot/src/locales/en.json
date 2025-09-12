@@ -616,6 +616,7 @@
     "asset_name_placeholder": "e.g., Savings Account",
     "debt_name_placeholder": "e.g., Credit Card",
     "current_balance": "Current Balance",
+    "value": "Value",
     "outstanding_balance": "Outstanding Balance",
     "amount_placeholder": "0.00",
     "asset_type": "Asset Type",

@@ -569,6 +569,7 @@
     "asset_name_placeholder": "जैसे, बचत खाता",
     "debt_name_placeholder": "जैसे, क्रेडिट कार्ड",
     "current_balance": "वर्तमान शेष",
+    "value": "मूल्य",
     "outstanding_balance": "बकाया शेष",
     "amount_placeholder": "0.00",
     "asset_type": "संपत्ति प्रकार",
