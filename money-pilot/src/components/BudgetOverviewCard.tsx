@@ -562,7 +562,8 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
           <TouchableOpacity
             onPress={handleSettingsPress}
             style={{
-              flex: 1,
+              width: 60,
+              height: 60,
               backgroundColor: colors.surfaceSecondary,
               padding: 12,
               borderRadius: 12,
