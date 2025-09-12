@@ -454,7 +454,7 @@
     "ready_to_go": "準備完了！財務管理を始めましょう。"
   },
   "financial_risk": {
-    "title": "財務リスクプロファイル",
+    "title": "財務リスク",
     "subtitle": "あなたの財務リスク概要",
     "emergency_fund": "緊急基金",
     "fully_funded": "完全に資金調達済み！",
@@ -464,7 +464,7 @@
     "target": "目標",
     "remaining": "残り",
     "months": "月",
-    "financial_ratios": "財務比率",
+    "financial_ratios": "スマート比率",
     "liquidity_ratio": "流動性比率",
     "current_assets_current_liabilities": "流動資産 ÷ 流動負債",
     "monthly_living_expenses_coverage": "月次生活費カバレッジ",

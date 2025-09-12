@@ -454,7 +454,7 @@
     "ready_to_go": "Все готово! Начните управлять вашими финансами."
   },
   "financial_risk": {
-    "title": "Профиль Финансового Риска",
+    "title": "Финансовый Риск",
     "subtitle": "Обзор ваших финансовых рисков",
     "emergency_fund": "Резервный Фонд",
     "fully_funded": "Полностью Финансирован!",
@@ -464,7 +464,7 @@
     "target": "Цель",
     "remaining": "Осталось",
     "months": "Месяцы",
-    "financial_ratios": "Финансовые Коэффициенты",
+    "financial_ratios": "Умные Коэффициенты",
     "liquidity_ratio": "Коэффициент Ликвидности",
     "current_assets_current_liabilities": "Оборотные Активы ÷ Оборотные Обязательства",
     "monthly_living_expenses_coverage": "Покрытие Ежемесячных Жизненных Расходов",

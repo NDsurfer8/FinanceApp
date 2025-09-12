@@ -305,6 +305,8 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   marginBottom: 20,
                   color: "#d97706",
                 }}
+                numberOfLines={2}
+                ellipsizeMode="tail"
               >
                 {t("financial_risk.emergency_fund")}
               </Text>
@@ -332,7 +334,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                 fontSize: 14,
                 color: colors.textSecondary,
                 marginBottom: 8,
+                textAlign: "center",
               }}
+              numberOfLines={2}
+              ellipsizeMode="tail"
             >
               {emergencyFundProgress >= 100
                 ? t("financial_risk.fully_funded")
@@ -340,7 +345,15 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                 ? t("financial_risk.halfway_there")
                 : t("financial_risk.getting_started")}
             </Text>
-            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+                textAlign: "center",
+              }}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {formatPercentage(emergencyFundProgress)}{" "}
               {t("financial_risk.of_six_month_target")}
             </Text>
@@ -488,6 +501,8 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                 marginBottom: 20,
                 color: colors.info,
               }}
+              numberOfLines={2}
+              ellipsizeMode="tail"
             >
               {t("financial_risk.financial_ratios")}
             </Text>
@@ -507,7 +522,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   fontSize: 14,
                   color: colors.textSecondary,
                   fontWeight: "500",
+                  flex: 1,
                 }}
+                numberOfLines={2}
+                ellipsizeMode="tail"
               >
                 {t("financial_risk.liquidity_ratio")}
               </Text>
@@ -516,7 +534,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   fontSize: 14,
                   fontWeight: "600",
                   color: getRatioColor(liquidityRatio, "liquidity"),
+                  marginLeft: 8,
                 }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
                 {getRatioStatus(liquidityRatio, "liquidity")}
               </Text>
@@ -526,7 +547,14 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
             >
               {fmt.ratio(liquidityRatio)}
             </Text>
-            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+              }}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {t("financial_risk.current_assets_current_liabilities")}
             </Text>
           </View>
@@ -545,7 +573,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   fontSize: 14,
                   color: colors.textSecondary,
                   fontWeight: "500",
+                  flex: 1,
                 }}
+                numberOfLines={2}
+                ellipsizeMode="tail"
               >
                 {t("financial_risk.monthly_living_expenses_coverage")}
               </Text>
@@ -557,7 +588,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                     monthlyLivingExpensesCoverage,
                     "coverage"
                   ),
+                  marginLeft: 8,
                 }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
                 {getRatioStatus(monthlyLivingExpensesCoverage, "coverage")}
               </Text>
@@ -567,7 +601,14 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
             >
               {fmt.months(monthlyLivingExpensesCoverage)}
             </Text>
-            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+              }}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {t("financial_risk.current_assets_total_monthly_expenses")}
             </Text>
           </View>
@@ -586,7 +627,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   fontSize: 14,
                   color: colors.textSecondary,
                   fontWeight: "500",
+                  flex: 1,
                 }}
+                numberOfLines={2}
+                ellipsizeMode="tail"
               >
                 {t("financial_risk.debt_asset_ratio")}
               </Text>
@@ -595,7 +639,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   fontSize: 14,
                   fontWeight: "600",
                   color: getRatioColor(debtAssetRatio, "debtAsset"),
+                  marginLeft: 8,
                 }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
                 {getRatioStatus(debtAssetRatio, "debtAsset")}
               </Text>
@@ -605,7 +652,14 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
             >
               {fmt.ratio(debtAssetRatio)}
             </Text>
-            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+              }}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {t("financial_risk.total_liabilities_total_assets")}
             </Text>
           </View>
@@ -624,7 +678,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   fontSize: 14,
                   color: colors.textSecondary,
                   fontWeight: "500",
+                  flex: 1,
                 }}
+                numberOfLines={2}
+                ellipsizeMode="tail"
               >
                 {t("financial_risk.debt_safety_ratio")}
               </Text>
@@ -633,7 +690,10 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
                   fontSize: 14,
                   fontWeight: "600",
                   color: getRatioColor(debtSafetyRatio, "debtSafety"),
+                  marginLeft: 8,
                 }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
                 {getRatioStatus(debtSafetyRatio, "debtSafety")}
               </Text>
@@ -643,7 +703,14 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
             >
               {fmt.ratio(debtSafetyRatio)}
             </Text>
-            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+              }}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {t("financial_risk.total_monthly_debt_payments_total_income")}
             </Text>
           </View>

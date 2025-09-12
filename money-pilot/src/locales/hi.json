@@ -454,7 +454,7 @@
     "ready_to_go": "सब कुछ तैयार है! अपने वित्त का प्रबंधन शुरू करें।"
   },
   "financial_risk": {
-    "title": "वित्तीय जोखिम प्रोफ़ाइल",
+    "title": "वित्तीय जोखिम",
     "subtitle": "आपका वित्तीय जोखिम अवलोकन",
     "emergency_fund": "आपातकालीन फंड",
     "fully_funded": "पूरी तरह से वित्तपोषित!",
@@ -464,7 +464,7 @@
     "target": "लक्ष्य",
     "remaining": "शेष",
     "months": "महीने",
-    "financial_ratios": "वित्तीय अनुपात",
+    "financial_ratios": "स्मार्ट अनुपात",
     "liquidity_ratio": "तरलता अनुपात",
     "current_assets_current_liabilities": "वर्तमान संपत्ति ÷ वर्तमान देनदारियां",
     "monthly_living_expenses_coverage": "मासिक जीवन व्यय कवरेज",

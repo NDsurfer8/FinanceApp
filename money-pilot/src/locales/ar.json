@@ -454,7 +454,7 @@
     "ready_to_go": "كل شيء جاهز! ابدأ في إدارة أموالك."
   },
   "financial_risk": {
-    "title": "ملف المخاطر المالية",
+    "title": "المخاطر المالية",
     "subtitle": "نظرة عامة على مخاطرك المالية",
     "emergency_fund": "صندوق الطوارئ",
     "fully_funded": "ممول بالكامل!",
@@ -464,7 +464,7 @@
     "target": "الهدف",
     "remaining": "المتبقي",
     "months": "أشهر",
-    "financial_ratios": "النسب المالية",
+    "financial_ratios": "النسب الذكية",
     "liquidity_ratio": "نسبة السيولة",
     "current_assets_current_liabilities": "الأصول المتداولة ÷ الخصوم المتداولة",
     "monthly_living_expenses_coverage": "تغطية النفقات المعيشية الشهرية",

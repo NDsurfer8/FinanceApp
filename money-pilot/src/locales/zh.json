@@ -454,7 +454,7 @@
     "ready_to_go": "一切就绪！开始管理您的财务。"
   },
   "financial_risk": {
-    "title": "财务风险概况",
+    "title": "财务风险",
     "subtitle": "您的财务风险概览",
     "emergency_fund": "应急基金",
     "fully_funded": "完全资助！",
@@ -464,7 +464,7 @@
     "target": "目标",
     "remaining": "剩余",
     "months": "月",
-    "financial_ratios": "财务比率",
+    "financial_ratios": "智能比率",
     "liquidity_ratio": "流动性比率",
     "current_assets_current_liabilities": "流动资产 ÷ 流动负债",
     "monthly_living_expenses_coverage": "月度生活费用覆盖",

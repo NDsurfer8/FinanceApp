@@ -457,7 +457,7 @@
     "ready_to_go": "¡Todo listo! Comienza a administrar tus finanzas."
   },
   "financial_risk": {
-    "title": "Perfil de Riesgo Financiero",
+    "title": "Riesgo Financiero",
     "subtitle": "Resumen de tu riesgo financiero",
     "emergency_fund": "Fondo de Emergencia",
     "fully_funded": "¡Totalmente Financiado!",
@@ -467,7 +467,7 @@
     "target": "Objetivo",
     "remaining": "Restante",
     "months": "Meses",
-    "financial_ratios": "Ratios Financieros",
+    "financial_ratios": "Ratios Inteligentes",
     "liquidity_ratio": "Ratio de Liquidez",
     "current_assets_current_liabilities": "Activos Corrientes ÷ Pasivos Corrientes",
     "monthly_living_expenses_coverage": "Cobertura de Gastos Mensuales de Vida",

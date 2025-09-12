@@ -434,7 +434,7 @@
     "ready_to_go": "You're all set! Start managing your finances."
   },
   "financial_risk": {
-    "title": "Financial Risk Profile",
+    "title": "Financial Risk",
     "subtitle": "Your financial risk overview",
     "emergency_fund": "Emergency Fund",
     "fully_funded": "Fully Funded!",
@@ -444,7 +444,7 @@
     "target": "Target",
     "remaining": "Remaining",
     "months": "Months",
-    "financial_ratios": "Financial Ratios",
+    "financial_ratios": "Smart Ratios",
     "liquidity_ratio": "Liquidity Ratio",
     "current_assets_current_liabilities": "Current Assets ÷ Current Liabilities",
     "monthly_living_expenses_coverage": "Monthly Living Expenses Coverage",

@@ -454,7 +454,7 @@
     "ready_to_go": "Alles bereit! Beginnen Sie mit der Verwaltung Ihrer Finanzen."
   },
   "financial_risk": {
-    "title": "Finanzrisikoprofil",
+    "title": "Finanzrisiko",
     "subtitle": "Ihr Finanzrisiko-Überblick",
     "emergency_fund": "Notfallfonds",
     "fully_funded": "Vollständig Finanziert!",
@@ -464,7 +464,7 @@
     "target": "Ziel",
     "remaining": "Verbleibend",
     "months": "Monate",
-    "financial_ratios": "Finanzkennzahlen",
+    "financial_ratios": "Smarte Kennzahlen",
     "liquidity_ratio": "Liquiditätskennzahl",
     "current_assets_current_liabilities": "Umlaufvermögen ÷ Kurzfristige Verbindlichkeiten",
     "monthly_living_expenses_coverage": "Monatliche Lebenshaltungskosten-Abdeckung",
