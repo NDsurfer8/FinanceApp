@@ -1,4 +1,6 @@
 {
+  "showing": "显示",
+  "filter": "筛选",
   "common": {
     "loading": "加载中...",
     "error": "错误",

@@ -1,4 +1,6 @@
 {
+  "showing": "Showing",
+  "filter": "Filter",
   "common": {
     "loading": "Loading...",
     "error": "Error",

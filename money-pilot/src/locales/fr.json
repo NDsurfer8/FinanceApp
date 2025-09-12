@@ -1,4 +1,6 @@
 {
+  "showing": "Affichage",
+  "filter": "Filtrer",
   "common": {
     "loading": "Chargement...",
     "error": "Erreur",
