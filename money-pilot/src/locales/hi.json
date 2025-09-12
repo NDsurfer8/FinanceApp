@@ -23,7 +23,7 @@
     "off": "बंद",
     "user": "उपयोगकर्ता",
     "premium": "प्रीमियम",
-    "skip": "Skip",
+    "skip": "छोड़ें",
     "update": "अपडेट करें",
     "info": "जानकारी"
   },
@@ -202,6 +202,9 @@
     "search_transactions": "लेनदेन खोजें...",
     "filter_by_category": "श्रेणी के अनुसार फ़िल्टर करें",
     "filter_by_date": "तारीख के अनुसार फ़िल्टर करें",
+    "filter_by_source": "स्रोत के अनुसार फ़िल्टर करें",
+    "manual_entries": "मैन्युअल प्रविष्टियां",
+    "auto_imported": "स्वचालित आयात",
     "no_transactions": "कोई लेनदेन नहीं मिला",
     "transaction_added": "लेनदेन सफलतापूर्वक जोड़ा गया",
     "transaction_updated": "लेनदेन सफलतापूर्वक अपडेट किया गया",
@@ -578,7 +581,7 @@
       "other": "अन्य"
     },
     "savings_accounts_note": "आपातकालीन निधि गणना के लिए बचत खातों का उपयोग किया जाता है",
-    "apr": "APR (%)",
+    "apr": "वार्षिक प्रतिशत दर (%)",
     "monthly_payment": "मासिक भुगतान",
     "asset": "संपत्ति",
     "debt": "ऋण"
@@ -1101,6 +1104,7 @@
     "investment_account_values_sync": "निवेश खाते के मूल्य आपके बैंक से स्वचालित रूप से सिंक होते हैं",
     "error_loading_bank_transactions": "बैंक लेनदेन लोड करने में त्रुटि",
     "available": "उपलब्ध",
+    "currencies_detected": "{{count}} मुद्राएं पाई गईं",
     "filter_by_bank": "बैंक द्वारा फ़िल्टर करें",
     "showing": "दिखा रहे हैं",
     "showing_all_banks": "सभी बैंक दिखा रहे हैं",

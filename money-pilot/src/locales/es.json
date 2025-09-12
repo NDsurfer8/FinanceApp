@@ -23,7 +23,7 @@
     "off": "Desactivado",
     "user": "Usuario",
     "premium": "Premium",
-    "skip": "Skip",
+    "skip": "Omitir",
     "update": "Actualizar",
     "info": "Información"
   },
@@ -581,7 +581,7 @@
       "other": "Otro"
     },
     "savings_accounts_note": "Las cuentas de ahorros se usan para cálculos de fondo de emergencia",
-    "apr": "APR (%)",
+    "apr": "TEA (%)",
     "monthly_payment": "Pago Mensual",
     "asset": "Activo",
     "debt": "Deuda"
@@ -1104,6 +1104,7 @@
     "investment_account_values_sync": "Los valores de las cuentas de inversión se sincronizan automáticamente desde tu banco",
     "error_loading_bank_transactions": "Error al cargar transacciones bancarias",
     "available": "Disponible",
+    "currencies_detected": "{{count}} monedas detectadas",
     "filter_by_bank": "Filtrar por Banco",
     "showing": "Mostrando",
     "showing_all_banks": "Mostrando todos los bancos",
