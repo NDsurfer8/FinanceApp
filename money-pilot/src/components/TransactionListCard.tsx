@@ -11,7 +11,6 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { HelpfulTooltip } from "./HelpfulTooltip";
-import { TransactionStatusBadge } from "./TransactionStatusBadge";
 import { Transaction, RecurringTransaction } from "../services/userData";
 import { transactionMatchingService } from "../services/transactionMatching";
 import { useAuth } from "../hooks/useAuth";
@@ -422,7 +421,6 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                             marginRight: 8,
                           }}
                         >
-                          <TransactionStatusBadge transaction={transaction} />
                           {shouldShowMarkPaidButton(transaction) && (
                             <TouchableOpacity
                               style={{
@@ -530,7 +528,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                                   fontWeight: "500",
                                 }}
                               >
-                                Mark Paid
+                                {t("common.mark_paid")}
                               </Text>
                             </TouchableOpacity>
                           )}
