@@ -287,6 +287,15 @@ export default function SharedGroupDetailFixed({
           // Add transactions if shared
           if (memberData.transactions && memberData.transactions.length > 0) {
             for (const transaction of memberData.transactions) {
+              // Skip transactions that were created from recurring transactions and marked as paid
+              // to avoid duplicates with recurring transaction templates
+              if (
+                transaction.recurringTransactionId &&
+                transaction.status === "paid"
+              ) {
+                continue;
+              }
+
               allTransactions.push({
                 id: transaction.id || "",
                 description: transaction.description,
