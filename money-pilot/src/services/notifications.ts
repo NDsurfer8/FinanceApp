@@ -308,9 +308,6 @@ export class NotificationService {
     const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
 
     if (!isBudgetRemindersEnabled) {
-      console.log(
-        "Budget reminders disabled, not scheduling weekly budget check"
-      );
       return "";
     }
 
@@ -322,7 +319,6 @@ export class NotificationService {
     );
 
     if (existingWeeklyCheck) {
-      console.log("Weekly budget check already scheduled");
       return existingWeeklyCheck.identifier;
     }
 
@@ -372,9 +368,6 @@ export class NotificationService {
     const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
 
     if (!isBudgetRemindersEnabled) {
-      console.log(
-        "Budget reminders disabled, not rescheduling weekly budget check"
-      );
       return "";
     }
 

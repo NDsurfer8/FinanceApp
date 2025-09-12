@@ -279,7 +279,6 @@ export const NotificationSettingsScreen: React.FC<
 
   const checkPermissions = async () => {
     const hasPermission = await notificationService.checkPermissions();
-    console.log("Notification permissions status:", hasPermission);
     setPermissionGranted(hasPermission);
   };
 
