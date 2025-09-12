@@ -525,6 +525,7 @@
     "remaining": "Verbleibend",
     "budget_vs_actual": "Budget vs Tatsächlich",
     "of_budget_used": "des Budgets verwendet",
+    "no_budget_set": "Kein Budget festgelegt",
     "monthly_limit": "Monatliches Limit",
     "of_income": "des Einkommens"
   },

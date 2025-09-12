@@ -525,6 +525,7 @@
     "remaining": "Restant",
     "budget_vs_actual": "Budget vs Réel",
     "of_budget_used": "du budget utilisé",
+    "no_budget_set": "Aucun budget défini",
     "monthly_limit": "Limite Mensuelle",
     "of_income": "du revenu"
   },

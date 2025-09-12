@@ -525,6 +525,7 @@
     "remaining": "शेष",
     "budget_vs_actual": "बजट बनाम वास्तविक",
     "of_budget_used": "बजट का उपयोग किया गया",
+    "no_budget_set": "कोई बजट सेट नहीं",
     "monthly_limit": "मासिक सीमा",
     "of_income": "आय का"
   },

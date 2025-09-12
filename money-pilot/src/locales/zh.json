@@ -525,6 +525,7 @@
     "remaining": "剩余",
     "budget_vs_actual": "预算与实际",
     "of_budget_used": "的预算已使用",
+    "no_budget_set": "未设置预算",
     "monthly_limit": "月度限额",
     "of_income": "的收入"
   },

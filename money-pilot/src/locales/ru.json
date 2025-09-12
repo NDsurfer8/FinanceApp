@@ -525,6 +525,7 @@
     "remaining": "Остаток",
     "budget_vs_actual": "Бюджет против Фактического",
     "of_budget_used": "бюджета использовано",
+    "no_budget_set": "Бюджет не установлен",
     "monthly_limit": "Месячный Лимит",
     "of_income": "от дохода"
   },

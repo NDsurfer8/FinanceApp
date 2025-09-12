@@ -525,6 +525,7 @@
     "remaining": "متبقي",
     "budget_vs_actual": "الميزانية مقابل الفعلي",
     "of_budget_used": "من الميزانية المستخدمة",
+    "no_budget_set": "لم يتم تعيين ميزانية",
     "monthly_limit": "الحد الشهري",
     "of_income": "من الدخل"
   },

@@ -506,6 +506,7 @@
     "remaining": "Remaining",
     "budget_vs_actual": "Budget vs Actual",
     "of_budget_used": "of budget used",
+    "no_budget_set": "No budget set",
     "monthly_limit": "Monthly Limit",
     "of_income": "of income"
   },

@@ -1309,10 +1309,10 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
         {filteredCategories.map((category) => {
           const spending = getCategorySpending(category.name);
           const remaining = category.monthlyLimit - spending.actual;
-          const progressPercentage = Math.min(
-            (spending.actual / category.monthlyLimit) * 100,
-            100
-          );
+          const progressPercentage =
+            category.monthlyLimit > 0
+              ? Math.min((spending.actual / category.monthlyLimit) * 100, 100)
+              : 0;
 
           return (
             <View
@@ -1529,8 +1529,11 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     textAlign: "center",
                   }}
                 >
-                  {progressPercentage.toFixed(1)}%{" "}
-                  {t("budget_categories.of_budget_used")}
+                  {category.monthlyLimit > 0
+                    ? `${progressPercentage.toFixed(1)}% ${t(
+                        "budget_categories.of_budget_used"
+                      )}`
+                    : t("budget_categories.no_budget_set")}
                 </Text>
                 {isCategoryOverBudget(category) && (
                   <View

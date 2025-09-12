@@ -525,6 +525,7 @@
     "remaining": "残り",
     "budget_vs_actual": "予算対実際",
     "of_budget_used": "の予算を使用",
+    "no_budget_set": "予算が設定されていません",
     "monthly_limit": "月次制限",
     "of_income": "の収入"
   },

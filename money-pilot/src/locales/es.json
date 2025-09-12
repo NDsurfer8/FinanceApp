@@ -525,6 +525,7 @@
     "remaining": "Restante",
     "budget_vs_actual": "Presupuesto vs Real",
     "of_budget_used": "del presupuesto usado",
+    "no_budget_set": "Sin presupuesto establecido",
     "monthly_limit": "Límite Mensual",
     "of_income": "del ingreso"
   },
