@@ -21,6 +21,11 @@ export type Transaction = {
   amount: number; // cents or dollars—pick one & stay consistent
   createdAt: number; // Date.now()
   month: MonthKey; // e.g., "YYYY-MM"
+  isManual?: boolean; // Whether this transaction was manually entered
+  status?: "pending" | "paid" | "cancelled"; // Status for manual transactions
+  bankTransactionId?: string; // ID of matched bank transaction
+  expectedDate?: number; // Expected date for manual transactions
+  matchedAt?: number; // When this transaction was matched
 };
 
 export type Asset = { name: string; balance: number };

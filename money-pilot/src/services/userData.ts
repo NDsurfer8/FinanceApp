@@ -109,6 +109,12 @@ export interface Transaction {
   sourceInstitution?: string; // Bank name for auto-imported transactions
   sourceItemId?: string; // Plaid item_id for auto-imported transactions
   isAutoImported?: boolean; // Flag to distinguish manual vs auto-imported transactions
+  // Transaction matching properties
+  isManual?: boolean; // Whether this transaction was manually entered
+  status?: "paid"; // Status for manual transactions (only "paid" when matched with bank transaction)
+  bankTransactionId?: string; // ID of matched bank transaction
+  expectedDate?: number; // Expected date for manual transactions
+  matchedAt?: number; // When this transaction was matched
 }
 
 export interface Asset {
@@ -503,6 +509,21 @@ export const saveTransaction = async (
       await trackTransactionEntry(transaction.userId);
     } catch (error) {
       console.error("Error tracking transaction entry:", error);
+    }
+
+    // Handle transaction matching for manual transactions
+    try {
+      if (transaction.isManual) {
+        const { transactionMatchingService } = await import(
+          "./transactionMatching"
+        );
+        await transactionMatchingService.markAsPending({
+          ...encryptedTransaction,
+          id: transactionId,
+        });
+      }
+    } catch (error) {
+      console.error("Error handling transaction matching:", error);
     }
 
     return transactionId;
@@ -2288,6 +2309,7 @@ export const generateRecurringTransactions = async (
             description: recurringTransaction.name,
             date: transactionDate.getTime(),
             userId: userId,
+            isManual: true, // Mark as manual transaction for matching
           };
 
           await saveTransaction(newTransaction);

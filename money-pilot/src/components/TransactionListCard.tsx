@@ -11,6 +11,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { HelpfulTooltip } from "./HelpfulTooltip";
+import { TransactionStatusBadge } from "./TransactionStatusBadge";
 import { Transaction } from "../services/userData";
 import {
   formatAmountWithFilteredCurrency,
@@ -339,20 +340,29 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                         activeOpacity={0.7}
                       >
                         <View style={{ flex: 1 }}>
-                          <Text
+                          <View
                             style={{
-                              fontSize: 16,
-                              color: colors.text,
-                              fontWeight: "500",
+                              flexDirection: "row",
+                              alignItems: "center",
+                              marginBottom: 4,
                             }}
                           >
-                            {transaction.description}
-                          </Text>
+                            <Text
+                              style={{
+                                fontSize: 16,
+                                color: colors.text,
+                                fontWeight: "500",
+                                flex: 1,
+                              }}
+                            >
+                              {transaction.description}
+                            </Text>
+                            <TransactionStatusBadge transaction={transaction} />
+                          </View>
                           <Text
                             style={{
                               fontSize: 12,
                               color: colors.textSecondary,
-                              marginTop: 2,
                             }}
                           >
                             {formatDate(transaction.date)}

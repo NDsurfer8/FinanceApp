@@ -217,6 +217,7 @@ export const createRecurringTransaction = async (
           userId: recurringTransaction.userId,
           recurringTransactionId: transactionId,
           isProjected: false,
+          isManual: true, // Mark as manual transaction for matching
         };
 
         await createTransaction(firstTransaction);
@@ -623,6 +624,7 @@ export const convertProjectedToActual = async (
       userId: userId,
       recurringTransactionId: recurringTransactionId,
       isProjected: false,
+      isManual: true, // Mark as manual transaction for matching
     };
 
     const transactionId = await createTransaction(actualTransaction);
@@ -755,6 +757,7 @@ export const generateTransactionsForMonth = async (
             date: transactionDate.getTime(),
             userId: userId,
             recurringTransactionId: recurringTransaction.id, // Reference to the recurring transaction
+            isManual: true, // Mark as manual transaction for matching
           };
 
           await createTransaction(newTransaction);

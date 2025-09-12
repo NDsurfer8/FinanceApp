@@ -648,6 +648,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           userId: user.uid,
           createdAt: Date.now(),
           updatedAt: Date.now(),
+          isManual: true, // Mark as manual transaction for matching
         };
 
         // Optimistic update - add to UI immediately

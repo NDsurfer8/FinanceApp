@@ -456,8 +456,35 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             isAutoImported: true,
           };
 
-          await saveTransaction(newTransaction);
-          savedCount++;
+          // Check for transaction matches with pending manual transactions BEFORE saving
+          let shouldSaveTransaction = true;
+          try {
+            const { transactionMatchingService } = await import(
+              "../services/transactionMatching"
+            );
+            const isMatched = await transactionMatchingService.checkForMatches(
+              user.uid,
+              transaction.originalTransaction
+            );
+            if (isMatched) {
+              shouldSaveTransaction = false; // Don't save bank transaction if it matched a manual one
+              console.log(
+                `Bank transaction matched manual entry, skipping save: ${transaction.name}`
+              );
+            }
+          } catch (error) {
+            console.error("Error checking for transaction matches:", error);
+          }
+
+          if (shouldSaveTransaction) {
+            await saveTransaction(newTransaction);
+            savedCount++;
+          } else {
+            // Transaction was matched with manual entry, count as processed but not saved
+            console.log(
+              `Transaction ${transaction.name} matched with manual entry, not saved as separate transaction`
+            );
+          }
 
           // Small delay to prevent overwhelming the server and show progress
           if (i < selectedTransactions.length - 1) {
