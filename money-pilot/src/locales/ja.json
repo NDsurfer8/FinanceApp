@@ -143,6 +143,7 @@
   "budget": {
     "title": "予算",
     "monthly_budget": "月次予算",
+    "spend_limits": "支出制限",
     "spent": "支出",
     "remaining": "残り",
     "categories": "カテゴリ",

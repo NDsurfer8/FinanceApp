@@ -143,6 +143,7 @@
   "budget": {
     "title": "Бюджет",
     "monthly_budget": "Месячный бюджет",
+    "spend_limits": "Лимиты Трат",
     "spent": "Потрачено",
     "remaining": "Осталось",
     "categories": "Категории",

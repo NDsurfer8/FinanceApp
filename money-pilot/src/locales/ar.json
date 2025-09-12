@@ -143,6 +143,7 @@
   "budget": {
     "title": "الميزانية",
     "monthly_budget": "الميزانية الشهرية",
+    "spend_limits": "حدود الإنفاق",
     "spent": "مُنفق",
     "remaining": "متبقي",
     "categories": "الفئات",

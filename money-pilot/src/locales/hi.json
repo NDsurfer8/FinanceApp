@@ -143,6 +143,7 @@
   "budget": {
     "title": "बजट",
     "monthly_budget": "मासिक बजट",
+    "spend_limits": "खर्च सीमाएं",
     "spent": "खर्च किया",
     "remaining": "शेष",
     "categories": "श्रेणियां",

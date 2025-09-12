@@ -143,6 +143,7 @@
   "budget": {
     "title": "Orçamento",
     "monthly_budget": "Orçamento Mensal",
+    "spend_limits": "Limites de Gasto",
     "spent": "Gasto",
     "remaining": "Restante",
     "categories": "Categorias",

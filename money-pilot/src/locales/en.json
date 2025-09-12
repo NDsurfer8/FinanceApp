@@ -312,6 +312,7 @@
     "partial_success": "Partial Success",
     "partial_success_message": "Imported {{saved}} transactions successfully.\n\n{{failed}} transactions failed to save (likely due to temporary connection issues).\n\nYou can try importing the failed transactions again.",
     "monthly_budget": "Monthly Budget",
+    "spend_limits": "Spend Limits",
     "spent": "Spent",
     "remaining": "Remaining",
     "categories": "Categories",

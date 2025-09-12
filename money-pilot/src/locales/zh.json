@@ -143,6 +143,7 @@
   "budget": {
     "title": "预算",
     "monthly_budget": "月度预算",
+    "spend_limits": "支出限制",
     "spent": "已花费",
     "remaining": "剩余",
     "categories": "分类",

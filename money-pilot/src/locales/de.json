@@ -143,6 +143,7 @@
   "budget": {
     "title": "Budget",
     "monthly_budget": "Monatsbudget",
+    "spend_limits": "Ausgabenlimits",
     "spent": "Ausgegeben",
     "remaining": "Verbleibend",
     "categories": "Kategorien",
