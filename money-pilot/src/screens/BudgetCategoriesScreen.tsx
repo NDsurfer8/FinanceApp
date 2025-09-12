@@ -603,6 +603,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       .reduce((sum, t) => sum + t.amount, 0);
 
     // Get actual spending from recurring transactions in this category
+    // Only count recurring transactions that haven't been marked as paid
     const actualRecurringSpending = recurringTransactions
       .filter((t) => {
         // Only include recurring expenses that are active in the selected month
@@ -638,7 +639,18 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
           }
         }
 
-        return true;
+        // Check if this recurring transaction has been marked as paid in the selected month
+        // If it has, we should count the individual transaction instead, not the recurring template
+        const hasPaidTransaction = monthlyTransactions.some((transaction) => {
+          return (
+            transaction.recurringTransactionId === t.id &&
+            transaction.status === "paid" &&
+            transaction.category.toLowerCase() === categoryName.toLowerCase()
+          );
+        });
+
+        // Only include this recurring transaction if it hasn't been marked as paid
+        return !hasPaidTransaction;
       })
       .reduce((sum: number, rt: any) => {
         let monthlyAmount = rt.amount;
@@ -650,7 +662,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
         return sum + monthlyAmount;
       }, 0);
 
-    // Total actual spending = one-time transactions + recurring transactions
+    // Total actual spending = one-time transactions + recurring transactions (only unmarked ones)
     const totalActualSpending = actualSpending + actualRecurringSpending;
 
     // Get the budget limit for this category

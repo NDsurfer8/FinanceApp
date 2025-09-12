@@ -137,9 +137,25 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       });
 
       const categoryRecurring = recurringTransactions.filter((rt) => {
-        return (
-          rt.type === "expense" && rt.isActive && rt.category === category.name
-        );
+        if (
+          rt.type !== "expense" ||
+          !rt.isActive ||
+          rt.category !== category.name
+        ) {
+          return false;
+        }
+
+        // Check if this recurring transaction has been marked as paid in the selected month
+        // If it has, we should count the individual transaction instead, not the recurring template
+        const hasPaidTransaction = categoryTransactions.some((transaction) => {
+          return (
+            transaction.recurringTransactionId === rt.id &&
+            transaction.status === "paid"
+          );
+        });
+
+        // Only include this recurring transaction if it hasn't been marked as paid
+        return !hasPaidTransaction;
       });
 
       const actualSpending =
