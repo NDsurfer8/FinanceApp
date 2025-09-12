@@ -340,25 +340,16 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                         activeOpacity={0.7}
                       >
                         <View style={{ flex: 1 }}>
-                          <View
+                          <Text
                             style={{
-                              flexDirection: "row",
-                              alignItems: "center",
+                              fontSize: 16,
+                              color: colors.text,
+                              fontWeight: "500",
                               marginBottom: 4,
                             }}
                           >
-                            <Text
-                              style={{
-                                fontSize: 16,
-                                color: colors.text,
-                                fontWeight: "500",
-                                flex: 1,
-                              }}
-                            >
-                              {transaction.description}
-                            </Text>
-                            <TransactionStatusBadge transaction={transaction} />
-                          </View>
+                            {transaction.description}
+                          </Text>
                           <Text
                             style={{
                               fontSize: 12,
@@ -367,6 +358,15 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                           >
                             {formatDate(transaction.date)}
                           </Text>
+                        </View>
+                        <View
+                          style={{
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginRight: 8,
+                          }}
+                        >
+                          <TransactionStatusBadge transaction={transaction} />
                         </View>
                         <View
                           style={{

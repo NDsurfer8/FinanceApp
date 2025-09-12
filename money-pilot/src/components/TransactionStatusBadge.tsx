@@ -24,8 +24,10 @@ export const TransactionStatusBadge: React.FC<TransactionStatusBadgeProps> = ({
         style={[
           styles.badge,
           {
-            backgroundColor: status.statusColor + "20",
-            borderColor: status.statusColor,
+            backgroundColor:
+              status.status === "paid" ? "#dc2626" : status.statusColor + "20",
+            borderColor:
+              status.status === "paid" ? "#b91c1c" : status.statusColor,
           },
         ]}
       >
@@ -33,11 +35,12 @@ export const TransactionStatusBadge: React.FC<TransactionStatusBadgeProps> = ({
           style={[
             styles.statusText,
             {
-              color: status.statusColor,
+              color: status.status === "paid" ? "#ffffff" : status.statusColor,
+              fontFamily: status.status === "paid" ? "System" : undefined,
             },
           ]}
         >
-          {status.statusText}
+          {status.status === "paid" ? "PAID" : status.statusText}
         </Text>
       </View>
     </View>
@@ -48,19 +51,36 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    justifyContent: "center",
   },
   badge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 3,
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 4,
+    borderWidth: 2,
+    gap: 4,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
+    minWidth: 60,
+    transform: [{ rotate: "-15deg" }],
+  },
+  icon: {
+    marginRight: 2,
   },
   statusText: {
-    fontSize: 10,
-    fontWeight: "500",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    textAlign: "center",
+    textTransform: "uppercase",
   },
 });
