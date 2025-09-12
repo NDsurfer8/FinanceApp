@@ -67,15 +67,15 @@ export const migrateAssetsToTypes = (assets: Asset[]): Asset[] => {
  */
 export const getAssetTypeLabel = (type: string): string => {
   const typeLabels: { [key: string]: string } = {
-    savings: "💾 Savings",
-    checking: "🏦 Checking",
-    investment: "📈 Investment",
-    real_estate: "🏠 Real Estate",
-    vehicle: "🚗 Vehicle",
-    other: "💼 Other",
-    asset: "💼 Asset", // Fallback for old assets
+    savings: "Savings",
+    checking: "Checking",
+    investment: "Investment",
+    real_estate: "Real Estate",
+    vehicle: "Vehicle",
+    other: "Other",
+    asset: "Asset", // Fallback for old assets
   };
-  return typeLabels[type] || "💼 Asset";
+  return typeLabels[type] || "Asset";
 };
 
 /**

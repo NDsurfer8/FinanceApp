@@ -390,20 +390,9 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           <View style={{ flex: 1, marginRight: 12 }}>
             <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
                 marginBottom: 4,
               }}
             >
-              <View
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: colors.success,
-                  marginRight: 8,
-                }}
-              />
               <Text
                 style={{
                   fontSize: 16,
@@ -420,7 +409,6 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 fontSize: 13,
                 color: colors.textSecondary,
                 fontFamily: fontFamily.regular,
-                marginLeft: 14,
               }}
             >
               {getAssetTypeLabel(asset.type)}
@@ -439,7 +427,6 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 fontWeight: "700",
                 color: colors.success,
                 fontFamily: fontFamily.bold,
-                marginRight: 4,
               }}
               numberOfLines={1}
               adjustsFontSizeToFit={true}
@@ -447,11 +434,6 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             >
               {formatCurrency(asset.balance)}
             </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={12}
-              color={colors.textTertiary}
-            />
           </View>
         </View>
       </TouchableOpacity>
@@ -487,20 +469,9 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
           <View style={{ flex: 1, marginRight: 12 }}>
             <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
                 marginBottom: 4,
               }}
             >
-              <View
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: colors.error,
-                  marginRight: 8,
-                }}
-              />
               <Text
                 style={{
                   fontSize: 16,
@@ -517,7 +488,6 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 flexDirection: "row",
                 alignItems: "center",
                 flexWrap: "wrap",
-                marginLeft: 14,
               }}
             >
               <Text
@@ -554,7 +524,6 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
                 fontWeight: "700",
                 color: colors.error,
                 fontFamily: fontFamily.bold,
-                marginRight: 4,
               }}
               numberOfLines={1}
               adjustsFontSizeToFit={true}
@@ -562,11 +531,6 @@ export const AssetsDebtsScreen: React.FC<AssetsDebtsScreenProps> = ({
             >
               {formatCurrency(debt.balance)}
             </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={12}
-              color={colors.textTertiary}
-            />
           </View>
         </View>
       </TouchableOpacity>

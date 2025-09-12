@@ -398,32 +398,26 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   {
                     value: "savings",
                     label: t("add_asset_debt.asset_types.savings"),
-                    icon: "💾",
                   },
                   {
                     value: "checking",
                     label: t("add_asset_debt.asset_types.checking"),
-                    icon: "🏦",
                   },
                   {
                     value: "investment",
                     label: t("add_asset_debt.asset_types.investment"),
-                    icon: "📈",
                   },
                   {
                     value: "real_estate",
                     label: t("add_asset_debt.asset_types.real_estate"),
-                    icon: "🏠",
                   },
                   {
                     value: "vehicle",
                     label: t("add_asset_debt.asset_types.vehicle"),
-                    icon: "🚗",
                   },
                   {
                     value: "other",
                     label: t("add_asset_debt.asset_types.other"),
-                    icon: "💼",
                   },
                 ].map((assetType) => (
                   <TouchableOpacity
@@ -449,9 +443,6 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                       setFormData({ ...formData, assetType: assetType.value })
                     }
                   >
-                    <Text style={{ fontSize: 16, marginRight: 4 }}>
-                      {assetType.icon}
-                    </Text>
                     <Text
                       style={{
                         fontSize: 14,
@@ -473,7 +464,7 @@ export const AddAssetDebtScreen: React.FC<AddAssetDebtScreenProps> = ({
                   marginTop: 8,
                 }}
               >
-                💡 {t("add_asset_debt.savings_accounts_note")}
+                {t("add_asset_debt.savings_accounts_note")}
               </Text>
             </View>
           )}
