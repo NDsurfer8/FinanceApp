@@ -234,29 +234,16 @@ class AIFinancialAdvisorService {
           })) || [],
 
         // Regular transactions with categories for complete analysis
-        // Exclude individual paid transactions that have matching recurring transactions
+        // Exclude transactions that were created from recurring transactions and marked as paid
         transactions: (snapshot.transactions || [])
           .filter((t) => {
-            // If this is a manual paid transaction, check if it has a matching recurring transaction
-            if (t.isManual && t.status === "paid") {
-              const hasMatchingRecurringTransaction = (
-                snapshot.recurringTransactions || []
-              ).some((rt) => {
-                return (
-                  rt.amount === t.amount &&
-                  rt.category === t.category &&
-                  rt.type === t.type &&
-                  rt.isActive
-                );
-              });
-
-              // If there's a matching recurring transaction, exclude this individual transaction
-              if (hasMatchingRecurringTransaction) {
-                console.log(
-                  `🔄 AI: Excluding individual paid transaction "${t.description}" - using recurring transaction instead`
-                );
-                return false;
-              }
+            // If this transaction was created from a recurring transaction and marked as paid,
+            // exclude it because the AI should see the recurring transaction template instead
+            if (t.recurringTransactionId && t.status === "paid") {
+              console.log(
+                `🔄 AI: Excluding paid transaction created from recurring "${t.description}" - using recurring transaction instead`
+              );
+              return false;
             }
 
             return true;

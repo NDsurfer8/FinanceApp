@@ -117,49 +117,17 @@ class TransactionMatchingService {
   }
 
   /**
-   * Get all manual transactions for a user (no bank ID = manual)
+   * Get all recurring transactions that should be marked as paid when matched
+   * Individual transactions are usually already paid when entered, so we only track recurring ones
    */
   private async getPendingTransactions(
     userId: string
   ): Promise<PendingTransaction[]> {
     const pendingTransactions: PendingTransaction[] = [];
 
-    // Check all transactions for manual ones (no bank ID = manual)
-    const transactionsRef = ref(db, `users/${userId}/transactions`);
-    const transactionsSnapshot = await get(transactionsRef);
-
-    if (transactionsSnapshot.exists()) {
-      const transactions = transactionsSnapshot.val();
-      console.log(
-        `📋 Checking ${
-          Object.keys(transactions).length
-        } total transactions for manual ones`
-      );
-
-      for (const [id, transaction] of Object.entries(transactions)) {
-        const tx = transaction as any;
-        console.log(
-          `📋 Transaction ${id}: isManual=${tx.isManual}, bankTransactionId=${tx.bankTransactionId}, isAutoImported=${tx.isAutoImported}, description="${tx.description}", amount=${tx.amount}, recurringTransactionId=${tx.recurringTransactionId}`
-        );
-
-        // Manual transaction = no bankTransactionId AND no isAutoImported
-        if (!tx.bankTransactionId && !tx.isAutoImported) {
-          console.log(`✅ Found manual transaction: "${tx.description}"`);
-          pendingTransactions.push({
-            id,
-            ...tx,
-            isManual: true,
-            status: "paid", // Will be "paid" when matched with bank transaction
-          });
-        } else {
-          console.log(
-            `❌ Skipping transaction "${tx.description}" - has bankTransactionId or isAutoImported`
-          );
-        }
-      }
-    } else {
-      console.log("📋 No transactions found in database");
-    }
+    console.log(
+      "📋 Only checking recurring transactions for pending status - individual transactions are usually already paid when entered"
+    );
 
     // Also check recurring transactions that should be pending
     const recurringTransactionsRef = ref(
@@ -652,14 +620,16 @@ class TransactionMatchingService {
 
   /**
    * Get transaction status for display
+   * Only show "paid" status for transactions created from recurring transactions
    */
   getTransactionStatus(transaction: any): {
     status: "paid" | "normal";
     statusText: string;
     statusColor: string;
   } {
-    // If it's a manual transaction that has been marked as paid (either by bank match or manually), show as "paid"
-    if (transaction.isManual && transaction.status === "paid") {
+    // Only show "paid" status for transactions that were created from recurring transactions
+    // Individual transactions are usually already paid when entered, so they don't need a "paid" status
+    if (transaction.recurringTransactionId && transaction.status === "paid") {
       return {
         status: "paid",
         statusText: "Paid",
@@ -667,7 +637,7 @@ class TransactionMatchingService {
       };
     }
 
-    // All other transactions (bank transactions, unmatched manual transactions) show as normal
+    // All other transactions (bank transactions, individual manual transactions) show as normal
     return {
       status: "normal",
       statusText: transaction.isManual ? "Manual" : "Bank Transaction",

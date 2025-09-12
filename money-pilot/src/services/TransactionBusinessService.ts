@@ -130,7 +130,8 @@ export class TransactionBusinessService {
           amount: monthlyAmount,
           type: formData.type,
           category: formData.category,
-          frequency: formData.frequency,
+          frequency: "monthly", // Always save as monthly in database
+          originalFrequency: formData.frequency, // Store original frequency for display
           endDate: formData.endDate,
           updatedAt: Date.now(),
         };

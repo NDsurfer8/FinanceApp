@@ -45,6 +45,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
   iconColor,
   transactions,
   projectedTransactions = [],
+  recurringTransactions = [],
   isCollapsed,
   onToggleCollapse,
   onTransactionPress,
@@ -59,6 +60,22 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
   const { refreshTransactions } = useData();
   const { t } = useTranslation();
   const { formatCurrency, selectedCurrency } = useCurrency();
+
+  // Helper function to get frequency from recurring transaction
+  const getFrequencyFromRecurringTransaction = (
+    transaction: Transaction
+  ): string | null => {
+    if (!transaction.recurringTransactionId || !recurringTransactions.length) {
+      return null;
+    }
+
+    const recurringTx = recurringTransactions.find(
+      (rt) => rt.id === transaction.recurringTransactionId
+    );
+
+    // Use originalFrequency for display, fallback to frequency if originalFrequency not available
+    return recurringTx?.originalFrequency || recurringTx?.frequency || null;
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
@@ -374,54 +391,56 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                           }}
                         >
                           <TransactionStatusBadge transaction={transaction} />
-                          {transaction.isManual && !transaction.status && (
-                            <TouchableOpacity
-                              style={{
-                                backgroundColor: "#6b7280",
-                                paddingHorizontal: 8,
-                                paddingVertical: 4,
-                                borderRadius: 6,
-                                marginTop: 4,
-                                opacity: 0.7,
-                              }}
-                              onPress={async () => {
-                                if (user && transaction.id) {
-                                  try {
-                                    // Mark as paid manually
-                                    const transactionRef = ref(
-                                      db,
-                                      `users/${user.uid}/transactions/${transaction.id}`
-                                    );
-                                    await update(transactionRef, {
-                                      status: "paid",
-                                      matchedAt: Date.now(),
-                                    });
-                                    console.log(
-                                      `✅ Manually marked transaction ${transaction.id} as paid`
-                                    );
-
-                                    // Refresh transactions to update UI
-                                    await refreshTransactions();
-                                  } catch (error) {
-                                    console.error(
-                                      "Error marking as paid:",
-                                      error
-                                    );
-                                  }
-                                }
-                              }}
-                            >
-                              <Text
+                          {transaction.recurringTransactionId &&
+                            !transaction.status &&
+                            transaction.type === "expense" && (
+                              <TouchableOpacity
                                 style={{
-                                  color: "#f3f4f6",
-                                  fontSize: 10,
-                                  fontWeight: "500",
+                                  backgroundColor: "#6b7280",
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 4,
+                                  borderRadius: 6,
+                                  marginTop: 4,
+                                  opacity: 0.7,
+                                }}
+                                onPress={async () => {
+                                  if (user && transaction.id) {
+                                    try {
+                                      // Mark as paid manually
+                                      const transactionRef = ref(
+                                        db,
+                                        `users/${user.uid}/transactions/${transaction.id}`
+                                      );
+                                      await update(transactionRef, {
+                                        status: "paid",
+                                        matchedAt: Date.now(),
+                                      });
+                                      console.log(
+                                        `✅ Manually marked transaction ${transaction.id} as paid`
+                                      );
+
+                                      // Refresh transactions to update UI
+                                      await refreshTransactions();
+                                    } catch (error) {
+                                      console.error(
+                                        "Error marking as paid:",
+                                        error
+                                      );
+                                    }
+                                  }
                                 }}
                               >
-                                Mark Paid
-                              </Text>
-                            </TouchableOpacity>
-                          )}
+                                <Text
+                                  style={{
+                                    color: "#f3f4f6",
+                                    fontSize: 10,
+                                    fontWeight: "500",
+                                  }}
+                                >
+                                  Mark Paid
+                                </Text>
+                              </TouchableOpacity>
+                            )}
                         </View>
                         <View
                           style={{
@@ -437,7 +456,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                                 marginRight: 6,
                                 justifyContent: "center",
                                 alignItems: "center",
-                                width: 18,
+                                minWidth: 18,
                                 height: 18,
                               }}
                             >
@@ -450,6 +469,36 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                                     : colors.error
                                 }
                               />
+                              {(() => {
+                                const frequency =
+                                  getFrequencyFromRecurringTransaction(
+                                    transaction
+                                  );
+                                return (
+                                  frequency && (
+                                    <Text
+                                      style={{
+                                        fontSize: 8,
+                                        color: colors.textSecondary,
+                                        marginTop: 1,
+                                        textAlign: "center",
+                                      }}
+                                    >
+                                      {frequency === "weekly"
+                                        ? "W"
+                                        : frequency === "biweekly"
+                                        ? "BW"
+                                        : frequency === "monthly"
+                                        ? "M"
+                                        : frequency === "quarterly"
+                                        ? "Q"
+                                        : frequency === "yearly"
+                                        ? "Y"
+                                        : "R"}
+                                    </Text>
+                                  )
+                                );
+                              })()}
                             </View>
                           )}
                           <Text

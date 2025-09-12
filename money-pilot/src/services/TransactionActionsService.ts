@@ -21,6 +21,7 @@ export interface RecurringTransactionTemplate {
   type: "income" | "expense";
   category: string;
   frequency: "weekly" | "biweekly" | "monthly";
+  originalFrequency?: "weekly" | "biweekly" | "monthly";
   startDate: number;
   endDate?: number;
   isActive: boolean;
@@ -172,7 +173,8 @@ export class TransactionActionsService {
       amount: monthlyAmount,
       type: formData.type,
       category: formData.category,
-      frequency: formData.frequency,
+      frequency: "monthly", // Always save as monthly in database
+      originalFrequency: formData.frequency, // Store original frequency for display
       startDate: formData.date,
       endDate: formData.endDate,
       isActive: true,

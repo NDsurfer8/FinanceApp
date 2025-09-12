@@ -172,6 +172,12 @@ export interface RecurringTransaction {
   type: "income" | "expense";
   category: string;
   frequency: "weekly" | "biweekly" | "monthly" | "quarterly" | "yearly";
+  originalFrequency?:
+    | "weekly"
+    | "biweekly"
+    | "monthly"
+    | "quarterly"
+    | "yearly"; // Store original frequency for display
   startDate: number;
   endDate?: number; // Optional end date
   isActive: boolean;

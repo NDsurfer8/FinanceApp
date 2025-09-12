@@ -680,7 +680,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     const targetMonthNum = targetMonth.getMonth();
     const targetYear = targetMonth.getFullYear();
 
-    // Exclude individual paid transactions that have matching recurring transactions
+    // Exclude transactions that were created from recurring transactions and marked as paid
     const monthlyTransactions = transactions.filter((transaction) => {
       const transactionDate = new Date(transaction.date);
       const isInSelectedMonth =
@@ -689,26 +689,13 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
 
       if (!isInSelectedMonth) return false;
 
-      // If this is a manual paid transaction, check if it has a matching recurring transaction
-      if (transaction.isManual && transaction.status === "paid") {
-        const hasMatchingRecurringTransaction = recurringTransactions.some(
-          (rt) => {
-            return (
-              rt.amount === transaction.amount &&
-              rt.category === transaction.category &&
-              rt.type === transaction.type &&
-              rt.isActive
-            );
-          }
+      // If this transaction was created from a recurring transaction and marked as paid,
+      // exclude it because we should use the recurring transaction template instead
+      if (transaction.recurringTransactionId && transaction.status === "paid") {
+        console.log(
+          `🔄 Snapshot: Excluding paid transaction created from recurring "${transaction.description}" - using recurring transaction instead`
         );
-
-        // If there's a matching recurring transaction, exclude this individual transaction
-        if (hasMatchingRecurringTransaction) {
-          console.log(
-            `🔄 Snapshot: Excluding individual paid transaction "${transaction.description}" - using recurring transaction instead`
-          );
-          return false;
-        }
+        return false;
       }
 
       return true;
