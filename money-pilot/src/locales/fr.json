@@ -1031,11 +1031,11 @@
     "step_counter": "Étape {{current}} sur {{total}}",
     "step1": {
       "title": "Suivez vos dépenses",
-      "description": "Connectez votre banque pour un suivi automatique — ou ajoutez des dépenses manuellement. Facile dans tous les cas !"
+      "description": "Connectez votre banque pour un suivi automatique — ou ajoutez des dépenses manuellement pendant que vous dépensez. Facile dans tous les cas !"
     },
     "step2": {
       "title": "Construisez votre budget",
-      "description": "Définissez des limites pour les catégories et voyez votre montant sûr à dépenser en temps réel."
+      "description": "Définissez des limites de dépenses pour la nourriture, les divertissements et autres catégories pour recevoir des alertes avant de dépasser votre budget."
     },
     "step3": {
       "title": "Définissez un objectif",
@@ -1047,7 +1047,11 @@
     },
     "step5": {
       "title": "Rencontrez Vectra",
-      "description": "Votre coach financier IA. Demandez n'importe quoi — de \"Suis-je prêt à acheter une maison ?\" à \"Combien puis-je économiser ce mois-ci ?\""
+      "description": "Votre coach financier IA. Demandez n'importe quoi — de \"Suis-je prêt à acheter une maison ?\" à \"Combien puis-je économiser ce mois-ci ?\" Tous vos revenus, dépenses et objectifs sont analysés et vous obtenez des conseils clairs et exploitables."
+    },
+    "step6": {
+      "title": "Ajoutez Revenus et Dépenses",
+      "description": "Commençons par ajouter vos revenus et dépenses. Ensuite, demandez à Vectra votre situation financière et commencez votre voyage vers la liberté financière."
     },
     "complete_setup": "Terminer la Configuration",
     "next_step": "Étape Suivante",

@@ -60,6 +60,12 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
       icon: "chatbubble-ellipses-outline" as keyof typeof Ionicons.glyphMap,
       action: "askAI",
     },
+    {
+      title: t("setup_wizard.step6.title"),
+      description: t("setup_wizard.step6.description"),
+      icon: "add-circle-outline" as keyof typeof Ionicons.glyphMap,
+      action: "addTransaction",
+    },
   ];
 
   const handleStepComplete = () => {

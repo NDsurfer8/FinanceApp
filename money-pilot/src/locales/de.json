@@ -1031,11 +1031,11 @@
     "step_counter": "Schritt {{current}} von {{total}}",
     "step1": {
       "title": "Verfolgen Sie Ihre Ausgaben",
-      "description": "Verknüpfen Sie Ihre Bank für automatische Verfolgung — oder fügen Sie Ausgaben manuell hinzu. Beides ist einfach!"
+      "description": "Verknüpfen Sie Ihre Bank für automatische Verfolgung — oder fügen Sie Ausgaben manuell hinzu, während Sie ausgeben. Beides ist einfach!"
     },
     "step2": {
       "title": "Erstellen Sie Ihr Budget",
-      "description": "Setzen Sie Grenzen für Kategorien und sehen Sie Ihr sicheres Ausgabegeld in Echtzeit."
+      "description": "Setzen Sie Ausgabenlimits für Lebensmittel, Unterhaltung und andere Kategorien, um Warnungen zu erhalten, bevor Sie Ihr Budget überschreiten."
     },
     "step3": {
       "title": "Setzen Sie ein Ziel",
@@ -1047,7 +1047,11 @@
     },
     "step5": {
       "title": "Lernen Sie Vectra kennen",
-      "description": "Ihr KI-Finanzcoach. Fragen Sie alles — von \"Bin ich bereit, ein Haus zu kaufen?\" bis \"Wie viel kann ich diesen Monat sparen?\""
+      "description": "Ihr KI-Finanzcoach. Fragen Sie alles — von \"Bin ich bereit, ein Haus zu kaufen?\" bis \"Wie viel kann ich diesen Monat sparen?\" Alle Ihre Einkommen, Ausgaben und Ziele werden analysiert und Sie erhalten klare, umsetzbare Tipps."
+    },
+    "step6": {
+      "title": "Einkommen und Ausgaben hinzufügen",
+      "description": "Beginnen wir damit, Ihre Einkommen und Ausgaben hinzuzufügen. Fragen Sie dann Vectra nach Ihrer finanziellen Situation und beginnen Sie Ihre Reise zur finanziellen Freiheit."
     },
     "complete_setup": "Setup Abschließen",
     "next_step": "Nächster Schritt",

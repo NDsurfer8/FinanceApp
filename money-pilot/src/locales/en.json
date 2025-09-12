@@ -100,11 +100,11 @@
     "step_counter": "Step {{current}} of {{total}}",
     "step1": {
       "title": "Track Your Spending",
-      "description": "Link your bank for automatic tracking — or add expenses manually. Easy either way!"
+      "description": "Link your bank for automatic tracking — or add expenses manually while you spend. Easy either way!"
     },
     "step2": {
       "title": "Build Your Budget",
-      "description": "Set limits for categories and see your safe-to-spend in real time."
+      "description": "Set spending limits for food, entertainment, and other categories to get alerts before you go over budget."
     },
     "step3": {
       "title": "Set a Goal",
@@ -116,7 +116,11 @@
     },
     "step5": {
       "title": "Meet Vectra",
-      "description": "Your AI money coach. Ask anything — from \"Am I ready to buy a house?\" to \"How much can I save this month?\""
+      "description": "Your AI money coach. Ask anything — from \"Am I ready to buy a house?\" to \"How much can I save this month?\" All your income, expenses, and goals are analyzed and you get clear, actionable tips."
+    },
+    "step6": {
+      "title": "Add Income & Expenses",
+      "description": "Let's start by adding your income and expenses. Then, ask Vectra about your financial situation and start your journey to financial freedom."
     },
     "complete_setup": "Complete Setup",
     "next_step": "Next Step",
