@@ -658,12 +658,8 @@ class TransactionMatchingService {
     statusText: string;
     statusColor: string;
   } {
-    // If it's a manual transaction that has been matched with a bank transaction, show as "paid"
-    if (
-      transaction.isManual &&
-      transaction.status === "paid" &&
-      transaction.bankTransactionId
-    ) {
+    // If it's a manual transaction that has been marked as paid (either by bank match or manually), show as "paid"
+    if (transaction.isManual && transaction.status === "paid") {
       return {
         status: "paid",
         statusText: "Paid",

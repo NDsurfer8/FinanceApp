@@ -13,6 +13,11 @@ import { useCurrency } from "../contexts/CurrencyContext";
 import { HelpfulTooltip } from "./HelpfulTooltip";
 import { TransactionStatusBadge } from "./TransactionStatusBadge";
 import { Transaction } from "../services/userData";
+import { transactionMatchingService } from "../services/transactionMatching";
+import { useAuth } from "../hooks/useAuth";
+import { ref, update } from "firebase/database";
+import { db } from "../services/firebase";
+import { useData } from "../contexts/DataContext";
 import {
   formatAmountWithFilteredCurrency,
   formatAmountWithoutSymbol,
@@ -50,6 +55,8 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
   filteredCurrency = null,
 }) => {
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const { refreshTransactions } = useData();
   const { t } = useTranslation();
   const { formatCurrency, selectedCurrency } = useCurrency();
   const [searchQuery, setSearchQuery] = useState("");
@@ -367,6 +374,54 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                           }}
                         >
                           <TransactionStatusBadge transaction={transaction} />
+                          {transaction.isManual && !transaction.status && (
+                            <TouchableOpacity
+                              style={{
+                                backgroundColor: "#6b7280",
+                                paddingHorizontal: 8,
+                                paddingVertical: 4,
+                                borderRadius: 6,
+                                marginTop: 4,
+                                opacity: 0.7,
+                              }}
+                              onPress={async () => {
+                                if (user && transaction.id) {
+                                  try {
+                                    // Mark as paid manually
+                                    const transactionRef = ref(
+                                      db,
+                                      `users/${user.uid}/transactions/${transaction.id}`
+                                    );
+                                    await update(transactionRef, {
+                                      status: "paid",
+                                      matchedAt: Date.now(),
+                                    });
+                                    console.log(
+                                      `✅ Manually marked transaction ${transaction.id} as paid`
+                                    );
+
+                                    // Refresh transactions to update UI
+                                    await refreshTransactions();
+                                  } catch (error) {
+                                    console.error(
+                                      "Error marking as paid:",
+                                      error
+                                    );
+                                  }
+                                }
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  color: "#f3f4f6",
+                                  fontSize: 10,
+                                  fontWeight: "500",
+                                }}
+                              >
+                                Mark Paid
+                              </Text>
+                            </TouchableOpacity>
+                          )}
                         </View>
                         <View
                           style={{
