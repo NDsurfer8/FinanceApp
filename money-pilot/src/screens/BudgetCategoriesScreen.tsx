@@ -292,9 +292,6 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
             JSON.stringify(savedCategories) !== JSON.stringify(uniqueCategories)
           ) {
             await saveBudgetCategories(uniqueCategories, user.uid);
-            console.log(
-              "Categories migrated to updated names and deduplicated"
-            );
           }
 
           // Only add missing default categories for new users (when no custom categories exist)
@@ -417,7 +414,6 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
             // Only save if new categories were actually added
             if (mergedCategories.length > uniqueCategories.length) {
               await saveBudgetCategories(mergedCategories, user.uid);
-              console.log("Added missing default categories");
             }
 
             setCategories(mergedCategories);

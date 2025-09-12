@@ -194,9 +194,6 @@ class PlaidService {
 
     if (timeSinceLastRequest < this.GLOBAL_RATE_LIMIT_MS) {
       const waitTime = this.GLOBAL_RATE_LIMIT_MS - timeSinceLastRequest;
-      // console.log(
-      //   `🕐 Global rate limit: waiting ${waitTime}ms before next request`
-      // );
       await new Promise((resolve) => setTimeout(resolve, waitTime));
     }
 
@@ -322,17 +319,9 @@ class PlaidService {
 
       // If it's been more than 30 seconds since first attempt, allow one more try
       if (timeSinceFirstAttempt > this.GRACEFUL_DEGRADATION_TIME) {
-        // console.log(
-        //   `🔄 Graceful degradation: Allowing additional attempt after ${Math.ceil(
-        //     timeSinceFirstAttempt / 1000
-        //   )}s`
-        // );
         this.linkAttemptCount = Math.max(0, this.linkAttemptCount - 2); // Reset some attempts
       } else {
         const waitTime = Math.ceil(this.LINK_ATTEMPT_RESET_TIME / 1000);
-        // console.log(
-        //   `🚨 Too many link attempts (${this.linkAttemptCount}/${this.MAX_LINK_ATTEMPTS}). Please wait ${waitTime} seconds.`
-        // );
         throw new Error(
           `Too many connection attempts. Please wait ${waitTime} seconds and try again.`
         );
@@ -344,9 +333,7 @@ class PlaidService {
       const waitTime = Math.ceil(
         (this.LINK_TOKEN_DEBOUNCE - timeSinceLastCall) / 1000
       );
-      // console.log(
-      //   `⏳ Rate limited: Please wait ${waitTime} seconds before trying again`
-      // );
+
       throw new Error(`Please wait ${waitTime} seconds before trying again`);
     }
 
@@ -591,9 +578,7 @@ class PlaidService {
       // Check if we've exceeded maximum attempts for success flow
       if (this.successFlowAttemptCount >= this.MAX_SUCCESS_FLOW_ATTEMPTS) {
         const waitTime = Math.ceil(this.LINK_ATTEMPT_RESET_TIME / 1000);
-        // console.log(
-        //   `🚨 Too many success flow attempts (${this.successFlowAttemptCount}/${this.MAX_SUCCESS_FLOW_ATTEMPTS}). Please wait ${waitTime} seconds.`
-        // );
+
         throw new Error(
           `Too many connection attempts. Please wait ${waitTime} seconds and try again.`
         );
@@ -604,9 +589,7 @@ class PlaidService {
         const waitTime = Math.ceil(
           (this.SUCCESS_FLOW_DEBOUNCE - timeSinceLastSuccessFlow) / 1000
         );
-        // console.log(
-        //   `⏳ Success flow rate limited: Please wait ${waitTime} seconds before trying again`
-        // );
+
         throw new Error(`Please wait ${waitTime} seconds before trying again`);
       }
 
@@ -638,17 +621,14 @@ class PlaidService {
           // First bank: Chase Bank
           accessToken = "test_access_token_12345";
           itemId = "test_item_id_67890";
-          // console.log("Test mode: Selecting Chase Bank (first bank)");
         } else if (connectionCount === 1) {
           // Second bank: Bank of America
           accessToken = "test_access_token_67890";
           itemId = "test_item_id_11111";
-          // console.log("Test mode: Selecting Bank of America (second bank)");
         } else if (connectionCount === 2) {
           // Third bank: Wells Fargo
           accessToken = "test_access_token_11111";
           itemId = "test_item_id_22222";
-          // console.log("Test mode: Selecting Wells Fargo (third bank)");
         } else {
           // Additional banks: Use timestamp-based ID to ensure uniqueness
           accessToken = "test_access_token_12345";
@@ -828,16 +808,13 @@ class PlaidService {
     try {
       // Test link token creation
       const linkToken = await this.initializePlaidLink();
-      // console.log("✅ Link token created successfully");
 
       // Test session creation
       await this.createPlaidLinkSession(linkToken);
-      // console.log("✅ Link session created successfully");
 
       // Reset session state
       this.isLinkInitialized = false;
 
-      // console.log("✅ Plaid Link flow test completed successfully");
       return true;
     } catch (error) {
       console.error("❌ Plaid Link flow test failed:", error);
@@ -1412,8 +1389,6 @@ class PlaidService {
 
       // Remove legacy data
       await remove(legacyRef);
-
-      // console.log("✅ Migrated legacy Plaid connection to new format");
     } catch (error) {
       console.error("Error migrating legacy connection:", error);
     }
@@ -1719,7 +1694,6 @@ class PlaidService {
     this.rateLimitAttempts++;
 
     if (this.rateLimitAttempts > 3) {
-      // console.log("🚨 Maximum RATE_LIMIT retry attempts reached. Stopping.");
       throw new Error("Too many rate limit errors. Please try again later.");
     }
 
@@ -1761,7 +1735,6 @@ class PlaidService {
 
           // Remove from local state
           this.connections.delete(itemId);
-          // console.log(`✅ Disconnected bank: ${connection.institution.name}`);
         }
       } else {
         // Disconnect all banks
@@ -1772,7 +1745,6 @@ class PlaidService {
             `users/${this.userId}/plaid_connections/${connection.itemId}`
           );
           await remove(connectionRef);
-          // console.log(`✅ Disconnected bank: ${connection.institution.name}`);
         }
 
         // Clear all local state
@@ -1816,10 +1788,8 @@ class PlaidService {
 
         // If we successfully loaded connections, return true to retry the operation
         if (this.hasAnyBankConnected()) {
-          // console.log("✅ Successfully refreshed Plaid connections");
           return true;
         } else {
-          // console.log("❌ No valid connections found, user needs to reconnect");
           return false;
         }
       } catch (refreshError) {
@@ -1899,8 +1869,6 @@ class PlaidService {
       this.isProcessingQueue = false;
       this.isLinkInitialized = false;
       this.userId = null;
-
-      // console.log("✅ All Plaid connections cleared for account deletion");
     } catch (error) {
       console.error("Error clearing connections for account deletion:", error);
       // Don't throw - this is for cleanup scenarios
@@ -1941,13 +1909,11 @@ class PlaidService {
 
         if (updatePromises.length > 0) {
           await Promise.all(updatePromises);
-          console.log("PlaidService: Updated multiple bank statuses:", updates);
         }
       } else {
         // Fallback to legacy single-bank structure for backward compatibility
         const plaidRef = ref(db, `users/${this.userId}/plaid`);
         await update(plaidRef, updates);
-        console.log("PlaidService: Updated legacy Plaid status:", updates);
       }
     } catch (error) {
       console.error("PlaidService: Error updating Plaid status:", error);

@@ -41,7 +41,6 @@ export const removeGroupSharedData = async (groupId: string): Promise<void> => {
   try {
     const sharedDataRef = ref(db, `sharedFinanceData/${groupId}`);
     await remove(sharedDataRef);
-    // console.log("✅ Removed all shared data for group:", groupId);
   } catch (error: any) {
     if (handlePermissionError(error, "skipping group shared data removal")) {
       return;

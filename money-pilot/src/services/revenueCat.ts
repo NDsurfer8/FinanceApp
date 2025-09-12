@@ -90,10 +90,6 @@ class RevenueCatService {
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        console.log(
-          `RevenueCat initialization attempt ${attempt}/${MAX_RETRIES}`
-        );
-
         // Check network connectivity first
         const isConnected = await checkNetworkConnectivity();
         if (!isConnected) {
@@ -131,7 +127,6 @@ class RevenueCatService {
         });
 
         if (attempt < MAX_RETRIES) {
-          console.log(`Retrying in ${RETRY_DELAY}ms...`);
           await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
         }
       }
@@ -142,14 +137,13 @@ class RevenueCatService {
       "RevenueCat initialization failed after all attempts:",
       lastError
     );
-    console.log("Enabling offline mode for RevenueCat");
+
     this.isOfflineMode = true;
     this.isInitialized = true; // Mark as initialized to prevent retries
   }
 
   async setUser(userId: string): Promise<void> {
     if (this.isOfflineMode) {
-      console.log("RevenueCat: Offline mode - skipping user set");
       return;
     }
 
@@ -184,18 +178,15 @@ class RevenueCatService {
 
   async getOfferings(): Promise<PurchasesOffering | null> {
     if (this.isOfflineMode) {
-      console.log("RevenueCat: Offline mode - returning null offerings");
       return null;
     }
 
     try {
-      console.log("RevenueCat: Fetching offerings...");
       const startTime = Date.now();
 
       const offerings = await Purchases.getOfferings();
 
       const fetchTime = Date.now() - startTime;
-      console.log(`RevenueCat: Offerings fetched in ${fetchTime}ms`);
 
       console.log("RevenueCat: Offerings fetched successfully:", {
         current: offerings.current?.identifier,
@@ -221,7 +212,7 @@ class RevenueCatService {
       const { customerInfo } = await Purchases.purchasePackage(
         packageToPurchase
       );
-      console.log("Purchase successful:", customerInfo);
+
       return customerInfo;
     } catch (error) {
       console.error("Purchase failed:", error);
@@ -294,13 +285,6 @@ class RevenueCatService {
         ? await this.refreshCustomerInfo()
         : await this.getCustomerInfo();
 
-      // Debug: Log all available entitlements
-      console.log(
-        "Available entitlements:",
-        Object.keys(customerInfo.entitlements.active)
-      );
-      console.log("Active entitlements:", customerInfo.entitlements.active);
-
       // Check for both possible entitlement names
       const isPremium =
         customerInfo.entitlements.active["premium"] !== undefined ||
@@ -309,9 +293,6 @@ class RevenueCatService {
       const premiumEntitlement =
         customerInfo.entitlements.active["premium"] ||
         customerInfo.entitlements.active["premium_monthly"];
-
-      console.log("Premium entitlement found:", premiumEntitlement);
-      console.log("Is premium:", isPremium);
 
       // Check introductory offer eligibility
       const isEligibleForIntroOffer = await this.checkIntroOfferEligibility();
@@ -362,16 +343,6 @@ class RevenueCatService {
       // Check if user has any subscription transactions (past or present)
       const hasSubscriptionHistory =
         Object.keys(customerInfo.allPurchaseDates).length > 0;
-
-      console.log("Intro offer eligibility check:", {
-        hasActiveSubscription,
-        hasNonSubscriptionPurchases,
-        hasSubscriptionHistory,
-        allPurchaseDates: Object.keys(customerInfo.allPurchaseDates),
-        nonSubscriptionTransactions: Object.keys(
-          customerInfo.nonSubscriptionTransactions
-        ),
-      });
 
       // User is eligible for intro offer if they have no active subscriptions,
       // no lifetime purchases, and no subscription history
@@ -485,13 +456,6 @@ class RevenueCatService {
     try {
       // Add listener for customer info updates
       Purchases.addCustomerInfoUpdateListener((customerInfo) => {
-        console.log("RevenueCat: Customer info updated", {
-          entitlements: Object.keys(customerInfo.entitlements.active),
-          isPremium:
-            customerInfo.entitlements.active["premium"] ||
-            customerInfo.entitlements.active["premium_monthly"],
-        });
-
         // Notify all listeners
         this.customerInfoUpdateListeners.forEach((listener) => {
           try {

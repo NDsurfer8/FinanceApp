@@ -467,9 +467,6 @@ export const updateWeeklyStreak = async (userId: string): Promise<void> => {
       streakData.lastWeek = currentWeek;
 
       await AsyncStorage.setItem(key, JSON.stringify(streakData));
-      console.log(
-        `📅 Updated weekly streak: ${streakData.currentStreak} weeks`
-      );
     }
   } catch (error) {
     console.error("Error updating weekly streak:", error);
@@ -512,9 +509,6 @@ const getUserAccountAge = async (userId: string): Promise<number> => {
       `simulated_createdAt_${userId}`
     );
     if (simulatedDate) {
-      console.log(
-        `⚠️ Using simulated date: ${simulatedDate} (this should be cleared for production)`
-      );
       const createdDate = new Date(simulatedDate);
       const now = new Date();
 
@@ -649,7 +643,6 @@ export const processMonthAchievements = async (
   try {
     // Only process completed months
     if (!isMonthComplete(month)) {
-      console.log("Skipping achievement processing for current month:", month);
       return [];
     }
 
@@ -664,14 +657,6 @@ export const processMonthAchievements = async (
       // Calculate current streak using historical data
       const currentStreak = await calculateCurrentStreak(userId, month);
 
-      console.log(
-        `🎯 Processing achievements for user with ${activeCategories.length} active categories and ${weeklyStreak} week streak:`,
-        activeCategories
-      );
-      console.log(
-        `📅 User account age: ${accountAge} months, Current streak: ${currentStreak}`
-      );
-
       // Award streak achievements based on account age
       // Only award if user has had the app long enough AND has the required streak
       if (
@@ -679,9 +664,6 @@ export const processMonthAchievements = async (
         currentStreak >= 1 &&
         !hasAchievement(progress, "streak_1")
       ) {
-        console.log(
-          `🎉 Awarding streak_1 achievement: accountAge=${accountAge}, currentStreak=${currentStreak}`
-        );
         newAchievements.push(await createAchievement("streak_1", userId));
       } else if (currentStreak >= 1) {
         console.log(
@@ -1026,7 +1008,6 @@ export const getDisplayStreak = async (
 export const clearSimulatedDates = async (userId: string): Promise<void> => {
   try {
     await AsyncStorage.removeItem(`simulated_createdAt_${userId}`);
-    console.log(`🧹 Cleared simulated date for user ${userId}`);
   } catch (error) {
     console.error("Error clearing simulated date:", error);
   }
@@ -1065,11 +1046,6 @@ export const cleanupIrrelevantAchievements = async (
     if (relevantAchievements.length !== progress.achievements.length) {
       progress.achievements = relevantAchievements;
       await saveAchievementProgress(progress);
-      console.log(
-        `🧹 Cleaned up ${
-          progress.achievements.length - relevantAchievements.length
-        } irrelevant achievements`
-      );
     }
   } catch (error) {
     console.error("Error cleaning up irrelevant achievements:", error);

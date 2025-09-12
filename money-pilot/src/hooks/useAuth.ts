@@ -27,9 +27,6 @@ export const useAuth = () => {
         try {
           const isValid = await isUserSessionValid();
           if (!isValid) {
-            console.log(
-              "Invalid session detected, attempting to refresh token"
-            );
             const refreshed = await refreshUserToken();
             if (!refreshed) {
               // Session is truly invalid, clear the user

@@ -2656,15 +2656,6 @@ export const isNewUser = async (user: any): Promise<boolean> => {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     const isNew = createdAtDate > fiveMinutesAgo;
 
-    // console.log("🔍 isNewUser Debug:", {
-    //   userId: user.uid,
-    //   createdAt,
-    //   createdAtDate: createdAtDate.toISOString(),
-    //   thirtyMinutesAgo: thirtyMinutesAgo.toISOString(),
-    //   isNew,
-    //   timeDiff: Date.now() - createdAtDate.getTime(),
-    // });
-
     return isNew;
   } catch (error) {
     console.error("Error checking if user is new:", error);

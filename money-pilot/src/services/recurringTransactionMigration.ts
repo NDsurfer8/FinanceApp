@@ -38,7 +38,6 @@ export class RecurringTransactionMigration {
           });
 
           migrated++;
-          console.log(`Migrated recurring transaction: ${recurring.name}`);
         } catch (error) {
           console.error(
             `Error migrating recurring transaction ${recurring.name}:`,
@@ -48,9 +47,6 @@ export class RecurringTransactionMigration {
         }
       }
 
-      console.log(
-        `Migration completed. Migrated: ${migrated}, Errors: ${errors}`
-      );
       return { migrated, errors };
     } catch (error) {
       console.error("Migration failed:", error);

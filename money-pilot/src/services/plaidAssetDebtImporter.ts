@@ -214,7 +214,6 @@ class PlaidAssetDebtImporter {
     try {
       const assetRef = ref(db, `users/${userId}/assets/${asset.id}`);
       await set(assetRef, asset);
-      // console.log(`✅ Asset imported: ${asset.name}`);
 
       // Note: Net worth will be updated after all imports are complete
     } catch (error) {
@@ -231,7 +230,6 @@ class PlaidAssetDebtImporter {
     try {
       const debtRef = ref(db, `users/${userId}/debts/${debt.id}`);
       await set(debtRef, debt);
-      // console.log(`✅ Debt imported: ${debt.name}`);
 
       // Note: Net worth will be updated after all imports are complete
     } catch (error) {
@@ -321,7 +319,6 @@ class PlaidAssetDebtImporter {
           ) {
             await set(ref(db, `users/${userId}/assets/${assetId}`), null);
             removedAssets++;
-            // console.log(`🗑️ Removed orphaned asset: ${assetData.name}`);
           }
         }
       }
@@ -341,7 +338,6 @@ class PlaidAssetDebtImporter {
           ) {
             await set(ref(db, `users/${userId}/debts/${debtId}`), null);
             removedDebts++;
-            // console.log(`🗑️ Removed orphaned debt: ${debtData.name}`);
           }
         }
       }

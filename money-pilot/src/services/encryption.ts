@@ -33,7 +33,6 @@ export const getEncryptionKey = async (): Promise<string> => {
 
     // Check if key rotation is needed
     if (!currentKey || currentTime - keyTimestamp > KEY_ROTATION_INTERVAL) {
-      // console.log("🔄 Key rotation needed - generating new encryption key");
       return await rotateEncryptionKey(currentKey, keyTimestamp);
     }
 
@@ -65,7 +64,6 @@ export const rotateEncryptionKey = async (
       await updateKeyHistory(oldKey, oldKeyTimestamp);
     }
 
-    // console.log("✅ Encryption key rotated successfully");
     return newKey;
   } catch (error) {
     console.error("Error rotating encryption key:", error);
@@ -98,7 +96,6 @@ const updateKeyHistory = async (
       ENCRYPTION_KEY_HISTORY_KEY,
       JSON.stringify(history)
     );
-    console.log(`📚 Updated key history (${history.length} keys)`);
   } catch (error) {
     console.error("Error updating key history:", error);
   }
@@ -558,7 +555,6 @@ export const decryptNetWorthEntries = async (
 // Manual key rotation (can be called from settings)
 export const manualKeyRotation = async (): Promise<boolean> => {
   try {
-    // console.log("🔄 Manual key rotation initiated");
     const currentKey = await AsyncStorage.getItem(ENCRYPTION_KEY_STORAGE_KEY);
     const keyVersion = await AsyncStorage.getItem(ENCRYPTION_KEY_VERSION_KEY);
     const keyTimestamp = keyVersion ? parseInt(keyVersion) : 0;

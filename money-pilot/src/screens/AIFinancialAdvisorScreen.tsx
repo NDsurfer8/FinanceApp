@@ -744,32 +744,6 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       return true;
     });
 
-    // Debug: Log recurring transactions
-    console.log(
-      "🔍 AI Debug - Active recurring income:",
-      activeRecurringIncome.length
-    );
-    console.log(
-      "🔍 AI Debug - Active recurring expenses:",
-      activeRecurringExpenses.length
-    );
-    console.log(
-      "🔍 AI Debug - Recurring expenses details:",
-      activeRecurringExpenses.map((rt) => ({
-        id: rt.id,
-        description: rt.description,
-        amount: rt.amount,
-        frequency: rt.frequency,
-        isActive: rt.isActive,
-        startDate: rt.startDate
-          ? new Date(rt.startDate).toLocaleDateString()
-          : "No start date",
-        endDate: rt.endDate
-          ? new Date(rt.endDate).toLocaleDateString()
-          : "No end date",
-      }))
-    );
-
     const recurringMonthlyIncome = activeRecurringIncome.reduce((sum, rt) => {
       let monthlyAmount = rt.amount;
       if (rt.frequency === "weekly") {
@@ -1582,8 +1556,6 @@ Requirements:
     const lines = text.substring(0, matchIndex).split("\n");
     const lastFewLines = lines.slice(-3).join(" ").toLowerCase();
 
-    // console.log("🔍 Budget Detection - Context lines:", lastFewLines);
-
     // Look for category names in the context
     const categoryKeywords = [
       "food",
@@ -1622,12 +1594,10 @@ Requirements:
 
     for (const keyword of categoryKeywords) {
       if (lastFewLines.includes(keyword)) {
-        // console.log("🔍 Budget Detection - Found keyword in context:", keyword);
         return keyword;
       }
     }
 
-    // console.log("🔍 Budget Detection - No keyword found in context");
     return "unknown";
   };
 

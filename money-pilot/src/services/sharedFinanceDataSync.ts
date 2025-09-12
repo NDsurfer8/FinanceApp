@@ -18,7 +18,6 @@ const handlePermissionError = (error: any, context: string) => {
     error?.code === "PERMISSION_DENIED" ||
     error?.message?.includes("Permission denied")
   ) {
-    console.log(`User account no longer exists, ${context}`);
     return true;
   }
   return false;

@@ -116,30 +116,13 @@ export const SetupProvider: React.FC<{ children: ReactNode }> = ({
 
       // BULLETPROOF: Auto-complete setup for users with data
       if (hasData && !setupWasCompleted) {
-        console.log("🔧 Auto-completing setup for user with existing data");
         await autoCompleteSetupForUserWithData(user.uid);
         // Update the shouldShowSetup logic after auto-completion
         const shouldShowSetupAfterAutoComplete =
           (userIsNew && false) || // setupWasCompleted is now true
           (!hasData && false && !wizardWasSeen) ||
           (!wizardWasSeen && !hasData);
-
-        // Override shouldShowSetup if we auto-completed
-        if (shouldShowSetupAfterAutoComplete !== shouldShowSetup) {
-          console.log("🔧 Setup auto-completed, hiding wizard");
-        }
       }
-
-      // Debug logging for troubleshooting
-      console.log("🔍 Setup Wizard Detection:", {
-        userId: user.uid,
-        userIsNew,
-        hasData,
-        setupWasCompleted,
-        wizardWasSeen,
-        shouldShowSetup,
-        detectionResults: detectionResults.map((r) => r.status),
-      });
 
       setIsFirstTimeUser(shouldShowSetup);
       setIsLoading(false);
@@ -159,7 +142,7 @@ export const SetupProvider: React.FC<{ children: ReactNode }> = ({
         JSON.stringify(progress)
       );
     } catch (error) {
-      // console.log("Error saving setup progress:", error);
+      console.log("Error saving setup progress:", error);
     }
   };
 
@@ -181,8 +164,6 @@ export const SetupProvider: React.FC<{ children: ReactNode }> = ({
       }
 
       setIsFirstTimeUser(false);
-
-      console.log("✅ Setup completed successfully");
     } catch (error) {
       console.error("❌ Error completing setup:", error);
       // Fallback: still mark as completed locally even if save fails
@@ -305,8 +286,6 @@ const autoCompleteSetupForUserWithData = async (
   userId: string
 ): Promise<void> => {
   try {
-    console.log("🔧 Auto-completing setup for user with data:", userId);
-
     // Check what data the user actually has to determine setup progress
     const dataChecks = await Promise.allSettled([
       get(ref(db, `users/${userId}/plaid_connections`)),
@@ -348,16 +327,12 @@ const autoCompleteSetupForUserWithData = async (
       setupCompleted: true,
     };
 
-    console.log("🔧 Auto-completion progress:", completedProgress);
-
     // Save the completed progress
     const setupKey = getSetupStorageKey(userId);
     await AsyncStorage.setItem(setupKey, JSON.stringify(completedProgress));
 
     // Mark that user has seen the setup wizard
     await markSetupWizardSeen(userId);
-
-    console.log("✅ Setup auto-completed successfully for user with data");
   } catch (error) {
     console.error("❌ Error auto-completing setup for user with data:", error);
 
@@ -374,8 +349,6 @@ const autoCompleteSetupForUserWithData = async (
       const setupKey = getSetupStorageKey(userId);
       await AsyncStorage.setItem(setupKey, JSON.stringify(fallbackProgress));
       await markSetupWizardSeen(userId);
-
-      console.log("✅ Fallback setup completion applied");
     } catch (fallbackError) {
       console.error("❌ Fallback setup completion also failed:", fallbackError);
     }

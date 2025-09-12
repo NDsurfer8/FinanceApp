@@ -45,9 +45,6 @@ export const storeMonthlyBudgetHistory = async (
     };
 
     await AsyncStorage.setItem(key, JSON.stringify(history));
-    console.log(
-      `📊 Stored budget history for ${month}: ${monthlyResult.successRate}% success rate`
-    );
   } catch (error) {
     console.error("Error storing monthly budget history:", error);
   }
@@ -174,10 +171,6 @@ export const processHistoricalMonth = async (
 
     // Store the historical data
     await storeMonthlyBudgetHistory(userId, month, monthlyResult);
-
-    console.log(
-      `✅ Stored historical data for ${month}: ${monthlyResult.successRate}% success rate`
-    );
   } catch (error) {
     console.error(`Error processing historical month ${month}:`, error);
   }

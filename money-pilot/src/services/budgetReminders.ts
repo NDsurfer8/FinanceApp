@@ -28,8 +28,6 @@ export class BudgetReminderService {
   // Schedule all budget reminders for a user
   async scheduleAllBudgetReminders(userId: string): Promise<void> {
     try {
-      console.log("Scheduling budget reminders for user:", userId);
-
       // Get user's transactions, budget settings, and goals
       const [transactions, budgetSettings, goals] = await Promise.all([
         getUserTransactions(userId),
@@ -152,10 +150,6 @@ export class BudgetReminderService {
           ),
         },
       });
-
-      console.log(
-        `Scheduled monthly budget reminder for ${tomorrow.toLocaleDateString()}`
-      );
     } catch (error) {
       console.error("Error scheduling monthly budget reminder:", error);
     }
@@ -216,10 +210,6 @@ export class BudgetReminderService {
           ),
         },
       });
-
-      console.log(
-        `Scheduled weekly budget reminder for ${tomorrow.toLocaleDateString()}`
-      );
     } catch (error) {
       console.error("Error scheduling weekly budget reminder:", error);
     }
@@ -280,10 +270,6 @@ export class BudgetReminderService {
           ),
         },
       });
-
-      console.log(
-        `Scheduled daily budget reminder for ${tomorrow.toLocaleDateString()}`
-      );
     } catch (error) {
       console.error("Error scheduling daily budget reminder:", error);
     }

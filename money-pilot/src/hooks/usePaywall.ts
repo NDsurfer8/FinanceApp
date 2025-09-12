@@ -25,7 +25,6 @@ export const usePaywall = () => {
 
       while (attempts < maxAttempts) {
         attempts++;
-        console.log(`Purchase completion attempt ${attempts}/${maxAttempts}`);
 
         // Add a delay between attempts to allow RevenueCat to process
         if (attempts > 1) {
@@ -36,14 +35,9 @@ export const usePaywall = () => {
           // Use the new handlePurchaseCompletion method
           subscriptionStatus =
             await revenueCatService.handlePurchaseCompletion();
-          console.log(
-            `Attempt ${attempts} - Subscription status:`,
-            subscriptionStatus
-          );
 
           // If we get a premium status, we can stop trying
           if (subscriptionStatus?.isPremium) {
-            console.log("Premium subscription detected, stopping attempts");
             break;
           }
         } catch (error) {
@@ -56,11 +50,9 @@ export const usePaywall = () => {
         await refreshSubscriptionStatus(true);
       }
 
-      console.log("=== PAYWALL PRESENTATION END ===");
       return true;
     } catch (error) {
       console.error("Failed to present paywall:", error);
-      console.log("=== PAYWALL PRESENTATION FAILED ===");
       return false;
     }
   }, [refreshSubscriptionStatus]);

@@ -92,7 +92,6 @@ if (!i18n.isInitialized) {
           true
         );
         i18n.changeLanguage(deviceLanguage);
-        console.log(`✅ Loaded device language: ${deviceLanguage}`);
       })
       .catch((error) => {
         console.error("Failed to load device language:", error);
@@ -106,7 +105,6 @@ export const loadLanguageOnDemand = async (language: string) => {
     const translations = await loadLanguage(language);
     // Always reload the resource bundle to ensure latest translations
     i18n.addResourceBundle(language, "translation", translations, true, true);
-    console.log(`✅ Loaded translations for ${language}`);
   } catch (error) {
     console.error(`Failed to load language ${language}:`, error);
   }

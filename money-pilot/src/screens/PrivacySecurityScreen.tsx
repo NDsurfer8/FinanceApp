@@ -439,10 +439,6 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
       if (setupProgress) {
         await AsyncStorage.setItem("user_setup_progress", setupProgress);
       }
-
-      console.log(
-        "AsyncStorage cleared successfully (preserved onboarding and setup status)"
-      );
     } catch (error) {
       console.error("Error clearing AsyncStorage:", error);
       // Don't throw here - continue with account deletion even if AsyncStorage fails

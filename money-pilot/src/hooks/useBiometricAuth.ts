@@ -46,7 +46,6 @@ export const useBiometricAuth = (): UseBiometricAuthReturn => {
   // Listen for biometric status changes from other components
   useEffect(() => {
     const handleBiometricChange = () => {
-      console.log("Biometric status changed, refreshing...");
       checkBiometricStatus();
     };
 

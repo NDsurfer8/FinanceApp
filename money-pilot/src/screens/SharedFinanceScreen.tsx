@@ -170,7 +170,6 @@ export default function SharedFinanceScreen({
         try {
           await saveUserProfile(basicProfile);
           userProfile = basicProfile;
-          // console.log("✅ Created basic user profile for group creation");
         } catch (error) {
           console.error("❌ Error creating basic profile:", error);
         }
@@ -178,7 +177,6 @@ export default function SharedFinanceScreen({
 
       const displayName =
         userProfile?.displayName || user.email?.split("@")[0] || "User";
-      // console.log("🔍 Using display name for group creation:", displayName);
 
       const newGroup: SharedGroup = {
         name: groupName.trim(),
@@ -237,9 +235,6 @@ export default function SharedFinanceScreen({
         };
 
         // No more automatic real-time sharing - users will manually sync when needed
-        console.log(
-          "✅ Group created - user can configure sharing settings when ready"
-        );
       } catch (error) {
         console.error("❌ Error during group creation:", error);
         // Continue with group creation
@@ -365,9 +360,6 @@ export default function SharedFinanceScreen({
           };
 
           // No more automatic real-time sharing - users will manually sync when needed
-          console.log(
-            "✅ Member joined - they can configure sharing settings when ready"
-          );
         } catch (error) {
           console.error("❌ Error during invitation acceptance:", error);
           // Continue with invitation acceptance

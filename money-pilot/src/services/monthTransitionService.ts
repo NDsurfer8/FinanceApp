@@ -34,9 +34,6 @@ export const checkMonthTransitions = async (userId: string): Promise<void> => {
 
     // If we haven't processed the previous month yet, do it now
     if (lastProcessedMonth !== previousMonth) {
-      console.log(
-        `🔄 Processing month transition: ${lastProcessedMonth} → ${previousMonth}`
-      );
       await processPreviousMonth(userId, previousMonth);
       await setLastProcessedMonth(userId, previousMonth);
     }
@@ -58,9 +55,6 @@ const processPreviousMonth = async (
     ).padStart(2, "0")}`;
 
     if (month === currentMonth) {
-      console.log(
-        `⏸️ Skipping achievement processing for current month: ${month}`
-      );
       return;
     }
 
@@ -86,10 +80,6 @@ const processPreviousMonth = async (
     );
 
     if (newAchievements.length > 0) {
-      console.log(
-        `🎉 Awarded ${newAchievements.length} new achievements for ${month}:`,
-        newAchievements.map((a) => a.title)
-      );
     } else {
       console.log(`📝 No new achievements for ${month}`);
     }
@@ -130,9 +120,6 @@ export const initializeMonthTracking = async (
   try {
     const currentMonth = getCurrentMonth();
     await setLastProcessedMonth(userId, currentMonth);
-    console.log(
-      `📅 Initialized month tracking for user ${userId} starting from ${currentMonth}`
-    );
   } catch (error) {
     console.error("Error initializing month tracking:", error);
   }

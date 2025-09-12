@@ -85,15 +85,6 @@ export const signInWithApple = async (): Promise<UserData> => {
       { encoding: Crypto.CryptoEncoding.HEX }
     );
 
-    console.log("Nonce generated:", {
-      rawNonceLength: rawNonce.length,
-      hashedNonceLength: hashedNonce.length,
-      rawNoncePrefix: rawNonce.substring(0, 8),
-      hashedNoncePrefix: hashedNonce.substring(0, 8),
-    });
-
-    console.log("Starting Apple authentication...");
-
     // Request Apple authentication
     let credential;
     try {
@@ -113,12 +104,6 @@ export const signInWithApple = async (): Promise<UserData> => {
       } as AuthErrorType;
     }
 
-    console.log("Apple authentication completed:", {
-      hasIdentityToken: !!credential.identityToken,
-      hasEmail: !!credential.email,
-      hasFullName: !!credential.fullName,
-    });
-
     // identityToken is required to authenticate with Firebase
     if (!credential.identityToken) {
       throw {
@@ -137,8 +122,6 @@ export const signInWithApple = async (): Promise<UserData> => {
       // Provide the un-hashed nonce to Firebase for verification
       rawNonce,
     });
-
-    console.log("Firebase credential created, attempting sign-in...");
 
     // Sign in to Firebase
     let userCredential;
@@ -164,12 +147,6 @@ export const signInWithApple = async (): Promise<UserData> => {
     }
 
     const user = userCredential.user;
-
-    console.log("Apple Sign In successful:", {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-    });
 
     // Apple Sign-In should work the same for both login and signup
     // Always ensure user profile exists in database (create if missing, update if exists)
@@ -203,13 +180,6 @@ export const signInWithApple = async (): Promise<UserData> => {
       displayName = "Apple User";
     }
 
-    console.log("Display name resolution:", {
-      appleFullName: credential.fullName,
-      firebaseDisplayName: user.displayName,
-      userEmail: user.email,
-      finalDisplayName: displayName,
-    });
-
     // Update display name if we have a better name than what's currently set
     if (displayName && displayName !== user.displayName) {
       await updateProfile(user, {
@@ -229,7 +199,6 @@ export const signInWithApple = async (): Promise<UserData> => {
 
     try {
       await saveUserProfile(userProfile);
-      console.log("Apple user profile ensured in database:", userProfile);
     } catch (dbError) {
       console.error("Error saving Apple user profile to database:", dbError);
       // Don't throw here - auth was successful, just database save failed
@@ -371,7 +340,6 @@ export const signUp = async (
 
       try {
         await saveUserProfile(userProfile);
-        console.log("✅ User profile saved successfully:", user.uid);
       } catch (dbError) {
         console.error("❌ Error saving user profile to database:", dbError);
         // Don't throw here - auth was successful, just database save failed

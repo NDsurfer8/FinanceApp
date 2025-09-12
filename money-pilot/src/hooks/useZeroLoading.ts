@@ -67,7 +67,6 @@ export const useZeroLoading = () => {
   // Background refresh (doesn't block UI)
   const refreshInBackground = useCallback(async () => {
     if (dataContext.isDataStale()) {
-      console.log("Refreshing data in background...");
       // Don't await - let it run in background
       dataContext.refreshData().catch((error) => {
         console.error("Background refresh failed:", error);

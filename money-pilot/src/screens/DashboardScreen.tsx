@@ -263,10 +263,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     : 5;
   const savingsAmount = monthlyIncome * (savingsPercent / 100);
   const debtPayoffAmount = monthlyIncome * (debtPayoffPercent / 100);
-  // console.log("savingsAmount", savingsAmount);
-  // console.log("debtPayoffAmount", debtPayoffAmount);
-  // console.log("monthlyIncome", monthlyIncome);
-  // console.log("monthlyExpenses", monthlyExpenses);
 
   // Calculate total goal contributions
   const totalGoalContributions = goals.reduce((total, goal) => {

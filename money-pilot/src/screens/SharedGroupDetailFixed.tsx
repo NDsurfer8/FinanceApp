@@ -106,7 +106,6 @@ export default function SharedGroupDetailFixed({
 
     try {
       setLoading(true);
-      // console.log("🔄 Manual refresh requested");
 
       // Get user's current sharing settings for this group
       const userSharingSettings = await getUserGroupSharingSettings(
@@ -182,10 +181,8 @@ export default function SharedGroupDetailFixed({
                 userSharingSettings,
                 userData
               );
-
-              // console.log("✅ Auto-sync completed successfully");
             } else {
-              // console.log("⚠️ No sharing settings found for auto-sync");
+              console.log("⚠️ No sharing settings found for auto-sync");
             }
           } catch (syncError) {
             // console.error("❌ Error during auto-sync:", syncError);
@@ -209,14 +206,10 @@ export default function SharedGroupDetailFixed({
 
   const loadGroupFinancialData = async (group: SharedGroup) => {
     try {
-      // console.log("🔄 Loading shared finance data for group:", groupId);
-
       // Try to load shared finance data first
       const sharedData = await getGroupSharedData(groupId);
 
       if (sharedData && Object.keys(sharedData.members).length > 0) {
-        // console.log("✅ Found shared data:", sharedData);
-
         // Use the shared data structure
         let totalNetWorth = 0;
         let totalAssets = 0;
@@ -240,11 +233,6 @@ export default function SharedGroupDetailFixed({
 
         // Process shared data from each member
         for (const [userId, memberData] of Object.entries(sharedData.members)) {
-          console.log(
-            `📊 Processing member data for ${memberData.displayName}:`,
-            memberData
-          );
-
           // Process assets and debts for net worth breakdown
           if (memberData.assets && memberData.assets.length > 0) {
             const memberAssets = memberData.assets.reduce(
@@ -252,7 +240,6 @@ export default function SharedGroupDetailFixed({
               0
             );
             totalAssets += memberAssets;
-            console.log(`🏦 Added assets: ${memberAssets}`);
           }
 
           if (memberData.debts && memberData.debts.length > 0) {
@@ -279,9 +266,6 @@ export default function SharedGroupDetailFixed({
               : 0;
             const memberNetWorth = memberAssets - memberDebts;
             totalNetWorth += memberNetWorth;
-            console.log(
-              `💰 Member ${memberData.displayName} net worth: ${memberNetWorth} (Assets: ${memberAssets}, Debts: ${memberDebts})`
-            );
           }
 
           if (memberData.monthlyIncome !== undefined) {
@@ -290,9 +274,6 @@ export default function SharedGroupDetailFixed({
 
           if (memberData.monthlyExpenses !== undefined) {
             totalMonthlyExpenses += memberData.monthlyExpenses;
-            console.log(
-              `💸 Added monthly expenses: ${memberData.monthlyExpenses}`
-            );
           }
 
           // Add member to income list
@@ -305,17 +286,7 @@ export default function SharedGroupDetailFixed({
 
           // Add transactions if shared
           if (memberData.transactions && memberData.transactions.length > 0) {
-            console.log(
-              `📝 Adding ${memberData.transactions.length} transactions from ${memberData.displayName}`
-            );
             for (const transaction of memberData.transactions) {
-              console.log(
-                `Transaction: ${
-                  transaction.description
-                }, Amount: ${formatCurrency(transaction.amount)}, Type: ${
-                  transaction.type
-                }`
-              );
               allTransactions.push({
                 id: transaction.id || "",
                 description: transaction.description,
@@ -335,15 +306,7 @@ export default function SharedGroupDetailFixed({
             memberData.recurringTransactions &&
             memberData.recurringTransactions.length > 0
           ) {
-            console.log(
-              `🔄 Adding ${memberData.recurringTransactions.length} recurring transactions from ${memberData.displayName}`
-            );
             for (const recurring of memberData.recurringTransactions) {
-              console.log(
-                `Recurring: ${recurring.name}, Amount: ${formatCurrency(
-                  recurring.amount
-                )}, Type: ${recurring.type}`
-              );
               allTransactions.push({
                 id: recurring.id || "",
                 description: recurring.name,
@@ -368,11 +331,7 @@ export default function SharedGroupDetailFixed({
           memberIncomes,
           recentTransactions: allTransactions.sort((a, b) => b.date - a.date),
         });
-
-        // console.log("✅ Successfully loaded shared finance data");
       } else {
-        // console.log("⚠️ No shared data found, showing empty state");
-
         // Show empty state if no shared data exists
         setGroupData({
           netWorth: 0,
@@ -477,9 +436,6 @@ export default function SharedGroupDetailFixed({
                 for (const member of group.members) {
                   try {
                     // Note: Real-time data sharing cleanup will be handled when implementing the new sync system
-                    console.log(
-                      `🛑 Stopped real-time sharing for member: ${member.displayName}`
-                    );
                   } catch (error) {
                     console.error(
                       `Error stopping real-time sharing for ${member.userId}:`,

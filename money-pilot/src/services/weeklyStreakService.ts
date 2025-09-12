@@ -25,8 +25,6 @@ export const trackTransactionEntry = async (userId: string): Promise<void> => {
 
     // Update the weekly streak
     await updateWeeklyStreak(userId);
-
-    console.log(`📝 Tracked transaction entry for week: ${currentWeek}`);
   } catch (error) {
     console.error("Error tracking transaction entry:", error);
   }

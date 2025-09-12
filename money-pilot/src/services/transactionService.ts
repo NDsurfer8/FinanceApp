@@ -261,20 +261,6 @@ export const updateRecurringTransaction = async (
     // CRITICAL: DO NOT update linked actual transactions
     // Historical actual transactions should NEVER be modified when recurring transactions change
     // This preserves data integrity and prevents historical data from disappearing
-
-    // Log what this update affects:
-    console.log("Recurring transaction template updated with new settings:", {
-      description: recurringTransaction.name,
-      amount: recurringTransaction.amount,
-      type: recurringTransaction.type,
-      category: recurringTransaction.category,
-      frequency: recurringTransaction.frequency,
-    });
-
-    console.log(
-      "Impact: Only future projected transactions will reflect these changes"
-    );
-    console.log("Historical actual transactions remain completely unchanged");
   } catch (error) {
     console.error("Error updating recurring transaction:", error);
     throw error;
