@@ -680,13 +680,38 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     const targetMonthNum = targetMonth.getMonth();
     const targetYear = targetMonth.getFullYear();
 
-    // Calculate monthly income and expenses from actual transactions for the selected month
+    // Exclude individual paid transactions that have matching recurring transactions
     const monthlyTransactions = transactions.filter((transaction) => {
       const transactionDate = new Date(transaction.date);
-      return (
+      const isInSelectedMonth =
         transactionDate.getMonth() === targetMonthNum &&
-        transactionDate.getFullYear() === targetYear
-      );
+        transactionDate.getFullYear() === targetYear;
+
+      if (!isInSelectedMonth) return false;
+
+      // If this is a manual paid transaction, check if it has a matching recurring transaction
+      if (transaction.isManual && transaction.status === "paid") {
+        const hasMatchingRecurringTransaction = recurringTransactions.some(
+          (rt) => {
+            return (
+              rt.amount === transaction.amount &&
+              rt.category === transaction.category &&
+              rt.type === transaction.type &&
+              rt.isActive
+            );
+          }
+        );
+
+        // If there's a matching recurring transaction, exclude this individual transaction
+        if (hasMatchingRecurringTransaction) {
+          console.log(
+            `🔄 Snapshot: Excluding individual paid transaction "${transaction.description}" - using recurring transaction instead`
+          );
+          return false;
+        }
+      }
+
+      return true;
     });
 
     const actualMonthlyIncome = monthlyTransactions
@@ -698,6 +723,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       .reduce((sum, t) => sum + t.amount, 0);
 
     // Calculate recurring monthly income and expenses - only those active during the selected month
+    // Prioritize recurring transactions over individual paid transactions
     const activeRecurringIncome = recurringTransactions.filter((t) => {
       if (t.type !== "income" || !t.isActive) return false;
 

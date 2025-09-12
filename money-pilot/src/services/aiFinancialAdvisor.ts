@@ -234,15 +234,44 @@ class AIFinancialAdvisorService {
           })) || [],
 
         // Regular transactions with categories for complete analysis
-        transactions: (snapshot.transactions || []).slice(0, 20).map((t) => ({
-          name: t.name,
-          amount: t.amount,
-          type: t.type,
-          category: t.category || "Uncategorized",
-          date: t.date,
-          description: t.description || "",
-        })),
+        // Exclude individual paid transactions that have matching recurring transactions
+        transactions: (snapshot.transactions || [])
+          .filter((t) => {
+            // If this is a manual paid transaction, check if it has a matching recurring transaction
+            if (t.isManual && t.status === "paid") {
+              const hasMatchingRecurringTransaction = (
+                snapshot.recurringTransactions || []
+              ).some((rt) => {
+                return (
+                  rt.amount === t.amount &&
+                  rt.category === t.category &&
+                  rt.type === t.type &&
+                  rt.isActive
+                );
+              });
+
+              // If there's a matching recurring transaction, exclude this individual transaction
+              if (hasMatchingRecurringTransaction) {
+                console.log(
+                  `🔄 AI: Excluding individual paid transaction "${t.description}" - using recurring transaction instead`
+                );
+                return false;
+              }
+            }
+
+            return true;
+          })
+          .slice(0, 20)
+          .map((t) => ({
+            name: t.name,
+            amount: t.amount,
+            type: t.type,
+            category: t.category || "Uncategorized",
+            date: t.date,
+            description: t.description || "",
+          })),
         // Include recurring transactions for comprehensive analysis
+        // Prioritize recurring transactions over individual paid transactions when they match
         recurringTransactions: (snapshot.recurringTransactions || [])
           .slice(0, 15)
           .map((rt) => {
@@ -273,7 +302,7 @@ class AIFinancialAdvisorService {
             };
           }),
 
-        // Financial stability indicators
+        // Financial stability indicators - focus on recurring patterns, not individual paid transactions
         financialStability: {
           incomeStability:
             (snapshot.recurringTransactions || []).filter(

@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 import { transactionMatchingService } from "../services/transactionMatching";
 
 interface TransactionStatusBadgeProps {
@@ -12,6 +13,7 @@ export const TransactionStatusBadge: React.FC<TransactionStatusBadgeProps> = ({
   transaction,
 }) => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const status = transactionMatchingService.getTransactionStatus(transaction);
 
   if (status.status === "normal") {
@@ -40,7 +42,7 @@ export const TransactionStatusBadge: React.FC<TransactionStatusBadgeProps> = ({
             },
           ]}
         >
-          {status.status === "paid" ? "PAID" : status.statusText}
+          {status.status === "paid" ? t("common.paid") : status.statusText}
         </Text>
       </View>
     </View>
