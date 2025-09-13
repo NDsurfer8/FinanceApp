@@ -28,12 +28,6 @@ export class BudgetReminderService {
     return BudgetReminderService.instance;
   }
 
-  // Debug function to manually trigger budget calculation (temporary)
-  async debugBudgetCalculation(userId: string): Promise<void> {
-    console.log("🔍 MANUAL DEBUG: Starting budget calculation...");
-    await this.scheduleAllBudgetReminders(userId);
-  }
-
   // Schedule all budget reminders for a user
   async scheduleAllBudgetReminders(userId: string): Promise<void> {
     try {
@@ -117,31 +111,6 @@ export class BudgetReminderService {
         netIncome - savingsAmount - debtPayoffAmount - totalGoalContributions;
       const remainingBalance = discretionaryIncome;
 
-      // Debug logging for budget calculation
-      console.log("🔍 Budget Reminder Calculation Debug:");
-      console.log(`📊 Individual Income: $${individualIncome.toFixed(2)}`);
-      console.log(
-        `📊 Active Recurring Income: $${activeRecurringIncome.toFixed(2)}`
-      );
-      console.log(`📊 Total Income: $${totalIncome.toFixed(2)}`);
-      console.log(`📊 Individual Expenses: $${individualExpenses.toFixed(2)}`);
-      console.log(
-        `📊 Paid Recurring Expenses: $${paidRecurringExpenses.toFixed(2)}`
-      );
-      console.log(`📊 Total Expenses: $${totalExpenses.toFixed(2)}`);
-      console.log(`📊 Net Income: $${netIncome.toFixed(2)}`);
-      console.log(`📊 Savings %: ${savingsPercent}%`);
-      console.log(`📊 Savings Amount: $${savingsAmount.toFixed(2)}`);
-      console.log(`📊 Debt Payoff %: ${debtPayoffPercent}%`);
-      console.log(`📊 Debt Payoff Amount: $${debtPayoffAmount.toFixed(2)}`);
-      console.log(
-        `📊 Goal Contributions: $${totalGoalContributions.toFixed(2)}`
-      );
-      console.log(
-        `📊 Discretionary Income: $${discretionaryIncome.toFixed(2)}`
-      );
-      console.log(`📊 Remaining Balance: $${remainingBalance.toFixed(2)}`);
-
       // Schedule different types of budget reminders
       await this.scheduleMonthlyBudgetReminder(remainingBalance, totalIncome);
       await this.scheduleWeeklyBudgetReminder(remainingBalance, totalIncome);
@@ -152,8 +121,6 @@ export class BudgetReminderService {
 
       // Schedule weekly budget check notification
       await notificationService.scheduleWeeklyBudgetCheck();
-
-      console.log("All budget reminders scheduled successfully");
     } catch (error) {
       console.error("Error scheduling budget reminders:", error);
     }
@@ -396,14 +363,6 @@ export class BudgetReminderService {
       const dailyBudget = remainingBudget / daysLeft;
       const isOverBudget = remainingBudget < 0;
 
-      // Debug logging for daily budget calculation
-      console.log("🔍 Daily Budget Reminder Debug:");
-      console.log(`📊 Remaining Budget: $${remainingBudget.toFixed(2)}`);
-      console.log(`📊 Days Left in Month: ${daysLeft}`);
-      console.log(`📊 Daily Budget: $${dailyBudget.toFixed(2)}`);
-      console.log(`📊 Is Over Budget: ${isOverBudget}`);
-      console.log(`📊 Budget Limit: $${budgetLimit.toFixed(2)}`);
-
       let title = "📅 Daily Budget";
       let body = `You have $${remainingBudget.toFixed(
         2
@@ -414,15 +373,6 @@ export class BudgetReminderService {
         body = `You're over budget this month. Daily limit: $${Math.abs(
           dailyBudget
         ).toFixed(2)}`;
-        console.log(
-          `⚠️ Daily Budget Alert triggered - Over by: $${Math.abs(
-            remainingBudget
-          ).toFixed(2)}`
-        );
-      } else {
-        console.log(
-          `✅ Daily Budget Normal - Remaining: $${remainingBudget.toFixed(2)}`
-        );
       }
 
       // Schedule for tomorrow morning

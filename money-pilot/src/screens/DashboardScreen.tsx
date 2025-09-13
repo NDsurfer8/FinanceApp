@@ -65,27 +65,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     refreshInBackground,
   } = useZeroLoading();
 
-  // Temporary debug function to trigger budget calculation
-  const debugBudgetCalculation = async () => {
-    if (user?.uid) {
-      try {
-        const { budgetReminderService } = await import(
-          "../services/budgetReminders"
-        );
-        await budgetReminderService.debugBudgetCalculation(user.uid);
-      } catch (error) {
-        console.error("Error debugging budget calculation:", error);
-      }
-    }
-  };
-
-  // Make debug function available globally for console access
-  React.useEffect(() => {
-    (global as any).debugBudgetCalculation = debugBudgetCalculation;
-    return () => {
-      delete (global as any).debugBudgetCalculation;
-    };
-  }, [user?.uid]);
   const { goals, budgetSettings, refreshAssetsDebts } = useData();
   const { setupProgress, updateSetupProgress } = useSetup();
   const { isScrolling, handleScrollBegin, handleScrollEnd } =
