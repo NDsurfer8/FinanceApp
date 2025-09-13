@@ -823,7 +823,9 @@
     "quick_question_analyze_spending": "Analisar gastos",
     "quick_question_how_to_use": "Como devo usar este aplicativo?",
     "smart_import_title": "Importação Inteligente:",
-    "smart_import_description": "Mantenha suas contas recorrentes sincronizadas com seu banco. Quando um pagamento aparecer, nós o marcaremos como pago para que seu orçamento sempre permaneça atualizado."
+    "smart_import_description": "Mantenha suas contas recorrentes sincronizadas com seu banco. Quando um pagamento aparecer, nós o marcaremos como pago para que seu orçamento sempre permaneça atualizado.",
+    "shared_finance_title": "Finanças Compartilhadas:",
+    "shared_finance_description": "Crie um grupo para colaborar em finanças com família, parceiros ou associados comerciais. Você controla quais dados compartilhar."
   },
   "notification_settings": {
     "title": "Configurações de Notificação",

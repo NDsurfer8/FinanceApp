@@ -823,7 +823,9 @@
     "quick_question_analyze_spending": "Analyser les dépenses",
     "quick_question_how_to_use": "Comment dois-je utiliser cette application ?",
     "smart_import_title": "Importation Intelligente :",
-    "smart_import_description": "Gardez vos factures récurrentes synchronisées avec votre banque. Quand un paiement apparaît, nous le marquerons comme payé pour que votre budget reste toujours à jour."
+    "smart_import_description": "Gardez vos factures récurrentes synchronisées avec votre banque. Quand un paiement apparaît, nous le marquerons comme payé pour que votre budget reste toujours à jour.",
+    "shared_finance_title": "Finance Partagée :",
+    "shared_finance_description": "Créez un groupe pour collaborer sur les finances avec la famille, les partenaires ou les associés commerciaux. Vous contrôlez quelles données partager."
   },
   "notification_settings": {
     "title": "Paramètres de Notification",

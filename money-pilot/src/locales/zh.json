@@ -823,7 +823,9 @@
     "quick_question_analyze_spending": "分析支出",
     "quick_question_how_to_use": "我应该如何使用这个应用？",
     "smart_import_title": "智能导入：",
-    "smart_import_description": "让您的定期账单与银行保持同步。当付款出现时，我们会将其标记为已付，这样您的预算始终保持最新状态。"
+    "smart_import_description": "让您的定期账单与银行保持同步。当付款出现时，我们会将其标记为已付，这样您的预算始终保持最新状态。",
+    "shared_finance_title": "共享财务：",
+    "shared_finance_description": "创建一个小组与家人、伴侣或商业伙伴协作管理财务。您控制要共享哪些数据。"
   },
   "notification_settings": {
     "title": "通知设置",

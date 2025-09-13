@@ -1054,7 +1054,9 @@
     "quick_question_analyze_spending": "Analyze spending",
     "quick_question_how_to_use": "How should I use this app?",
     "smart_import_title": "Smart Import:",
-    "smart_import_description": "Keep your recurring bills in sync with your bank. When a payment shows up, we'll mark it paid so your budget always stays up to date."
+    "smart_import_description": "Keep your recurring bills in sync with your bank. When a payment shows up, we'll mark it paid so your budget always stays up to date.",
+    "shared_finance_title": "Shared Finance:",
+    "shared_finance_description": "Create a group to collaborate on finances with family, partners, or business associates. You control what data to share."
   },
   "notification_settings": {
     "title": "Notification Settings",

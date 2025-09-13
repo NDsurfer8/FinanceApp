@@ -745,9 +745,11 @@ export default function SharedFinanceScreen({
                   lineHeight: 16,
                 }}
               >
-                💡 <Text style={{ fontWeight: "600" }}>Shared Finance:</Text>{" "}
-                Create a group to collaborate on finances with family, partners,
-                or business associates. You control what data to share.
+                💡{" "}
+                <Text style={{ fontWeight: "600" }}>
+                  {t("ai_chat.shared_finance_title")}
+                </Text>{" "}
+                {t("ai_chat.shared_finance_description")}
               </Text>
             </View>
 

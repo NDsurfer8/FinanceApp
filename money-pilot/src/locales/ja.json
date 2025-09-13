@@ -823,7 +823,9 @@
     "quick_question_analyze_spending": "支出を分析",
     "quick_question_how_to_use": "このアプリをどのように使うべきですか？",
     "smart_import_title": "スマートインポート：",
-    "smart_import_description": "定期的な請求書を銀行と同期させておきます。支払いが表示されたら、支払済みとしてマークして、予算が常に最新の状態になるようにします。"
+    "smart_import_description": "定期的な請求書を銀行と同期させておきます。支払いが表示されたら、支払済みとしてマークして、予算が常に最新の状態になるようにします。",
+    "shared_finance_title": "共有ファイナンス：",
+    "shared_finance_description": "家族、パートナー、またはビジネスパートナーと財務で協力するためのグループを作成します。どのデータを共有するかはあなたがコントロールします。"
   },
   "notification_settings": {
     "title": "通知設定",
