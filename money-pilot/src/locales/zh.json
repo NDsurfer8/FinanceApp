@@ -820,7 +820,8 @@
     "quick_question_budget": "我的预算怎么样？",
     "quick_question_car": "我能买得起什么车？",
     "quick_question_savings_goal": "设定储蓄目标",
-    "quick_question_analyze_spending": "分析支出"
+    "quick_question_analyze_spending": "分析支出",
+    "quick_question_how_to_use": "我应该如何使用这个应用？"
   },
   "notification_settings": {
     "title": "通知设置",

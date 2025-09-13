@@ -820,7 +820,8 @@
     "quick_question_budget": "Wie steht es um mein Budget?",
     "quick_question_car": "Welches Auto kann ich mir leisten?",
     "quick_question_savings_goal": "Sparziel festlegen",
-    "quick_question_analyze_spending": "Ausgaben analysieren"
+    "quick_question_analyze_spending": "Ausgaben analysieren",
+    "quick_question_how_to_use": "Wie sollte ich diese App verwenden?"
   },
   "notification_settings": {
     "title": "Benachrichtigungseinstellungen",

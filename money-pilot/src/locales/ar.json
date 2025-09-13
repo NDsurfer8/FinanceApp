@@ -820,7 +820,8 @@
     "quick_question_budget": "كيف حال ميزانيتي؟",
     "quick_question_car": "ما نوع السيارة التي يمكنني تحملها؟",
     "quick_question_savings_goal": "تحديد هدف للادخار",
-    "quick_question_analyze_spending": "تحليل الإنفاق"
+    "quick_question_analyze_spending": "تحليل الإنفاق",
+    "quick_question_how_to_use": "كيف يجب أن أستخدم هذا التطبيق؟"
   },
   "notification_settings": {
     "title": "إعدادات الإشعارات",

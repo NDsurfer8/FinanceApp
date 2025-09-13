@@ -820,7 +820,8 @@
     "quick_question_budget": "Como está meu orçamento?",
     "quick_question_car": "Que tipo de carro posso comprar?",
     "quick_question_savings_goal": "Definir meta de poupança",
-    "quick_question_analyze_spending": "Analisar gastos"
+    "quick_question_analyze_spending": "Analisar gastos",
+    "quick_question_how_to_use": "Como devo usar este aplicativo?"
   },
   "notification_settings": {
     "title": "Configurações de Notificação",

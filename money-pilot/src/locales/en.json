@@ -1051,7 +1051,8 @@
     "quick_question_budget": "How's my budget?",
     "quick_question_car": "What kind of car is in my budget?",
     "quick_question_savings_goal": "Set a savings goal",
-    "quick_question_analyze_spending": "Analyze spending"
+    "quick_question_analyze_spending": "Analyze spending",
+    "quick_question_how_to_use": "How should I use this app?"
   },
   "notification_settings": {
     "title": "Notification Settings",

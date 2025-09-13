@@ -820,7 +820,8 @@
     "quick_question_budget": "Как дела с бюджетом?",
     "quick_question_car": "Какую машину я могу себе позволить?",
     "quick_question_savings_goal": "Установить цель сбережений",
-    "quick_question_analyze_spending": "Анализировать расходы"
+    "quick_question_analyze_spending": "Анализировать расходы",
+    "quick_question_how_to_use": "Как мне использовать это приложение?"
   },
   "notification_settings": {
     "title": "Настройки Уведомлений",

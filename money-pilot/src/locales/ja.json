@@ -820,7 +820,8 @@
     "quick_question_budget": "私の予算はどうですか？",
     "quick_question_car": "どんな車を買えますか？",
     "quick_question_savings_goal": "貯蓄目標を設定",
-    "quick_question_analyze_spending": "支出を分析"
+    "quick_question_analyze_spending": "支出を分析",
+    "quick_question_how_to_use": "このアプリをどのように使うべきですか？"
   },
   "notification_settings": {
     "title": "通知設定",

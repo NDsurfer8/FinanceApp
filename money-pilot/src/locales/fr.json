@@ -820,7 +820,8 @@
     "quick_question_budget": "Comment va mon budget ?",
     "quick_question_car": "Quel type de voiture puis-je me permettre ?",
     "quick_question_savings_goal": "Définir un objectif d'épargne",
-    "quick_question_analyze_spending": "Analyser les dépenses"
+    "quick_question_analyze_spending": "Analyser les dépenses",
+    "quick_question_how_to_use": "Comment dois-je utiliser cette application ?"
   },
   "notification_settings": {
     "title": "Paramètres de Notification",

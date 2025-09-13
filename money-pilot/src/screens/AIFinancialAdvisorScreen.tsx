@@ -2449,6 +2449,7 @@ Original Request: ${basePrompt}
                 t("ai_chat.quick_question_car"),
                 t("ai_chat.quick_question_savings_goal"),
                 t("ai_chat.quick_question_analyze_spending"),
+                t("ai_chat.quick_question_how_to_use"),
               ].map((question, index) => (
                 <TouchableOpacity
                   key={index}
