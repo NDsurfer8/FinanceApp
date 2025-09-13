@@ -821,7 +821,9 @@
     "quick_question_car": "ما نوع السيارة التي يمكنني تحملها؟",
     "quick_question_savings_goal": "تحديد هدف للادخار",
     "quick_question_analyze_spending": "تحليل الإنفاق",
-    "quick_question_how_to_use": "كيف يجب أن أستخدم هذا التطبيق؟"
+    "quick_question_how_to_use": "كيف يجب أن أستخدم هذا التطبيق؟",
+    "smart_import_title": "الاستيراد الذكي:",
+    "smart_import_description": "حافظ على فواتيرك المتكررة متزامنة مع بنكك. عندما تظهر دفعة، سنقوم بت标记ها كمُدفوعة حتى يبقى ميزانيتك محدثاً دائماً."
   },
   "notification_settings": {
     "title": "إعدادات الإشعارات",

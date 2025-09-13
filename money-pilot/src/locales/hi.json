@@ -821,7 +821,9 @@
     "quick_question_car": "मैं किस तरह की कार खरीद सकता हूं?",
     "quick_question_savings_goal": "बचत का लक्ष्य निर्धारित करें",
     "quick_question_analyze_spending": "खर्च का विश्लेषण करें",
-    "quick_question_how_to_use": "मुझे इस ऐप का उपयोग कैसे करना चाहिए?"
+    "quick_question_how_to_use": "मुझे इस ऐप का उपयोग कैसे करना चाहिए?",
+    "smart_import_title": "स्मार्ट आयात:",
+    "smart_import_description": "अपने आवर्ती बिलों को अपने बैंक के साथ सिंक में रखें। जब कोई भुगतान दिखाई देता है, हम इसे भुगतान किया गया चिह्नित करेंगे ताकि आपका बजट हमेशा अपडेट रहे।"
   },
   "notification_settings": {
     "title": "अधिसूचना सेटिंग्स",

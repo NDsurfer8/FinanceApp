@@ -647,9 +647,10 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                       }}
                     >
                       💡{" "}
-                      <Text style={{ fontWeight: "600" }}>Smart Import:</Text>{" "}
-                      Transactions will be automatically matched with your
-                      existing recurring expenses to prevent duplicates.
+                      <Text style={{ fontWeight: "600" }}>
+                        {t("ai_chat.smart_import_title")}
+                      </Text>{" "}
+                      {t("ai_chat.smart_import_description")}
                     </Text>
                   </View>
 

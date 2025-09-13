@@ -821,7 +821,9 @@
     "quick_question_car": "どんな車を買えますか？",
     "quick_question_savings_goal": "貯蓄目標を設定",
     "quick_question_analyze_spending": "支出を分析",
-    "quick_question_how_to_use": "このアプリをどのように使うべきですか？"
+    "quick_question_how_to_use": "このアプリをどのように使うべきですか？",
+    "smart_import_title": "スマートインポート：",
+    "smart_import_description": "定期的な請求書を銀行と同期させておきます。支払いが表示されたら、支払済みとしてマークして、予算が常に最新の状態になるようにします。"
   },
   "notification_settings": {
     "title": "通知設定",

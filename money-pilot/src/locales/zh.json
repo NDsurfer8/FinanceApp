@@ -821,7 +821,9 @@
     "quick_question_car": "我能买得起什么车？",
     "quick_question_savings_goal": "设定储蓄目标",
     "quick_question_analyze_spending": "分析支出",
-    "quick_question_how_to_use": "我应该如何使用这个应用？"
+    "quick_question_how_to_use": "我应该如何使用这个应用？",
+    "smart_import_title": "智能导入：",
+    "smart_import_description": "让您的定期账单与银行保持同步。当付款出现时，我们会将其标记为已付，这样您的预算始终保持最新状态。"
   },
   "notification_settings": {
     "title": "通知设置",

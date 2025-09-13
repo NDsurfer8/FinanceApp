@@ -821,7 +821,9 @@
     "quick_question_car": "Que tipo de carro posso comprar?",
     "quick_question_savings_goal": "Definir meta de poupança",
     "quick_question_analyze_spending": "Analisar gastos",
-    "quick_question_how_to_use": "Como devo usar este aplicativo?"
+    "quick_question_how_to_use": "Como devo usar este aplicativo?",
+    "smart_import_title": "Importação Inteligente:",
+    "smart_import_description": "Mantenha suas contas recorrentes sincronizadas com seu banco. Quando um pagamento aparecer, nós o marcaremos como pago para que seu orçamento sempre permaneça atualizado."
   },
   "notification_settings": {
     "title": "Configurações de Notificação",

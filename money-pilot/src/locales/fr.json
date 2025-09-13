@@ -821,7 +821,9 @@
     "quick_question_car": "Quel type de voiture puis-je me permettre ?",
     "quick_question_savings_goal": "Définir un objectif d'épargne",
     "quick_question_analyze_spending": "Analyser les dépenses",
-    "quick_question_how_to_use": "Comment dois-je utiliser cette application ?"
+    "quick_question_how_to_use": "Comment dois-je utiliser cette application ?",
+    "smart_import_title": "Importation Intelligente :",
+    "smart_import_description": "Gardez vos factures récurrentes synchronisées avec votre banque. Quand un paiement apparaît, nous le marquerons comme payé pour que votre budget reste toujours à jour."
   },
   "notification_settings": {
     "title": "Paramètres de Notification",
