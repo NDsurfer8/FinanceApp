@@ -189,13 +189,15 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     const targetYear = selectedMonth.getFullYear();
 
     // Get actual spending for this category (transactions + recurring)
+    // Exclude transactions that were created from recurring transactions to avoid double counting
     const categoryTransactions = transactions.filter((t) => {
       const transactionDate = new Date(t.date);
       return (
         transactionDate.getMonth() === targetMonth &&
         transactionDate.getFullYear() === targetYear &&
         t.type === "expense" &&
-        t.category === category.name
+        t.category === category.name &&
+        !t.recurringTransactionId // Exclude transactions created from recurring transactions
       );
     });
 
@@ -1439,7 +1441,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   >
                     {spending.actual === 0
                       ? t("budget_categories.no_spending_yet")
-                      : `-${formatCurrency(spending.actual)}`}
+                      : formatCurrency(spending.actual)}
                   </Text>
                 </View>
 
