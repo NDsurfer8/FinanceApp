@@ -239,15 +239,21 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       return sum + monthlyAmount;
     }, 0);
 
+  // Filter out individual transactions that are generated from recurring transactions
+  // to avoid double counting (these are already included in recurring amounts)
+  const nonRecurringMonthlyTransactions = monthlyTransactions.filter(
+    (t) => !t.recurringTransactionId
+  );
+
   // Total monthly amounts including recurring
   const monthlyIncome =
-    monthlyTransactions
+    nonRecurringMonthlyTransactions
       .filter((t) => t.type === "income")
       .reduce((sum: number, t: any) => sum + t.amount, 0) +
     recurringMonthlyIncome;
 
   const monthlyExpenses =
-    monthlyTransactions
+    nonRecurringMonthlyTransactions
       .filter((t) => t.type === "expense")
       .reduce((sum: number, t: any) => sum + t.amount, 0) +
     recurringMonthlyExpenses;
@@ -337,14 +343,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       }
     }
 
-    if (monthlyTransactions.length >= 10) {
+    if (nonRecurringMonthlyTransactions.length >= 10) {
       insights.push({
         id: "active-month",
         type: "info",
         icon: "analytics",
         title: t("dashboard.active_month"),
         message: t("dashboard.active_month_message", {
-          count: monthlyTransactions.length,
+          count: nonRecurringMonthlyTransactions.length,
         }),
       });
     }
@@ -384,38 +390,41 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
     // Recurring Transaction Insights
     if (recurringMonthlyIncome > 0 || recurringMonthlyExpenses > 0) {
-      const totalRecurring = recurringMonthlyIncome + recurringMonthlyExpenses;
-      const recurringPercentage =
-        monthlyIncome > 0 ? (totalRecurring / monthlyIncome) * 100 : 0;
+      // Calculate what percentage of total monthly income is from recurring sources
+      const totalMonthlyIncome = monthlyIncome; // This already includes recurring income
+      const recurringIncomePercentage =
+        totalMonthlyIncome > 0
+          ? (recurringMonthlyIncome / totalMonthlyIncome) * 100
+          : 0;
 
-      if (recurringPercentage > 80) {
+      if (recurringIncomePercentage > 80) {
         insights.push({
           id: "high-recurring-commitments",
           type: "info",
           icon: "repeat",
           title: t("dashboard.high_recurring_commitments"),
           message: t("dashboard.high_recurring_message", {
-            percentage: recurringPercentage.toFixed(0),
+            percentage: recurringIncomePercentage.toFixed(0),
           }),
         });
-      } else if (recurringPercentage > 50) {
+      } else if (recurringIncomePercentage > 50) {
         insights.push({
           id: "moderate-recurring-commitments",
           type: "info",
           icon: "repeat",
           title: t("dashboard.moderate_recurring_commitments"),
           message: t("dashboard.moderate_recurring_message", {
-            percentage: recurringPercentage.toFixed(0),
+            percentage: recurringIncomePercentage.toFixed(0),
           }),
         });
-      } else if (recurringPercentage > 0) {
+      } else if (recurringIncomePercentage > 0) {
         insights.push({
           id: "low-recurring-commitments",
           type: "info",
           icon: "repeat",
           title: t("dashboard.low_recurring_commitments"),
           message: t("dashboard.low_recurring_message", {
-            percentage: recurringPercentage.toFixed(0),
+            percentage: recurringIncomePercentage.toFixed(0),
           }),
         });
       }
@@ -431,7 +440,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       availableAmount,
       totalDebts,
       totalAssets,
-      monthlyTransactions.length,
+      nonRecurringMonthlyTransactions.length,
       emergencyFundProgress,
       totalSavings,
       recurringMonthlyIncome,
@@ -471,12 +480,18 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         );
       });
 
-      // Calculate actual transactions for this month
-      const actualIncome = monthTransactions
+      // Filter out individual transactions that are generated from recurring transactions
+      // to avoid double counting (these are already included in recurring amounts)
+      const nonRecurringMonthTransactions = monthTransactions.filter(
+        (t) => !t.recurringTransactionId
+      );
+
+      // Calculate actual transactions for this month (excluding recurring-generated ones)
+      const actualIncome = nonRecurringMonthTransactions
         .filter((t) => t.type === "income")
         .reduce((sum: number, t: any) => sum + t.amount, 0);
 
-      const actualExpenses = monthTransactions
+      const actualExpenses = nonRecurringMonthTransactions
         .filter((t) => t.type === "expense")
         .reduce((sum: number, t: any) => sum + t.amount, 0);
 

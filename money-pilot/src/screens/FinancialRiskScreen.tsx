@@ -121,11 +121,19 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
       return sum + monthlyAmount;
     }, 0);
 
-  // Total monthly income including recurring
-  const totalMonthlyIncome = monthlyIncome + recurringMonthlyIncome;
-  // Total monthly income
+  // Filter out individual transactions that are generated from recurring transactions
+  // to avoid double counting (these are already included in recurring amounts)
+  const nonRecurringMonthlyTransactions = monthlyTransactions.filter(
+    (t) => !t.recurringTransactionId
+  );
 
-  const monthlyExpenses = monthlyTransactions
+  // Total monthly income including recurring
+  const totalMonthlyIncome =
+    nonRecurringMonthlyTransactions
+      .filter((t) => t.type === "income")
+      .reduce((sum, t) => sum + t.amount, 0) + recurringMonthlyIncome;
+
+  const monthlyExpenses = nonRecurringMonthlyTransactions
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
 

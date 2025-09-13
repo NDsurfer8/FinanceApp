@@ -19,6 +19,8 @@ import { useCurrency } from "../contexts/CurrencyContext";
 import { saveTransaction } from "../services/userData";
 import { formatAmountWithoutSymbol } from "../utils/filteredCurrency";
 import { mapPlaidCategoryToBudgetCategory } from "../utils/plaidCategoryMapping";
+import { categorizeTransactionEnhanced } from "../utils/categorize";
+import { overrideStore } from "../services/merchantOverrideStore";
 
 interface AutoBudgetImporterProps {
   isVisible: boolean;
@@ -36,6 +38,8 @@ interface CategorizedTransaction {
   category: string;
   type: "income" | "expense";
   isSelected: boolean;
+  confidence: number;
+  reason: string;
   originalTransaction: any;
 }
 
@@ -46,376 +50,199 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
   selectedMonth,
   onDataRefresh,
 }) => {
-  const { user } = useAuth();
-  const { bankTransactions, transactions, isBankConnected, connectedBanks } =
-    useData();
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const {
+    transactions,
+    refreshTransactions,
+    bankTransactions,
+    refreshBankData,
+    isBankConnected,
+    bankAccounts,
+  } = useData();
   const { formatCurrency, selectedCurrency } = useCurrency();
-
-  // Helper function to format month
-  const formatMonth = (date: Date) => {
-    return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  };
-
-  // Helper function to check if a bank transaction already exists in budget
-  const isTransactionAlreadyImported = (bankTransaction: any): boolean => {
-    const bankDate = new Date(bankTransaction.date);
-    const bankAmount = Math.abs(bankTransaction.amount);
-    const bankName = bankTransaction.name?.toLowerCase() || "";
-
-    return transactions.some((budgetTransaction: any) => {
-      // First check: if this budget transaction was created from this bank transaction
-      if (budgetTransaction.bankTransactionId === bankTransaction.id) {
-        return true;
-      }
-
-      // Second check: traditional matching by amount, date, and name
-      const budgetDate = new Date(budgetTransaction.date);
-      const budgetAmount = Math.abs(budgetTransaction.amount);
-      const budgetName = budgetTransaction.description?.toLowerCase() || "";
-
-      // Check if dates are within 1 day of each other (to account for timezone differences)
-      const dateDiff = Math.abs(bankDate.getTime() - budgetDate.getTime());
-      const oneDayInMs = 24 * 60 * 60 * 1000;
-
-      // Check if amounts match (within $0.01 tolerance for rounding differences)
-      const amountDiff = Math.abs(bankAmount - budgetAmount);
-
-      // Check if names are similar (basic fuzzy matching)
-      const nameSimilarity =
-        bankName.includes(budgetName) || budgetName.includes(bankName);
-
-      return dateDiff <= oneDayInMs && amountDiff <= 0.01 && nameSimilarity;
-    });
-  };
 
   const [categorizedTransactions, setCategorizedTransactions] = useState<
     CategorizedTransaction[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedBankFilter, setSelectedBankFilter] = useState<string>("all");
   const [saveProgress, setSaveProgress] = useState({
-    current: 0,
-    total: 0,
     currentTransaction: "",
     startTime: 0,
   });
+  const [selectedBankFilter, setSelectedBankFilter] = useState<string>("all");
 
-  // Enhanced categorization rules for better credit card transaction categorization
-  const categorizeTransaction = (
+  // Process bank transactions when modal becomes visible
+  useEffect(() => {
+    if (isVisible) {
+      if (!isBankConnected) {
+        // Clear any existing transactions if no bank is connected
+        setCategorizedTransactions([]);
+        return;
+      }
+
+      if (bankTransactions.length > 0) {
+        processBankTransactions(bankTransactions);
+      } else {
+        // If no bank transactions, try to refresh bank data
+        refreshBankData();
+      }
+    }
+  }, [
+    isVisible,
+    bankTransactions,
+    selectedMonth,
+    isBankConnected,
+    selectedBankFilter,
+  ]);
+
+  // Enhanced categorization using the new system
+  const categorizeTransaction = async (
     transaction: any
-  ): { category: string; type: "income" | "expense" } => {
-    const name = transaction.name?.toLowerCase() || "";
-    const amount = transaction.amount;
+  ): Promise<{
+    category: string;
+    type: "income" | "expense";
+    confidence: number;
+    reason: string;
+  }> => {
+    if (!user?.uid) {
+      return {
+        category: "Other Expenses",
+        type: "expense",
+        confidence: 0,
+        reason: "no_user",
+      };
+    }
 
-    // First, try to use Plaid's new personal_finance_category if available
-    if (transaction.personal_finance_category?.primary) {
-      const plaidCategory = transaction.personal_finance_category.primary;
-      const mappedCategory = mapPlaidCategoryToBudgetCategory(plaidCategory);
-
-      // Determine type based on amount (Plaid: negative = income, positive = expense)
+    try {
+      const result = await categorizeTransactionEnhanced(
+        transaction,
+        user.uid,
+        overrideStore
+      );
+      return result;
+    } catch (error) {
+      console.error("Error in enhanced categorization:", error);
+      // Fallback to simple categorization
+      const amount = transaction.amount;
       const type = amount < 0 ? "income" : "expense";
-
-      return { category: mappedCategory, type };
+      return {
+        category: "Other Expenses",
+        type,
+        confidence: 0.3,
+        reason: "fallback_error",
+      };
     }
-
-    // Fallback to enhanced logic when Plaid categories aren't available
-    // Income patterns (Plaid: negative = income, positive = expense)
-    if (amount < 0) {
-      if (
-        name.includes("deposit") ||
-        name.includes("transfer") ||
-        name.includes("salary") ||
-        name.includes("payroll") ||
-        name.includes("direct deposit") ||
-        name.includes("payroll") ||
-        name.includes("refund") ||
-        name.includes("return") ||
-        name.includes("credit")
-      ) {
-        return { category: "Salary", type: "income" };
-      }
-      return { category: "Other Income", type: "income" };
-    }
-
-    // Enhanced expense patterns for better credit card categorization
-    if (amount > 0) {
-      // Food & Dining - Enhanced patterns
-      if (
-        name.includes("restaurant") ||
-        name.includes("mcdonalds") ||
-        name.includes("starbucks") ||
-        name.includes("uber eats") ||
-        name.includes("doordash") ||
-        name.includes("grubhub") ||
-        name.includes("pizza") ||
-        name.includes("burger") ||
-        name.includes("cafe") ||
-        name.includes("coffee") ||
-        name.includes("deli") ||
-        name.includes("food") ||
-        name.includes("grocery") ||
-        name.includes("supermarket") ||
-        name.includes("kroger") ||
-        name.includes("safeway") ||
-        name.includes("whole foods") ||
-        name.includes("trader joe") ||
-        name.includes("albertsons") ||
-        name.includes("publix") ||
-        name.includes("wegmans") ||
-        name.includes("dining") ||
-        name.includes("kitchen") ||
-        name.includes("grill") ||
-        name.includes("bar") ||
-        name.includes("pub") ||
-        name.includes("tavern")
-      ) {
-        return { category: "Food", type: "expense" };
-      }
-
-      // Transportation - Enhanced patterns
-      if (
-        name.includes("uber") ||
-        name.includes("lyft") ||
-        name.includes("gas") ||
-        name.includes("shell") ||
-        name.includes("exxon") ||
-        name.includes("chevron") ||
-        name.includes("bp") ||
-        name.includes("mobil") ||
-        name.includes("speedway") ||
-        name.includes("7-eleven") ||
-        name.includes("parking") ||
-        name.includes("toll") ||
-        name.includes("metro") ||
-        name.includes("bus") ||
-        name.includes("train") ||
-        name.includes("taxi") ||
-        name.includes("car") ||
-        name.includes("auto") ||
-        name.includes("vehicle") ||
-        name.includes("fuel") ||
-        name.includes("petrol")
-      ) {
-        return { category: "Transportation", type: "expense" };
-      }
-
-      // Shopping - Enhanced patterns
-      if (
-        name.includes("amazon") ||
-        name.includes("walmart") ||
-        name.includes("target") ||
-        name.includes("costco") ||
-        name.includes("best buy") ||
-        name.includes("home depot") ||
-        name.includes("lowes") ||
-        name.includes("macy") ||
-        name.includes("nordstrom") ||
-        name.includes("gap") ||
-        name.includes("old navy") ||
-        name.includes("h&m") ||
-        name.includes("zara") ||
-        name.includes("uniqlo") ||
-        name.includes("apple") ||
-        name.includes("google") ||
-        name.includes("microsoft") ||
-        name.includes("shop") ||
-        name.includes("store") ||
-        name.includes("retail") ||
-        name.includes("outlet") ||
-        name.includes("mall")
-      ) {
-        return { category: "Shopping", type: "expense" };
-      }
-
-      // Bills & Utilities - Enhanced patterns
-      if (
-        name.includes("electric") ||
-        name.includes("water") ||
-        name.includes("gas") ||
-        name.includes("internet") ||
-        name.includes("phone") ||
-        name.includes("netflix") ||
-        name.includes("spotify") ||
-        name.includes("hulu") ||
-        name.includes("disney") ||
-        name.includes("youtube") ||
-        name.includes("prime") ||
-        name.includes("cable") ||
-        name.includes("wifi") ||
-        name.includes("broadband") ||
-        name.includes("utility") ||
-        name.includes("bill") ||
-        name.includes("payment") ||
-        name.includes("subscription") ||
-        name.includes("membership") ||
-        name.includes("insurance") ||
-        name.includes("rent") ||
-        name.includes("mortgage") ||
-        name.includes("hoa")
-      ) {
-        return { category: "Utilities", type: "expense" };
-      }
-
-      // Healthcare - Enhanced patterns
-      if (
-        name.includes("pharmacy") ||
-        name.includes("cvs") ||
-        name.includes("walgreens") ||
-        name.includes("doctor") ||
-        name.includes("medical") ||
-        name.includes("hospital") ||
-        name.includes("clinic") ||
-        name.includes("dental") ||
-        name.includes("vision") ||
-        name.includes("health") ||
-        name.includes("wellness") ||
-        name.includes("fitness") ||
-        name.includes("gym") ||
-        name.includes("yoga") ||
-        name.includes("spa") ||
-        name.includes("massage")
-      ) {
-        return { category: "Health", type: "expense" };
-      }
-
-      // Entertainment - Enhanced patterns
-      if (
-        name.includes("movie") ||
-        name.includes("theater") ||
-        name.includes("concert") ||
-        name.includes("game") ||
-        name.includes("ticket") ||
-        name.includes("cinema") ||
-        name.includes("amc") ||
-        name.includes("regal") ||
-        name.includes("entertainment") ||
-        name.includes("fun") ||
-        name.includes("leisure") ||
-        name.includes("recreation") ||
-        name.includes("sports") ||
-        name.includes("golf") ||
-        name.includes("bowling") ||
-        name.includes("arcade") ||
-        name.includes("casino") ||
-        name.includes("bar") ||
-        name.includes("club")
-      ) {
-        return { category: "Entertainment", type: "expense" };
-      }
-
-      // Business & Professional - New category
-      if (
-        name.includes("office") ||
-        name.includes("business") ||
-        name.includes("professional") ||
-        name.includes("consulting") ||
-        name.includes("legal") ||
-        name.includes("accounting") ||
-        name.includes("software") ||
-        name.includes("adobe") ||
-        name.includes("microsoft") ||
-        name.includes("slack") ||
-        name.includes("zoom") ||
-        name.includes("meeting") ||
-        name.includes("conference") ||
-        name.includes("training") ||
-        name.includes("education") ||
-        name.includes("course") ||
-        name.includes("book") ||
-        name.includes("supply") ||
-        name.includes("equipment")
-      ) {
-        return { category: "Business", type: "expense" };
-      }
-
-      return { category: "Other Expenses", type: "expense" };
-    }
-
-    return { category: "Other Expenses", type: "expense" };
   };
 
   // Process bank transactions and categorize them
-  useEffect(() => {
-    if (isVisible && bankTransactions.length > 0) {
-      // Filter transactions for selected month (or current month if not provided)
-      const targetMonth = selectedMonth || new Date();
-      const targetMonthNumber = targetMonth.getMonth();
-      const targetYear = targetMonth.getFullYear();
+  const processBankTransactions = async (bankTransactions: any[]) => {
+    if (!user?.uid || !selectedMonth) return;
 
-      const targetMonthTransactions = bankTransactions.filter(
-        (transaction: any) => {
-          const transactionDate = new Date(transaction.date);
-          const isCorrectMonth =
-            transactionDate.getMonth() === targetMonthNumber &&
-            transactionDate.getFullYear() === targetYear;
+    setIsLoading(true);
+    try {
+      const targetMonth = selectedMonth.getMonth();
+      const targetYear = selectedMonth.getFullYear();
 
-          // Apply bank filter
-          const isCorrectBank =
-            selectedBankFilter === "all" ||
-            transaction.institution === selectedBankFilter;
+      // Get unique banks from bank accounts
+      const getUniqueBanks = () => {
+        const banks = new Set<string>();
+        bankAccounts.forEach((account: any) => {
+          if (account.institution) {
+            banks.add(account.institution);
+          }
+        });
+        return Array.from(banks);
+      };
 
-          return isCorrectMonth && isCorrectBank;
-        }
+      // Get filtered account IDs based on selected bank
+      const getFilteredAccountIds = () => {
+        if (selectedBankFilter === "all")
+          return bankAccounts.map((account: any) => account.id);
+        return bankAccounts
+          .filter((account: any) => account.institution === selectedBankFilter)
+          .map((account: any) => account.id);
+      };
+
+      // Filter transactions for the selected month and bank
+      const monthlyTransactions = bankTransactions.filter((transaction) => {
+        const transactionDate = new Date(transaction.date);
+        const isCorrectMonth =
+          transactionDate.getMonth() === targetMonth &&
+          transactionDate.getFullYear() === targetYear;
+
+        // Apply bank filter by account IDs
+        const filteredAccountIds = getFilteredAccountIds();
+        const isCorrectBank = filteredAccountIds.includes(
+          transaction.account_id
+        );
+
+        return isCorrectMonth && isCorrectBank;
+      });
+
+      // Filter out already imported transactions
+      const isTransactionAlreadyImported = (bankTransaction: any) => {
+        return transactions.some((existingTransaction) => {
+          // Check if this bank transaction was already imported
+          if (existingTransaction.bankTransactionId === bankTransaction.id) {
+            return true;
+          }
+          // Check if this is a duplicate based on amount, date, and description
+          const existingDate = new Date(existingTransaction.date);
+          const bankDate = new Date(bankTransaction.date);
+          const sameDate =
+            existingDate.toDateString() === bankDate.toDateString();
+          const sameAmount =
+            Math.abs(
+              existingTransaction.amount - Math.abs(bankTransaction.amount)
+            ) < 0.01;
+          const sameDescription =
+            existingTransaction.description.toLowerCase() ===
+            bankTransaction.name.toLowerCase();
+
+          return sameDate && sameAmount && sameDescription;
+        });
+      };
+
+      const newTransactions = monthlyTransactions.filter(
+        (transaction) => !isTransactionAlreadyImported(transaction)
       );
 
-      // Count how many transactions are already imported
-      const alreadyImportedCount = targetMonthTransactions.filter(
-        (transaction: any) => isTransactionAlreadyImported(transaction)
-      ).length;
-
-      const categorized = targetMonthTransactions
-        .filter((transaction: any) => {
-          // Filter out transactions that are already in budget
-          return !isTransactionAlreadyImported(transaction);
-        })
-        .map((transaction: any) => {
-          const { category, type } = categorizeTransaction(transaction);
+      // Categorize each transaction using the enhanced system
+      const categorized = await Promise.all(
+        newTransactions.map(async (transaction) => {
+          const result = await categorizeTransaction(transaction);
           return {
             id: transaction.id,
             name: transaction.name,
             amount: Math.abs(transaction.amount),
             date: transaction.date,
-            category,
-            type,
-            isSelected: true,
+            category: result.category,
+            type: result.type,
+            isSelected: result.confidence >= 0.6, // Auto-select if confident
+            confidence: result.confidence,
+            reason: result.reason,
             originalTransaction: transaction,
           };
-        });
+        })
+      );
 
       setCategorizedTransactions(categorized);
+    } catch (error) {
+      console.error("Error processing bank transactions:", error);
+      Alert.alert(
+        t("auto_budget_importer.error"),
+        t("auto_budget_importer.processing_error")
+      );
+    } finally {
+      setIsLoading(false);
     }
-  }, [
-    isVisible,
-    bankTransactions,
-    transactions,
-    selectedMonth,
-    selectedBankFilter,
-  ]);
-
-  const toggleTransactionSelection = (transactionId: string) => {
-    setCategorizedTransactions((prev) =>
-      prev.map((t) =>
-        t.id === transactionId ? { ...t, isSelected: !t.isSelected } : t
-      )
-    );
   };
 
-  const selectAll = () => {
-    setCategorizedTransactions((prev) =>
-      prev.map((t) => ({ ...t, isSelected: true }))
-    );
-  };
-
-  const deselectAll = () => {
-    setCategorizedTransactions((prev) =>
-      prev.map((t) => ({ ...t, isSelected: false }))
-    );
-  };
-
-  const saveSelectedTransactions = async () => {
+  // Save selected transactions
+  const handleSaveTransactions = async () => {
     if (!user?.uid) return;
 
     const selectedTransactions = categorizedTransactions.filter(
@@ -423,150 +250,87 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
     );
     if (selectedTransactions.length === 0) {
       Alert.alert(
-        t("budget.no_transactions_selected"),
-        t("budget.select_at_least_one_transaction")
+        t("auto_budget_importer.no_selection"),
+        t("auto_budget_importer.select_transactions")
       );
       return;
     }
 
     setIsSaving(true);
     setSaveProgress({
-      current: 0,
-      total: selectedTransactions.length,
       currentTransaction: "",
       startTime: Date.now(),
     });
 
+    let savedCount = 0;
+    let matchedCount = 0;
+
     try {
-      let savedCount = 0;
-      let failedCount = 0;
-      const failedTransactions: string[] = [];
-
-      for (let i = 0; i < selectedTransactions.length; i++) {
-        const transaction = selectedTransactions[i];
-
-        // Update progress
-        setSaveProgress((prev) => ({
-          ...prev,
-          current: i + 1,
+      for (const transaction of selectedTransactions) {
+        setSaveProgress({
           currentTransaction: transaction.name,
-        }));
+          startTime: Date.now(),
+        });
 
         try {
-          const newTransaction = {
-            userId: user.uid,
-            description: String(transaction.name),
-            amount: Math.abs(transaction.amount), // Always store as positive
-            category: transaction.category,
-            date: new Date(transaction.date).getTime(),
-            type: transaction.type,
-            createdAt: Date.now(),
-            // Preserve source account information for filtering
-            sourceAccountId: transaction.originalTransaction?.account_id,
-            sourceInstitution: transaction.originalTransaction?.institution,
-            sourceItemId: transaction.originalTransaction?.itemId,
-            isAutoImported: true,
-          };
+          // Check for transaction matches before saving
+          const { transactionMatchingService } = await import(
+            "../services/transactionMatching"
+          );
+          const isMatch = await transactionMatchingService.checkForMatches(
+            user.uid,
+            transaction.originalTransaction
+          );
 
-          // Check for transaction matches with pending manual transactions BEFORE saving
-          let shouldSaveTransaction = true;
-          try {
-            const { transactionMatchingService } = await import(
-              "../services/transactionMatching"
-            );
-            const isMatched = await transactionMatchingService.checkForMatches(
-              user.uid,
-              transaction.originalTransaction
-            );
-            if (isMatched) {
-              shouldSaveTransaction = false; // Don't save bank transaction if it matched a manual one
-              console.log(
-                `Bank transaction matched manual entry, skipping save: ${transaction.name}`
-              );
-            }
-          } catch (error) {
-            console.error("Error checking for transaction matches:", error);
-          }
-
-          if (shouldSaveTransaction) {
-            await saveTransaction(newTransaction);
-            savedCount++;
+          if (isMatch) {
+            console.log(`✅ Transaction matched: ${transaction.name}`);
+            matchedCount++;
+            savedCount++; // Count matched transactions as "saved" for UI purposes
           } else {
-            // Transaction was matched with manual entry, count as processed but not saved
-            console.log(
-              `Transaction ${transaction.name} matched with manual entry, not saved as separate transaction`
-            );
-            savedCount++; // Count matched transactions as processed
-          }
+            // Save the transaction if no match found
+            const transactionData = {
+              description: transaction.name,
+              amount: transaction.amount,
+              type: transaction.type,
+              category: transaction.category,
+              date: new Date(transaction.date).getTime(),
+              userId: user.uid,
+              bankTransactionId: transaction.id,
+              isAutoImported: true,
+              createdAt: Date.now(),
+            };
 
-          // Small delay to prevent overwhelming the server and show progress
-          if (i < selectedTransactions.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            await saveTransaction(transactionData);
+            savedCount++;
           }
         } catch (error) {
           console.error(`Error saving transaction ${transaction.name}:`, error);
-          failedCount++;
-          failedTransactions.push(transaction.name);
         }
       }
 
-      // Show detailed results
-      if (savedCount > 0 && failedCount === 0) {
-        // All succeeded
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert(
-          t("common.success"),
-          t("budget.import_success_message", { count: savedCount }),
-          [
-            {
-              text: t("common.ok"),
-              onPress: () => {
-                onDataRefresh?.(); // Refresh data to update import button count
-                onSuccess?.(savedCount);
-                onClose();
-              },
+      // Show success message
+      const totalProcessed = savedCount + matchedCount;
+      Alert.alert(
+        t("auto_budget_importer.success"),
+        t("auto_budget_importer.transactions_imported", {
+          count: totalProcessed,
+        }),
+        [
+          {
+            text: t("common.ok"),
+            onPress: () => {
+              onDataRefresh?.();
+              onSuccess?.(totalProcessed);
+              onClose();
             },
-          ]
-        );
-      } else if (savedCount > 0 && failedCount > 0) {
-        // Partial success
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Alert.alert(
-          t("budget.partial_success"),
-          t("budget.partial_success_message", {
-            saved: savedCount,
-            failed: failedCount,
-          }),
-          [
-            {
-              text: t("common.ok"),
-              onPress: () => {
-                onDataRefresh?.(); // Refresh data to update import button count
-                onSuccess?.(savedCount);
-                onClose();
-              },
-            },
-          ]
-        );
-      } else {
-        // All failed
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert(
-          t("auto_budget_importer.import_failed"),
-          t("auto_budget_importer.import_failed_description"),
-          [
-            {
-              text: t("common.ok"),
-              onPress: () => onClose(),
-            },
-          ]
-        );
-      }
+          },
+        ]
+      );
     } catch (error) {
       console.error("Error saving transactions:", error);
       Alert.alert(
-        t("auto_budget_importer.error_saving_transactions"),
-        t("auto_budget_importer.error_saving_description")
+        t("auto_budget_importer.error"),
+        t("auto_budget_importer.save_error")
       );
     } finally {
       setIsSaving(false);
@@ -578,7 +342,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
   ).length;
   const totalCount = categorizedTransactions.length;
 
-  if (!isBankConnected) {
+  if (!user?.uid || !isBankConnected) {
     return (
       <Modal visible={isVisible} animationType="slide" transparent>
         <View
@@ -592,76 +356,55 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
           <View
             style={{
               backgroundColor: colors.surface,
-              padding: 24,
               borderRadius: 20,
+              padding: 24,
               margin: 20,
               maxWidth: 400,
-              shadowColor: colors.shadow,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.25,
-              shadowRadius: 12,
-              elevation: 8,
             }}
           >
-            <View
+            <Text
               style={{
-                alignItems: "center",
+                fontSize: 18,
+                fontWeight: "600",
+                color: colors.text,
+                textAlign: "center",
+                marginBottom: 16,
+              }}
+            >
+              {!user?.uid
+                ? t("auto_budget_importer.not_authenticated")
+                : t("auto_budget_importer.no_bank_connected")}
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                textAlign: "center",
                 marginBottom: 20,
               }}
             >
-              <View
-                style={{
-                  backgroundColor: colors.primaryLight,
-                  padding: 16,
-                  borderRadius: 16,
-                  marginBottom: 16,
-                }}
-              >
-                <Ionicons
-                  name="card-outline"
-                  size={32}
-                  color={colors.primary}
-                />
-              </View>
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "700",
-                  color: colors.text,
-                  marginBottom: 8,
-                  textAlign: "center",
-                }}
-              >
-                {t("auto_budget_importer.no_bank_connected")}
-              </Text>
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  textAlign: "center",
-                  fontSize: 14,
-                  lineHeight: 20,
-                }}
-              >
-                {t("auto_budget_importer.connect_bank_description")}
-              </Text>
-            </View>
+              {!user?.uid
+                ? t("auto_budget_importer.login_required")
+                : t("auto_budget_importer.connect_bank_description")}
+            </Text>
             <TouchableOpacity
               onPress={onClose}
               style={{
                 backgroundColor: colors.primary,
-                padding: 16,
+                paddingVertical: 12,
+                paddingHorizontal: 24,
                 borderRadius: 12,
                 alignItems: "center",
               }}
             >
               <Text
                 style={{
-                  color: colors.buttonText,
-                  fontWeight: "600",
+                  color: "white",
                   fontSize: 16,
+                  fontWeight: "600",
                 }}
               >
-                {t("auto_budget_importer.close")}
+                {t("common.close")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -671,493 +414,565 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
   }
 
   return (
-    <Modal
-      visible={isVisible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-        {/* Progress Overlay */}
-        {isSaving && (
-          <View
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.7)",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: 1000,
-            }}
-          >
+    <Modal visible={isVisible} animationType="slide" transparent>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.5)",
+          justifyContent: "flex-end",
+          paddingTop: 8, // Minimal padding to maximize transaction space
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            maxHeight: "98%", // Even more height for transactions
+            minHeight: "80%", // Higher minimum height
+          }}
+        >
+          <SafeAreaView style={{ flex: 1 }}>
+            {/* Header */}
             <View
               style={{
-                backgroundColor: colors.surface,
-                borderRadius: 16,
-                padding: 24,
-                margin: 20,
+                flexDirection: "row",
+                justifyContent: "space-between",
                 alignItems: "center",
-                minWidth: 280,
+                paddingHorizontal: 24,
+                paddingVertical: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.border,
               }}
             >
-              <ActivityIndicator
-                size="large"
-                color={colors.primary}
-                style={{ marginBottom: 16 }}
-              />
               <Text
                 style={{
-                  fontSize: 18,
-                  fontWeight: "600",
+                  fontSize: 20,
+                  fontWeight: "700",
                   color: colors.text,
-                  marginBottom: 8,
-                  textAlign: "center",
                 }}
               >
-                {t("auto_budget_importer.importing_transactions")}
+                {t("auto_budget_importer.title")}
               </Text>
-              <Text
+              <TouchableOpacity
+                onPress={onClose}
                 style={{
-                  fontSize: 14,
-                  color: colors.textSecondary,
-                  marginBottom: 16,
-                  textAlign: "center",
+                  padding: 8,
+                  borderRadius: 8,
+                  backgroundColor: colors.surfaceSecondary,
                 }}
               >
-                {saveProgress.current} of {saveProgress.total}
-                {saveProgress.startTime > 0 && saveProgress.current > 0 && (
-                  <Text style={{ fontSize: 12 }}>
-                    {"\n"}
-                    {Math.round(
-                      (((Date.now() - saveProgress.startTime) /
-                        saveProgress.current) *
-                        (saveProgress.total - saveProgress.current)) /
-                        1000
-                    )}
-                    {t("auto_budget_importer.s_remaining")}
-                  </Text>
-                )}
-              </Text>
-              {saveProgress.currentTransaction && (
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: colors.textSecondary,
-                    textAlign: "center",
-                    fontStyle: "italic",
-                    marginBottom: 16,
-                  }}
-                  numberOfLines={2}
-                >
-                  {t("auto_budget_importer.saving")}{" "}
-                  {saveProgress.currentTransaction}
-                </Text>
-              )}
-              <View
-                style={{
-                  width: "100%",
-                  height: 4,
-                  backgroundColor: colors.border,
-                  borderRadius: 2,
-                  overflow: "hidden",
-                }}
-              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Content */}
+            <View style={{ flex: 1, padding: 24 }}>
+              {isLoading ? (
                 <View
                   style={{
-                    width: `${
-                      (saveProgress.current / saveProgress.total) * 100
-                    }%`,
-                    height: "100%",
-                    backgroundColor: colors.primary,
-                    borderRadius: 2,
-                  }}
-                />
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Modal Header */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: 20,
-            paddingTop: 60,
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
-          }}
-        >
-          <TouchableOpacity onPress={onClose} style={{ padding: 8 }}>
-            <Ionicons name="close" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: colors.text,
-            }}
-          >
-            {t("auto_budget_importer.import")}{" "}
-            {selectedMonth
-              ? formatMonth(selectedMonth)
-              : t("auto_budget_importer.current_month")}
-          </Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        {/* Summary */}
-        <View
-          style={{
-            padding: 20,
-            backgroundColor: colors.surface,
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
-          }}
-        >
-          {/* Bank Filter */}
-          {connectedBanks.length > 1 && (
-            <View style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "600",
-                  color: colors.text,
-                  marginBottom: 8,
-                }}
-              >
-                {t("auto_budget_importer.filter_by_bank")}
-              </Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={{ marginBottom: 0, height: 40 }}
-              >
-                <TouchableOpacity
-                  onPress={() => setSelectedBankFilter("all")}
-                  style={{
-                    backgroundColor:
-                      selectedBankFilter === "all"
-                        ? colors.primary
-                        : colors.card,
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    borderRadius: 20,
-                    marginRight: 8,
-                    borderWidth: 0,
-                    borderColor:
-                      selectedBankFilter === "all"
-                        ? colors.primary
-                        : colors.border,
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
                   }}
                 >
+                  <ActivityIndicator size="large" color={colors.primary} />
                   <Text
                     style={{
-                      color:
-                        selectedBankFilter === "all" ? "white" : colors.text,
-                      fontSize: 14,
-                      fontWeight: "600",
+                      marginTop: 16,
+                      fontSize: 16,
+                      color: colors.textSecondary,
                     }}
                   >
-                    {t("auto_budget_importer.all_banks")}
+                    {t("auto_budget_importer.processing")}
                   </Text>
-                </TouchableOpacity>
-                {connectedBanks.map((bank: any) => (
-                  <TouchableOpacity
-                    key={bank.name}
-                    onPress={() => setSelectedBankFilter(bank.name)}
-                    style={{
-                      backgroundColor:
-                        selectedBankFilter === bank.name
-                          ? colors.primary
-                          : colors.card,
-                      paddingHorizontal: 16,
-                      paddingVertical: 12,
-                      borderRadius: 20,
-                      marginRight: 8,
-                      borderWidth: 1,
-                      borderColor:
-                        selectedBankFilter === bank.name
-                          ? colors.primary
-                          : colors.border,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          selectedBankFilter === bank.name
-                            ? "white"
-                            : colors.text,
-                        fontSize: 14,
-                        fontWeight: "600",
-                      }}
-                    >
-                      {bank.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          <View style={{ flexDirection: "row", gap: 12 }}>
-            <TouchableOpacity
-              onPress={selectAll}
-              style={{
-                backgroundColor: colors.primary,
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderRadius: 8,
-                flex: 1,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.buttonText,
-                  fontSize: 14,
-                  fontWeight: "600",
-                }}
-              >
-                {t("auto_budget_importer.select_all")}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={deselectAll}
-              style={{
-                backgroundColor: colors.surface,
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderRadius: 8,
-                flex: 1,
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: colors.border,
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.text,
-                  fontSize: 14,
-                  fontWeight: "600",
-                }}
-              >
-                {t("auto_budget_importer.deselect_all")}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Transactions List */}
-        <ScrollView style={{ flex: 1, padding: 16, paddingHorizontal: 16 }}>
-          {categorizedTransactions.length === 0 ? (
-            <View
-              style={{
-                alignItems: "center",
-                justifyContent: "center",
-                paddingVertical: 40,
-                paddingHorizontal: 20,
-              }}
-            >
-              <Ionicons
-                name="calendar"
-                size={48}
-                color={colors.textSecondary}
-                style={{ marginBottom: 16 }}
-              />
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "600",
-                  color: colors.text,
-                  marginBottom: 8,
-                  textAlign: "center",
-                }}
-              >
-                {t("auto_budget_importer.no_current_month_transactions")}
-              </Text>
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  textAlign: "center",
-                  lineHeight: 20,
-                }}
-              >
-                {t("auto_budget_importer.no_transactions_description")}
-              </Text>
-            </View>
-          ) : (
-            categorizedTransactions.map((transaction) => (
-              <TouchableOpacity
-                key={transaction.id}
-                onPress={() => toggleTransactionSelection(transaction.id)}
-                style={{
-                  backgroundColor: colors.surface,
-                  padding: 16,
-                  borderRadius: 12,
-                  marginBottom: 12,
-                  borderWidth: 2,
-                  borderColor: transaction.isSelected
-                    ? colors.primary
-                    : colors.border,
-                }}
-              >
+                </View>
+              ) : categorizedTransactions.length === 0 ? (
                 <View
                   style={{
-                    flexDirection: "row",
+                    flex: 1,
+                    justifyContent: "center",
                     alignItems: "center",
-                    justifyContent: "space-between",
                   }}
                 >
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "600",
-                        color: colors.text,
-                        marginBottom: 4,
-                      }}
-                    >
-                      {transaction.name}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                        marginBottom: 4,
-                      }}
-                    >
-                      {transaction.category} •{" "}
-                      {new Date(transaction.date).toLocaleDateString()}
-                    </Text>
-                    <View
-                      style={{
-                        backgroundColor:
-                          transaction.type === "income"
-                            ? colors.successLight
-                            : colors.errorLight,
-                        paddingHorizontal: 8,
-                        paddingVertical: 2,
-                        borderRadius: 4,
-                        alignSelf: "flex-start",
-                      }}
-                    >
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={64}
+                    color={colors.success}
+                    style={{ marginBottom: 16 }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: "600",
+                      color: colors.text,
+                      textAlign: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    {t("auto_budget_importer.all_imported")}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      textAlign: "center",
+                    }}
+                  >
+                    {t("auto_budget_importer.no_new_transactions")}
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  {/* Bank Filters */}
+                  {(() => {
+                    const uniqueBanks = new Set<string>();
+                    bankAccounts.forEach((account: any) => {
+                      if (account.institution) {
+                        uniqueBanks.add(account.institution);
+                      }
+                    });
+                    return uniqueBanks.size > 1;
+                  })() && (
+                    <View style={{ marginBottom: 20 }}>
                       <Text
                         style={{
-                          fontSize: 12,
+                          fontSize: 16,
                           fontWeight: "600",
-                          color:
-                            transaction.type === "income"
-                              ? colors.success
-                              : colors.error,
+                          color: colors.text,
+                          marginBottom: 12,
                         }}
                       >
-                        {transaction.type === "income"
-                          ? t("auto_budget_importer.income")
-                          : t("auto_budget_importer.expense")}
+                        {t("auto_budget_importer.filter_by_bank")}
                       </Text>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={{ marginBottom: 12 }}
+                      >
+                        <TouchableOpacity
+                          onPress={() => setSelectedBankFilter("all")}
+                          style={{
+                            paddingHorizontal: 16,
+                            paddingVertical: 8,
+                            borderRadius: 20,
+                            marginRight: 8,
+                            backgroundColor:
+                              selectedBankFilter === "all"
+                                ? colors.primary
+                                : colors.surfaceSecondary,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              fontWeight: "600",
+                              color:
+                                selectedBankFilter === "all"
+                                  ? "white"
+                                  : colors.textSecondary,
+                            }}
+                          >
+                            {t("auto_budget_importer.all_banks")}
+                          </Text>
+                        </TouchableOpacity>
+                        {(() => {
+                          const uniqueBanks = new Set<string>();
+                          bankAccounts.forEach((account: any) => {
+                            if (account.institution) {
+                              uniqueBanks.add(account.institution);
+                            }
+                          });
+                          return Array.from(uniqueBanks);
+                        })().map((bankName) => (
+                          <TouchableOpacity
+                            key={bankName}
+                            onPress={() => setSelectedBankFilter(bankName)}
+                            style={{
+                              paddingHorizontal: 16,
+                              paddingVertical: 8,
+                              borderRadius: 20,
+                              marginRight: 8,
+                              backgroundColor:
+                                selectedBankFilter === bankName
+                                  ? colors.primary
+                                  : colors.surfaceSecondary,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: 14,
+                                fontWeight: "600",
+                                color:
+                                  selectedBankFilter === bankName
+                                    ? "white"
+                                    : colors.textSecondary,
+                              }}
+                            >
+                              {bankName}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
                     </View>
-                  </View>
+                  )}
 
-                  <View style={{ alignItems: "flex-end" }}>
-                    <Text
+                  {/* Action Bar with Select All/Deselect All */}
+                  {categorizedTransactions.length > 0 && (
+                    <View
                       style={{
-                        fontSize: 18,
-                        fontWeight: "700",
-                        color:
-                          transaction.type === "income"
-                            ? colors.success
-                            : colors.error,
-                        marginBottom: 8,
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        paddingVertical: 12,
+                        paddingHorizontal: 16,
+                        backgroundColor: colors.surfaceSecondary,
+                        borderRadius: 12,
+                        marginBottom: 16,
                       }}
                     >
-                      {transaction.type === "income" ? "+" : "-"}
-                      {formatAmountWithoutSymbol(
-                        transaction.amount,
-                        null, // No filtered currency in auto-import
-                        selectedCurrency
-                      )}
-                    </Text>
-                    <Ionicons
-                      name={
-                        transaction.isSelected
-                          ? "checkmark-circle"
-                          : "ellipse-outline"
-                      }
-                      size={24}
-                      color={
-                        transaction.isSelected
-                          ? colors.primary
-                          : colors.textSecondary
-                      }
-                    />
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))
-          )}
-        </ScrollView>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setCategorizedTransactions((prev) =>
+                            prev.map((t) => ({ ...t, isSelected: true }))
+                          );
+                        }}
+                        style={{
+                          flex: 1,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                          backgroundColor: colors.primary + "20",
+                          borderRadius: 8,
+                          borderWidth: 1,
+                          borderColor: colors.primary,
+                          marginRight: 8,
+                        }}
+                      >
+                        <Ionicons
+                          name="checkmark-done-circle-outline"
+                          size={16}
+                          color={colors.primary}
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            fontWeight: "600",
+                            color: colors.primary,
+                          }}
+                        >
+                          {t("auto_budget_importer.select_all")}
+                        </Text>
+                      </TouchableOpacity>
 
-        {/* Save Button */}
-        <View
-          style={{
-            padding: 16,
-            paddingHorizontal: 16,
-            borderTopWidth: 1,
-            borderTopColor: colors.border,
-          }}
-        >
-          <TouchableOpacity
-            onPress={saveSelectedTransactions}
-            disabled={isSaving || selectedCount === 0}
-            style={{
-              backgroundColor:
-                selectedCount > 0 ? colors.primary : colors.border,
-              padding: 16,
-              borderRadius: 12,
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "center",
-            }}
-          >
-            {isSaving ? (
-              <ActivityIndicator
-                size="small"
-                color={colors.buttonText}
-                style={{ marginRight: 8 }}
-              />
-            ) : (
-              <Ionicons
-                name="save"
-                size={20}
-                color={colors.buttonText}
-                style={{ marginRight: 8 }}
-              />
-            )}
-            <Text
-              style={{
-                color: colors.buttonText,
-                fontSize: 16,
-                fontWeight: "600",
-              }}
-            >
-              {isSaving
-                ? t("auto_budget_importer.saving_transactions")
-                : selectedCount === 1
-                ? t("auto_budget_importer.save_transactions", {
-                    count: selectedCount,
-                  })
-                : t("auto_budget_importer.save_transactions_plural", {
-                    count: selectedCount,
-                  })}
-            </Text>
-          </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setCategorizedTransactions((prev) =>
+                            prev.map((t) => ({ ...t, isSelected: false }))
+                          );
+                        }}
+                        style={{
+                          flex: 1,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                          backgroundColor: colors.error + "20",
+                          borderRadius: 8,
+                          borderWidth: 1,
+                          borderColor: colors.error,
+                          marginLeft: 8,
+                        }}
+                      >
+                        <Ionicons
+                          name="close-circle-outline"
+                          size={16}
+                          color={colors.error}
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            fontWeight: "600",
+                            color: colors.error,
+                          }}
+                        >
+                          {t("auto_budget_importer.deselect_all")}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* Transactions List */}
+                  <ScrollView style={{ flex: 1 }}>
+                    {categorizedTransactions.map((transaction, index) => (
+                      <TouchableOpacity
+                        key={`${transaction.id}-${index}`}
+                        onPress={() => {
+                          setCategorizedTransactions((prev) =>
+                            prev.map((t, i) =>
+                              i === index
+                                ? { ...t, isSelected: !t.isSelected }
+                                : t
+                            )
+                          );
+                        }}
+                        style={{
+                          backgroundColor: colors.surfaceSecondary,
+                          borderRadius: 12,
+                          padding: 16,
+                          marginBottom: 12,
+                          borderWidth: 2,
+                          borderColor: transaction.isSelected
+                            ? colors.primary
+                            : colors.border,
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                            marginBottom: 8,
+                          }}
+                        >
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={{
+                                fontSize: 16,
+                                fontWeight: "600",
+                                color: colors.text,
+                                marginBottom: 4,
+                              }}
+                            >
+                              {transaction.name}
+                            </Text>
+                            <Text
+                              style={{
+                                fontSize: 14,
+                                color: colors.textSecondary,
+                                marginBottom: 4,
+                              }}
+                            >
+                              {new Date(transaction.date).toLocaleDateString()}
+                            </Text>
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                marginBottom: 4,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: 12,
+                                  color: colors.textSecondary,
+                                  marginRight: 8,
+                                }}
+                              >
+                                {transaction.category}
+                              </Text>
+                              <View
+                                style={{
+                                  backgroundColor: colors.primary + "20",
+                                  paddingHorizontal: 6,
+                                  paddingVertical: 2,
+                                  borderRadius: 4,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    fontSize: 10,
+                                    color: colors.primary,
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  {Math.round(transaction.confidence * 100)}%
+                                </Text>
+                              </View>
+                            </View>
+                            <Text
+                              style={{
+                                fontSize: 10,
+                                color: colors.textSecondary,
+                                fontStyle: "italic",
+                              }}
+                            >
+                              {transaction.reason}
+                            </Text>
+                          </View>
+                          <View
+                            style={{
+                              alignItems: "flex-end",
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: 18,
+                                fontWeight: "700",
+                                color:
+                                  transaction.type === "income"
+                                    ? colors.success
+                                    : colors.error,
+                              }}
+                            >
+                              {transaction.type === "income" ? "+" : "-"}
+                              {formatAmountWithoutSymbol(
+                                transaction.amount,
+                                null,
+                                selectedCurrency
+                              )}
+                            </Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+
+                  {/* Import Progress Info */}
+                  {isSaving && (
+                    <View
+                      style={{
+                        backgroundColor: colors.surfaceSecondary,
+                        borderRadius: 12,
+                        padding: 16,
+                        marginBottom: 16,
+                        borderWidth: 1,
+                        borderColor: colors.primary + "30",
+                      }}
+                    >
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 8,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            fontWeight: "600",
+                            color: colors.text,
+                          }}
+                        >
+                          {t("auto_budget_importer.importing_transactions")}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: colors.textSecondary,
+                          }}
+                        >
+                          {saveProgress.currentTransaction}
+                        </Text>
+                      </View>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: colors.textSecondary,
+                          }}
+                        >
+                          {selectedCount}{" "}
+                          {t("auto_budget_importer.transactions_remaining")}
+                        </Text>
+                        {saveProgress.startTime > 0 && (
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              color: colors.primary,
+                              fontWeight: "500",
+                            }}
+                          >
+                            {(() => {
+                              const elapsed =
+                                (Date.now() - saveProgress.startTime) / 1000;
+                              const remaining = Math.max(
+                                0,
+                                selectedCount * 0.5 - elapsed
+                              );
+                              return remaining > 0
+                                ? `${Math.ceil(remaining)}s ${t(
+                                    "auto_budget_importer.remaining"
+                                  )}`
+                                : t("auto_budget_importer.almost_done");
+                            })()}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Add Button */}
+                  <TouchableOpacity
+                    onPress={handleSaveTransactions}
+                    disabled={isSaving || selectedCount === 0}
+                    style={{
+                      backgroundColor:
+                        selectedCount === 0
+                          ? colors.surfaceSecondary
+                          : colors.primary,
+                      paddingVertical: 16,
+                      borderRadius: 12,
+                      alignItems: "center",
+                      marginTop: 16,
+                      opacity: selectedCount === 0 ? 0.5 : 1,
+                    }}
+                  >
+                    {isSaving ? (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                        }}
+                      >
+                        <ActivityIndicator
+                          size="small"
+                          color="white"
+                          style={{ marginRight: 8 }}
+                        />
+                        <Text
+                          style={{
+                            color: "white",
+                            fontSize: 16,
+                            fontWeight: "600",
+                          }}
+                        >
+                          {t("auto_budget_importer.adding_transactions")}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text
+                        style={{
+                          color: "white",
+                          fontSize: 16,
+                          fontWeight: "600",
+                        }}
+                      >
+                        {t("auto_budget_importer.add_selected", {
+                          count: selectedCount,
+                        })}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          </SafeAreaView>
         </View>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 };
