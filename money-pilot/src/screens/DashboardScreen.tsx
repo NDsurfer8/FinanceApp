@@ -546,23 +546,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       const totalIncome = actualIncome + recurringIncome;
       const totalExpenses = actualExpenses + recurringExpenses;
 
-      // DEBUG: Log trend data calculation
-      console.log(
-        `📊 Dashboard Trend - Month ${
-          date.getMonth() + 1
-        }/${date.getFullYear()}:`
-      );
-      console.log(`  📋 Total transactions: ${monthTransactions.length}`);
-      console.log(
-        `  📋 Non-recurring transactions: ${nonRecurringMonthTransactions.length}`
-      );
-      console.log(`  💰 Actual income: $${actualIncome.toFixed(2)}`);
-      console.log(`  🔄 Recurring income: $${recurringIncome.toFixed(2)}`);
-      console.log(`  💰 Total income: $${totalIncome.toFixed(2)}`);
-      console.log(`  💸 Actual expenses: $${actualExpenses.toFixed(2)}`);
-      console.log(`  🔄 Recurring expenses: $${recurringExpenses.toFixed(2)}`);
-      console.log(`  💸 Total expenses: $${totalExpenses.toFixed(2)}`);
-
       // Find net worth for this month
       const monthNetWorthEntry = netWorthEntries.find((entry) => {
         const entryDate = new Date(entry.date);

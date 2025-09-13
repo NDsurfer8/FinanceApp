@@ -316,17 +316,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   const getInsights = () => {
     const insights = [];
 
-    // DEBUG: Log smart insights calculation
-    console.log("🧠 Budget Screen - Smart Insights Debug:");
-    console.log(`  💰 Total Income: $${totalIncome.toFixed(2)}`);
-    console.log(`  💸 Total Expenses: $${totalExpenses.toFixed(2)}`);
-    console.log(`  📊 All Month Transactions: ${allMonthTransactions.length}`);
-    console.log(
-      `  🎯 Discretionary Income: $${discretionaryIncome.toFixed(2)}`
-    );
-    console.log(`  💵 Remaining Balance: $${remainingBalance.toFixed(2)}`);
-    console.log(`  📈 Savings Percentage: ${savingsPercentage}%`);
-
     if (totalIncome > 0) {
       // Calculate discretionary savings rate (what's actually available after all allocations)
       const discretionarySavingsRate = (remainingBalance / totalIncome) * 100;
