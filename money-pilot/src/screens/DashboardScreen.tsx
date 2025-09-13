@@ -1516,7 +1516,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         fontWeight: "600",
                       }}
                     >
-                      Set Emergency Fund Goal →
+                      {t("dashboard.set_emergency_fund_goal")}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -1540,7 +1540,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         fontWeight: "600",
                       }}
                     >
-                      Review Budget →
+                      {t("dashboard.review_budget")}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -1564,7 +1564,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         fontWeight: "600",
                       }}
                     >
-                      Manage Debts →
+                      {t("dashboard.manage_debts")}
                     </Text>
                   </TouchableOpacity>
                 )}
