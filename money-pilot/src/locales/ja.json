@@ -1174,7 +1174,9 @@
     "error_saving_description": "取引の保存に失敗しました。接続を確認して再試行してください。",
     "s_remaining": "秒残り",
     "filter_by_bank": "銀行でフィルター",
-    "all_banks": "すべての銀行"
+    "all_banks": "すべての銀行",
+    "new_transactions_imported": "新しい取引をインポートしました",
+    "recurring_transactions_marked_paid": "定期取引を支払済みとしてマークしました"
   },
   "transaction_list_card": {
     "transactions": "取引",

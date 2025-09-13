@@ -227,7 +227,9 @@
     "error_saving_description": "Failed to save transactions. Please check your connection and try again.",
     "s_remaining": "s remaining",
     "filter_by_bank": "Filter by Bank",
-    "all_banks": "All Banks"
+    "all_banks": "All Banks",
+    "new_transactions_imported": "new transactions imported",
+    "recurring_transactions_marked_paid": "recurring transactions marked paid"
   },
   "transaction_list_card": {
     "transactions": "transactions",

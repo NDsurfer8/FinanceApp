@@ -1174,7 +1174,9 @@
     "error_saving_description": "Error al guardar transacciones. Por favor, verifica tu conexión e inténtalo de nuevo.",
     "s_remaining": "s restantes",
     "filter_by_bank": "Filtrar por Banco",
-    "all_banks": "Todos los Bancos"
+    "all_banks": "Todos los Bancos",
+    "new_transactions_imported": "nuevas transacciones importadas",
+    "recurring_transactions_marked_paid": "transacciones recurrentes marcadas como pagadas"
   },
   "transaction_list_card": {
     "transactions": "transacciones",

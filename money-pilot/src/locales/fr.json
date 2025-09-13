@@ -1174,7 +1174,9 @@
     "error_saving_description": "Échec de la sauvegarde des transactions. Veuillez vérifier votre connexion et réessayer.",
     "s_remaining": "s restantes",
     "filter_by_bank": "Filtrer par Banque",
-    "all_banks": "Toutes les Banques"
+    "all_banks": "Toutes les Banques",
+    "new_transactions_imported": "nouvelles transactions importées",
+    "recurring_transactions_marked_paid": "transactions récurrentes marquées comme payées"
   },
   "transaction_list_card": {
     "transactions": "transactions",

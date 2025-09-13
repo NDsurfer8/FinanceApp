@@ -330,7 +330,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
       const totalProcessed = savedCount + matchedCount;
       const message =
         matchedCount > 0
-          ? `${totalProcessed} transactions processed:\n• ${savedCount} new transactions imported\n• ${matchedCount} transactions matched with existing ones`
+          ? `${totalProcessed} transactions processed:\n• ${savedCount} ${t("auto_budget_importer.new_transactions_imported")}\n• ${matchedCount} ${t("auto_budget_importer.recurring_transactions_marked_paid")}`
           : t("auto_budget_importer.transactions_imported", {
               count: totalProcessed,
             });

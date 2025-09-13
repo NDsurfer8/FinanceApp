@@ -1174,7 +1174,9 @@
     "error_saving_description": "保存交易失败。请检查您的连接并重试。",
     "s_remaining": "笔剩余",
     "filter_by_bank": "按银行筛选",
-    "all_banks": "所有银行"
+    "all_banks": "所有银行",
+    "new_transactions_imported": "新交易已导入",
+    "recurring_transactions_marked_paid": "定期交易已标记为已付"
   },
   "transaction_list_card": {
     "transactions": "交易",

@@ -1174,7 +1174,9 @@
     "error_saving_description": "लेनदेन सहेजने में विफल। कृपया अपना कनेक्शन जांचें और पुनः प्रयास करें।",
     "s_remaining": "सेकंड शेष",
     "filter_by_bank": "बैंक के अनुसार फ़िल्टर करें",
-    "all_banks": "सभी बैंक"
+    "all_banks": "सभी बैंक",
+    "new_transactions_imported": "नए लेनदेन आयात किए गए",
+    "recurring_transactions_marked_paid": "आवर्ती लेनदेन भुगतान किया गया चिह्नित"
   },
   "transaction_list_card": {
     "transactions": "लेनदेन",

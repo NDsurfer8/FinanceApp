@@ -1174,7 +1174,9 @@
     "error_saving_description": "فشل في حفظ المعاملات. يرجى التحقق من اتصالك والمحاولة مرة أخرى.",
     "s_remaining": "ثواني متبقية",
     "filter_by_bank": "تصفية حسب البنك",
-    "all_banks": "جميع البنوك"
+    "all_banks": "جميع البنوك",
+    "new_transactions_imported": "معاملات جديدة مستوردة",
+    "recurring_transactions_marked_paid": "معاملات متكررة تم تحديدها كمُدفوعة"
   },
   "transaction_list_card": {
     "transactions": "المعاملات",

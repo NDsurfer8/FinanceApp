@@ -1174,7 +1174,9 @@
     "error_saving_description": "Fehler beim Speichern der Transaktionen. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
     "s_remaining": "s verbleibend",
     "filter_by_bank": "Nach Bank Filtern",
-    "all_banks": "Alle Banken"
+    "all_banks": "Alle Banken",
+    "new_transactions_imported": "neue Transaktionen importiert",
+    "recurring_transactions_marked_paid": "wiederkehrende Transaktionen als bezahlt markiert"
   },
   "transaction_list_card": {
     "transactions": "Transaktionen",

@@ -1174,7 +1174,9 @@
     "error_saving_description": "Не удалось сохранить транзакции. Проверьте подключение и попробуйте снова.",
     "s_remaining": "с осталось",
     "filter_by_bank": "Фильтр по Банку",
-    "all_banks": "Все Банки"
+    "all_banks": "Все Банки",
+    "new_transactions_imported": "новые транзакции импортированы",
+    "recurring_transactions_marked_paid": "повторяющиеся транзакции отмечены как оплаченные"
   },
   "transaction_list_card": {
     "transactions": "транзакции",
