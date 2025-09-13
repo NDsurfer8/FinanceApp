@@ -35,6 +35,7 @@ import { getProjectedTransactionsForMonth } from "../services/transactionService
 import { timestampToDateString } from "../utils/dateUtils";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 import { useScrollDetection } from "../hooks/useScrollDetection";
+import { handledTransactionsTracker } from "../services/handledTransactionsTracker";
 
 interface BudgetScreenProps {
   navigation: any;
@@ -154,8 +155,22 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     });
   };
 
-  // Helper function to check if a bank transaction already exists in budget (same as AutoBudgetImporter)
-  const isTransactionAlreadyImported = (bankTransaction: any): boolean => {
+  // Helper function to check if a bank transaction already exists in budget or has been handled
+  const isTransactionAlreadyImported = async (
+    bankTransaction: any
+  ): Promise<boolean> => {
+    if (!user?.uid) return false;
+
+    // First check if this transaction has been handled (saved or matched)
+    const isHandled = await handledTransactionsTracker.isHandled(
+      user.uid,
+      bankTransaction.id
+    );
+    if (isHandled) {
+      return true;
+    }
+
+    // Then check if it already exists as a saved transaction
     const bankDate = new Date(bankTransaction.date);
     const bankAmount = Math.abs(bankTransaction.amount);
     const bankName = bankTransaction.name?.toLowerCase() || "";
@@ -181,8 +196,25 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   };
 
   // Calculate available transactions for import (excluding already imported ones)
-  const getAvailableTransactionsCount = () => {
-    if (!isBankConnected || !bankTransactions.length) return 0;
+  const [availableTransactionsCount, setAvailableTransactionsCount] =
+    useState(0);
+
+  // Update available transactions count when dependencies change
+  useEffect(() => {
+    getAvailableTransactionsCount();
+  }, [
+    isBankConnected,
+    bankTransactions,
+    selectedMonth,
+    transactions,
+    user?.uid,
+  ]);
+
+  const getAvailableTransactionsCount = async () => {
+    if (!isBankConnected || !bankTransactions.length) {
+      setAvailableTransactionsCount(0);
+      return 0;
+    }
 
     const currentMonthTransactions = bankTransactions.filter(
       (transaction: any) => {
@@ -195,9 +227,16 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     );
 
     // Filter out transactions that are already imported using the same logic as AutoBudgetImporter
-    return currentMonthTransactions.filter(
-      (transaction: any) => !isTransactionAlreadyImported(transaction)
-    ).length;
+    let count = 0;
+    for (const transaction of currentMonthTransactions) {
+      const isAlreadyImported = await isTransactionAlreadyImported(transaction);
+      if (!isAlreadyImported) {
+        count++;
+      }
+    }
+
+    setAvailableTransactionsCount(count);
+    return count;
   };
 
   // Filter transactions for the selected month
@@ -1013,7 +1052,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           onPressExpense={handleAddExpense}
           onPressImport={() => setShowAutoImporter(true)}
           isBankConnected={isBankConnected}
-          availableTransactionsCount={getAvailableTransactionsCount()}
+          availableTransactionsCount={availableTransactionsCount}
           hasOverBudgetItems={hasOverBudgetItems()}
         />
 

@@ -4,18 +4,22 @@ export const mapPlaidCategoryToBudgetCategory = (
 ): string => {
   const category = plaidCategory.toUpperCase();
 
-  // Food & Dining
-  if (category === "FOOD_AND_DRINK") {
+  // Food & Dining - Handle both primary and detailed categories
+  if (category === "FOOD_AND_DRINK" || category.startsWith("FOOD_AND_DRINK_")) {
     return "Food";
   }
 
-  // Transportation
-  if (category === "TRANSPORTATION") {
+  // Transportation - Handle both primary and detailed categories
+  if (category === "TRANSPORTATION" || category.startsWith("TRANSPORTATION_")) {
     return "Transportation";
   }
 
-  // Shopping & Merchandise
-  if (category === "SHOPPING" || category === "GENERAL_MERCHANDISE") {
+  // Shopping & Merchandise - Handle both primary and detailed categories
+  if (
+    category === "SHOPPING" ||
+    category === "GENERAL_MERCHANDISE" ||
+    category.startsWith("GENERAL_MERCHANDISE_")
+  ) {
     return "Shopping";
   }
 
@@ -23,7 +27,10 @@ export const mapPlaidCategoryToBudgetCategory = (
   if (category === "HOME_IMPROVEMENT") {
     return "Utilities";
   }
-  if (category === "GENERAL_SERVICES") {
+  if (
+    category === "GENERAL_SERVICES" ||
+    category.startsWith("GENERAL_SERVICES_")
+  ) {
     return "Utilities";
   }
 
@@ -42,8 +49,8 @@ export const mapPlaidCategoryToBudgetCategory = (
     return "Business";
   }
 
-  // Income (for income transactions)
-  if (category === "INCOME") {
+  // Income (for income transactions) - Handle both primary and detailed categories
+  if (category === "INCOME" || category.startsWith("INCOME_")) {
     return "Salary";
   }
 
@@ -51,12 +58,12 @@ export const mapPlaidCategoryToBudgetCategory = (
   if (category === "TRANSFER_IN") {
     return "Other Income";
   }
-  if (category === "TRANSFER_OUT") {
+  if (category === "TRANSFER_OUT" || category.startsWith("TRANSFER_OUT_")) {
     return "Other Expenses";
   }
 
-  if (category === "LOAN_PAYMENTS") {
-    return "Loan Payment";
+  if (category === "LOAN_PAYMENTS" || category.startsWith("LOAN_PAYMENTS_")) {
+    return "Credit Card";
   }
 
   if (category === "BANK_FEES") {
@@ -91,6 +98,58 @@ export const mapPlaidCategoryToBudgetCategory = (
   // Service
   if (category === "SERVICE") {
     return "Utilities";
+  }
+
+  // Rent and Housing - Handle both primary and detailed categories
+  if (
+    category === "RENT_AND_UTILITIES" ||
+    category === "RENT" ||
+    category.startsWith("RENT_AND_UTILITIES_")
+  ) {
+    return "Rent";
+  }
+
+  // Car Payment and Automotive
+  if (category === "AUTOMOTIVE" || category === "AUTO_LOAN") {
+    return "Car Payment";
+  }
+
+  // Insurance - Handle both primary and detailed categories
+  if (
+    category === "INSURANCE" ||
+    category.startsWith("GENERAL_SERVICES_INSURANCE")
+  ) {
+    return "Insurance";
+  }
+
+  // Internet and Telecom - Handle both primary and detailed categories
+  if (
+    category === "TELECOM" ||
+    category === "INTERNET" ||
+    category.startsWith("RENT_AND_UTILITIES_INTERNET") ||
+    category.startsWith("RENT_AND_UTILITIES_CABLE")
+  ) {
+    return "Internet";
+  }
+
+  // Phone specifically
+  if (category === "MOBILE_PHONE" || category === "CELL_PHONE") {
+    return "Phone";
+  }
+
+  // Subscriptions and recurring services - Handle both primary and detailed categories
+  if (
+    category === "SUBSCRIPTION" ||
+    category === "RECURRING_SUBSCRIPTION" ||
+    category.startsWith("SUBSCRIPTION_") ||
+    category.startsWith("RECURRING_SUBSCRIPTION_")
+  ) {
+    return "Subscriptions";
+  }
+
+  // Credit Card payments
+  if (category === "CREDIT_CARD_PAYMENT" || category === "CREDIT_CARD") {
+    return "Credit Card";
   }
 
   // Default to "Other Expenses" if no match found
