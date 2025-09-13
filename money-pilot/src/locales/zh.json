@@ -145,7 +145,10 @@
     "recent_transactions": "最近交易",
     "quick_actions": "快速操作",
     "financial_insights": "金融洞察",
-    "excellent_discretionary_savings": "优秀的可自由支配储蓄！"
+    "excellent_discretionary_savings": "优秀的可自由支配储蓄！",
+    "doing_great_title": "您做得很好！🎉",
+    "doing_great_message": "您的财务状况看起来很健康！继续跟踪您的支出并朝着您的目标努力。",
+    "get_personalized_advice": "获取个性化建议"
   },
   "budget": {
     "title": "预算",

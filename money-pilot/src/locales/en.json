@@ -308,7 +308,10 @@
     "savings": "Savings:",
     "goal_contrib": "Goal Contrib:",
     "debt_payoff": "Debt Payoff:",
-    "available": "Available:"
+    "available": "Available:",
+    "doing_great_title": "You're Doing Great! 🎉",
+    "doing_great_message": "Your finances look healthy! Keep tracking your expenses and working toward your goals.",
+    "get_personalized_advice": "Get Personalized Advice"
   },
   "budget": {
     "title": "Budget",

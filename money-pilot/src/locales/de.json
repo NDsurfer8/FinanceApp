@@ -145,7 +145,10 @@
     "recent_transactions": "Aktuelle Transaktionen",
     "quick_actions": "Schnellaktionen",
     "financial_insights": "Finanzielle Einblicke",
-    "excellent_discretionary_savings": "Ausgezeichnete diskretionäre Ersparnisse!"
+    "excellent_discretionary_savings": "Ausgezeichnete diskretionäre Ersparnisse!",
+    "doing_great_title": "Sie Machen Das Großartig! 🎉",
+    "doing_great_message": "Ihre Finanzen sehen gesund aus! Verfolgen Sie weiterhin Ihre Ausgaben und arbeiten Sie auf Ihre Ziele hin.",
+    "get_personalized_advice": "Personalisierte Beratung Erhalten"
   },
   "budget": {
     "title": "Budget",

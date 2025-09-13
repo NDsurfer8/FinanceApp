@@ -145,7 +145,10 @@
     "recent_transactions": "最近の取引",
     "quick_actions": "クイックアクション",
     "financial_insights": "財務インサイト",
-    "excellent_discretionary_savings": "素晴らしい裁量的貯蓄！"
+    "excellent_discretionary_savings": "素晴らしい裁量的貯蓄！",
+    "doing_great_title": "素晴らしいです！🎉",
+    "doing_great_message": "あなたの財務は健全に見えます！支出を追跡し続け、目標に向かって取り組んでください。",
+    "get_personalized_advice": "パーソナライズされたアドバイスを取得"
   },
   "budget": {
     "title": "予算",

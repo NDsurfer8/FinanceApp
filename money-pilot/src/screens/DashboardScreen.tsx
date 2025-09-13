@@ -1614,7 +1614,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   color: colors.text,
                 }}
               >
-                You're Doing Great! 🎉
+                {t("dashboard.doing_great_title")}
               </Text>
             </View>
 
@@ -1626,8 +1626,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 marginBottom: 16,
               }}
             >
-              Your finances look healthy! Keep tracking your expenses and
-              working toward your goals.
+              {t("dashboard.doing_great_message")}
             </Text>
 
             <TouchableOpacity
@@ -1655,7 +1654,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   fontWeight: "600",
                 }}
               >
-                Get Personalized Advice
+                {t("dashboard.get_personalized_advice")}
               </Text>
             </TouchableOpacity>
           </View>

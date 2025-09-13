@@ -145,7 +145,10 @@
     "recent_transactions": "Transactions Récentes",
     "quick_actions": "Actions Rapides",
     "financial_insights": "Insights Financiers",
-    "excellent_discretionary_savings": "Excellent Épargne Discrétionnaire !"
+    "excellent_discretionary_savings": "Excellent Épargne Discrétionnaire !",
+    "doing_great_title": "Vous Vous En Sortez Très Bien ! 🎉",
+    "doing_great_message": "Vos finances ont l'air saines ! Continuez à suivre vos dépenses et à travailler vers vos objectifs.",
+    "get_personalized_advice": "Obtenir des Conseils Personnalisés"
   },
   "budget": {
     "title": "Budget",

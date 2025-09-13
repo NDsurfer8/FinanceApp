@@ -145,7 +145,10 @@
     "recent_transactions": "Transações Recentes",
     "quick_actions": "Ações Rápidas",
     "financial_insights": "Insights Financeiros",
-    "excellent_discretionary_savings": "Excelente Poupança Discricionária!"
+    "excellent_discretionary_savings": "Excelente Poupança Discricionária!",
+    "doing_great_title": "Você Está Indo Muito Bem! 🎉",
+    "doing_great_message": "Suas finanças parecem saudáveis! Continue rastreando seus gastos e trabalhando em direção aos seus objetivos.",
+    "get_personalized_advice": "Obter Conselhos Personalizados"
   },
   "budget": {
     "title": "Orçamento",
