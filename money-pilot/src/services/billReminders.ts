@@ -1,6 +1,7 @@
 import { notificationService } from "./notifications";
 import { getUserTransactions, getUserRecurringTransactions } from "./userData";
 import * as Notifications from "expo-notifications";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export interface BillReminder {
   id: string;
@@ -26,6 +27,15 @@ export class BillReminderService {
   // Schedule all bill reminders for a user
   async scheduleAllBillReminders(userId: string): Promise<void> {
     try {
+      // Check if bill reminders are enabled before scheduling
+      const billRemindersEnabled = await AsyncStorage.getItem(
+        `notification_bill-reminders`
+      );
+      const isBillRemindersEnabled = billRemindersEnabled === "true";
+
+      if (!isBillRemindersEnabled) {
+        return; // Bill reminders are disabled
+      }
       // Get all transactions and recurring transactions
       const [transactions, recurringTransactions] = await Promise.all([
         getUserTransactions(userId),

@@ -688,6 +688,9 @@ export class NotificationService {
       case "budget-reminder":
         // Navigate to budget screen
         break;
+      case "category-over-budget":
+        // Navigate to budget categories screen to review over-budget categories
+        break;
       case "weekly-budget-check":
         // Navigate to dashboard to review budget progress
         // Reschedule the next weekly notification
