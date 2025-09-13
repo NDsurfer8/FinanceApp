@@ -908,7 +908,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              {t("add_transaction.type")}
+              {t("add_transaction.type")} *
             </Text>
             <View style={{ flexDirection: "row", gap: 12 }}>
               <TouchableOpacity
@@ -978,7 +978,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              {t("add_transaction.description")}
+              {t("add_transaction.description")} *
             </Text>
             <TextInput
               style={{
@@ -1009,7 +1009,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              {getCurrencySymbol()} {t("add_transaction.amount")}
+              {getCurrencySymbol()} {t("add_transaction.amount")} *
             </Text>
             <TextInput
               style={{
@@ -1042,7 +1042,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              {t("add_transaction.category")}
+              {t("add_transaction.category")} *
             </Text>
             <ScrollView
               horizontal
@@ -1093,7 +1093,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 marginBottom: 8,
               }}
             >
-              {t("add_transaction.date")}
+              {t("add_transaction.date")} *
             </Text>
             <TouchableOpacity
               style={{
