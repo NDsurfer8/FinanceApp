@@ -21,7 +21,6 @@ import { formatAmountWithoutSymbol } from "../utils/filteredCurrency";
 import { mapPlaidCategoryToBudgetCategory } from "../utils/plaidCategoryMapping";
 import { categorizeTransactionEnhanced } from "../utils/categorize";
 import { overrideStore } from "../services/merchantOverrideStore";
-import { handledTransactionsTracker } from "../services/handledTransactionsTracker";
 
 interface AutoBudgetImporterProps {
   isVisible: boolean;
@@ -187,16 +186,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
       const isTransactionAlreadyImported = async (bankTransaction: any) => {
         if (!user?.uid) return false;
 
-        // First check if this transaction has been handled (saved or matched)
-        const isHandled = await handledTransactionsTracker.isHandled(
-          user.uid,
-          bankTransaction.id
-        );
-        if (isHandled) {
-          return true;
-        }
-
-        // Then check if it already exists as a saved transaction
+        // Check if it already exists as a saved transaction
         return transactions.some((existingTransaction) => {
           // Check if this bank transaction was already imported
           if (existingTransaction.bankTransactionId === bankTransaction.id) {
@@ -308,11 +298,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             matchedCount++;
             savedCount++; // Count matched transactions as "saved" for UI purposes
 
-            // Mark as handled since it was matched
-            await handledTransactionsTracker.markAsHandled(
-              user.uid,
-              transaction.id
-            );
+            // Transaction was matched with existing recurring transaction
           } else {
             // Save the transaction if no match found
             const transactionData = {
@@ -330,11 +316,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             await saveTransaction(transactionData);
             savedCount++;
 
-            // Mark as handled since it was saved
-            await handledTransactionsTracker.markAsHandled(
-              user.uid,
-              transaction.id
-            );
+            // Transaction was saved successfully
           }
         } catch (error) {
           console.error(`Error saving transaction ${transaction.name}:`, error);

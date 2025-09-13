@@ -35,7 +35,6 @@ import { getProjectedTransactionsForMonth } from "../services/transactionService
 import { timestampToDateString } from "../utils/dateUtils";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 import { useScrollDetection } from "../hooks/useScrollDetection";
-import { handledTransactionsTracker } from "../services/handledTransactionsTracker";
 
 interface BudgetScreenProps {
   navigation: any;
@@ -161,16 +160,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   ): Promise<boolean> => {
     if (!user?.uid) return false;
 
-    // First check if this transaction has been handled (saved or matched)
-    const isHandled = await handledTransactionsTracker.isHandled(
-      user.uid,
-      bankTransaction.id
-    );
-    if (isHandled) {
-      return true;
-    }
-
-    // Then check if it already exists as a saved transaction
+    // Check if it already exists as a saved transaction
     const bankDate = new Date(bankTransaction.date);
     const bankAmount = Math.abs(bankTransaction.amount);
     const bankName = bankTransaction.name?.toLowerCase() || "";
