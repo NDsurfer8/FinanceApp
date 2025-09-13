@@ -727,6 +727,30 @@ export default function SharedFinanceScreen({
               </TouchableOpacity>
             </View>
 
+            {/* Helpful Info */}
+            <View
+              style={{
+                backgroundColor: colors.primary + "10",
+                borderRadius: 8,
+                padding: 12,
+                marginBottom: 16,
+                borderLeftWidth: 4,
+                borderLeftColor: colors.primary,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                  lineHeight: 16,
+                }}
+              >
+                💡 <Text style={{ fontWeight: "600" }}>Shared Finance:</Text>{" "}
+                Create a group to collaborate on finances with family, partners,
+                or business associates. You control what data to share.
+              </Text>
+            </View>
+
             <TextInput
               style={[
                 styles.input,
@@ -769,21 +793,25 @@ export default function SharedFinanceScreen({
                     type: "couple",
                     label: t("shared_finance.couple"),
                     icon: "heart",
+                    description: "Share finances with your partner",
                   },
                   {
                     type: "family",
                     label: t("shared_finance.family"),
                     icon: "people",
+                    description: "Family financial planning",
                   },
                   {
                     type: "investment",
                     label: t("shared_finance.investment"),
                     icon: "trending-up",
+                    description: "Investment partnerships",
                   },
                   {
                     type: "business",
                     label: t("shared_finance.business"),
                     icon: "business",
+                    description: "Business financial management",
                   },
                 ].map((typeOption) => (
                   <TouchableOpacity
@@ -812,19 +840,31 @@ export default function SharedFinanceScreen({
                           : colors.textSecondary
                       }
                     />
-                    <Text
-                      style={[
-                        styles.typeOptionLabel,
-                        {
-                          color:
-                            groupType === typeOption.type
-                              ? colors.primary
-                              : colors.textSecondary,
-                        },
-                      ]}
-                    >
-                      {typeOption.label}
-                    </Text>
+                    <View style={{ alignItems: "center" }}>
+                      <Text
+                        style={[
+                          styles.typeOptionLabel,
+                          {
+                            color:
+                              groupType === typeOption.type
+                                ? colors.primary
+                                : colors.textSecondary,
+                          },
+                        ]}
+                      >
+                        {typeOption.label}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          color: colors.textSecondary,
+                          textAlign: "center",
+                          marginTop: 2,
+                        }}
+                      >
+                        {typeOption.description}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 ))}
               </View>

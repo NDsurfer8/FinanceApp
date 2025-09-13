@@ -60,6 +60,22 @@ const VOICE_OPTIONS = [
 
 // Local responses for common app questions (no API call needed)
 const APP_NAVIGATION_RESPONSES = {
+  // Welcome and help responses
+  "hello hi hey": {
+    response:
+      "Hi there! 👋 I'm Vectra, your AI financial advisor. I can help you with budgeting, goal setting, expense tracking, and financial planning. What would you like to know about your finances today?",
+    isLocal: true,
+  },
+  "help what can you do": {
+    response:
+      "I can help you with:\n\n💰 Budget analysis and recommendations\n🎯 Goal setting and tracking\n📊 Expense categorization and insights\n💡 Financial planning and advice\n📈 Net worth analysis\n🔍 Transaction matching and organization\n\nJust ask me anything about your finances!",
+    isLocal: true,
+  },
+  "how are you doing": {
+    response:
+      "I'm doing great, thanks for asking! 😊 I'm here and ready to help you with your financial goals. What's on your mind today?",
+    isLocal: true,
+  },
   // Dashboard questions
   "dashboard add transaction": {
     response:
@@ -2402,6 +2418,64 @@ Original Request: ${basePrompt}
             </Animated.View>
           )}
         </View>
+
+        {/* Quick Action Buttons */}
+        {messages.length <= 1 && (
+          <View
+            style={{
+              paddingHorizontal: 16,
+              paddingBottom: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "600",
+                color: colors.textSecondary,
+                marginBottom: 8,
+              }}
+            >
+              {t("ai_chat.quick_questions_title")}
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                gap: 8,
+              }}
+            >
+              {[
+                t("ai_chat.quick_question_budget"),
+                t("ai_chat.quick_question_car"),
+                t("ai_chat.quick_question_savings_goal"),
+                t("ai_chat.quick_question_analyze_spending"),
+              ].map((question, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => setInputText(question)}
+                  style={{
+                    backgroundColor: colors.primary + "15",
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: colors.primary + "30",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.primary,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {question}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
 
         <View
           style={{

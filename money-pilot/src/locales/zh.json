@@ -801,7 +801,7 @@
     "disconnect_all_banks": "断开所有银行连接"
   },
   "ai_chat": {
-    "initial_message": "阿罗哈！我是Vectra，您的个人AI财务顾问。我可以帮助您处理预算、目标、债务、投资和副业——您今天在想什么？🤙",
+    "initial_message": "你好！👋 我是Vectra，您的AI财务顾问。\n\n问我任何关于您金钱的问题：\n\n🚗 \"我能买得起什么车？\"\n🏠 \"我今年能买房吗？\"\n💳 \"我应该还债还是存钱？\"\n📱 \"这个订阅值得吗？\"\n💰 \"我每月应该存多少钱？\"\n\n您在想什么？",
     "input_placeholder": "✨ 询问我关于您的财务...",
     "audio_tooltip_title": "开启音频以听到Vectra的声音！",
     "audio_tooltip_description": "点击下面的扬声器图标以启用语音回复",
@@ -812,7 +812,12 @@
     "voice_fable": "温暖、讲故事的声音",
     "voice_onyx": "深沉、权威的音调",
     "voice_nova": "明亮、充满活力的声音",
-    "voice_shimmer": "柔和、温和的音调"
+    "voice_shimmer": "柔和、温和的音调",
+    "quick_questions_title": "快速问题：",
+    "quick_question_budget": "我的预算怎么样？",
+    "quick_question_car": "我能买得起什么车？",
+    "quick_question_savings_goal": "设定储蓄目标",
+    "quick_question_analyze_spending": "分析支出"
   },
   "notification_settings": {
     "title": "通知设置",

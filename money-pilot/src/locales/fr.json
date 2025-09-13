@@ -801,7 +801,7 @@
     "disconnect_all_banks": "Déconnecter Toutes les Banques"
   },
   "ai_chat": {
-    "initial_message": "Aloha ! Je suis Vectra, votre Conseiller Financier IA personnel. Je peux vous aider avec les budgets, objectifs, dettes, investissements et activités secondaires — qu'avez-vous en tête aujourd'hui ? 🤙",
+    "initial_message": "Salut ! 👋 Je suis Vectra, votre conseiller financier IA.\n\nDemandez-moi n'importe quoi sur votre argent :\n\n🚗 \"Quel type de voiture puis-je me permettre ?\"\n🏠 \"Puis-je acheter une maison cette année ?\"\n💳 \"Dois-je rembourser mes dettes ou épargner ?\"\n📱 \"Cet abonnement en vaut-il la peine ?\"\n💰 \"Combien devrais-je épargner chaque mois ?\"\n\nQu'avez-vous en tête ?",
     "input_placeholder": "✨ Demandez-moi des conseils financiers...",
     "audio_tooltip_title": "Activez l'audio pour entendre la voix de Vectra !",
     "audio_tooltip_description": "Appuyez sur l'icône du haut-parleur ci-dessous pour activer les réponses vocales",
@@ -812,7 +812,12 @@
     "voice_fable": "Voix chaleureuse et narrative",
     "voice_onyx": "Ton profond et autoritaire",
     "voice_nova": "Voix brillante et énergique",
-    "voice_shimmer": "Ton doux et gentil"
+    "voice_shimmer": "Ton doux et gentil",
+    "quick_questions_title": "Questions rapides :",
+    "quick_question_budget": "Comment va mon budget ?",
+    "quick_question_car": "Quel type de voiture puis-je me permettre ?",
+    "quick_question_savings_goal": "Définir un objectif d'épargne",
+    "quick_question_analyze_spending": "Analyser les dépenses"
   },
   "notification_settings": {
     "title": "Paramètres de Notification",

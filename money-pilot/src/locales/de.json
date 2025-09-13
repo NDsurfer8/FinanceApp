@@ -801,7 +801,7 @@
     "disconnect_all_banks": "Alle Banken Trennen"
   },
   "ai_chat": {
-    "initial_message": "Aloha! Ich bin Vectra, Ihr persönlicher KI-Finanzberater. Ich kann bei Budgets, Zielen, Schulden, Investitionen und Nebentätigkeiten helfen — was haben Sie heute im Sinn? 🤙",
+    "initial_message": "Hallo! 👋 Ich bin Vectra, Ihr KI-Finanzberater.\n\nFragen Sie mich alles über Ihr Geld:\n\n🚗 \"Welches Auto kann ich mir leisten?\"\n🏠 \"Kann ich dieses Jahr ein Haus kaufen?\"\n💳 \"Sollte ich Schulden tilgen oder sparen?\"\n📱 \"Ist dieses Abonnement es wert?\"\n💰 \"Wie viel sollte ich monatlich sparen?\"\n\nWas haben Sie im Sinn?",
     "input_placeholder": "✨ Fragen Sie mich zu Ihren Finanzen...",
     "audio_tooltip_title": "Aktivieren Sie Audio, um Vectras Stimme zu hören!",
     "audio_tooltip_description": "Tippen Sie auf das Lautsprecher-Symbol unten, um Sprachantworten zu aktivieren",
@@ -812,7 +812,12 @@
     "voice_fable": "Warme, erzählende Stimme",
     "voice_onyx": "Tiefer, autoritärer Ton",
     "voice_nova": "Helle, energische Stimme",
-    "voice_shimmer": "Sanfter, sanfter Ton"
+    "voice_shimmer": "Sanfter, sanfter Ton",
+    "quick_questions_title": "Schnelle Fragen:",
+    "quick_question_budget": "Wie steht es um mein Budget?",
+    "quick_question_car": "Welches Auto kann ich mir leisten?",
+    "quick_question_savings_goal": "Sparziel festlegen",
+    "quick_question_analyze_spending": "Ausgaben analysieren"
   },
   "notification_settings": {
     "title": "Benachrichtigungseinstellungen",

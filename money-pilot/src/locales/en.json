@@ -1032,7 +1032,7 @@
     "disconnect_all_banks": "Disconnect All Banks"
   },
   "ai_chat": {
-    "initial_message": "Aloha! I'm Vectra, your personal AI Financial Advisor. I can help with budgeting, goals, debt, investing, and side hustles — what's on your mind today? 🤙",
+    "initial_message": "Hi! 👋 I'm Vectra, your AI financial advisor.\n\nAsk me anything about your money:\n\n🚗 \"What kind of car can I afford?\"\n🏠 \"Can I buy a house this year?\"\n💳 \"Should I pay off debt or save?\"\n📱 \"Is this subscription worth it?\"\n💰 \"How much should I save each month?\"\n\nWhat's on your mind?",
     "input_placeholder": "✨ Ask me about your finances...",
     "audio_tooltip_title": "Turn on audio to hear Vectra's voice!",
     "audio_tooltip_description": "Tap the speaker icon below to enable voice responses",
@@ -1043,7 +1043,12 @@
     "voice_fable": "Warm, storytelling voice",
     "voice_onyx": "Deep, authoritative tone",
     "voice_nova": "Bright, energetic voice",
-    "voice_shimmer": "Soft, gentle tone"
+    "voice_shimmer": "Soft, gentle tone",
+    "quick_questions_title": "Quick questions:",
+    "quick_question_budget": "How's my budget?",
+    "quick_question_car": "What kind of car is in my budget?",
+    "quick_question_savings_goal": "Set a savings goal",
+    "quick_question_analyze_spending": "Analyze spending"
   },
   "notification_settings": {
     "title": "Notification Settings",

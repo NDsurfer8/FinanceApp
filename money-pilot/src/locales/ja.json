@@ -801,7 +801,7 @@
     "disconnect_all_banks": "すべての銀行を切断"
   },
   "ai_chat": {
-    "initial_message": "アロハ！私はVectra、あなたのパーソナルAIファイナンシャルアドバイザーです。予算、目標、借金、投資、サイドハッスルについてお手伝いできます — 今日は何をお考えですか？🤙",
+    "initial_message": "こんにちは！👋 私はVectra、あなたのAIファイナンシャルアドバイザーです。\n\nお金について何でも聞いてください：\n\n🚗 \"どんな車を買えますか？\"\n🏠 \"今年家を買えますか？\"\n💳 \"借金を返すべきか、貯金すべきか？\"\n📱 \"このサブスクリプションは価値がありますか？\"\n💰 \"毎月いくら貯金すべきですか？\"\n\n何をお考えですか？",
     "input_placeholder": "✨ あなたの財務について聞いてください...",
     "audio_tooltip_title": "Vectraの声を聞くためにオーディオをオンにしてください！",
     "audio_tooltip_description": "音声応答を有効にするには、下のスピーカーアイコンをタップしてください",
@@ -812,7 +812,12 @@
     "voice_fable": "温かく物語的な声",
     "voice_onyx": "深く威厳のあるトーン",
     "voice_nova": "明るくエネルギッシュな声",
-    "voice_shimmer": "柔らかく優しいトーン"
+    "voice_shimmer": "柔らかく優しいトーン",
+    "quick_questions_title": "クイック質問：",
+    "quick_question_budget": "私の予算はどうですか？",
+    "quick_question_car": "どんな車を買えますか？",
+    "quick_question_savings_goal": "貯蓄目標を設定",
+    "quick_question_analyze_spending": "支出を分析"
   },
   "notification_settings": {
     "title": "通知設定",

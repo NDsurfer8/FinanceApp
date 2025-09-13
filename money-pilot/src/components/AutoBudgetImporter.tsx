@@ -284,6 +284,12 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             matchedCount++;
             savedCount++; // Count matched transactions as "saved" for UI purposes
 
+            // Update progress to show matching status
+            setSaveProgress((prev) => ({
+              ...prev,
+              currentTransaction: `✅ Matched: ${transaction.name}`,
+            }));
+
             // Transaction was matched with existing recurring transaction
           } else {
             // Save the transaction if no match found
@@ -302,6 +308,12 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             await saveTransaction(transactionData);
             savedCount++;
 
+            // Update progress to show saving status
+            setSaveProgress((prev) => ({
+              ...prev,
+              currentTransaction: `💾 Saved: ${transaction.name}`,
+            }));
+
             // Transaction was saved successfully
           }
         } catch (error) {
@@ -309,24 +321,25 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         }
       }
 
-      // Show success message
+      // Show success message with detailed breakdown
       const totalProcessed = savedCount + matchedCount;
-      Alert.alert(
-        t("auto_budget_importer.success"),
-        t("auto_budget_importer.transactions_imported", {
-          count: totalProcessed,
-        }),
-        [
-          {
-            text: t("common.ok"),
-            onPress: () => {
-              onDataRefresh?.();
-              onSuccess?.(totalProcessed);
-              onClose();
-            },
+      const message =
+        matchedCount > 0
+          ? `${totalProcessed} transactions processed:\n• ${savedCount} new transactions added\n• ${matchedCount} transactions matched with existing ones`
+          : t("auto_budget_importer.transactions_imported", {
+              count: totalProcessed,
+            });
+
+      Alert.alert(t("auto_budget_importer.success"), message, [
+        {
+          text: t("common.ok"),
+          onPress: () => {
+            onDataRefresh?.();
+            onSuccess?.(totalProcessed);
+            onClose();
           },
-        ]
-      );
+        },
+      ]);
     } catch (error) {
       console.error("Error saving transactions:", error);
       Alert.alert(
@@ -615,6 +628,31 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                     </View>
                   )}
 
+                  {/* Helpful Info */}
+                  <View
+                    style={{
+                      backgroundColor: colors.primary + "10",
+                      borderRadius: 8,
+                      padding: 12,
+                      marginBottom: 16,
+                      borderLeftWidth: 4,
+                      borderLeftColor: colors.primary,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                        lineHeight: 16,
+                      }}
+                    >
+                      💡{" "}
+                      <Text style={{ fontWeight: "600" }}>Smart Import:</Text>{" "}
+                      Transactions will be automatically matched with your
+                      existing recurring expenses to prevent duplicates.
+                    </Text>
+                  </View>
+
                   {/* Transactions List */}
                   <ScrollView style={{ flex: 1 }}>
                     {categorizedTransactions.map((transaction, index) => (
@@ -638,6 +676,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                           borderColor: transaction.isSelected
                             ? colors.primary
                             : colors.border,
+                          opacity: transaction.isSelected ? 1 : 0.8,
                         }}
                         activeOpacity={0.7}
                       >

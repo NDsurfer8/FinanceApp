@@ -801,7 +801,7 @@
     "disconnect_all_banks": "Desconectar Todos os Bancos"
   },
   "ai_chat": {
-    "initial_message": "Aloha! Eu sou a Vectra, sua Consultora Financeira IA pessoal. Posso ajudar com orçamentos, metas, dívidas, investimentos e trabalhos paralelos — o que você tem em mente hoje? 🤙",
+    "initial_message": "Olá! 👋 Eu sou a Vectra, sua consultora financeira IA.\n\nPergunte-me qualquer coisa sobre seu dinheiro:\n\n🚗 \"Que tipo de carro posso comprar?\"\n🏠 \"Posso comprar uma casa este ano?\"\n💳 \"Devo pagar dívidas ou poupar?\"\n📱 \"Esta assinatura vale a pena?\"\n💰 \"Quanto devo poupar por mês?\"\n\nO que você tem em mente?",
     "input_placeholder": "✨ Pergunte-me sobre suas finanças...",
     "audio_tooltip_title": "Ative o áudio para ouvir a voz da Vectra!",
     "audio_tooltip_description": "Toque no ícone do alto-falante abaixo para ativar respostas de voz",
@@ -812,7 +812,12 @@
     "voice_fable": "Voz calorosa e narrativa",
     "voice_onyx": "Tom profundo e autoritário",
     "voice_nova": "Voz brilhante e energética",
-    "voice_shimmer": "Tom suave e gentil"
+    "voice_shimmer": "Tom suave e gentil",
+    "quick_questions_title": "Perguntas rápidas:",
+    "quick_question_budget": "Como está meu orçamento?",
+    "quick_question_car": "Que tipo de carro posso comprar?",
+    "quick_question_savings_goal": "Definir meta de poupança",
+    "quick_question_analyze_spending": "Analisar gastos"
   },
   "notification_settings": {
     "title": "Configurações de Notificação",

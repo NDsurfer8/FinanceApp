@@ -1391,8 +1391,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </View>
         </View>
 
-        {/* Smart Insights - Only show if there are insights */}
-        {insights.length > 0 && (
+        {/* Smart Insights */}
+        {insights.length > 0 ? (
           <View
             style={{
               backgroundColor: colors.surface,
@@ -1490,12 +1490,174 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     fontSize: 13,
                     color: colors.textSecondary,
                     marginLeft: 24,
+                    marginBottom: 8,
                   }}
                 >
                   {insight.message}
                 </Text>
+
+                {/* Action Button for Insights */}
+                {insight.id === "build-emergency-fund" && (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("Goals")}
+                    style={{
+                      marginLeft: 24,
+                      backgroundColor: colors.primary + "15",
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 8,
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: colors.primary,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Set Emergency Fund Goal →
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {insight.id === "spending-more-than-income" && (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("Budget")}
+                    style={{
+                      marginLeft: 24,
+                      backgroundColor: colors.error + "15",
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 8,
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: colors.error,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Review Budget →
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {insight.id === "high-debt-ratio" && (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("Assets/Debts")}
+                    style={{
+                      marginLeft: 24,
+                      backgroundColor: colors.warning + "15",
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 8,
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: colors.warning,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Manage Debts →
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ))}
+          </View>
+        ) : (
+          /* No Insights - Show Helpful Tip */
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 24,
+              marginBottom: 20,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 4,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: colors.success + "15",
+                  padding: 8,
+                  borderRadius: 10,
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color={colors.success}
+                />
+              </View>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
+                You're Doing Great! 🎉
+              </Text>
+            </View>
+
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                lineHeight: 20,
+                marginBottom: 16,
+              }}
+            >
+              Your finances look healthy! Keep tracking your expenses and
+              working toward your goals.
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate("AIFinancialAdvisor")}
+              style={{
+                backgroundColor: colors.primary + "15",
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderRadius: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                alignSelf: "flex-start",
+              }}
+            >
+              <Ionicons
+                name="chatbubble"
+                size={16}
+                color={colors.primary}
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.primary,
+                  fontWeight: "600",
+                }}
+              >
+                Get Personalized Advice
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
 
