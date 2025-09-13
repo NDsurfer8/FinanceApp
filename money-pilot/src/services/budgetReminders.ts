@@ -179,7 +179,7 @@ export class BudgetReminderService {
       tomorrow.setHours(9, 0, 0, 0); // 9 AM
 
       await notificationService.scheduleNotification({
-        id: `budget-monthly-${tomorrow.getTime()}`,
+        id: `budget-reminder-monthly`,
         title,
         body,
         data: {
@@ -215,6 +215,11 @@ export class BudgetReminderService {
         return; // Budget reminders are disabled
       }
 
+      // Cancel existing category over-budget notifications first
+      await notificationService.cancelNotificationsByType(
+        "category-over-budget"
+      );
+
       const { overBudgetCategories, totalOverBudget } =
         await this.getCategoryOverBudgetStatus(userId);
 
@@ -241,8 +246,9 @@ export class BudgetReminderService {
         } categories by $${totalOverBudget.toFixed(2)} total.`;
       }
 
+      // Use a consistent ID to prevent duplicates
       await notificationService.scheduleNotification({
-        id: `category-over-budget-${tomorrow.getTime()}`,
+        id: `category-over-budget-${userId}`,
         title,
         body,
         data: {
@@ -312,7 +318,7 @@ export class BudgetReminderService {
       tomorrow.setHours(8, 0, 0, 0); // 8 AM
 
       await notificationService.scheduleNotification({
-        id: `budget-weekly-${tomorrow.getTime()}`,
+        id: `budget-reminder-weekly`,
         title,
         body,
         data: {
@@ -381,7 +387,7 @@ export class BudgetReminderService {
       tomorrow.setHours(7, 0, 0, 0); // 7 AM
 
       await notificationService.scheduleNotification({
-        id: `budget-daily-${tomorrow.getTime()}`,
+        id: `budget-reminder-daily`,
         title,
         body,
         data: {
