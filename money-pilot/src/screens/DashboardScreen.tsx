@@ -1733,7 +1733,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
                 {insight.id === "over-budget-warning" && (
                   <TouchableOpacity
-                    onPress={() => navigation.navigate("Budget Categories")}
+                    onPress={() =>
+                      navigation.navigate("Budget", {
+                        screen: "BudgetCategories",
+                      })
+                    }
                     style={{
                       marginLeft: 24,
                       backgroundColor: colors.error + "15",

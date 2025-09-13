@@ -1330,7 +1330,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                 {/* Action Button for Over-budget Insight */}
                 {insight.id === "over-budget-warning" && (
                   <TouchableOpacity
-                    onPress={() => navigation.navigate("Budget Categories")}
+                    onPress={() => navigation.navigate("BudgetCategories")}
                     style={{
                       marginLeft: 24,
                       backgroundColor: colors.error + "15",
