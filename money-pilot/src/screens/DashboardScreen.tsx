@@ -546,6 +546,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       const totalIncome = actualIncome + recurringIncome;
       const totalExpenses = actualExpenses + recurringExpenses;
 
+      // DEBUG: Log trend data calculation
+      console.log(
+        `📊 Dashboard Trend - Month ${
+          date.getMonth() + 1
+        }/${date.getFullYear()}:`
+      );
+      console.log(`  📋 Total transactions: ${monthTransactions.length}`);
+      console.log(
+        `  📋 Non-recurring transactions: ${nonRecurringMonthTransactions.length}`
+      );
+      console.log(`  💰 Actual income: $${actualIncome.toFixed(2)}`);
+      console.log(`  🔄 Recurring income: $${recurringIncome.toFixed(2)}`);
+      console.log(`  💰 Total income: $${totalIncome.toFixed(2)}`);
+      console.log(`  💸 Actual expenses: $${actualExpenses.toFixed(2)}`);
+      console.log(`  🔄 Recurring expenses: $${recurringExpenses.toFixed(2)}`);
+      console.log(`  💸 Total expenses: $${totalExpenses.toFixed(2)}`);
+
       // Find net worth for this month
       const monthNetWorthEntry = netWorthEntries.find((entry) => {
         const entryDate = new Date(entry.date);
@@ -1159,20 +1176,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 >
                   {formatCurrency(monthlyIncome)}
                 </Text>
-                {/* Show breakdown of actual vs recurring income */}
-                {recurringMonthlyIncome > 0 && (
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: colors.textSecondary,
-                      marginTop: 2,
-                    }}
-                  >
-                    {formatCurrency(monthlyIncome - recurringMonthlyIncome)}{" "}
-                    recorded + {formatCurrency(recurringMonthlyIncome)}{" "}
-                    recurring
-                  </Text>
-                )}
               </View>
             </View>
 
@@ -1238,20 +1241,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 >
                   {formatCurrency(monthlyExpenses)}
                 </Text>
-                {/* Show breakdown of actual vs recurring expenses */}
-                {recurringMonthlyExpenses > 0 && (
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: colors.textSecondary,
-                      marginTop: 2,
-                    }}
-                  >
-                    {formatCurrency(monthlyExpenses - recurringMonthlyExpenses)}{" "}
-                    recorded + {formatCurrency(recurringMonthlyExpenses)}{" "}
-                    recurring
-                  </Text>
-                )}
               </View>
             </View>
 

@@ -155,8 +155,6 @@ export const FinancialRiskScreen: React.FC<FinancialRiskScreenProps> = ({
   // Total monthly expenses including recurring
   const totalMonthlyExpenses = monthlyExpenses + recurringMonthlyExpenses;
 
-  // DEBUG monthlyExpenses calculation
-
   // Calculate savings breakdown
   const totalSavings = assets
     .filter((asset) => asset.type === "savings")

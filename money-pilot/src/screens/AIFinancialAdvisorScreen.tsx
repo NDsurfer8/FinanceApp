@@ -785,7 +785,28 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     const monthlyExpenses = actualMonthlyExpenses + recurringMonthlyExpenses;
     const netIncome = monthlyIncome - monthlyExpenses;
 
-    // Debug logging to verify calculations
+    // DEBUG: Log AI Financial Advisor calculation
+    console.log("🤖 AI Financial Advisor - Financial Snapshot Debug:");
+    console.log(
+      `  📊 Selected Month: ${
+        selectedMonth.getMonth() + 1
+      }/${selectedMonth.getFullYear()}`
+    );
+    console.log(
+      `  💰 Actual Monthly Income: $${actualMonthlyIncome.toFixed(2)}`
+    );
+    console.log(
+      `  🔄 Recurring Monthly Income: $${recurringMonthlyIncome.toFixed(2)}`
+    );
+    console.log(`  💸 Total Monthly Income: $${monthlyIncome.toFixed(2)}`);
+    console.log(
+      `  💸 Actual Monthly Expenses: $${actualMonthlyExpenses.toFixed(2)}`
+    );
+    console.log(
+      `  🔄 Recurring Monthly Expenses: $${recurringMonthlyExpenses.toFixed(2)}`
+    );
+    console.log(`  💸 Total Monthly Expenses: $${monthlyExpenses.toFixed(2)}`);
+    console.log(`  📈 Net Income: $${netIncome.toFixed(2)}`);
 
     // Calculate totals
     const totalDebt = debts.reduce((sum, debt) => sum + debt.balance, 0);

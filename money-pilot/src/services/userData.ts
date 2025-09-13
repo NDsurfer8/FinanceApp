@@ -1845,11 +1845,16 @@ export const getGroupAggregatedData = async (
       }
     );
 
-    totalIncome = currentMonthTransactions
+    // Filter out individual transactions that are generated from recurring transactions
+    // to avoid double counting (these are already included in recurring amounts)
+    const nonRecurringCurrentMonthTransactions =
+      currentMonthTransactions.filter((t) => !t.recurringTransactionId);
+
+    totalIncome = nonRecurringCurrentMonthTransactions
       .filter((t) => t.type === "income")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    totalExpenses = currentMonthTransactions
+    totalExpenses = nonRecurringCurrentMonthTransactions
       .filter((t) => t.type === "expense")
       .reduce((sum, t) => sum + t.amount, 0);
 
