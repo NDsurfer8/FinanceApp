@@ -1019,7 +1019,7 @@
   "intro": {
     "slide1": {
       "title": "Willkommen bei VectorFi",
-      "text": "Lernen Sie Vectra kennen, Ihren persönlichen KI-Finanzcoach. Einmal verbunden, versteht Vectra Ihre Finanzen sicher und übersetzt sie in praktische Ratschläge - hilft Ihnen, mehr zu sparen, klug auszugeben und auf Kurs zu Ihren Zielen zu bleiben."
+      "text": "Lernen Sie Vectra kennen, Ihren persönlichen KI-Finanzcoach. Sie können Vectra alles über Ihre Finanzen fragen und sie wird Ihnen klare, umsetzbare Schritte zur Führung geben."
     },
     "slide2": {
       "title": "Sicher mit Plaid Verbinden",
@@ -1047,28 +1047,20 @@
     "header_title": "Lass uns anfangen!",
     "step_counter": "Schritt {{current}} von {{total}}",
     "step1": {
-      "title": "Verfolgen Sie Ihre Ausgaben",
-      "description": "Verknüpfen Sie Ihre Bank für automatische Verfolgung — oder fügen Sie Ausgaben manuell hinzu, während Sie ausgeben. Beides ist einfach!"
+      "title": "Planen Sie Ihre Ausgaben",
+      "description": "Fügen Sie wiederkehrende Einkommen und Rechnungen im Voraus hinzu. Wenn Ihre Bank sie bestätigt, markieren wir sie automatisch als bezahlt."
     },
     "step2": {
-      "title": "Erstellen Sie Ihr Budget",
-      "description": "Setzen Sie Ausgabenlimits für Lebensmittel, Unterhaltung und andere Kategorien, um Warnungen zu erhalten, bevor Sie Ihr Budget überschreiten."
+      "title": "Bleiben Sie auf Kurs",
+      "description": "Setzen Sie Limits für Lebensmittel, Unterhaltung und andere variable Ausgabenkategorien, um die Ausgaben unter Kontrolle zu halten."
     },
     "step3": {
-      "title": "Setzen Sie ein Ziel",
+      "title": "Setzen Sie Ziele",
       "description": "Wählen Sie etwas Spaßiges (wie eine Spanien-Reise ✈️) und setzen Sie ein Zieldatum."
     },
     "step4": {
-      "title": "Fügen Sie Vermögenswerte und Schulden hinzu",
-      "description": "Fügen Sie Ersparnisse, Kredite und Karten hinzu, um Ihr wahres Nettovermögen zu sehen."
-    },
-    "step5": {
-      "title": "Lernen Sie Vectra kennen",
-      "description": "Ihr KI-Finanzcoach. Fragen Sie alles — von \"Bin ich bereit, ein Haus zu kaufen?\" bis \"Wie viel kann ich diesen Monat sparen?\" Alle Ihre Einkommen, Ausgaben und Ziele werden analysiert und Sie erhalten klare, umsetzbare Tipps."
-    },
-    "step6": {
-      "title": "Einkommen und Ausgaben hinzufügen",
-      "description": "Beginnen wir damit, Ihre Einkommen und Ausgaben hinzuzufügen. Fragen Sie dann Vectra nach Ihrer finanziellen Situation und beginnen Sie Ihre Reise zur finanziellen Freiheit."
+      "title": "Fragen Sie Vectra",
+      "description": "Fügen Sie Ihre Einkommen und Ausgaben (Rechnungen) hinzu, dann tippen Sie auf die grüne Chat-Blase, um Ihre erste Frage zu stellen!"
     },
     "complete_setup": "Setup Abschließen",
     "next_step": "Nächster Schritt",

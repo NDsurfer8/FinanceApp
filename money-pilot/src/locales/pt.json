@@ -1019,7 +1019,7 @@
   "intro": {
     "slide1": {
       "title": "Bem-vindo ao VectorFi",
-      "text": "Conheça Vectra, seu coach financeiro pessoal de IA. Uma vez conectado, Vectra compreende com segurança suas finanças e as traduz em conselhos práticos, ajudando você a economizar mais, gastar sabiamente e permanecer no caminho para seus objetivos."
+      "text": "Conheça Vectra, seu coach financeiro pessoal de IA. Você pode perguntar qualquer coisa sobre suas finanças para Vectra e ela lhe dará passos claros e acionáveis para guiá-lo."
     },
     "slide2": {
       "title": "Conecte-se com Segurança ao Plaid",
@@ -1047,28 +1047,20 @@
     "header_title": "Vamos Começar!",
     "step_counter": "Passo {{current}} de {{total}}",
     "step1": {
-      "title": "Rastreie seus gastos",
-      "description": "Conecte seu banco para rastreamento automático — ou adicione despesas manualmente enquanto gasta. Fácil de qualquer forma!"
+      "title": "Planeje seus Gastos",
+      "description": "Adicione renda recorrente e contas com antecedência. Quando seu banco confirmar, nós os marcaremos como pagos automaticamente."
     },
     "step2": {
-      "title": "Construa seu orçamento",
-      "description": "Defina limites de gastos para comida, entretenimento e outras categorias para receber alertas antes de exceder seu orçamento."
+      "title": "Mantenha-se no Caminho",
+      "description": "Defina limites para comida, entretenimento e outras categorias de gastos variáveis para manter os gastos sob controle."
     },
     "step3": {
-      "title": "Defina uma meta",
+      "title": "Defina Metas",
       "description": "Escolha algo divertido (como uma viagem para a Espanha ✈️) e defina uma data alvo."
     },
     "step4": {
-      "title": "Adicione ativos e dívidas",
-      "description": "Inclua poupanças, empréstimos e cartões para ver seu verdadeiro patrimônio líquido."
-    },
-    "step5": {
-      "title": "Conheça o Vectra",
-      "description": "Seu coach financeiro de IA. Pergunte qualquer coisa — de \"Estou pronto para comprar uma casa?\" a \"Quanto posso economizar este mês?\" Todos os seus rendimentos, despesas e objetivos são analisados e você recebe dicas claras e acionáveis."
-    },
-    "step6": {
-      "title": "Adicione Renda e Despesas",
-      "description": "Vamos começar adicionando sua renda e despesas. Em seguida, pergunte ao Vectra sobre sua situação financeira e comece sua jornada para a liberdade financeira."
+      "title": "Pergunte ao Vectra",
+      "description": "Adicione sua renda e despesas (contas), depois toque na bolha de chat verde para fazer sua primeira pergunta!"
     },
     "complete_setup": "Completar Configuração",
     "next_step": "Próximo Passo",

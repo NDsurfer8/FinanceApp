@@ -75,7 +75,7 @@
   "intro": {
     "slide1": {
       "title": "Welcome to VectorFi",
-      "text": "Meet Vectra, your personal AI financial coach. Once connected, Vectra securely understands your finances and translates them into practical advice—helping you save more, spend wisely, and stay on track toward your goals."
+      "text": "Meet Vectra, your personal AI financial coach. You can ask Vectra anything about your finances and she will give you clear, actionable steps to guide you."
     },
     "slide2": {
       "title": "Connect Securely with Plaid",
@@ -103,28 +103,20 @@
     "header_title": "Let's Get You Started!",
     "step_counter": "Step {{current}} of {{total}}",
     "step1": {
-      "title": "Track Your Spending",
-      "description": "Link your bank for automatic tracking — or add expenses manually while you spend. Easy either way!"
+      "title": "Plan Your Spending",
+      "description": "Add recurring income and bills ahead of time. When your bank confirms them, we’ll mark them paid automatically."
     },
     "step2": {
-      "title": "Build Your Budget",
-      "description": "Set spending limits for food, entertainment, and other categories to get alerts before you go over budget."
+      "title": "Stay on Track",
+      "description": "Set limits for food, entertainment, and other variable expense categories to keep spending in check."
     },
     "step3": {
-      "title": "Set a Goal",
+      "title": "Set Goals",
       "description": "Pick something fun (like a Spain trip ✈️) and set a target date."
     },
     "step4": {
-      "title": "Add Assets & Debts",
-      "description": "Include savings, loans, and cards to see your true net worth."
-    },
-    "step5": {
-      "title": "Meet Vectra",
-      "description": "Your AI money coach. Ask anything — from \"Am I ready to buy a house?\" to \"How much can I save this month?\" All your income, expenses, and goals are analyzed and you get clear, actionable tips."
-    },
-    "step6": {
-      "title": "Add Income & Expenses",
-      "description": "Let's start by adding your income and expenses. Then, ask Vectra about your financial situation and start your journey to financial freedom."
+      "title": "Ask Vectra",
+      "description": "Add your income and expenses (bills), then tap the green chat bubble to ask your first question!"
     },
     "complete_setup": "Complete Setup",
     "next_step": "Next Step",

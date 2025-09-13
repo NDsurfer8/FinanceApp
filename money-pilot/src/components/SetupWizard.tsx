@@ -48,23 +48,12 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
       icon: "flag-outline" as keyof typeof Ionicons.glyphMap,
       action: "setGoal",
     },
+
     {
       title: t("setup_wizard.step4.title"),
       description: t("setup_wizard.step4.description"),
-      icon: "briefcase-outline" as keyof typeof Ionicons.glyphMap,
-      action: "addAssetsDebts",
-    },
-    {
-      title: t("setup_wizard.step5.title"),
-      description: t("setup_wizard.step5.description"),
       icon: "chatbubble-ellipses-outline" as keyof typeof Ionicons.glyphMap,
       action: "askAI",
-    },
-    {
-      title: t("setup_wizard.step6.title"),
-      description: t("setup_wizard.step6.description"),
-      icon: "add-circle-outline" as keyof typeof Ionicons.glyphMap,
-      action: "addTransaction",
     },
   ];
 
