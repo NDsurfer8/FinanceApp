@@ -271,6 +271,28 @@ export class NotificationService {
     await Notifications.cancelAllScheduledNotificationsAsync();
   }
 
+  // Cancel notifications by type
+  async cancelNotificationsByType(type: string): Promise<void> {
+    try {
+      // Get all scheduled notifications
+      const scheduledNotifications =
+        await Notifications.getAllScheduledNotificationsAsync();
+
+      // Filter notifications by type and cancel them
+      const notificationsToCancel = scheduledNotifications.filter(
+        (notification) => notification.content.data?.type === type
+      );
+
+      for (const notification of notificationsToCancel) {
+        await Notifications.cancelScheduledNotificationAsync(
+          notification.identifier
+        );
+      }
+    } catch (error) {
+      console.error(`Error cancelling notifications of type ${type}:`, error);
+    }
+  }
+
   // Get all scheduled notifications
   async getScheduledNotifications(): Promise<
     Notifications.NotificationRequest[]

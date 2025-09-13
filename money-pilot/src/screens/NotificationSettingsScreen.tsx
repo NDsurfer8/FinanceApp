@@ -347,9 +347,12 @@ export const NotificationSettingsScreen: React.FC<
           );
           break;
         case "goals":
-          // Goal reminders are scheduled when goals are created/updated
-          // This toggle just enables/disables the feature
-          // Goal reminder notifications enabled
+          if (user) {
+            const { goalReminderService } = await import(
+              "../services/goalReminders"
+            );
+            await goalReminderService.scheduleAllGoalReminders(user.uid);
+          }
           break;
         case "webhook-transactions":
           // Webhook notifications are handled automatically by the system
