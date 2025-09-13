@@ -91,7 +91,13 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         refreshBankData();
       }
     }
-  }, [isVisible, bankTransactions, selectedMonth, isBankConnected]);
+  }, [
+    isVisible,
+    bankTransactions,
+    selectedMonth,
+    isBankConnected,
+    transactions,
+  ]);
 
   // Enhanced categorization using the new system
   const categorizeTransaction = async (
@@ -282,7 +288,6 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
           if (isMatch) {
             console.log(`✅ Transaction matched: ${transaction.name}`);
             matchedCount++;
-            savedCount++; // Count matched transactions as "saved" for UI purposes
 
             // Update progress to show matching status
             setSaveProgress((prev) => ({
@@ -325,7 +330,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
       const totalProcessed = savedCount + matchedCount;
       const message =
         matchedCount > 0
-          ? `${totalProcessed} transactions processed:\n• ${savedCount} new transactions added\n• ${matchedCount} transactions matched with existing ones`
+          ? `${totalProcessed} transactions processed:\n• ${savedCount} new transactions imported\n• ${matchedCount} transactions matched with existing ones`
           : t("auto_budget_importer.transactions_imported", {
               count: totalProcessed,
             });
