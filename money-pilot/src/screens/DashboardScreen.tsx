@@ -87,6 +87,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [monthlyBudgetResult, setMonthlyBudgetResult] = useState<any>(null);
   const [showAllAchievements, setShowAllAchievements] = useState(false);
   const [hasBudgetCategories, setHasBudgetCategories] = useState(false);
+  const [budgetCategories, setBudgetCategories] = useState<any[]>([]);
   const [achievementsHidden, setAchievementsHidden] = useState(false);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [unseenAchievements, setUnseenAchievements] = useState<Achievement[]>(
@@ -462,6 +463,130 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       });
     }
 
+    // Over-budget insight - Calculate total over-budget amount
+    console.log(
+      `🔍 Dashboard - Current month: ${currentMonthNum}, Current year: ${currentYear}`
+    );
+    const currentMonthTransactions = transactions.filter((transaction) => {
+      const transactionDate = new Date(transaction.date);
+      const isInCurrentMonth =
+        transactionDate.getMonth() === currentMonthNum &&
+        transactionDate.getFullYear() === currentYear;
+
+      if (!isInCurrentMonth || transaction.type !== "expense") return false;
+
+      // If this transaction was created from a recurring transaction and marked as paid,
+      // exclude it because we should use the recurring transaction template instead
+      if (transaction.recurringTransactionId && transaction.status === "paid") {
+        return false;
+      }
+
+      return true;
+    });
+
+    // Calculate over-budget amount by category
+    let totalOverBudget = 0;
+    const categorySpending: { [key: string]: number } = {};
+
+    // Sum spending by category from actual transactions
+    console.log(
+      "🔍 Dashboard - Current month transactions:",
+      currentMonthTransactions.length
+    );
+    currentMonthTransactions.forEach((transaction) => {
+      const category = transaction.category;
+      console.log(
+        `📊 Transaction: ${transaction.description} - ${category} - $${transaction.amount}`
+      );
+      categorySpending[category] =
+        (categorySpending[category] || 0) + transaction.amount;
+    });
+
+    // Add recurring expenses that have been marked as paid this month
+    console.log(
+      "🔍 Dashboard - Recurring transactions:",
+      recurringTransactions.length
+    );
+
+    // Find recurring expenses that have been marked as paid this month
+    const paidRecurringExpenses = transactions.filter((transaction) => {
+      const transactionDate = new Date(transaction.date);
+      const isInCurrentMonth =
+        transactionDate.getMonth() === currentMonthNum &&
+        transactionDate.getFullYear() === currentYear;
+
+      // Only include transactions that were created from recurring transactions and marked as paid
+      // (either through bank import with bankTransactionId OR manually marked as paid)
+      return (
+        isInCurrentMonth &&
+        transaction.recurringTransactionId &&
+        transaction.status === "paid" &&
+        transaction.type === "expense"
+      );
+    });
+
+    console.log(
+      `🔍 Dashboard - Paid recurring expenses this month: ${paidRecurringExpenses.length}`
+    );
+    paidRecurringExpenses.forEach((transaction) => {
+      const category = transaction.category;
+      console.log(
+        `📊 Paid Recurring: ${transaction.description} - ${category} - $${transaction.amount}`
+      );
+      categorySpending[category] =
+        (categorySpending[category] || 0) + transaction.amount;
+    });
+
+    // Check each budget category for over-budget spending
+    console.log("🔍 Dashboard Over-budget Debug:");
+    console.log("📊 Budget categories:", budgetCategories.length);
+    console.log("📊 Category spending:", categorySpending);
+
+    budgetCategories.forEach((category) => {
+      const spent = categorySpending[category.name] || 0;
+      console.log(
+        `📊 Category: ${category.name}, Limit: ${category.monthlyLimit}, Spent: ${spent}`
+      );
+      if (spent >= category.monthlyLimit && category.monthlyLimit > 0) {
+        const overAmount = spent - category.monthlyLimit;
+        totalOverBudget += overAmount;
+        console.log(`⚠️ Over budget: ${category.name} by ${overAmount}`);
+      }
+    });
+
+    console.log("📊 Total over budget:", totalOverBudget);
+
+    if (totalOverBudget > 0) {
+      insights.push({
+        id: "over-budget-warning",
+        type: "warning",
+        icon: "warning",
+        title: t("dashboard.over_budget_warning"),
+        message: t("dashboard.over_budget_message", {
+          amount: formatCurrency(totalOverBudget),
+        }),
+      });
+    } else if (
+      totalOverBudget === 0 &&
+      Object.keys(categorySpending).length > 0
+    ) {
+      // Only show "at budget limit" if there's actual spending
+      const hasSpendingAtLimit = budgetCategories.some((category) => {
+        const spent = categorySpending[category.name] || 0;
+        return spent === category.monthlyLimit && category.monthlyLimit > 0;
+      });
+
+      if (hasSpendingAtLimit) {
+        insights.push({
+          id: "over-budget-warning",
+          type: "warning",
+          icon: "warning",
+          title: t("dashboard.over_budget_warning"),
+          message: t("dashboard.at_budget_limit_message"),
+        });
+      }
+    }
+
     return insights;
   };
   // Available amount is discretionary income
@@ -477,6 +602,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       totalSavings,
       recurringMonthlyIncome,
       recurringMonthlyExpenses,
+      budgetCategories,
+      recurringTransactions,
     ]
   );
 
@@ -628,6 +755,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
     try {
       const categories = await getUserBudgetCategories(user.uid);
+      setBudgetCategories(categories);
       const hasCategoriesWithLimits = categories.some(
         (category: any) => category.monthlyLimit > 0
       );
@@ -635,6 +763,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     } catch (error) {
       console.error("Error checking budget categories:", error);
       setHasBudgetCategories(false);
+      setBudgetCategories([]);
     }
   };
 
@@ -1597,6 +1726,30 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       }}
                     >
                       {t("dashboard.manage_debts")}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {insight.id === "over-budget-warning" && (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("Budget Categories")}
+                    style={{
+                      marginLeft: 24,
+                      backgroundColor: colors.error + "15",
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 8,
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: colors.error,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {t("dashboard.review_categories")}
                     </Text>
                   </TouchableOpacity>
                 )}

@@ -315,7 +315,11 @@
     "doing_great_message": "Your finances look healthy! Keep tracking your expenses and working toward your goals.",
     "get_personalized_advice": "Get Personalized Advice",
     "bills_paid_success": "Bills Paid! ✅",
-    "bills_paid_success_message": "{{count}} recurring bills marked as paid this month"
+    "bills_paid_success_message": "{{count}} recurring bills marked as paid this month",
+    "over_budget_warning": "Over Budget! ⚠️",
+    "over_budget_message": "You're {{amount}} over budget this month",
+    "at_budget_limit_message": "You've reached your budget limit this month",
+    "review_categories": "Review Categories"
   },
   "budget": {
     "title": "Budget",
@@ -360,7 +364,11 @@
     "import_transactions": "Import Transactions",
     "available_transactions": "Available Transactions",
     "bills_paid_success": "Bills Paid! ✅",
-    "bills_paid_success_message": "{{count}} recurring bills marked as paid this month"
+    "bills_paid_success_message": "{{count}} recurring bills marked as paid this month",
+    "over_budget_warning": "Over Budget! ⚠️",
+    "over_budget_message": "You're {{amount}} over budget this month",
+    "at_budget_limit_message": "You've reached your budget limit this month",
+    "review_categories": "Review Categories"
   },
   "transactions": {
     "title": "Transactions",

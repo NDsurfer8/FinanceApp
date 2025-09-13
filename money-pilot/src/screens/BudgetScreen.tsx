@@ -136,13 +136,22 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         );
       });
 
-      // Note: We no longer count recurring transactions in budget categories
-      // Budget categories should only show money that has actually been spent
-      // Recurring transactions are projected/planned spending, not actual spending
-      const actualSpending = categoryTransactions.reduce(
-        (sum, t) => sum + t.amount,
-        0
-      );
+      // Only include recurring expenses that have been marked as paid this month
+      const paidRecurringExpenses = transactions.filter((t) => {
+        const transactionDate = new Date(t.date);
+        return (
+          transactionDate.getMonth() === targetMonth &&
+          transactionDate.getFullYear() === targetYear &&
+          t.type === "expense" &&
+          t.category === category.name &&
+          t.recurringTransactionId &&
+          t.status === "paid"
+        );
+      });
+
+      const actualSpending =
+        categoryTransactions.reduce((sum, t) => sum + t.amount, 0) +
+        paidRecurringExpenses.reduce((sum, t) => sum + t.amount, 0);
 
       // Only show badge if category is over budget AND user hasn't seen it yet for this month
       const monthSeenCategories =
@@ -421,6 +430,130 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       });
     }
 
+    // Over-budget insight - Calculate total over-budget amount
+    console.log(
+      `🔍 Budget Screen - Current month: ${currentMonthNum}, Current year: ${currentYear}`
+    );
+    const currentMonthTransactions = transactions.filter((transaction) => {
+      const transactionDate = new Date(transaction.date);
+      const isInCurrentMonth =
+        transactionDate.getMonth() === currentMonthNum &&
+        transactionDate.getFullYear() === currentYear;
+
+      if (!isInCurrentMonth || transaction.type !== "expense") return false;
+
+      // If this transaction was created from a recurring transaction and marked as paid,
+      // exclude it because we should use the recurring transaction template instead
+      if (transaction.recurringTransactionId && transaction.status === "paid") {
+        return false;
+      }
+
+      return true;
+    });
+
+    // Calculate over-budget amount by category
+    let totalOverBudget = 0;
+    const categorySpending: { [key: string]: number } = {};
+
+    // Sum spending by category from actual transactions
+    console.log(
+      "🔍 Budget Screen - Current month transactions:",
+      currentMonthTransactions.length
+    );
+    currentMonthTransactions.forEach((transaction) => {
+      const category = transaction.category;
+      console.log(
+        `📊 Transaction: ${transaction.description} - ${category} - $${transaction.amount}`
+      );
+      categorySpending[category] =
+        (categorySpending[category] || 0) + transaction.amount;
+    });
+
+    // Add recurring expenses that have been marked as paid this month
+    console.log(
+      "🔍 Budget Screen - Recurring transactions:",
+      recurringTransactions.length
+    );
+
+    // Find recurring expenses that have been marked as paid this month
+    const paidRecurringExpenses = transactions.filter((transaction) => {
+      const transactionDate = new Date(transaction.date);
+      const isInCurrentMonth =
+        transactionDate.getMonth() === currentMonthNum &&
+        transactionDate.getFullYear() === currentYear;
+
+      // Only include transactions that were created from recurring transactions and marked as paid
+      // (either through bank import with bankTransactionId OR manually marked as paid)
+      return (
+        isInCurrentMonth &&
+        transaction.recurringTransactionId &&
+        transaction.status === "paid" &&
+        transaction.type === "expense"
+      );
+    });
+
+    console.log(
+      `🔍 Budget Screen - Paid recurring expenses this month: ${paidRecurringExpenses.length}`
+    );
+    paidRecurringExpenses.forEach((transaction) => {
+      const category = transaction.category;
+      console.log(
+        `📊 Paid Recurring: ${transaction.description} - ${category} - $${transaction.amount}`
+      );
+      categorySpending[category] =
+        (categorySpending[category] || 0) + transaction.amount;
+    });
+
+    // Check each budget category for over-budget spending
+    console.log("🔍 Budget Screen Over-budget Debug:");
+    console.log("📊 Budget categories:", budgetCategories.length);
+    console.log("📊 Category spending:", categorySpending);
+
+    budgetCategories.forEach((category) => {
+      const spent = categorySpending[category.name] || 0;
+      console.log(
+        `📊 Category: ${category.name}, Limit: ${category.monthlyLimit}, Spent: ${spent}`
+      );
+      if (spent >= category.monthlyLimit && category.monthlyLimit > 0) {
+        const overAmount = spent - category.monthlyLimit;
+        totalOverBudget += overAmount;
+        console.log(`⚠️ Over budget: ${category.name} by ${overAmount}`);
+      }
+    });
+
+    console.log("📊 Total over budget:", totalOverBudget);
+
+    if (totalOverBudget > 0) {
+      insights.push({
+        id: "over-budget-warning",
+        type: "warning",
+        icon: "warning",
+        title: t("budget.over_budget_warning"),
+        message: t("budget.over_budget_message", {
+          amount: formatCurrency(totalOverBudget),
+        }),
+      });
+    } else if (
+      totalOverBudget === 0 &&
+      Object.keys(categorySpending).length > 0
+    ) {
+      // Only show "at budget limit" if there's actual spending
+      const hasSpendingAtLimit = budgetCategories.some((category) => {
+        const spent = categorySpending[category.name] || 0;
+        return spent === category.monthlyLimit && category.monthlyLimit > 0;
+      });
+
+      if (hasSpendingAtLimit) {
+        insights.push({
+          id: "over-budget-warning",
+          type: "warning",
+          icon: "warning",
+          title: t("budget.over_budget_warning"),
+          message: t("budget.at_budget_limit_message"),
+        });
+      }
+    }
+
     return insights;
   };
 
@@ -433,6 +566,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       allMonthTransactions.length,
       savingsPercentage,
       dismissedInsights,
+      recurringTransactions,
     ]
   );
 
@@ -1185,10 +1319,36 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
                     fontSize: 14,
                     color: colors.textSecondary,
                     marginLeft: 24,
+                    marginBottom: 8,
                   }}
                 >
                   {insight.message}
                 </Text>
+
+                {/* Action Button for Over-budget Insight */}
+                {insight.id === "over-budget-warning" && (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("Budget Categories")}
+                    style={{
+                      marginLeft: 24,
+                      backgroundColor: colors.error + "15",
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 8,
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: colors.error,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {t("budget.review_categories")}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ))}
           </View>

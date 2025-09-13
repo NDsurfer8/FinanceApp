@@ -150,7 +150,11 @@
     "doing_great_message": "आपके वित्त स्वस्थ दिखते हैं! अपने खर्चों को ट्रैक करना जारी रखें और अपने लक्ष्यों की ओर काम करते रहें।",
     "get_personalized_advice": "व्यक्तिगत सलाह प्राप्त करें",
     "bills_paid_success": "बिल भुगतान! ✅",
-    "bills_paid_success_message": "इस महीने {{count}} आवर्ती बिल भुगतान के रूप में चिह्नित किए गए"
+    "bills_paid_success_message": "इस महीने {{count}} आवर्ती बिल भुगतान के रूप में चिह्नित किए गए",
+    "over_budget_warning": "बजट से अधिक! ⚠️",
+    "over_budget_message": "आप इस महीने {{amount}} बजट से अधिक खर्च कर रहे हैं",
+    "at_budget_limit_message": "आपने इस महीने अपनी बजट सीमा तक पहुंच गए हैं",
+    "review_categories": "श्रेणियों की समीक्षा करें"
   },
   "budget": {
     "title": "बजट",
@@ -169,6 +173,10 @@
     "available_transactions": "उपलब्ध लेनदेन",
     "bills_paid_success": "बिल भुगतान! ✅",
     "bills_paid_success_message": "इस महीने {{count}} आवर्ती बिल भुगतान के रूप में चिह्नित किए गए",
+    "over_budget_warning": "बजट से अधिक! ⚠️",
+    "over_budget_message": "आप इस महीने {{amount}} बजट से अधिक खर्च कर रहे हैं",
+    "at_budget_limit_message": "आपने इस महीने अपनी बजट सीमा तक पहुंच गए हैं",
+    "review_categories": "श्रेणियों की समीक्षा करें",
     "monthly_planning": "मासिक योजना",
     "reconnect": "पुन: कनेक्ट करें",
     "smart_insights": "स्मार्ट अंतर्दृष्टि",

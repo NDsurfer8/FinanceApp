@@ -239,14 +239,22 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       return true;
     });
 
+    // Only include recurring expenses that have been marked as paid this month
+    const paidRecurringExpenses = transactions.filter((t) => {
+      const transactionDate = new Date(t.date);
+      return (
+        transactionDate.getMonth() === targetMonth &&
+        transactionDate.getFullYear() === targetYear &&
+        t.type === "expense" &&
+        t.category === category.name &&
+        t.recurringTransactionId &&
+        t.status === "paid"
+      );
+    });
+
     const actualSpending =
       categoryTransactions.reduce((sum, t) => sum + t.amount, 0) +
-      categoryRecurring.reduce((sum, rt) => {
-        let monthlyAmount = rt.amount;
-        if (rt.frequency === "weekly") monthlyAmount = rt.amount * 4;
-        else if (rt.frequency === "biweekly") monthlyAmount = rt.amount * 2;
-        return sum + monthlyAmount;
-      }, 0);
+      paidRecurringExpenses.reduce((sum, t) => sum + t.amount, 0);
 
     return actualSpending > category.monthlyLimit;
   };
@@ -1149,10 +1157,16 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   alignItems: "center",
                   paddingVertical: 8,
                   paddingHorizontal: 12,
-                  backgroundColor: colors.primary + "15",
+                  backgroundColor:
+                    totalBudget < 0
+                      ? colors.error + "15"
+                      : colors.primary + "15",
                   borderRadius: 8,
                   borderWidth: 1,
-                  borderColor: colors.primary + "30",
+                  borderColor:
+                    totalBudget < 0
+                      ? colors.error + "30"
+                      : colors.primary + "30",
                 }}
               >
                 <Text
@@ -1168,7 +1182,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   style={{
                     fontSize: 20,
                     fontWeight: "700",
-                    color: colors.primary,
+                    color: totalBudget < 0 ? colors.error : colors.primary,
                   }}
                 >
                   {formatCurrency(totalBudget)}

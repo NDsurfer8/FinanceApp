@@ -150,7 +150,11 @@
     "doing_great_message": "¡Tus finanzas se ven saludables! Sigue rastreando tus gastos y trabajando hacia tus objetivos.",
     "get_personalized_advice": "Obtener Consejos Personalizados",
     "bills_paid_success": "¡Facturas Pagadas! ✅",
-    "bills_paid_success_message": "{{count}} facturas recurrentes marcadas como pagadas este mes"
+    "bills_paid_success_message": "{{count}} facturas recurrentes marcadas como pagadas este mes",
+    "over_budget_warning": "¡Sobre Presupuesto! ⚠️",
+    "over_budget_message": "Estás {{amount}} sobre el presupuesto este mes",
+    "at_budget_limit_message": "Has alcanzado tu límite de presupuesto este mes",
+    "review_categories": "Revisar Categorías"
   },
   "budget": {
     "title": "Presupuesto",
@@ -169,6 +173,10 @@
     "available_transactions": "Transacciones Disponibles",
     "bills_paid_success": "¡Facturas Pagadas! ✅",
     "bills_paid_success_message": "{{count}} facturas recurrentes marcadas como pagadas este mes",
+    "over_budget_warning": "¡Sobre Presupuesto! ⚠️",
+    "over_budget_message": "Estás {{amount}} sobre el presupuesto este mes",
+    "at_budget_limit_message": "Has alcanzado tu límite de presupuesto este mes",
+    "review_categories": "Revisar Categorías",
     "monthly_planning": "Planificación Mensual",
     "reconnect": "Reconectar",
     "smart_insights": "Insights Inteligentes",

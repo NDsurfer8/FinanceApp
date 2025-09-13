@@ -150,7 +150,11 @@
     "doing_great_message": "أموالك تبدو صحية! استمر في تتبع نفقاتك والعمل نحو أهدافك.",
     "get_personalized_advice": "الحصول على نصائح مخصصة",
     "bills_paid_success": "تم دفع الفواتير! ✅",
-    "bills_paid_success_message": "{{count}} فاتورة متكررة تم تمييزها كمدفوعة هذا الشهر"
+    "bills_paid_success_message": "{{count}} فاتورة متكررة تم تمييزها كمدفوعة هذا الشهر",
+    "over_budget_warning": "تجاوز الميزانية! ⚠️",
+    "over_budget_message": "لقد تجاوزت ميزانيتك بمبلغ {{amount}} هذا الشهر",
+    "at_budget_limit_message": "لقد وصلت إلى حد ميزانيتك هذا الشهر",
+    "review_categories": "مراجعة الفئات"
   },
   "budget": {
     "title": "الميزانية",
@@ -169,6 +173,10 @@
     "available_transactions": "المعاملات المتاحة",
     "bills_paid_success": "تم دفع الفواتير! ✅",
     "bills_paid_success_message": "{{count}} فاتورة متكررة تم تمييزها كمدفوعة هذا الشهر",
+    "over_budget_warning": "تجاوز الميزانية! ⚠️",
+    "over_budget_message": "لقد تجاوزت ميزانيتك بمبلغ {{amount}} هذا الشهر",
+    "at_budget_limit_message": "لقد وصلت إلى حد ميزانيتك هذا الشهر",
+    "review_categories": "مراجعة الفئات",
     "monthly_planning": "التخطيط الشهري",
     "reconnect": "إعادة الاتصال",
     "smart_insights": "رؤى ذكية",

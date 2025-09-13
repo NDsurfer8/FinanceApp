@@ -150,7 +150,11 @@
     "doing_great_message": "あなたの財務は健全に見えます！支出を追跡し続け、目標に向かって取り組んでください。",
     "get_personalized_advice": "パーソナライズされたアドバイスを取得",
     "bills_paid_success": "請求書支払済み！✅",
-    "bills_paid_success_message": "今月{{count}}件の定期請求書が支払済みとしてマークされました"
+    "bills_paid_success_message": "今月{{count}}件の定期請求書が支払済みとしてマークされました",
+    "over_budget_warning": "予算超過！⚠️",
+    "over_budget_message": "今月{{amount}}予算を超過しています",
+    "at_budget_limit_message": "今月の予算制限に達しました",
+    "review_categories": "カテゴリを確認"
   },
   "budget": {
     "title": "予算",
@@ -169,6 +173,10 @@
     "available_transactions": "利用可能な取引",
     "bills_paid_success": "請求書支払済み！✅",
     "bills_paid_success_message": "今月{{count}}件の定期請求書が支払済みとしてマークされました",
+    "over_budget_warning": "予算超過！⚠️",
+    "over_budget_message": "今月{{amount}}予算を超過しています",
+    "at_budget_limit_message": "今月の予算制限に達しました",
+    "review_categories": "カテゴリを確認",
     "monthly_planning": "月次計画",
     "reconnect": "再接続",
     "smart_insights": "スマートインサイト",

@@ -150,7 +150,11 @@
     "doing_great_message": "Ваши финансы выглядят здоровыми! Продолжайте отслеживать свои расходы и работать над достижением своих целей.",
     "get_personalized_advice": "Получить Персональные Советы",
     "bills_paid_success": "Счета Оплачены! ✅",
-    "bills_paid_success_message": "{{count}} повторяющихся счетов отмечены как оплаченные в этом месяце"
+    "bills_paid_success_message": "{{count}} повторяющихся счетов отмечены как оплаченные в этом месяце",
+    "over_budget_warning": "Превышение Бюджета! ⚠️",
+    "over_budget_message": "Вы превысили бюджет на {{amount}} в этом месяце",
+    "at_budget_limit_message": "Вы достигли лимита бюджета в этом месяце",
+    "review_categories": "Просмотреть Категории"
   },
   "budget": {
     "title": "Бюджет",
@@ -169,6 +173,10 @@
     "available_transactions": "Доступные транзакции",
     "bills_paid_success": "Счета Оплачены! ✅",
     "bills_paid_success_message": "{{count}} повторяющихся счетов отмечены как оплаченные в этом месяце",
+    "over_budget_warning": "Превышение Бюджета! ⚠️",
+    "over_budget_message": "Вы превысили бюджет на {{amount}} в этом месяце",
+    "at_budget_limit_message": "Вы достигли лимита бюджета в этом месяце",
+    "review_categories": "Просмотреть Категории",
     "monthly_planning": "Ежемесячное Планирование",
     "reconnect": "Переподключить",
     "smart_insights": "Умные Инсайты",

@@ -150,7 +150,11 @@
     "doing_great_message": "您的财务状况看起来很健康！继续跟踪您的支出并朝着您的目标努力。",
     "get_personalized_advice": "获取个性化建议",
     "bills_paid_success": "账单已支付！✅",
-    "bills_paid_success_message": "本月标记为已支付的{{count}}笔定期账单"
+    "bills_paid_success_message": "本月标记为已支付的{{count}}笔定期账单",
+    "over_budget_warning": "超预算！⚠️",
+    "over_budget_message": "您本月超预算{{amount}}",
+    "at_budget_limit_message": "您本月已达到预算限制",
+    "review_categories": "查看分类"
   },
   "budget": {
     "title": "预算",
@@ -169,6 +173,10 @@
     "available_transactions": "可用交易",
     "bills_paid_success": "账单已支付！✅",
     "bills_paid_success_message": "本月标记为已支付的{{count}}笔定期账单",
+    "over_budget_warning": "超预算！⚠️",
+    "over_budget_message": "您本月超预算{{amount}}",
+    "at_budget_limit_message": "您本月已达到预算限制",
+    "review_categories": "查看分类",
     "monthly_planning": "月度规划",
     "reconnect": "重新连接",
     "smart_insights": "智能洞察",
