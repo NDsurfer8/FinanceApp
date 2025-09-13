@@ -470,7 +470,7 @@ export const maintainNetWorthHistory = async (
   }
 };
 
-// Save transaction
+// Save transaction (new date-based structure)
 export const saveTransaction = async (
   transaction: Transaction
 ): Promise<string> => {
@@ -478,7 +478,14 @@ export const saveTransaction = async (
     const { encryptTransaction } = await import("./encryption");
     const encryptedTransaction = await encryptTransaction(transaction);
 
-    const transactionsRef = ref(db, `users/${transaction.userId}/transactions`);
+    // Determine the month for this transaction
+    const transactionDate = new Date(transaction.date);
+    const month = transactionDate.toISOString().slice(0, 7); // YYYY-MM format
+
+    const transactionsRef = ref(
+      db,
+      `users/${transaction.userId}/transactions/${month}`
+    );
     const newTransactionRef = push(transactionsRef);
     const transactionId = newTransactionRef.key;
 
@@ -523,7 +530,7 @@ export const saveTransaction = async (
         const { transactionMatchingService } = await import(
           "./transactionMatching"
         );
-        await transactionMatchingService.markAsPending({
+        await transactionMatchingService.markAsPaid({
           ...encryptedTransaction,
           id: transactionId,
         });
@@ -539,26 +546,53 @@ export const saveTransaction = async (
   }
 };
 
-// Get user transactions
+// Get user transactions (new date-based structure)
 export const getUserTransactions = async (
-  userId: string
+  userId: string,
+  month?: string // Optional month filter (YYYY-MM format)
 ): Promise<Transaction[]> => {
   try {
     const { decryptTransactions } = await import("./encryption");
-    const transactionsRef = ref(db, `users/${userId}/transactions`);
-    const snapshot = await get(transactionsRef);
 
-    if (snapshot.exists()) {
-      const transactions: Transaction[] = [];
-      snapshot.forEach((childSnapshot) => {
-        transactions.push(childSnapshot.val());
-      });
+    if (month) {
+      // Get transactions for specific month
+      const transactionsRef = ref(db, `users/${userId}/transactions/${month}`);
+      const snapshot = await get(transactionsRef);
 
-      // Decrypt all transactions
-      const decryptedTransactions = await decryptTransactions(transactions);
-      return decryptedTransactions.sort((a, b) => b.date - a.date);
+      if (snapshot.exists()) {
+        const transactions: Transaction[] = [];
+        snapshot.forEach((childSnapshot) => {
+          transactions.push(childSnapshot.val());
+        });
+
+        // Decrypt all transactions
+        const decryptedTransactions = await decryptTransactions(transactions);
+        return decryptedTransactions.sort((a, b) => b.date - a.date);
+      }
+      return [];
+    } else {
+      // Get all transactions from all months
+      const transactionsRef = ref(db, `users/${userId}/transactions`);
+      const snapshot = await get(transactionsRef);
+
+      if (snapshot.exists()) {
+        const allTransactions: Transaction[] = [];
+
+        // Iterate through each month
+        snapshot.forEach((monthSnapshot) => {
+          monthSnapshot.forEach((transactionSnapshot) => {
+            allTransactions.push(transactionSnapshot.val());
+          });
+        });
+
+        // Decrypt all transactions
+        const decryptedTransactions = await decryptTransactions(
+          allTransactions
+        );
+        return decryptedTransactions.sort((a, b) => b.date - a.date);
+      }
+      return [];
     }
-    return [];
   } catch (error) {
     console.error("Error getting user transactions:", error);
     throw error;
@@ -688,10 +722,30 @@ export const removeTransaction = async (
   transactionId: string
 ): Promise<void> => {
   try {
-    const transactionRef = ref(
-      db,
-      `users/${userId}/transactions/${transactionId}`
-    );
+    // First, find which month the transaction is in
+    const transactionsRef = ref(db, `users/${userId}/transactions`);
+    const snapshot = await get(transactionsRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("No transactions found");
+    }
+
+    let transactionFound = false;
+    let monthPath = "";
+
+    // Search through all months to find the transaction
+    snapshot.forEach((monthSnapshot) => {
+      if (monthSnapshot.key && monthSnapshot.hasChild(transactionId)) {
+        monthPath = `users/${userId}/transactions/${monthSnapshot.key}/${transactionId}`;
+        transactionFound = true;
+      }
+    });
+
+    if (!transactionFound) {
+      throw new Error(`Transaction ${transactionId} not found`);
+    }
+
+    const transactionRef = ref(db, monthPath);
     await remove(transactionRef);
 
     // Auto-update shared groups
@@ -725,10 +779,34 @@ export const updateTransaction = async (
     const { encryptTransaction } = await import("./encryption");
     const encryptedTransaction = await encryptTransaction(transaction);
 
-    const transactionRef = ref(
-      db,
-      `users/${transaction.userId}/transactions/${transaction.id}`
-    );
+    // First, find which month the transaction is in
+    const transactionsRef = ref(db, `users/${transaction.userId}/transactions`);
+    const snapshot = await get(transactionsRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("No transactions found");
+    }
+
+    let transactionFound = false;
+    let monthPath = "";
+
+    // Search through all months to find the transaction
+    snapshot.forEach((monthSnapshot) => {
+      if (
+        monthSnapshot.key &&
+        transaction.id &&
+        monthSnapshot.hasChild(transaction.id)
+      ) {
+        monthPath = `users/${transaction.userId}/transactions/${monthSnapshot.key}/${transaction.id}`;
+        transactionFound = true;
+      }
+    });
+
+    if (!transactionFound) {
+      throw new Error(`Transaction ${transaction.id} not found`);
+    }
+
+    const transactionRef = ref(db, monthPath);
     await set(transactionRef, {
       ...encryptedTransaction,
       updatedAt: Date.now(),
@@ -2167,6 +2245,10 @@ export const deleteRecurringTransaction = async (
   userId: string
 ): Promise<void> => {
   try {
+    console.log(
+      `[userData] Attempting to delete recurring transaction: ${recurringTransactionId} for user: ${userId}`
+    );
+
     // Delete the recurring transaction from the user's collection
     const recurringTransactionRef = ref(
       db,
@@ -2176,8 +2258,15 @@ export const deleteRecurringTransaction = async (
     // First check if it exists
     const snapshot = await get(recurringTransactionRef);
     if (!snapshot.exists()) {
+      console.log(
+        `[userData] Recurring transaction ${recurringTransactionId} not found in database`
+      );
       throw new Error("Recurring transaction not found");
     }
+
+    console.log(
+      `[userData] Found recurring transaction ${recurringTransactionId}, proceeding with deletion`
+    );
 
     // Delete the recurring transaction
     await remove(recurringTransactionRef);
@@ -2189,22 +2278,30 @@ export const deleteRecurringTransaction = async (
       const transactionsSnapshot = await get(transactionsRef);
 
       if (transactionsSnapshot.exists()) {
-        const transactions = transactionsSnapshot.val();
         const transactionIdsToUpdate: string[] = [];
 
-        // Find transactions that reference this recurring transaction
-        Object.keys(transactions).forEach((transactionId) => {
-          const transaction = transactions[transactionId];
-          if (transaction.recurringTransactionId === recurringTransactionId) {
-            transactionIdsToUpdate.push(transactionId);
+        // Search through all months to find transactions that reference this recurring transaction
+        transactionsSnapshot.forEach((monthSnapshot) => {
+          if (monthSnapshot.key && monthSnapshot.val()) {
+            const monthTransactions = monthSnapshot.val();
+            Object.keys(monthTransactions).forEach((transactionId) => {
+              const transaction = monthTransactions[transactionId];
+              if (
+                transaction.recurringTransactionId === recurringTransactionId
+              ) {
+                transactionIdsToUpdate.push(
+                  `${monthSnapshot.key}/${transactionId}`
+                );
+              }
+            });
           }
         });
 
         // Remove the recurring transaction reference (but keep the actual transaction)
-        for (const transactionId of transactionIdsToUpdate) {
+        for (const transactionPath of transactionIdsToUpdate) {
           const transactionRef = ref(
             db,
-            `users/${userId}/transactions/${transactionId}`
+            `users/${userId}/transactions/${transactionPath}`
           );
           await update(transactionRef, {
             recurringTransactionId: null,
@@ -2212,6 +2309,9 @@ export const deleteRecurringTransaction = async (
         }
 
         if (transactionIdsToUpdate.length > 0) {
+          console.log(
+            `Cleaned up ${transactionIdsToUpdate.length} transaction references`
+          );
         }
       }
     } catch (cleanupError) {

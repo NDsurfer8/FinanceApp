@@ -8,6 +8,7 @@ import {
   equalTo,
 } from "firebase/database";
 import { db } from "./firebase";
+import { Transaction } from "./userData";
 
 export interface TransactionMatch {
   manualTransactionId: string;
@@ -39,19 +40,40 @@ class TransactionMatchingService {
   private readonly MIN_MATCH_CONFIDENCE = 60; // Minimum confidence for auto-matching
 
   /**
-   * Mark a manual transaction as pending when created
+   * Find a transaction by ID across all months
    */
-  async markAsPending(transaction: any): Promise<void> {
+  private async findTransactionById(
+    userId: string,
+    transactionId: string
+  ): Promise<Transaction | null> {
+    try {
+      const { getUserTransactions } = await import("./userData");
+      const transactions = await getUserTransactions(userId);
+      return transactions.find((t) => t.id === transactionId) || null;
+    } catch (error) {
+      console.error("Error finding transaction by ID:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Mark a manual transaction as paid when created (no pending status)
+   */
+  async markAsPaid(transaction: any): Promise<void> {
     if (!transaction.isManual) return;
 
     const updates = {
-      status: "pending",
-      expectedDate: transaction.date,
+      status: "paid",
+      matchedAt: Date.now(),
     };
+
+    // Find the correct month for this transaction
+    const transactionDate = new Date(transaction.date);
+    const month = transactionDate.toISOString().slice(0, 7); // YYYY-MM format
 
     const transactionRef = ref(
       db,
-      `users/${transaction.userId}/transactions/${transaction.id}`
+      `users/${transaction.userId}/transactions/${month}/${transaction.id}`
     );
     await update(transactionRef, updates);
   }
@@ -69,19 +91,19 @@ class TransactionMatchingService {
         `🔍 Checking for matches for bank transaction: ${bankTransaction.name} - $${bankTransaction.amount}`
       );
 
-      // Get all pending manual transactions for this user
-      const pendingTransactions = await this.getPendingTransactions(userId);
+      // Get all transactions that can be matched for this user
+      const matchableTransactions = await this.getMatchableTransactions(userId);
       console.log(
-        `📋 Found ${pendingTransactions.length} pending manual transactions`
+        `📋 Found ${matchableTransactions.length} matchable transactions`
       );
 
-      for (const pendingTransaction of pendingTransactions) {
+      for (const matchableTransaction of matchableTransactions) {
         console.log(
-          `🔍 Checking pending: ${pendingTransaction.description} - $${pendingTransaction.amount}`
+          `🔍 Checking matchable: ${matchableTransaction.description} - $${matchableTransaction.amount}`
         );
 
         const match = await this.evaluateMatch(
-          pendingTransaction,
+          matchableTransaction,
           bankTransaction
         );
 
@@ -89,10 +111,10 @@ class TransactionMatchingService {
           console.log(`🎯 Match found! Confidence: ${match.matchConfidence}%`);
 
           if (match.matchConfidence >= this.MIN_MATCH_CONFIDENCE) {
-            // Auto-match and mark manual transaction as paid
+            // Auto-match and mark transaction as paid
             await this.autoMatch(userId, match);
             console.log(
-              `✅ Matched manual transaction ${match.manualTransactionId} with bank transaction ${match.bankTransactionId}`
+              `✅ Matched transaction ${match.manualTransactionId} with bank transaction ${match.bankTransactionId}`
             );
             return true; // Indicate that this bank transaction should not be saved
           } else {
@@ -102,7 +124,7 @@ class TransactionMatchingService {
           }
         } else {
           console.log(
-            `❌ No match found for: ${pendingTransaction.description}`
+            `❌ No match found for: ${matchableTransaction.description}`
           );
         }
       }
@@ -117,19 +139,49 @@ class TransactionMatchingService {
   }
 
   /**
-   * Get all recurring transactions that should be marked as paid when matched
-   * Individual transactions are usually already paid when entered, so we only track recurring ones
+   * Get all transactions that can be matched with bank transactions
+   * This includes both manual transactions and recurring transactions
    */
-  private async getPendingTransactions(
+  private async getMatchableTransactions(
     userId: string
   ): Promise<PendingTransaction[]> {
-    const pendingTransactions: PendingTransaction[] = [];
+    const matchableTransactions: PendingTransaction[] = [];
 
     console.log(
-      "📋 Only checking recurring transactions for pending status - individual transactions are usually already paid when entered"
+      "📋 Looking for transactions that can be matched with bank transactions"
     );
 
-    // Also check recurring transactions that should be pending
+    // First, get all manual transactions that can be matched
+    const { getUserTransactions } = await import("./userData");
+    const allTransactions = await getUserTransactions(userId);
+
+    // Add manual transactions that don't have a bankTransactionId yet
+    const manualTransactions = allTransactions.filter(
+      (t) => t.isManual && !t.bankTransactionId && t.status !== "paid"
+    );
+
+    console.log(
+      `📋 Found ${manualTransactions.length} manual transactions that can be matched`
+    );
+
+    for (const transaction of manualTransactions) {
+      const matchableTransaction: PendingTransaction = {
+        id: transaction.id!,
+        userId: transaction.userId,
+        description: transaction.description,
+        amount: transaction.amount,
+        category: transaction.category,
+        date: transaction.date,
+        type: transaction.type,
+        status: "paid", // Will be "paid" when matched
+        expectedDate: transaction.date,
+        createdAt: transaction.createdAt || Date.now(),
+        isManual: true,
+      };
+      matchableTransactions.push(matchableTransaction);
+    }
+
+    // Also check recurring transactions that should be matched
     const recurringTransactionsRef = ref(
       db,
       `users/${userId}/recurringTransactions`
@@ -141,7 +193,7 @@ class TransactionMatchingService {
       console.log(
         `📋 Checking ${
           Object.keys(recurringTransactions).length
-        } recurring transactions for pending ones`
+        } recurring transactions for matching`
       );
 
       for (const [id, recurringTx] of Object.entries(recurringTransactions)) {
@@ -187,7 +239,7 @@ class TransactionMatchingService {
             isManual: true,
           };
 
-          pendingTransactions.push(virtualPendingTransaction);
+          matchableTransactions.push(virtualPendingTransaction);
         }
       }
     } else {
@@ -195,9 +247,9 @@ class TransactionMatchingService {
     }
 
     console.log(
-      `📋 Returning ${pendingTransactions.length} manual transactions`
+      `📋 Returning ${matchableTransactions.length} matchable transactions`
     );
-    return pendingTransactions;
+    return matchableTransactions;
   }
 
   /**
@@ -412,16 +464,8 @@ class TransactionMatchingService {
 
           const transactionId = await saveTransaction(actualTransaction);
 
-          // Ensure the transaction is marked as paid in the database
-          const transactionRef = ref(
-            db,
-            `users/${userId}/transactions/${transactionId}`
-          );
-          await update(transactionRef, {
-            status: "paid",
-            bankTransactionId: match.bankTransactionId,
-            matchedAt: match.matchedAt,
-          });
+          // The transaction is already saved with the correct status via saveTransaction
+          // No need for additional update since saveTransaction handles the new structure
 
           // Update the recurring transaction's next due date
           const nextDueDate = new Date(recurringTx.nextDueDate);
@@ -444,16 +488,21 @@ class TransactionMatchingService {
           );
         }
       } else {
-        // Update existing manual transaction status
-        const manualTransactionRef = ref(
-          db,
-          `users/${userId}/transactions/${match.manualTransactionId}`
+        // Update existing manual transaction status using the updateTransaction function
+        // which handles the new date-based structure
+        const { updateTransaction } = await import("./userData");
+        const existingTransaction = await this.findTransactionById(
+          userId,
+          match.manualTransactionId
         );
-        await update(manualTransactionRef, {
-          status: "paid",
-          bankTransactionId: match.bankTransactionId,
-          matchedAt: match.matchedAt,
-        });
+        if (existingTransaction) {
+          await updateTransaction({
+            ...existingTransaction,
+            status: "paid",
+            bankTransactionId: match.bankTransactionId,
+            matchedAt: match.matchedAt,
+          });
+        }
 
         console.log(
           `Auto-matched transaction ${match.manualTransactionId} with bank transaction ${match.bankTransactionId}`
@@ -502,16 +551,20 @@ class TransactionMatchingService {
         matchedBy: userId,
       };
 
-      // Update manual transaction status
-      const manualTransactionRef = ref(
-        db,
-        `users/${userId}/transactions/${manualTransactionId}`
+      // Update manual transaction status using the updateTransaction function
+      const { updateTransaction } = await import("./userData");
+      const existingTransaction = await this.findTransactionById(
+        userId,
+        manualTransactionId
       );
-      await update(manualTransactionRef, {
-        status: "paid",
-        bankTransactionId,
-        matchedAt: match.matchedAt,
-      });
+      if (existingTransaction) {
+        await updateTransaction({
+          ...existingTransaction,
+          status: "paid",
+          bankTransactionId,
+          matchedAt: match.matchedAt,
+        });
+      }
 
       // Match record is not needed - all important data is stored in the transaction itself
 
@@ -569,14 +622,17 @@ class TransactionMatchingService {
    */
   async markAsCancelled(userId: string, transactionId: string): Promise<void> {
     try {
-      const transactionRef = ref(
-        db,
-        `users/${userId}/transactions/${transactionId}`
+      const { updateTransaction } = await import("./userData");
+      const existingTransaction = await this.findTransactionById(
+        userId,
+        transactionId
       );
-      await update(transactionRef, {
-        status: "cancelled",
-        cancelledAt: Date.now(),
-      });
+      if (existingTransaction) {
+        await updateTransaction({
+          ...existingTransaction,
+          status: "paid",
+        });
+      }
     } catch (error) {
       console.error("Error marking transaction as cancelled:", error);
       throw error;
@@ -592,26 +648,33 @@ class TransactionMatchingService {
       const snapshot = await get(transactionsRef);
 
       if (snapshot.exists()) {
-        const transactions = snapshot.val();
-        const updates: any = {};
+        // Iterate through each month
+        snapshot.forEach((monthSnapshot) => {
+          const month = monthSnapshot.key;
+          const transactions = monthSnapshot.val();
+          const updates: any = {};
 
-        for (const [id, transaction] of Object.entries(transactions)) {
-          const tx = transaction as any;
-          // If transaction has bankTransactionId but status is not "paid", fix it
-          if (tx.bankTransactionId && tx.status !== "paid") {
-            console.log(
-              `🔧 Fixing transaction ${id}: status=${tx.status} -> paid`
-            );
-            updates[`${id}/status`] = "paid";
+          for (const [id, transaction] of Object.entries(transactions)) {
+            const tx = transaction as any;
+            // If transaction has bankTransactionId but status is not "paid", fix it
+            if (tx.bankTransactionId && tx.status !== "paid") {
+              console.log(
+                `🔧 Fixing transaction ${id} in ${month}: status=${tx.status} -> paid`
+              );
+              updates[`${id}/status`] = "paid";
+            }
           }
-        }
 
-        if (Object.keys(updates).length > 0) {
-          await update(transactionsRef, updates);
-          console.log(
-            `✅ Fixed ${Object.keys(updates).length} transaction statuses`
-          );
-        }
+          if (Object.keys(updates).length > 0) {
+            const monthRef = ref(db, `users/${userId}/transactions/${month}`);
+            update(monthRef, updates);
+            console.log(
+              `✅ Fixed ${
+                Object.keys(updates).length
+              } transaction statuses in ${month}`
+            );
+          }
+        });
       }
     } catch (error) {
       console.error("Error fixing transaction statuses:", error);

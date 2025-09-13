@@ -154,7 +154,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     });
   };
 
-  // Helper function to check if a bank transaction already exists in budget or has been handled
+  // Helper function to check if a bank transaction already exists as a saved individual transaction
   const isTransactionAlreadyImported = async (
     bankTransaction: any
   ): Promise<boolean> => {
@@ -216,7 +216,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       }
     );
 
-    // Filter out transactions that are already imported using the same logic as AutoBudgetImporter
+    // Filter out transactions that are already saved as individual transactions
     let count = 0;
     for (const transaction of currentMonthTransactions) {
       const isAlreadyImported = await isTransactionAlreadyImported(transaction);

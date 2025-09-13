@@ -76,10 +76,29 @@ export const deleteTransaction = async (
   transactionId: string
 ): Promise<void> => {
   try {
-    const transactionRef = ref(
-      db,
-      `users/${userId}/transactions/${transactionId}`
-    );
+    // First, find which month the transaction is in
+    const transactionsRef = ref(db, `users/${userId}/transactions`);
+    const snapshot = await get(transactionsRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("Transaction not found");
+    }
+
+    let monthPath: string | null = null;
+    let transactionFound = false;
+
+    snapshot.forEach((monthSnapshot) => {
+      if (monthSnapshot.key && monthSnapshot.hasChild(transactionId)) {
+        monthPath = `users/${userId}/transactions/${monthSnapshot.key}/${transactionId}`;
+        transactionFound = true;
+      }
+    });
+
+    if (!transactionFound || !monthPath) {
+      throw new Error("Transaction not found");
+    }
+
+    const transactionRef = ref(db, monthPath);
     await remove(transactionRef);
   } catch (error) {
     console.error("Error deleting transaction:", error);
@@ -273,6 +292,10 @@ export const deleteRecurringTransaction = async (
   userId: string
 ): Promise<void> => {
   try {
+    console.log(
+      `Attempting to delete recurring transaction: ${recurringTransactionId} for user: ${userId}`
+    );
+
     // Delete the recurring transaction from the user's collection
     const recurringTransactionRef = ref(
       db,
@@ -282,8 +305,15 @@ export const deleteRecurringTransaction = async (
     // First check if it exists
     const snapshot = await get(recurringTransactionRef);
     if (!snapshot.exists()) {
+      console.log(
+        `Recurring transaction ${recurringTransactionId} not found in database`
+      );
       throw new Error("Recurring transaction not found");
     }
+
+    console.log(
+      `Found recurring transaction ${recurringTransactionId}, proceeding with deletion`
+    );
 
     // Delete the recurring transaction
     await remove(recurringTransactionRef);
@@ -298,22 +328,30 @@ export const deleteRecurringTransaction = async (
       const transactionsSnapshot = await get(transactionsRef);
 
       if (transactionsSnapshot.exists()) {
-        const transactions = transactionsSnapshot.val();
         const transactionIdsToUpdate: string[] = [];
 
-        // Find transactions that reference this recurring transaction
-        Object.keys(transactions).forEach((transactionId) => {
-          const transaction = transactions[transactionId];
-          if (transaction.recurringTransactionId === recurringTransactionId) {
-            transactionIdsToUpdate.push(transactionId);
+        // Search through all months to find transactions that reference this recurring transaction
+        transactionsSnapshot.forEach((monthSnapshot) => {
+          if (monthSnapshot.key && monthSnapshot.val()) {
+            const monthTransactions = monthSnapshot.val();
+            Object.keys(monthTransactions).forEach((transactionId) => {
+              const transaction = monthTransactions[transactionId];
+              if (
+                transaction.recurringTransactionId === recurringTransactionId
+              ) {
+                transactionIdsToUpdate.push(
+                  `${monthSnapshot.key}/${transactionId}`
+                );
+              }
+            });
           }
         });
 
         // Remove the recurring transaction reference (but keep the actual transaction)
-        for (const transactionId of transactionIdsToUpdate) {
+        for (const transactionPath of transactionIdsToUpdate) {
           const transactionRef = ref(
             db,
-            `users/${userId}/transactions/${transactionId}`
+            `users/${userId}/transactions/${transactionPath}`
           );
           await update(transactionRef, {
             recurringTransactionId: null,

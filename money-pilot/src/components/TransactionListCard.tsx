@@ -495,12 +495,11 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                                         }
                                       }
                                     } else if (transaction.id) {
-                                      // For actual transactions: just mark as paid
-                                      const transactionRef = ref(
-                                        db,
-                                        `users/${user.uid}/transactions/${transaction.id}`
-                                      );
-                                      await update(transactionRef, {
+                                      // For actual transactions: just mark as paid using updateTransaction
+                                      const { updateTransaction } =
+                                        await import("../services/userData");
+                                      await updateTransaction({
+                                        ...transaction,
                                         status: "paid",
                                         matchedAt: Date.now(),
                                       });
