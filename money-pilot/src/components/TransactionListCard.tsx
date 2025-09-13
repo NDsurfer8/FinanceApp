@@ -448,7 +448,7 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                                         amount: transaction.amount,
                                         type: transaction.type,
                                         category: transaction.category,
-                                        date: Date.now(), // Use current date when marked as paid
+                                        date: transaction.date, // Keep original due date to maintain list position
                                         userId: user.uid,
                                         recurringTransactionId:
                                           transaction.recurringTransactionId,
