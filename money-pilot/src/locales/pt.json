@@ -148,7 +148,9 @@
     "excellent_discretionary_savings": "Excelente Poupança Discricionária!",
     "doing_great_title": "Você Está Indo Muito Bem! 🎉",
     "doing_great_message": "Suas finanças parecem saudáveis! Continue rastreando seus gastos e trabalhando em direção aos seus objetivos.",
-    "get_personalized_advice": "Obter Conselhos Personalizados"
+    "get_personalized_advice": "Obter Conselhos Personalizados",
+    "smart_import_success": "Importação Inteligente Funcionando! 🎯",
+    "smart_import_success_message": "{{count}} transações recorrentes automaticamente marcadas como pagas este mês"
   },
   "budget": {
     "title": "Orçamento",

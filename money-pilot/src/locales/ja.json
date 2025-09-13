@@ -148,7 +148,9 @@
     "excellent_discretionary_savings": "素晴らしい裁量的貯蓄！",
     "doing_great_title": "素晴らしいです！🎉",
     "doing_great_message": "あなたの財務は健全に見えます！支出を追跡し続け、目標に向かって取り組んでください。",
-    "get_personalized_advice": "パーソナライズされたアドバイスを取得"
+    "get_personalized_advice": "パーソナライズされたアドバイスを取得",
+    "smart_import_success": "スマートインポートが機能しています！🎯",
+    "smart_import_success_message": "今月{{count}}件の定期取引が自動的に支払済みとしてマークされました"
   },
   "budget": {
     "title": "予算",

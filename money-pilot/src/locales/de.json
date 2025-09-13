@@ -148,7 +148,9 @@
     "excellent_discretionary_savings": "Ausgezeichnete diskretionäre Ersparnisse!",
     "doing_great_title": "Sie Machen Das Großartig! 🎉",
     "doing_great_message": "Ihre Finanzen sehen gesund aus! Verfolgen Sie weiterhin Ihre Ausgaben und arbeiten Sie auf Ihre Ziele hin.",
-    "get_personalized_advice": "Personalisierte Beratung Erhalten"
+    "get_personalized_advice": "Personalisierte Beratung Erhalten",
+    "smart_import_success": "Intelligenter Import Funktioniert! 🎯",
+    "smart_import_success_message": "{{count}} wiederkehrende Transaktionen automatisch als bezahlt markiert diesen Monat"
   },
   "budget": {
     "title": "Budget",

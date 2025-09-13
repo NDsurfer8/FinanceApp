@@ -430,6 +430,38 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       }
     }
 
+    // Smart Import Insights - Count transactions marked as paid this month
+    const currentMonth = new Date();
+    const currentMonthNum = currentMonth.getMonth();
+    const currentYear = currentMonth.getFullYear();
+
+    const markedAsPaidThisMonth = transactions.filter((transaction) => {
+      const transactionDate = new Date(transaction.date);
+      const isInCurrentMonth =
+        transactionDate.getMonth() === currentMonthNum &&
+        transactionDate.getFullYear() === currentYear;
+
+      // Count transactions that were created from recurring transactions and marked as paid
+      return (
+        isInCurrentMonth &&
+        transaction.recurringTransactionId &&
+        transaction.status === "paid" &&
+        transaction.bankTransactionId
+      );
+    });
+
+    if (markedAsPaidThisMonth.length > 0) {
+      insights.push({
+        id: "smart-import-success",
+        type: "success",
+        icon: "checkmark-circle",
+        title: t("dashboard.smart_import_success"),
+        message: t("dashboard.smart_import_success_message", {
+          count: markedAsPaidThisMonth.length,
+        }),
+      });
+    }
+
     return insights;
   };
   // Available amount is discretionary income

@@ -148,7 +148,9 @@
     "excellent_discretionary_savings": "¡Excelentes Ahorros Discrecionales!",
     "doing_great_title": "¡Lo Estás Haciendo Genial! 🎉",
     "doing_great_message": "¡Tus finanzas se ven saludables! Sigue rastreando tus gastos y trabajando hacia tus objetivos.",
-    "get_personalized_advice": "Obtener Consejos Personalizados"
+    "get_personalized_advice": "Obtener Consejos Personalizados",
+    "smart_import_success": "¡Importación Inteligente Funcionando! 🎯",
+    "smart_import_success_message": "{{count}} transacciones recurrentes marcadas automáticamente como pagadas este mes"
   },
   "budget": {
     "title": "Presupuesto",
