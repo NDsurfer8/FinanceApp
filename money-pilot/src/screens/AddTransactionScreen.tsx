@@ -71,7 +71,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [stopFutureLoading, setStopFutureLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>(
     []
   );
@@ -112,16 +111,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     isRecurring: editMode
       ? transaction?.isRecurring || transaction?.recurringTransactionId || false
       : false,
-    frequency: editMode
-      ? transaction?.frequency || "monthly"
-      : ("monthly" as "weekly" | "biweekly" | "monthly"),
-    endDate: editMode
-      ? transaction?.endDate && typeof transaction.endDate === "number"
-        ? transaction.endDate
-        : transaction?.endDate
-        ? new Date(transaction.endDate).getTime()
-        : undefined
-      : undefined,
   });
 
   // Store original recurring transaction data for comparison
@@ -159,7 +148,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         category: route.params.category || prev.category,
         type: route.params.type || prev.type,
         isRecurring: route.params.isRecurring || prev.isRecurring,
-        frequency: route.params.frequency || prev.frequency,
         date: route.params.date
           ? typeof route.params.date === "number"
             ? route.params.date
@@ -248,27 +236,12 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
     }
   };
 
-  const handleEndDateChange = (event: any, selectedDate?: Date) => {
-    if (selectedDate) {
-      const timestamp = selectedDate.getTime(); // Save as timestamp
-      setFormData({ ...formData, endDate: timestamp });
-    }
-  };
-
   const handleDatePickerDone = () => {
     setShowDatePicker(false);
   };
 
-  const handleEndDatePickerDone = () => {
-    setShowEndDatePicker(false);
-  };
-
   const openDatePicker = () => {
     setShowDatePicker(true);
-  };
-
-  const openEndDatePicker = () => {
-    setShowEndDatePicker(true);
   };
 
   // Function to translate category names
@@ -344,16 +317,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
   const categories = getCategories(formData.type);
 
-  // Use the service for calculating monthly amounts
-  const calculateMonthlyAmount =
-    TransactionActionsService.calculateMonthlyAmount;
-
-  // Get the monthly equivalent amount for display
-  const monthlyEquivalentAmount =
-    formData.isRecurring && formData.amount
-      ? calculateMonthlyAmount(formData.amount, formData.frequency)
-      : 0;
-
   const handleSave = async () => {
     if (!formData.description || !formData.amount || !formData.category) {
       Alert.alert("Error", t("add_transaction.error_fill_fields"));
@@ -424,9 +387,9 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               amount: formData.amount,
               category: formData.category,
               type: formData.type,
-              frequency: formData.frequency,
+              frequency: "monthly", // Default to monthly for simplicity
               date: formData.date,
-              endDate: formData.endDate,
+              endDate: undefined, // No end date for simplicity
             },
             user.uid
           );
@@ -515,9 +478,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           (transaction.isRecurring || transaction.recurringTransactionId)
         ) {
           // Use business service to update recurring transaction
-          const finalFrequency = route.params?.fromBankSuggestion
-            ? "monthly"
-            : formData.frequency;
+          const finalFrequency = "monthly"; // Default to monthly for simplicity
 
           const result =
             await TransactionBusinessService.updateRecurringTransaction(
@@ -529,7 +490,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                 type: formData.type,
                 frequency: finalFrequency,
                 date: formData.date,
-                endDate: formData.endDate,
+                endDate: undefined, // No end date for simplicity
               },
               user.uid,
               isFutureMonth,
@@ -538,10 +499,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
 
           if (result.success) {
             // Optimistic update - update the transaction to reflect the new recurring transaction ID
-            const monthlyAmount = calculateMonthlyAmount(
-              formData.amount,
-              finalFrequency
-            );
+            const monthlyAmount = parseFloat(removeCommas(formData.amount)); // Use amount directly for monthly
             const updatedTransactions = transactions.map((t) => {
               if (t.id === transaction.id) {
                 return {
@@ -601,9 +559,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
         }
       } else if (formData.isRecurring) {
         // Use business service to create new recurring transaction
-        const finalFrequency = route.params?.fromBankSuggestion
-          ? "monthly"
-          : formData.frequency;
+        const finalFrequency = "monthly"; // Default to monthly for simplicity
 
         const template = TransactionActionsService.createRecurringTemplate(
           {
@@ -613,7 +569,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
             type: formData.type,
             frequency: finalFrequency,
             date: formData.date,
-            endDate: formData.endDate,
+            endDate: undefined, // No end date for simplicity
           },
           user.uid
         );
@@ -637,7 +593,7 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           Alert.alert("Error", result.message);
         }
       } else {
-        // Create regular transaction
+        // Create transaction (regular or recurring)
         const newTransaction = {
           id: Date.now().toString(),
           description: formData.description,
@@ -649,6 +605,10 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
           createdAt: Date.now(),
           updatedAt: Date.now(),
           isManual: true, // Mark as manual transaction for matching
+          ...(formData.isRecurring && {
+            isRecurring: true,
+            frequency: "monthly", // Default to monthly for simplicity
+          }),
         };
 
         // Optimistic update - add to UI immediately
@@ -1070,63 +1030,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               placeholderTextColor={colors.inputPlaceholder}
               keyboardType="numeric"
             />
-
-            {/* Monthly Equivalent Amount Display */}
-            {formData.isRecurring &&
-              formData.amount &&
-              monthlyEquivalentAmount > 0 && (
-                <View
-                  style={{
-                    marginTop: 8,
-                    padding: 12,
-                    backgroundColor: colors.primary + "20",
-                    borderRadius: 8,
-                    borderLeftWidth: 4,
-                    borderLeftColor: colors.primary,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: colors.primary,
-                      fontWeight: "600",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {t("add_transaction.monthly_equivalent")}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: colors.text,
-                      fontWeight: "700",
-                    }}
-                  >
-                    {getCurrencySymbol()}
-                    {formatNumberWithCommas(monthlyEquivalentAmount.toFixed(2))}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: colors.textSecondary,
-                      marginTop: 2,
-                    }}
-                  >
-                    {formData.frequency === "weekly" &&
-                      t("add_transaction.weekly_calculation", {
-                        amount: formData.amount,
-                      })}
-                    {formData.frequency === "biweekly" &&
-                      t("add_transaction.biweekly_calculation", {
-                        amount: formData.amount,
-                      })}
-                    {formData.frequency === "monthly" &&
-                      t("add_transaction.monthly_calculation", {
-                        amount: formData.amount,
-                      })}
-                  </Text>
-                </View>
-              )}
           </View>
 
           {/* Category */}
@@ -1283,108 +1186,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
               </View>
             </TouchableOpacity>
           </View>
-
-          {/* Recurring Options */}
-          {formData.isRecurring && (
-            <>
-              {/* Frequency */}
-              <View style={{ marginBottom: 20 }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    color: colors.text,
-                    marginBottom: 8,
-                  }}
-                >
-                  {t("add_transaction.frequency")}
-                </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {["weekly", "biweekly", "monthly"].map((frequency) => (
-                    <TouchableOpacity
-                      key={frequency}
-                      style={{
-                        paddingHorizontal: 16,
-                        paddingVertical: 8,
-                        marginRight: 8,
-                        borderRadius: 20,
-                        borderWidth: 1,
-                        borderColor:
-                          formData.frequency === frequency
-                            ? colors.primary
-                            : colors.border,
-                        backgroundColor:
-                          formData.frequency === frequency
-                            ? colors.primary
-                            : "transparent",
-                      }}
-                      onPress={() =>
-                        setFormData({ ...formData, frequency: frequency })
-                      }
-                    >
-                      <Text
-                        style={{
-                          color:
-                            formData.frequency === frequency
-                              ? "white"
-                              : colors.text,
-                          fontSize: 14,
-                          textTransform: "capitalize",
-                        }}
-                      >
-                        {t(`add_transaction.${frequency}`)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-
-              {/* End Date */}
-              <View style={{ marginBottom: 20 }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    color: colors.text,
-                    marginBottom: 8,
-                  }}
-                >
-                  {t("add_transaction.end_date_optional")}
-                </Text>
-                <TouchableOpacity
-                  style={{
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    borderRadius: 8,
-                    padding: 12,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    backgroundColor: colors.card,
-                  }}
-                  onPress={openEndDatePicker}
-                >
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: formData.endDate
-                        ? colors.text
-                        : colors.textSecondary,
-                    }}
-                  >
-                    {formData.endDate
-                      ? new Date(formData.endDate).toISOString().split("T")[0]
-                      : t("add_transaction.select_end_date_optional")}
-                  </Text>
-                  <Ionicons
-                    name="calendar-outline"
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
 
           {/* Action Buttons */}
           <View style={{ marginTop: 20, gap: 12 }}>
@@ -1626,122 +1427,6 @@ export const AddTransactionScreen: React.FC<AddTransactionScreenProps> = ({
                   alignItems: "center",
                 }}
                 onPress={handleDatePickerDone}
-              >
-                <Text
-                  style={{
-                    color: "white",
-                    fontSize: 16,
-                    fontWeight: "600",
-                  }}
-                >
-                  {t("add_transaction.done")}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* End Date Picker Modal */}
-      <Modal
-        visible={showEndDatePicker}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowEndDatePicker(false)}
-      >
-        <TouchableOpacity
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-          activeOpacity={1}
-          onPress={() => setShowEndDatePicker(false)}
-        >
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 24,
-              width: "90%",
-              maxWidth: 400,
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.25,
-              shadowRadius: 20,
-              shadowOffset: { width: 0, height: 10 },
-              elevation: 10,
-            }}
-            onStartShouldSetResponder={() => true}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "600",
-                color: colors.text,
-                marginBottom: 20,
-                textAlign: "center",
-              }}
-            >
-              {t("add_transaction.select_end_date_modal")}
-            </Text>
-            <View
-              style={{
-                alignItems: "center",
-                marginVertical: 10,
-              }}
-            >
-              <DateTimePicker
-                value={
-                  formData.endDate ? new Date(formData.endDate) : new Date()
-                }
-                mode="date"
-                display="spinner"
-                onChange={handleEndDateChange}
-                style={{
-                  backgroundColor: colors.surface,
-                  borderRadius: 12,
-                  width: "100%",
-                }}
-                textColor={colors.text}
-              />
-            </View>
-            <View
-              style={{
-                flexDirection: "row",
-                gap: 12,
-                marginTop: 20,
-              }}
-            >
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  backgroundColor: colors.border,
-                  padding: 16,
-                  borderRadius: 12,
-                  alignItems: "center",
-                }}
-                onPress={() => setShowEndDatePicker(false)}
-              >
-                <Text
-                  style={{
-                    color: colors.text,
-                    fontSize: 16,
-                    fontWeight: "600",
-                  }}
-                >
-                  {t("add_transaction.cancel")}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  backgroundColor: colors.primary,
-                  padding: 16,
-                  borderRadius: 12,
-                  alignItems: "center",
-                }}
-                onPress={handleEndDatePickerDone}
               >
                 <Text
                   style={{
