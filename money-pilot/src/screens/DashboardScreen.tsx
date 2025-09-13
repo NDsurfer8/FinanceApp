@@ -604,6 +604,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       recurringMonthlyExpenses,
       budgetCategories,
       recurringTransactions,
+      transactions, // Add transactions to trigger real-time updates
     ]
   );
 

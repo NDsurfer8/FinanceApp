@@ -567,6 +567,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       savingsPercentage,
       dismissedInsights,
       recurringTransactions,
+      budgetCategories, // Add budgetCategories for over-budget insights
+      transactions, // Add transactions for real-time updates
     ]
   );
 
