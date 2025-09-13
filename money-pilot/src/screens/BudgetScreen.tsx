@@ -160,7 +160,16 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
   ): Promise<boolean> => {
     if (!user?.uid) return false;
 
-    // Check if it already exists as a saved transaction
+    // First check if this bank transaction was already imported by checking bankTransactionId
+    const alreadyImportedById = transactions.some((budgetTransaction: any) => {
+      return budgetTransaction.bankTransactionId === bankTransaction.id;
+    });
+
+    if (alreadyImportedById) {
+      return true;
+    }
+
+    // Check if it already exists as a saved transaction based on content matching
     const bankDate = new Date(bankTransaction.date);
     const bankAmount = Math.abs(bankTransaction.amount);
     const bankName = bankTransaction.name?.toLowerCase() || "";
