@@ -71,8 +71,9 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
   const [saveProgress, setSaveProgress] = useState({
     currentTransaction: "",
     startTime: 0,
+    processedCount: 0,
+    totalCount: 0,
   });
-  const [selectedBankFilter, setSelectedBankFilter] = useState<string>("all");
 
   // Process bank transactions when modal becomes visible
   useEffect(() => {
@@ -90,13 +91,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         refreshBankData();
       }
     }
-  }, [
-    isVisible,
-    bankTransactions,
-    selectedMonth,
-    isBankConnected,
-    selectedBankFilter,
-  ]);
+  }, [isVisible, bankTransactions, selectedMonth, isBankConnected]);
 
   // Enhanced categorization using the new system
   const categorizeTransaction = async (
@@ -157,29 +152,14 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
         return Array.from(banks);
       };
 
-      // Get filtered account IDs based on selected bank
-      const getFilteredAccountIds = () => {
-        if (selectedBankFilter === "all")
-          return bankAccounts.map((account: any) => account.id);
-        return bankAccounts
-          .filter((account: any) => account.institution === selectedBankFilter)
-          .map((account: any) => account.id);
-      };
-
-      // Filter transactions for the selected month and bank
+      // Filter transactions for the selected month only (no bank filtering)
       const monthlyTransactions = bankTransactions.filter((transaction) => {
         const transactionDate = new Date(transaction.date);
         const isCorrectMonth =
           transactionDate.getMonth() === targetMonth &&
           transactionDate.getFullYear() === targetYear;
 
-        // Apply bank filter by account IDs
-        const filteredAccountIds = getFilteredAccountIds();
-        const isCorrectBank = filteredAccountIds.includes(
-          transaction.account_id
-        );
-
-        return isCorrectMonth && isCorrectBank;
+        return isCorrectMonth;
       });
 
       // Filter out already imported transactions
@@ -267,20 +247,26 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
       return;
     }
 
+    const startTime = Date.now();
     setIsSaving(true);
     setSaveProgress({
       currentTransaction: "",
-      startTime: Date.now(),
+      startTime: startTime,
+      processedCount: 0,
+      totalCount: selectedTransactions.length,
     });
 
     let savedCount = 0;
     let matchedCount = 0;
 
     try {
-      for (const transaction of selectedTransactions) {
+      for (let i = 0; i < selectedTransactions.length; i++) {
+        const transaction = selectedTransactions[i];
         setSaveProgress({
           currentTransaction: transaction.name,
-          startTime: Date.now(),
+          startTime: startTime,
+          processedCount: i,
+          totalCount: selectedTransactions.length,
         });
 
         try {
@@ -482,7 +468,7 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
             </View>
 
             {/* Content */}
-            <View style={{ flex: 1, padding: 24 }}>
+            <View style={{ flex: 1, padding: 20 }}>
               {isLoading ? (
                 <View
                   style={{
@@ -539,99 +525,6 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                 </View>
               ) : (
                 <>
-                  {/* Bank Filters */}
-                  {(() => {
-                    const uniqueBanks = new Set<string>();
-                    bankAccounts.forEach((account: any) => {
-                      if (account.institution) {
-                        uniqueBanks.add(account.institution);
-                      }
-                    });
-                    return uniqueBanks.size > 1;
-                  })() && (
-                    <View style={{ marginBottom: 20 }}>
-                      <Text
-                        style={{
-                          fontSize: 16,
-                          fontWeight: "600",
-                          color: colors.text,
-                          marginBottom: 12,
-                        }}
-                      >
-                        {t("auto_budget_importer.filter_by_bank")}
-                      </Text>
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={{ marginBottom: 12 }}
-                      >
-                        <TouchableOpacity
-                          onPress={() => setSelectedBankFilter("all")}
-                          style={{
-                            paddingHorizontal: 16,
-                            paddingVertical: 8,
-                            borderRadius: 20,
-                            marginRight: 8,
-                            backgroundColor:
-                              selectedBankFilter === "all"
-                                ? colors.primary
-                                : colors.surfaceSecondary,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 14,
-                              fontWeight: "600",
-                              color:
-                                selectedBankFilter === "all"
-                                  ? "white"
-                                  : colors.textSecondary,
-                            }}
-                          >
-                            {t("auto_budget_importer.all_banks")}
-                          </Text>
-                        </TouchableOpacity>
-                        {(() => {
-                          const uniqueBanks = new Set<string>();
-                          bankAccounts.forEach((account: any) => {
-                            if (account.institution) {
-                              uniqueBanks.add(account.institution);
-                            }
-                          });
-                          return Array.from(uniqueBanks);
-                        })().map((bankName) => (
-                          <TouchableOpacity
-                            key={bankName}
-                            onPress={() => setSelectedBankFilter(bankName)}
-                            style={{
-                              paddingHorizontal: 16,
-                              paddingVertical: 8,
-                              borderRadius: 20,
-                              marginRight: 8,
-                              backgroundColor:
-                                selectedBankFilter === bankName
-                                  ? colors.primary
-                                  : colors.surfaceSecondary,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                fontSize: 14,
-                                fontWeight: "600",
-                                color:
-                                  selectedBankFilter === bankName
-                                    ? "white"
-                                    : colors.textSecondary,
-                              }}
-                            >
-                              {bankName}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
-
                   {/* Action Bar with Select All/Deselect All */}
                   {categorizedTransactions.length > 0 && (
                     <View
@@ -639,11 +532,11 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                         flexDirection: "row",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        paddingVertical: 12,
+                        paddingVertical: 10,
                         paddingHorizontal: 16,
                         backgroundColor: colors.surfaceSecondary,
                         borderRadius: 12,
-                        marginBottom: 16,
+                        marginBottom: 12,
                       }}
                     >
                       <TouchableOpacity
@@ -849,14 +742,14 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                     ))}
                   </ScrollView>
 
-                  {/* Import Progress Info */}
+                  {/* Import Progress Info - Compact */}
                   {isSaving && (
                     <View
                       style={{
                         backgroundColor: colors.surfaceSecondary,
-                        borderRadius: 12,
-                        padding: 16,
-                        marginBottom: 16,
+                        borderRadius: 8,
+                        padding: 12,
+                        marginBottom: 12,
                         borderWidth: 1,
                         borderColor: colors.primary + "30",
                       }}
@@ -866,25 +759,29 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                           flexDirection: "row",
                           justifyContent: "space-between",
                           alignItems: "center",
-                          marginBottom: 8,
+                          marginBottom: 4,
                         }}
                       >
                         <Text
                           style={{
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: "600",
                             color: colors.text,
+                            flex: 1,
+                            marginRight: 8,
                           }}
+                          numberOfLines={1}
                         >
-                          {t("auto_budget_importer.importing_transactions")}
+                          {saveProgress.currentTransaction}
                         </Text>
                         <Text
                           style={{
-                            fontSize: 12,
+                            fontSize: 11,
                             color: colors.textSecondary,
                           }}
                         >
-                          {saveProgress.currentTransaction}
+                          {saveProgress.processedCount + 1}/
+                          {saveProgress.totalCount}
                         </Text>
                       </View>
                       <View
@@ -896,36 +793,43 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                       >
                         <Text
                           style={{
-                            fontSize: 12,
+                            fontSize: 11,
                             color: colors.textSecondary,
                           }}
                         >
-                          {selectedCount}{" "}
+                          {saveProgress.totalCount -
+                            saveProgress.processedCount}{" "}
                           {t("auto_budget_importer.transactions_remaining")}
                         </Text>
-                        {saveProgress.startTime > 0 && (
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              color: colors.primary,
-                              fontWeight: "500",
-                            }}
-                          >
-                            {(() => {
-                              const elapsed =
-                                (Date.now() - saveProgress.startTime) / 1000;
-                              const remaining = Math.max(
-                                0,
-                                selectedCount * 0.5 - elapsed
-                              );
-                              return remaining > 0
-                                ? `${Math.ceil(remaining)}s ${t(
-                                    "auto_budget_importer.remaining"
-                                  )}`
-                                : t("auto_budget_importer.almost_done");
-                            })()}
-                          </Text>
-                        )}
+                        {saveProgress.startTime > 0 &&
+                          saveProgress.processedCount > 0 && (
+                            <Text
+                              style={{
+                                fontSize: 11,
+                                color: colors.primary,
+                                fontWeight: "500",
+                              }}
+                            >
+                              {(() => {
+                                const elapsed =
+                                  (Date.now() - saveProgress.startTime) / 1000;
+                                const avgTimePerTransaction =
+                                  elapsed / saveProgress.processedCount;
+                                const remainingTransactions =
+                                  saveProgress.totalCount -
+                                  saveProgress.processedCount;
+                                const estimatedRemaining = Math.max(
+                                  0,
+                                  remainingTransactions * avgTimePerTransaction
+                                );
+                                return estimatedRemaining > 0
+                                  ? `${Math.ceil(estimatedRemaining)}s ${t(
+                                      "auto_budget_importer.remaining"
+                                    )}`
+                                  : t("auto_budget_importer.almost_done");
+                              })()}
+                            </Text>
+                          )}
                       </View>
                     </View>
                   )}
@@ -939,10 +843,10 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
                         selectedCount === 0
                           ? colors.surfaceSecondary
                           : colors.primary,
-                      paddingVertical: 16,
+                      paddingVertical: 14,
                       borderRadius: 12,
                       alignItems: "center",
-                      marginTop: 16,
+                      marginTop: 12,
                       opacity: selectedCount === 0 ? 0.5 : 1,
                     }}
                   >
