@@ -452,11 +452,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
     if (markedAsPaidThisMonth.length > 0) {
       insights.push({
-        id: "smart-import-success",
+        id: "bills-paid-success",
         type: "success",
         icon: "checkmark-circle",
-        title: t("dashboard.smart_import_success"),
-        message: t("dashboard.smart_import_success_message", {
+        title: t("dashboard.bills_paid_success"),
+        message: t("dashboard.bills_paid_success_message", {
           count: markedAsPaidThisMonth.length,
         }),
       });

@@ -389,6 +389,38 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       });
     }
 
+    // Smart Import Insights - Count transactions marked as paid this month
+    const currentMonth = new Date();
+    const currentMonthNum = currentMonth.getMonth();
+    const currentYear = currentMonth.getFullYear();
+
+    const markedAsPaidThisMonth = transactions.filter((transaction) => {
+      const transactionDate = new Date(transaction.date);
+      const isInCurrentMonth =
+        transactionDate.getMonth() === currentMonthNum &&
+        transactionDate.getFullYear() === currentYear;
+
+      // Count transactions that were created from recurring transactions and marked as paid
+      return (
+        isInCurrentMonth &&
+        transaction.recurringTransactionId &&
+        transaction.status === "paid" &&
+        transaction.bankTransactionId
+      );
+    });
+
+    if (markedAsPaidThisMonth.length > 0) {
+      insights.push({
+        id: "bills-paid-success",
+        type: "success",
+        icon: "checkmark-circle",
+        title: t("budget.bills_paid_success"),
+        message: t("budget.bills_paid_success_message", {
+          count: markedAsPaidThisMonth.length,
+        }),
+      });
+    }
+
     return insights;
   };
 

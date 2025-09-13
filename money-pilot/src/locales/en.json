@@ -314,8 +314,8 @@
     "doing_great_title": "You're Doing Great! 🎉",
     "doing_great_message": "Your finances look healthy! Keep tracking your expenses and working toward your goals.",
     "get_personalized_advice": "Get Personalized Advice",
-    "smart_import_success": "Smart Import Working! 🎯",
-    "smart_import_success_message": "{{count}} recurring transactions automatically marked as paid this month"
+    "bills_paid_success": "Bills Paid! ✅",
+    "bills_paid_success_message": "{{count}} recurring bills marked as paid this month"
   },
   "budget": {
     "title": "Budget",
@@ -358,7 +358,9 @@
     "category_name": "Category Name",
     "auto_import": "Auto Import",
     "import_transactions": "Import Transactions",
-    "available_transactions": "Available Transactions"
+    "available_transactions": "Available Transactions",
+    "bills_paid_success": "Bills Paid! ✅",
+    "bills_paid_success_message": "{{count}} recurring bills marked as paid this month"
   },
   "transactions": {
     "title": "Transactions",

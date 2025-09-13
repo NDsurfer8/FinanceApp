@@ -149,8 +149,8 @@
     "doing_great_title": "您做得很好！🎉",
     "doing_great_message": "您的财务状况看起来很健康！继续跟踪您的支出并朝着您的目标努力。",
     "get_personalized_advice": "获取个性化建议",
-    "smart_import_success": "智能导入正在工作！🎯",
-    "smart_import_success_message": "本月自动标记为已支付的{{count}}笔定期交易"
+    "bills_paid_success": "账单已支付！✅",
+    "bills_paid_success_message": "本月标记为已支付的{{count}}笔定期账单"
   },
   "budget": {
     "title": "预算",
@@ -167,6 +167,8 @@
     "auto_import": "自动导入",
     "import_transactions": "导入交易",
     "available_transactions": "可用交易",
+    "bills_paid_success": "账单已支付！✅",
+    "bills_paid_success_message": "本月标记为已支付的{{count}}笔定期账单",
     "monthly_planning": "月度规划",
     "reconnect": "重新连接",
     "smart_insights": "智能洞察",

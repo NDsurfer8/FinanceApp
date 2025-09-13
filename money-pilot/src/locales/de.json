@@ -149,8 +149,8 @@
     "doing_great_title": "Sie Machen Das Großartig! 🎉",
     "doing_great_message": "Ihre Finanzen sehen gesund aus! Verfolgen Sie weiterhin Ihre Ausgaben und arbeiten Sie auf Ihre Ziele hin.",
     "get_personalized_advice": "Personalisierte Beratung Erhalten",
-    "smart_import_success": "Intelligenter Import Funktioniert! 🎯",
-    "smart_import_success_message": "{{count}} wiederkehrende Transaktionen automatisch als bezahlt markiert diesen Monat"
+    "bills_paid_success": "Rechnungen Bezahlt! ✅",
+    "bills_paid_success_message": "{{count}} wiederkehrende Rechnungen als bezahlt markiert diesen Monat"
   },
   "budget": {
     "title": "Budget",
@@ -167,6 +167,8 @@
     "auto_import": "Automatischer Import",
     "import_transactions": "Transaktionen importieren",
     "available_transactions": "Verfügbare Transaktionen",
+    "bills_paid_success": "Rechnungen Bezahlt! ✅",
+    "bills_paid_success_message": "{{count}} wiederkehrende Rechnungen als bezahlt markiert diesen Monat",
     "monthly_planning": "Monatliche Planung",
     "reconnect": "Neu Verbinden",
     "smart_insights": "Intelligente Einblicke",
