@@ -696,25 +696,15 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     const targetMonthNum = targetMonth.getMonth();
     const targetYear = targetMonth.getFullYear();
 
-    // Exclude transactions that were created from recurring transactions and marked as paid
+    // Include ALL transactions for budget category analysis (including paid recurring ones)
+    // This matches the BudgetCategoriesScreen logic
     const monthlyTransactions = transactions.filter((transaction) => {
       const transactionDate = new Date(transaction.date);
       const isInSelectedMonth =
         transactionDate.getMonth() === targetMonthNum &&
         transactionDate.getFullYear() === targetYear;
 
-      if (!isInSelectedMonth) return false;
-
-      // If this transaction was created from a recurring transaction and marked as paid,
-      // exclude it because we should use the recurring transaction template instead
-      if (transaction.recurringTransactionId && transaction.status === "paid") {
-        console.log(
-          `🔄 Snapshot: Excluding paid transaction created from recurring "${transaction.description}" - using recurring transaction instead`
-        );
-        return false;
-      }
-
-      return true;
+      return isInSelectedMonth;
     });
 
     const actualMonthlyIncome = monthlyTransactions
@@ -877,25 +867,68 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       : false;
     const budgetCategoriesWithSpending = shouldIncludeBudgetCategories
       ? budgetCategories.map((category) => {
-          // Calculate actual spending for this category in the selected month
+          // Calculate actual spending from transactions in this category
           const categoryTransactions = monthlyTransactions.filter((t) => {
-            return t.category === category.name && t.type === "expense";
+            return (
+              t.category.toLowerCase() === category.name.toLowerCase() &&
+              t.type === "expense"
+            );
           });
 
           const actualSpending = categoryTransactions.reduce(
             (sum, t) => sum + t.amount,
             0
           );
-          const remaining = Math.max(0, category.monthlyLimit - actualSpending);
-          const isOverBudget = actualSpending > category.monthlyLimit;
+
+          // For current month, also include projected recurring transactions
+          const isCurrentMonth =
+            targetMonthNum === new Date().getMonth() &&
+            targetYear === new Date().getFullYear();
+
+          let projectedSpending = 0;
+          if (isCurrentMonth) {
+            // Calculate projected spending from active recurring transactions for this category
+            projectedSpending = allRecurringTransactions
+              .filter(
+                (rt) =>
+                  rt.isActive &&
+                  rt.type === "expense" &&
+                  rt.category.toLowerCase() === category.name.toLowerCase()
+              )
+              .reduce((sum, rt) => {
+                // Check if this recurring transaction should occur this month
+                const startDate = new Date(rt.startDate || rt.date);
+                const currentDate = new Date();
+
+                // If recurring transaction started before or during this month
+                if (startDate <= currentDate) {
+                  // Check if there's already an actual transaction for this recurring transaction this month
+                  const hasActualTransaction = monthlyTransactions.some(
+                    (t) => t.recurringTransactionId === rt.id
+                  );
+
+                  // Only add projected amount if no actual transaction exists
+                  if (!hasActualTransaction) {
+                    return sum + rt.amount;
+                  }
+                }
+                return sum;
+              }, 0);
+          }
+
+          const totalSpending = actualSpending + projectedSpending;
+          const remaining = Math.max(0, category.monthlyLimit - totalSpending);
+          const isOverBudget = totalSpending > category.monthlyLimit;
           const percentageUsed =
             category.monthlyLimit > 0
-              ? (actualSpending / category.monthlyLimit) * 100
+              ? (totalSpending / category.monthlyLimit) * 100
               : 0;
 
           return {
             ...category,
             actualSpending,
+            projectedSpending,
+            totalSpending,
             remaining,
             isOverBudget,
             percentageUsed: Math.round(percentageUsed),
