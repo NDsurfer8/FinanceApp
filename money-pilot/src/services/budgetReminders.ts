@@ -31,14 +31,26 @@ export class BudgetReminderService {
   // Schedule all budget reminders for a user
   async scheduleAllBudgetReminders(userId: string): Promise<void> {
     try {
+      console.log(
+        "🚀 [Budget Reminders] Starting to schedule all budget reminders for user:",
+        userId
+      );
+
       // Check if budget reminders are enabled before scheduling
       const budgetRemindersEnabled = await AsyncStorage.getItem(
         `notification_budget-reminders`
       );
       const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
+      console.log(
+        "⚙️ [Budget Reminders] Budget reminders enabled:",
+        isBudgetRemindersEnabled
+      );
 
       if (!isBudgetRemindersEnabled) {
         // If not enabled, just cancel existing reminders and return
+        console.log(
+          "❌ [Budget Reminders] Budget reminders disabled, cancelling existing reminders"
+        );
         await this.cancelAllBudgetReminders();
         return;
       }
@@ -52,12 +64,26 @@ export class BudgetReminderService {
           getUserRecurringTransactions(userId),
         ]);
 
+      console.log(
+        "📊 [Budget Reminders] Data loaded - Transactions:",
+        transactions.length,
+        "Goals:",
+        goals.length,
+        "Recurring:",
+        recurringTransactions.length
+      );
+
       // Cancel existing budget reminders
       await this.cancelAllBudgetReminders();
 
       // Calculate current month's budget status
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
+      console.log(
+        "📅 [Budget Reminders] Current month/year:",
+        currentMonth + 1,
+        currentYear
+      );
 
       const monthlyTransactions = transactions.filter((transaction) => {
         const transactionDate = new Date(transaction.date);
@@ -66,6 +92,11 @@ export class BudgetReminderService {
           transactionDate.getFullYear() === currentYear
         );
       });
+
+      console.log(
+        "💳 [Budget Reminders] Monthly transactions count:",
+        monthlyTransactions.length
+      );
 
       // Calculate income including active recurring income for current month
       const individualIncome = monthlyTransactions
@@ -77,29 +108,49 @@ export class BudgetReminderService {
         .filter((rt) => rt.type === "income" && rt.isActive)
         .reduce((sum, rt) => sum + rt.amount, 0);
 
-      const totalIncome = individualIncome + activeRecurringIncome;
+      console.log("💰 [Budget Reminders] Individual income:", individualIncome);
+      console.log(
+        "🔄 [Budget Reminders] Active recurring income:",
+        activeRecurringIncome
+      );
 
-      // Calculate expenses including recurring expenses that's been marked as paid
+      const totalIncome = individualIncome + activeRecurringIncome;
+      console.log("💰 [Budget Reminders] Total income:", totalIncome);
+
+      // Calculate expenses including all active recurring expenses (planned expenses)
       const individualExpenses = monthlyTransactions
         .filter((t) => t.type === "expense" && !t.recurringTransactionId)
         .reduce((sum, t) => sum + t.amount, 0);
 
-      const paidRecurringExpenses = monthlyTransactions
-        .filter(
-          (t) =>
-            t.type === "expense" &&
-            t.recurringTransactionId &&
-            t.status === "paid"
-        )
-        .reduce((sum, t) => sum + t.amount, 0);
+      // Get all active recurring expenses for current month (planned expenses, regardless of payment status)
+      const activeRecurringExpenses = recurringTransactions
+        .filter((rt) => rt.type === "expense" && rt.isActive)
+        .reduce((sum, rt) => sum + rt.amount, 0);
 
-      const totalExpenses = individualExpenses + paidRecurringExpenses;
+      const totalExpenses = individualExpenses + activeRecurringExpenses;
+      console.log(
+        "💸 [Budget Reminders] Individual expenses:",
+        individualExpenses
+      );
+      console.log(
+        "💸 [Budget Reminders] Active recurring expenses (planned):",
+        activeRecurringExpenses
+      );
+      console.log("💸 [Budget Reminders] Total expenses:", totalExpenses);
 
       // Calculate remaining balance like in budget summary
       const netIncome = totalIncome - totalExpenses;
       const savingsPercent = budgetSettings?.savingsPercentage || 20;
       const debtPayoffPercent = budgetSettings?.debtPayoffPercentage || 5;
       const savingsAmount = totalIncome * (savingsPercent / 100);
+
+      console.log("📊 [Budget Reminders] Net income:", netIncome);
+      console.log(
+        "💾 [Budget Reminders] Savings %:",
+        savingsPercent,
+        "Amount:",
+        savingsAmount
+      );
 
       // Calculate total goal contributions
       const totalGoalContributions = goals.reduce((total, goal) => {
@@ -111,16 +162,64 @@ export class BudgetReminderService {
         netIncome - savingsAmount - debtPayoffAmount - totalGoalContributions;
       const remainingBalance = discretionaryIncome;
 
+      console.log(
+        "🎯 [Budget Reminders] Goal contributions:",
+        totalGoalContributions
+      );
+      console.log(
+        "💳 [Budget Reminders] Debt payoff %:",
+        debtPayoffPercent,
+        "Amount:",
+        debtPayoffAmount
+      );
+      console.log(
+        "🧮 [Budget Reminders] Calculation: netIncome - savings - debt - goals"
+      );
+      console.log(
+        "🧮 [Budget Reminders] Calculation:",
+        netIncome,
+        "-",
+        savingsAmount,
+        "-",
+        debtPayoffAmount,
+        "-",
+        totalGoalContributions,
+        "=",
+        remainingBalance
+      );
+
+      console.log(
+        "📅 [Budget Reminders] Scheduling budget reminders with safe to spend amount:",
+        remainingBalance,
+        "and total income:",
+        totalIncome
+      );
+
       // Schedule different types of budget reminders
+      console.log(
+        "📅 [Budget Reminders] Scheduling monthly budget reminder..."
+      );
       await this.scheduleMonthlyBudgetReminder(remainingBalance, totalIncome);
+
+      console.log("📅 [Budget Reminders] Scheduling weekly budget reminder...");
       await this.scheduleWeeklyBudgetReminder(remainingBalance, totalIncome);
+
+      console.log("📅 [Budget Reminders] Scheduling daily budget reminder...");
       await this.scheduleDailyBudgetReminder(remainingBalance, totalIncome);
 
       // Schedule category-specific over-budget notifications (matches smart insights logic)
+      console.log(
+        "📅 [Budget Reminders] Scheduling category over-budget notifications..."
+      );
       await this.scheduleCategoryOverBudgetNotifications(userId);
 
       // Schedule weekly budget check notification
+      console.log("📅 [Budget Reminders] Scheduling weekly budget check...");
       await notificationService.scheduleWeeklyBudgetCheck();
+
+      console.log(
+        "✅ [Budget Reminders] All budget reminders scheduled successfully!"
+      );
     } catch (error) {
       console.error("Error scheduling budget reminders:", error);
     }
@@ -347,6 +446,13 @@ export class BudgetReminderService {
     budgetLimit: number
   ): Promise<void> {
     try {
+      console.log(
+        "📅 [Daily Budget Reminder] Starting with safe to spend amount:",
+        remainingBudget,
+        "total income:",
+        budgetLimit
+      );
+
       // Check if budget reminders are enabled before scheduling
       const budgetRemindersEnabled = await AsyncStorage.getItem(
         `notification_budget-reminders`
@@ -354,6 +460,9 @@ export class BudgetReminderService {
       const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
 
       if (!isBudgetRemindersEnabled) {
+        console.log(
+          "❌ [Daily Budget Reminder] Budget reminders disabled, skipping"
+        );
         return; // Budget reminders are disabled
       }
       const now = new Date();
@@ -364,15 +473,32 @@ export class BudgetReminderService {
       ).getDate();
       const daysLeft = daysInMonth - now.getDate();
 
-      if (daysLeft <= 0) return; // End of month
+      console.log(
+        "📅 [Daily Budget Reminder] Days in month:",
+        daysInMonth,
+        "Days left:",
+        daysLeft
+      );
+
+      if (daysLeft <= 0) {
+        console.log("❌ [Daily Budget Reminder] End of month, skipping");
+        return; // End of month
+      }
 
       const dailyBudget = remainingBudget / daysLeft;
       const isOverBudget = remainingBudget < 0;
 
+      console.log(
+        "💰 [Daily Budget Reminder] Daily budget:",
+        dailyBudget,
+        "Is over budget:",
+        isOverBudget
+      );
+
       let title = "📅 Daily Budget";
       let body = `You have $${remainingBudget.toFixed(
         2
-      )} remaining this month. Daily budget: $${dailyBudget.toFixed(2)}`;
+      )} safe to spend this month. Daily budget: $${dailyBudget.toFixed(2)}`;
 
       if (isOverBudget) {
         title = "⚠️ Daily Budget Alert";
@@ -381,10 +507,15 @@ export class BudgetReminderService {
         ).toFixed(2)}`;
       }
 
+      console.log("📱 [Daily Budget Reminder] Notification title:", title);
+      console.log("📱 [Daily Budget Reminder] Notification body:", body);
+
       // Schedule for tomorrow morning
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(7, 0, 0, 0); // 7 AM
+
+      console.log("⏰ [Daily Budget Reminder] Scheduling for:", tomorrow);
 
       await notificationService.scheduleNotification({
         id: `budget-reminder-daily`,
@@ -405,8 +536,15 @@ export class BudgetReminderService {
           ),
         },
       });
+
+      console.log(
+        "✅ [Daily Budget Reminder] Successfully scheduled daily budget reminder"
+      );
     } catch (error) {
-      console.error("Error scheduling daily budget reminder:", error);
+      console.error(
+        "❌ [Daily Budget Reminder] Error scheduling daily budget reminder:",
+        error
+      );
     }
   }
 
@@ -535,14 +673,26 @@ export class BudgetReminderService {
     daysLeft: number;
   }> {
     try {
-      const [transactions, budgetSettings, goals] = await Promise.all([
-        getUserTransactions(userId),
-        getUserBudgetSettings(userId),
-        getUserGoals(userId),
-      ]);
+      console.log(
+        "🔍 [Budget Reminders] Getting current budget status for user:",
+        userId
+      );
+
+      const [transactions, budgetSettings, goals, recurringTransactions] =
+        await Promise.all([
+          getUserTransactions(userId),
+          getUserBudgetSettings(userId),
+          getUserGoals(userId),
+          getUserRecurringTransactions(userId),
+        ]);
 
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
+      console.log(
+        "📅 [Budget Reminders] Current month/year:",
+        currentMonth + 1,
+        currentYear
+      );
 
       const monthlyTransactions = transactions.filter((transaction: any) => {
         const transactionDate = new Date(transaction.date);
@@ -552,19 +702,64 @@ export class BudgetReminderService {
         );
       });
 
-      const totalIncome = monthlyTransactions
-        .filter((t: any) => t.type === "income")
-        .reduce((sum: number, t: any) => sum + t.amount, 0);
+      console.log(
+        "💳 [Budget Reminders] Monthly transactions count:",
+        monthlyTransactions.length
+      );
 
-      const totalExpenses = monthlyTransactions
-        .filter((t: any) => t.type === "expense")
-        .reduce((sum: number, t: any) => sum + t.amount, 0);
+      // Calculate income including active recurring income for current month (same logic as scheduleAllBudgetReminders)
+      const individualIncome = monthlyTransactions
+        .filter((t) => t.type === "income" && !t.recurringTransactionId)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      // Get active recurring income for current month
+      const activeRecurringIncome = recurringTransactions
+        .filter((rt) => rt.type === "income" && rt.isActive)
+        .reduce((sum, rt) => sum + rt.amount, 0);
+
+      const totalIncome = individualIncome + activeRecurringIncome;
+
+      // Calculate expenses including all active recurring expenses (planned expenses)
+      const individualExpenses = monthlyTransactions
+        .filter((t) => t.type === "expense" && !t.recurringTransactionId)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      // Get all active recurring expenses for current month (planned expenses, regardless of payment status)
+      const activeRecurringExpenses = recurringTransactions
+        .filter((rt) => rt.type === "expense" && rt.isActive)
+        .reduce((sum, rt) => sum + rt.amount, 0);
+
+      const totalExpenses = individualExpenses + activeRecurringExpenses;
+
+      console.log("💰 [Budget Reminders] Individual income:", individualIncome);
+      console.log(
+        "🔄 [Budget Reminders] Active recurring income:",
+        activeRecurringIncome
+      );
+      console.log("💰 [Budget Reminders] Total income:", totalIncome);
+      console.log(
+        "💸 [Budget Reminders] Individual expenses:",
+        individualExpenses
+      );
+      console.log(
+        "💸 [Budget Reminders] Active recurring expenses (planned):",
+        activeRecurringExpenses
+      );
+      console.log("💸 [Budget Reminders] Total expenses:", totalExpenses);
 
       // Calculate remaining balance like in budget summary
       const netIncome = totalIncome - totalExpenses;
       const savingsPercent = budgetSettings?.savingsPercentage || 20;
       const debtPayoffPercent = budgetSettings?.debtPayoffPercentage || 5;
       const savingsAmount = totalIncome * (savingsPercent / 100);
+
+      console.log("📊 [Budget Reminders] Net income:", netIncome);
+      console.log(
+        "💾 [Budget Reminders] Savings %:",
+        savingsPercent,
+        "Amount:",
+        savingsAmount
+      );
 
       // Calculate total goal contributions
       const totalGoalContributions = goals.reduce(
@@ -579,18 +774,55 @@ export class BudgetReminderService {
         netIncome - savingsAmount - debtPayoffAmount - totalGoalContributions;
       const remainingBalance = discretionaryIncome;
 
+      console.log(
+        "🎯 [Budget Reminders] Goal contributions:",
+        totalGoalContributions
+      );
+      console.log(
+        "💳 [Budget Reminders] Debt payoff %:",
+        debtPayoffPercent,
+        "Amount:",
+        debtPayoffAmount
+      );
+      console.log(
+        "🧮 [Budget Reminders] Calculation: netIncome - savings - debt - goals"
+      );
+      console.log(
+        "🧮 [Budget Reminders] Calculation:",
+        netIncome,
+        "-",
+        savingsAmount,
+        "-",
+        debtPayoffAmount,
+        "-",
+        totalGoalContributions,
+        "=",
+        remainingBalance
+      );
+
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
       const daysLeft = daysInMonth - new Date().getDate();
 
-      return {
+      console.log("📅 [Budget Reminders] Days left in month:", daysLeft);
+
+      const result = {
         totalIncome,
         totalExpenses,
         remainingBudget: remainingBalance,
         budgetLimit: totalIncome,
         daysLeft: Math.max(0, daysLeft),
       };
+
+      console.log(
+        "✅ [Budget Reminders] Final result (remainingBudget = safe to spend amount):",
+        result
+      );
+      return result;
     } catch (error) {
-      console.error("Error getting budget status:", error);
+      console.error(
+        "❌ [Budget Reminders] Error getting budget status:",
+        error
+      );
       return {
         totalIncome: 0,
         totalExpenses: 0,
