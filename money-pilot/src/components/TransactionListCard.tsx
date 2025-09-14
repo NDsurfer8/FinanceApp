@@ -81,16 +81,24 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
   const shouldShowMarkPaidButton = (transaction: Transaction): boolean => {
     // Don't show if already optimistically marked as paid
     if (optimisticallyPaid.has(transaction.id || "")) {
+      console.log(`🔍 Button hidden - optimistically paid: ${transaction.id}`);
       return false;
     }
 
     // For actual transactions: show if it's a recurring expense that's not paid
     if (transaction.id && !transaction.id.startsWith("projected-")) {
-      return (
+      const shouldShow =
         !!transaction.recurringTransactionId &&
-        !transaction.status &&
-        transaction.type === "expense"
+        transaction.status !== "paid" &&
+        transaction.type === "expense";
+      console.log(
+        `🔍 Actual transaction ${
+          transaction.id
+        }: recurringId=${!!transaction.recurringTransactionId}, status=${
+          transaction.status
+        }, type=${transaction.type}, shouldShow=${shouldShow}`
       );
+      return shouldShow;
     }
 
     // For projected transactions: show if it's a recurring expense in the current month
@@ -103,13 +111,21 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
         transactionDate.getMonth() === currentDate.getMonth() &&
         transactionDate.getFullYear() === currentDate.getFullYear();
 
-      return (
+      const shouldShow =
         !!transaction.recurringTransactionId &&
         transaction.type === "expense" &&
-        isCurrentMonth
+        isCurrentMonth;
+      console.log(
+        `🔍 Projected transaction ${
+          transaction.id
+        }: recurringId=${!!transaction.recurringTransactionId}, type=${
+          transaction.type
+        }, isCurrentMonth=${isCurrentMonth}, shouldShow=${shouldShow}`
       );
+      return shouldShow;
     }
 
+    console.log(`🔍 No conditions met for ${transaction.id}, returning false`);
     return false;
   };
   const [searchQuery, setSearchQuery] = useState("");
@@ -120,11 +136,27 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
 
   // Clear optimistic state when transactions refresh and we have new data
   React.useEffect(() => {
-    // Only clear if we have transactions and the optimistic state is not empty
+    // Only clear optimistic state for transactions that are now actually marked as paid
     if (transactions.length > 0 && optimisticallyPaid.size > 0) {
-      setOptimisticallyPaid(new Set());
+      const newOptimisticallyPaid = new Set(optimisticallyPaid);
+
+      // Remove from optimistic state any transactions that are now actually marked as paid
+      optimisticallyPaid.forEach((transactionId) => {
+        const transaction = transactions.find((t) => t.id === transactionId);
+        if (transaction && transaction.status === "paid") {
+          newOptimisticallyPaid.delete(transactionId);
+          console.log(
+            `🔍 Removed ${transactionId} from optimistic state - now actually paid`
+          );
+        }
+      });
+
+      // Only update if there are changes
+      if (newOptimisticallyPaid.size !== optimisticallyPaid.size) {
+        setOptimisticallyPaid(newOptimisticallyPaid);
+      }
     }
-  }, [transactions, optimisticallyPaid.size]);
+  }, [transactions, optimisticallyPaid]);
 
   // Helper function to translate category names
   const translateCategory = (category: string): string => {
@@ -460,10 +492,18 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                               }}
                               onPress={async () => {
                                 if (user && transaction.id) {
+                                  console.log(
+                                    `🔍 Mark Paid button pressed for transaction: ${transaction.id}, status: ${transaction.status}`
+                                  );
+
                                   // Optimistically update UI immediately
                                   setOptimisticallyPaid(
                                     (prev) =>
                                       new Set([...prev, transaction.id!])
+                                  );
+
+                                  console.log(
+                                    `🔍 Added ${transaction.id} to optimisticallyPaid set`
                                   );
 
                                   try {
@@ -541,6 +581,9 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                                       });
                                       console.log(
                                         `✅ Manually marked transaction ${transaction.id} as paid`
+                                      );
+                                      console.log(
+                                        `🔍 Transaction ${transaction.id} should now have status: paid`
                                       );
                                     }
 
