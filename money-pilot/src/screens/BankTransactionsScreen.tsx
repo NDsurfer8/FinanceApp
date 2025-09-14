@@ -1028,6 +1028,9 @@ export const BankTransactionsScreen: React.FC<BankTransactionsScreenProps> = ({
                         color: amount >= 0 ? colors.success : colors.error,
                         letterSpacing: -0.5,
                       }}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit={true}
+                      minimumFontScale={0.6}
                     >
                       {formatBankAmount(amount, {
                         iso_currency_code: currency,

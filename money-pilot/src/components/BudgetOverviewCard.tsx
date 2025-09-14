@@ -294,6 +294,9 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
               fontWeight: "800",
               color: colors.warning,
             }}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.6}
           >
             {formatCurrency(safeRemainingBalance)}
           </Text>
@@ -367,6 +370,9 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
                   color: colors.success,
                   marginTop: 4,
                 }}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.7}
               >
                 {formatCurrency(safeTotalIncome)}
               </Text>
@@ -429,6 +435,9 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
                   color: colors.error,
                   marginTop: 4,
                 }}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.7}
               >
                 {formatCurrency(safeTotalExpenses)}
               </Text>
@@ -473,6 +482,9 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = (
               fontWeight: "700",
               color: colors.success,
             }}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.7}
           >
             {formatCurrency(safeSavingsAmount)}
           </Text>

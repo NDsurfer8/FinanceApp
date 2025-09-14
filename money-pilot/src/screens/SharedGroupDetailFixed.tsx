@@ -711,6 +711,9 @@ export default function SharedGroupDetailFixed({
                 color: groupData.netWorth >= 0 ? colors.text : colors.error,
               },
             ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.6}
           >
             {groupData.netWorth >= 0 ? "" : "-"}
             {formatCurrency(Math.abs(groupData.netWorth))}
@@ -727,7 +730,12 @@ export default function SharedGroupDetailFixed({
             >
               {t("group_detail.assets")}
             </Text>
-            <Text style={[styles.breakdownAmount, { color: colors.success }]}>
+            <Text 
+              style={[styles.breakdownAmount, { color: colors.success }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
+            >
               {formatCurrency(groupData.assets)}
             </Text>
           </View>
@@ -737,7 +745,12 @@ export default function SharedGroupDetailFixed({
             >
               {t("group_detail.debts")}
             </Text>
-            <Text style={[styles.breakdownAmount, { color: colors.error }]}>
+            <Text 
+              style={[styles.breakdownAmount, { color: colors.error }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
+            >
               {formatCurrency(groupData.debts)}
             </Text>
           </View>
@@ -766,7 +779,12 @@ export default function SharedGroupDetailFixed({
 
       <View style={styles.incomeSection}>
         <View style={styles.incomeMain}>
-          <Text style={[styles.incomeAmount, { color: colors.text }]}>
+          <Text 
+            style={[styles.incomeAmount, { color: colors.text }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.6}
+          >
             {formatCurrency(groupData.monthlyIncome)}
           </Text>
           <Text style={[styles.incomeLabel, { color: colors.textSecondary }]}>

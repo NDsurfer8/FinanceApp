@@ -378,6 +378,9 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                             fontWeight: "600",
                             color: colors.text,
                           }}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit={true}
+                          minimumFontScale={0.8}
                         >
                           {formatAmountWithFilteredCurrency(
                             categoryTransactions.reduce(

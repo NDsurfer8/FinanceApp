@@ -56,7 +56,12 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                 >
                   {t("assets_debts.total_assets")}
                 </Text>
-                <Text style={[styles.summaryValue, { color: colors.success }]}>
+                <Text 
+                  style={[styles.summaryValue, { color: colors.success }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
+                >
                   {formatCurrency(totalAssets)}
                 </Text>
               </View>
@@ -66,7 +71,12 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                 >
                   {t("assets_debts.total_debt")}
                 </Text>
-                <Text style={[styles.summaryValue, { color: colors.error }]}>
+                <Text 
+                  style={[styles.summaryValue, { color: colors.error }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
+                >
                   {formatCurrency(totalDebts)}
                 </Text>
               </View>
@@ -83,6 +93,9 @@ export const AssetsDebtsChart: React.FC<AssetsDebtsChartProps> = React.memo(
                   styles.netWorthValue,
                   { color: netWorth >= 0 ? colors.success : colors.error },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.6}
               >
                 {formatCurrency(Math.abs(netWorth))}
                 {netWorth < 0 ? ` (${t("assets_debts.negative")})` : ""}

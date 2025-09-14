@@ -1309,6 +1309,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     color: colors.success,
                     letterSpacing: -0.3,
                   }}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
                 >
                   {formatCurrency(monthlyIncome)}
                 </Text>
@@ -1374,6 +1377,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     color: colors.error,
                     letterSpacing: -0.3,
                   }}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
                 >
                   {formatCurrency(monthlyExpenses)}
                 </Text>
@@ -1443,6 +1449,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     color: availableAmount >= 0 ? colors.warning : colors.error,
                     letterSpacing: -0.3,
                   }}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
                 >
                   {formatCurrency(availableAmount)}
                 </Text>
@@ -1485,6 +1494,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 color: netWorth >= 0 ? colors.success : colors.error,
                 marginBottom: 8,
               }}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.6}
             >
               {formatCurrency(netWorth)}
             </Text>
@@ -1517,6 +1529,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   fontWeight: "700",
                   color: colors.success,
                 }}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.7}
               >
                 {formatCurrency(totalAssets)}
               </Text>
@@ -1537,6 +1552,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   fontWeight: "700",
                   color: colors.error,
                 }}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.7}
               >
                 {formatCurrency(totalDebts)}
               </Text>
