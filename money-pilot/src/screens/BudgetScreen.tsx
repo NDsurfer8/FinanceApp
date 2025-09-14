@@ -35,6 +35,7 @@ import { getProjectedTransactionsForMonth } from "../services/transactionService
 import { timestampToDateString } from "../utils/dateUtils";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 import { useScrollDetection } from "../hooks/useScrollDetection";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface BudgetScreenProps {
   navigation: any;
@@ -669,6 +670,15 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
         refreshBankData(false); // Use cache if available, but refresh if stale
       }
     }, [isBankConnected, user?.uid, refreshBankData])
+  );
+
+  // Refresh budget categories when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user?.uid) {
+        loadBudgetCategories();
+      }
+    }, [user?.uid])
   );
 
   // Save budget settings
