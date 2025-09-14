@@ -538,7 +538,7 @@
     "total_budget": "总预算",
     "allocated_to_categories": "分配给类别",
     "budget_allocation_settings": "预算分配设置",
-    "current_total_budget": "当前总预算",
+    "current_total_budget": "初始总预算",
     "spent": "已花费",
     "remaining": "剩余",
     "budget_vs_actual": "预算与实际",

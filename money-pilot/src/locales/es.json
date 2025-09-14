@@ -538,7 +538,7 @@
     "total_budget": "Presupuesto Total",
     "allocated_to_categories": "Asignado a Categorías",
     "budget_allocation_settings": "Configuración de Asignación de Presupuesto",
-    "current_total_budget": "Presupuesto Total Actual",
+    "current_total_budget": "Presupuesto Total Inicial",
     "spent": "Gastado",
     "remaining": "Restante",
     "budget_vs_actual": "Presupuesto vs Real",

@@ -538,7 +538,7 @@
     "total_budget": "総予算",
     "allocated_to_categories": "カテゴリに配分済み",
     "budget_allocation_settings": "予算配分設定",
-    "current_total_budget": "現在の総予算",
+    "current_total_budget": "初期総予算",
     "spent": "支出",
     "remaining": "残り",
     "budget_vs_actual": "予算対実際",

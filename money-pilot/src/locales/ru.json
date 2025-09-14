@@ -538,7 +538,7 @@
     "total_budget": "Общий Бюджет",
     "allocated_to_categories": "Распределено по Категориям",
     "budget_allocation_settings": "Настройки Распределения Бюджета",
-    "current_total_budget": "Текущий Общий Бюджет",
+    "current_total_budget": "Начальный Общий Бюджет",
     "spent": "Потрачено",
     "remaining": "Остаток",
     "budget_vs_actual": "Бюджет против Фактического",

@@ -538,7 +538,7 @@
     "total_budget": "Total Budget",
     "allocated_to_categories": "Allocated to Categories",
     "budget_allocation_settings": "Budget Allocation Settings",
-    "current_total_budget": "Current Total Budget",
+    "current_total_budget": "Initial Total Budget",
     "spent": "Spent",
     "remaining": "Remaining",
     "budget_vs_actual": "Budget vs Actual",

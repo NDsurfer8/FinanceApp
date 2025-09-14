@@ -507,7 +507,14 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     .filter((goal) => goal.monthlyContribution > 0)
     .reduce((sum, goal) => sum + goal.monthlyContribution, 0);
 
-  // Calculate total budget based on user settings
+  // Calculate currently budgeted amount (sum of all category limits)
+  const currentlyBudgetedAmount = categories.reduce(
+    (sum, category) => sum + category.monthlyLimit,
+    0
+  );
+
+  // For budgeting, we start with total income and subtract only fixed allocations
+  // (savings, debt payoff, goals) - NOT expenses, because expenses are what we're budgeting for
   const totalBudget =
     totalIncome -
     (includeSavings ? savingsAmount : 0) -
@@ -516,6 +523,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
 
   // Calculate available amount for allocation
   const availableAmount = useMemo(() => {
+    // totalBudget is money available for category allocation (income - fixed allocations)
+    // We need to subtract what's already allocated to categories
     return (
       totalBudget -
       (editingCategory
