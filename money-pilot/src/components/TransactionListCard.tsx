@@ -437,265 +437,242 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                       </View>
                     </View>
 
-                    {categoryTransactions.map((transaction, index) => (
-                      <TouchableOpacity
-                        key={`${transaction.id}-${transaction.date}-${index}`}
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          paddingVertical: 12,
-                          paddingHorizontal: 12,
-                          backgroundColor: colors.surfaceSecondary,
-                          borderRadius: 8,
-                          marginBottom: 8,
-                        }}
-                        onPress={() => onTransactionPress(transaction)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              color: colors.text,
-                              fontWeight: "500",
-                              marginBottom: 4,
-                            }}
-                          >
-                            {transaction.description}
-                          </Text>
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              color: colors.textSecondary,
-                            }}
-                          >
-                            {formatDate(transaction.date)}
-                          </Text>
-                        </View>
-                        <View
+                    {categoryTransactions.map((transaction, index) => {
+                      const frequency =
+                        getFrequencyFromRecurringTransaction(transaction);
+                      const isRecurring =
+                        transaction.recurringTransactionId ||
+                        transaction.id?.startsWith("projected-");
+
+                      return (
+                        <TouchableOpacity
+                          key={`${transaction.id}-${transaction.date}-${index}`}
                           style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
                             alignItems: "center",
-                            justifyContent: "center",
-                            marginRight: 8,
+                            paddingVertical: 16,
+                            paddingHorizontal: 16,
+                            backgroundColor: colors.surfaceSecondary,
+                            borderRadius: 12,
+                            marginBottom: 8,
+                            shadowColor: colors.shadow,
+                            shadowOpacity: 0.08,
+                            shadowRadius: 6,
+                            shadowOffset: { width: 0, height: 2 },
+                            elevation: 3,
                           }}
+                          onPress={() => onTransactionPress(transaction)}
+                          activeOpacity={0.7}
                         >
-                          {shouldShowMarkPaidButton(transaction) && (
-                            <TouchableOpacity
+                          <View style={{ flex: 1 }}>
+                            <View
                               style={{
-                                backgroundColor: "#6b7280",
-                                paddingHorizontal: 8,
-                                paddingVertical: 4,
-                                borderRadius: 6,
-                                marginTop: 4,
-                                opacity: 0.7,
-                              }}
-                              onPress={async () => {
-                                if (user && transaction.id) {
-                                  console.log(
-                                    `🔍 Mark Paid button pressed for transaction: ${transaction.id}, status: ${transaction.status}`
-                                  );
-
-                                  // Optimistically update UI immediately
-                                  setOptimisticallyPaid(
-                                    (prev) =>
-                                      new Set([...prev, transaction.id!])
-                                  );
-
-                                  console.log(
-                                    `🔍 Added ${transaction.id} to optimisticallyPaid set`
-                                  );
-
-                                  try {
-                                    // Check if this is a projected transaction or actual transaction
-                                    if (
-                                      transaction.id?.startsWith("projected-")
-                                    ) {
-                                      // For projected transactions: create the actual transaction and mark as paid
-                                      const { saveTransaction } = await import(
-                                        "../services/userData"
-                                      );
-
-                                      const actualTransaction = {
-                                        description: transaction.description,
-                                        amount: transaction.amount,
-                                        type: transaction.type,
-                                        category: transaction.category,
-                                        date: transaction.date, // Keep original due date to maintain list position
-                                        userId: user.uid,
-                                        recurringTransactionId:
-                                          transaction.recurringTransactionId,
-                                        // Don't set isManual: true since we want it marked as paid immediately
-                                        // isManual: true would trigger markAsPending() in saveTransaction
-                                        status: "paid" as const,
-                                        matchedAt: Date.now(),
-                                        createdAt: Date.now(),
-                                      };
-
-                                      const transactionId =
-                                        await saveTransaction(
-                                          actualTransaction
-                                        );
-                                      console.log(
-                                        `✅ Created and marked projected transaction as paid: ${transactionId}`
-                                      );
-
-                                      // Don't add optimistic transaction - let the natural refresh handle it
-                                      // This prevents duplicates while still hiding the button
-
-                                      // Update the recurring transaction's totalOccurrences
-                                      if (transaction.recurringTransactionId) {
-                                        const recurringRef = ref(
-                                          db,
-                                          `users/${user.uid}/recurringTransactions/${transaction.recurringTransactionId}`
-                                        );
-                                        const { get, update } = await import(
-                                          "firebase/database"
-                                        );
-                                        const recurringSnapshot = await get(
-                                          recurringRef
-                                        );
-
-                                        if (recurringSnapshot.exists()) {
-                                          const recurringTx =
-                                            recurringSnapshot.val();
-                                          await update(recurringRef, {
-                                            totalOccurrences:
-                                              (recurringTx.totalOccurrences ||
-                                                0) + 1,
-                                            lastGeneratedDate: Date.now(),
-                                          });
-                                          console.log(
-                                            `✅ Updated totalOccurrences for recurring transaction ${transaction.recurringTransactionId}`
-                                          );
-                                        }
-                                      }
-                                    } else if (transaction.id) {
-                                      // For actual transactions: just mark as paid using updateTransaction
-                                      const { updateTransaction } =
-                                        await import("../services/userData");
-                                      await updateTransaction({
-                                        ...transaction,
-                                        status: "paid",
-                                        matchedAt: Date.now(),
-                                      });
-                                      console.log(
-                                        `✅ Manually marked transaction ${transaction.id} as paid`
-                                      );
-                                      console.log(
-                                        `🔍 Transaction ${transaction.id} should now have status: paid`
-                                      );
-                                    }
-
-                                    // Don't refresh immediately - let the optimistic UI handle it
-                                    // The refresh will happen naturally when the component re-renders
-                                  } catch (error) {
-                                    console.error(
-                                      "Error marking as paid:",
-                                      error
-                                    );
-                                    // Revert optimistic update on error
-                                    setOptimisticallyPaid((prev) => {
-                                      const newSet = new Set(prev);
-                                      newSet.delete(transaction.id!);
-                                      return newSet;
-                                    });
-                                    // No optimistic transactions to clean up
-                                  }
-                                }
+                                flexDirection: "row",
+                                alignItems: "center",
+                                marginBottom: 6,
                               }}
                             >
                               <Text
                                 style={{
-                                  color: "#f3f4f6",
-                                  fontSize: 10,
-                                  fontWeight: "500",
+                                  fontSize: 16,
+                                  color: colors.text,
+                                  fontWeight: "600",
+                                  flex: 1,
                                 }}
+                                numberOfLines={1}
                               >
-                                {t("common.mark_paid")}
+                                {transaction.description}
                               </Text>
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            justifyContent: "flex-end",
-                          }}
-                        >
-                          {(isRecurringTransaction(transaction) ||
-                            transaction.id?.startsWith("projected-")) && (
-                            <View
+
+                              {/* Simple recurring indicator */}
+                              {isRecurring && (
+                                <View
+                                  style={{
+                                    marginLeft: 8,
+                                    paddingHorizontal: 6,
+                                    paddingVertical: 2,
+                                    backgroundColor: colors.primary + "15",
+                                    borderRadius: 4,
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <Ionicons
+                                    name="repeat"
+                                    size={10}
+                                    color={colors.primary}
+                                    style={{ marginRight: 2 }}
+                                  />
+                                  <Text
+                                    style={{
+                                      fontSize: 9,
+                                      color: colors.primary,
+                                      fontWeight: "600",
+                                    }}
+                                  >
+                                    {frequency || "R"}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+
+                            <Text
                               style={{
-                                marginRight: 6,
-                                justifyContent: "center",
-                                alignItems: "center",
-                                minWidth: 18,
-                                height: 18,
+                                fontSize: 13,
+                                color: colors.textSecondary,
+                                fontWeight: "500",
                               }}
                             >
-                              <Ionicons
-                                name="repeat"
-                                size={14}
-                                color={
-                                  transaction.type === "income"
-                                    ? colors.success
-                                    : colors.error
-                                }
-                              />
-                              {(() => {
-                                const frequency =
-                                  getFrequencyFromRecurringTransaction(
-                                    transaction
-                                  );
-                                return (
-                                  frequency && (
-                                    <Text
-                                      style={{
-                                        fontSize: 8,
-                                        color: colors.textSecondary,
-                                        marginTop: 1,
-                                        textAlign: "center",
-                                      }}
-                                    >
-                                      {frequency === "weekly"
-                                        ? "W"
-                                        : frequency === "biweekly"
-                                        ? "BW"
-                                        : frequency === "monthly"
-                                        ? "M"
-                                        : frequency === "quarterly"
-                                        ? "Q"
-                                        : frequency === "yearly"
-                                        ? "Y"
-                                        : "R"}
-                                    </Text>
-                                  )
-                                );
-                              })()}
-                            </View>
-                          )}
-                          <Text
+                              {formatDate(transaction.date)}
+                            </Text>
+                          </View>
+                          <View
                             style={{
-                              fontSize: 16,
-                              fontWeight: "700",
-                              color:
-                                transaction.type === "income"
-                                  ? colors.success
-                                  : colors.error,
+                              alignItems: "flex-end",
+                              justifyContent: "center",
                             }}
                           >
-                            {transaction.type === "income" ? "+" : "-"}
-                            {formatAmountWithoutSymbol(
-                              transaction.amount,
-                              filteredCurrency,
-                              selectedCurrency
+                            {/* Mark Paid Button */}
+                            {shouldShowMarkPaidButton(transaction) && (
+                              <TouchableOpacity
+                                style={{
+                                  backgroundColor: "#48484A",
+                                  paddingHorizontal: 10,
+                                  paddingVertical: 6,
+                                  borderRadius: 8,
+                                  marginBottom: 8,
+                                  shadowColor: "#48484A",
+                                  shadowOpacity: 0.2,
+                                  shadowRadius: 4,
+                                  shadowOffset: { width: 0, height: 2 },
+                                  elevation: 2,
+                                }}
+                                onPress={async (e) => {
+                                  e.stopPropagation();
+                                  if (user && transaction.id) {
+                                    // Optimistically update UI immediately
+                                    setOptimisticallyPaid(
+                                      (prev) =>
+                                        new Set([...prev, transaction.id!])
+                                    );
+
+                                    try {
+                                      // Check if this is a projected transaction or actual transaction
+                                      if (
+                                        transaction.id?.startsWith("projected-")
+                                      ) {
+                                        // For projected transactions: create the actual transaction and mark as paid
+                                        const { saveTransaction } =
+                                          await import("../services/userData");
+
+                                        const actualTransaction = {
+                                          description: transaction.description,
+                                          amount: transaction.amount,
+                                          type: transaction.type,
+                                          category: transaction.category,
+                                          date: transaction.date,
+                                          userId: user.uid,
+                                          recurringTransactionId:
+                                            transaction.recurringTransactionId,
+                                          status: "paid" as const,
+                                          matchedAt: Date.now(),
+                                          createdAt: Date.now(),
+                                        };
+
+                                        await saveTransaction(
+                                          actualTransaction
+                                        );
+
+                                        // Update the recurring transaction's totalOccurrences
+                                        if (
+                                          transaction.recurringTransactionId
+                                        ) {
+                                          const recurringRef = ref(
+                                            db,
+                                            `users/${user.uid}/recurringTransactions/${transaction.recurringTransactionId}`
+                                          );
+                                          const { get, update } = await import(
+                                            "firebase/database"
+                                          );
+                                          const recurringSnapshot = await get(
+                                            recurringRef
+                                          );
+
+                                          if (recurringSnapshot.exists()) {
+                                            const recurringTx =
+                                              recurringSnapshot.val();
+                                            await update(recurringRef, {
+                                              totalOccurrences:
+                                                (recurringTx.totalOccurrences ||
+                                                  0) + 1,
+                                              lastGeneratedDate: Date.now(),
+                                            });
+                                          }
+                                        }
+                                      } else if (transaction.id) {
+                                        // For actual transactions: just mark as paid
+                                        const { updateTransaction } =
+                                          await import("../services/userData");
+                                        await updateTransaction({
+                                          ...transaction,
+                                          status: "paid",
+                                          matchedAt: Date.now(),
+                                        });
+                                      }
+                                    } catch (error) {
+                                      console.error(
+                                        "Error marking as paid:",
+                                        error
+                                      );
+                                      // Revert optimistic update on error
+                                      setOptimisticallyPaid((prev) => {
+                                        const newSet = new Set(prev);
+                                        newSet.delete(transaction.id!);
+                                        return newSet;
+                                      });
+                                    }
+                                  }
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    color: colors.buttonText,
+                                    fontSize: 11,
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  Mark Paid
+                                </Text>
+                              </TouchableOpacity>
                             )}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
+
+                            {/* Amount */}
+                            <Text
+                              style={{
+                                fontSize: 18,
+                                fontWeight: "700",
+                                color:
+                                  transaction.type === "income"
+                                    ? colors.success
+                                    : colors.error,
+                                textAlign: "right",
+                              }}
+                              numberOfLines={1}
+                              adjustsFontSizeToFit={true}
+                              minimumFontScale={0.8}
+                            >
+                              {transaction.type === "income" ? "+" : "-"}
+                              {formatAmountWithFilteredCurrency(
+                                transaction.amount,
+                                filteredCurrency,
+                                selectedCurrency
+                              )}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 )
               )}
@@ -705,24 +682,50 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
               style={{
                 alignItems: "center",
                 paddingVertical: 40,
+                paddingHorizontal: 20,
               }}
             >
-              <Ionicons
-                name="search-outline"
-                size={48}
-                color={colors.textSecondary}
-                style={{ marginBottom: 12 }}
-              />
+              <View
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                  backgroundColor: colors.surfaceSecondary,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginBottom: 16,
+                }}
+              >
+                <Ionicons
+                  name="search-outline"
+                  size={32}
+                  color={colors.textSecondary}
+                />
+              </View>
               <Text
                 style={{
-                  fontSize: 16,
-                  color: colors.textSecondary,
+                  fontSize: 18,
+                  color: colors.text,
+                  fontWeight: "600",
                   textAlign: "center",
+                  marginBottom: 8,
                 }}
               >
                 {searchQuery || selectedCategory !== "all"
-                  ? t("transactions.no_transactions_match_filters")
-                  : t("transactions.no_transactions_yet")}
+                  ? "No transactions found"
+                  : "No transactions yet"}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: colors.textSecondary,
+                  textAlign: "center",
+                  lineHeight: 20,
+                }}
+              >
+                {searchQuery || selectedCategory !== "all"
+                  ? "Try adjusting your search or filters"
+                  : "Add your first transaction to get started"}
               </Text>
             </View>
           )}
