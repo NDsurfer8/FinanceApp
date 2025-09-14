@@ -218,17 +218,35 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
     });
   }, [allTransactions, searchQuery, selectedCategory]);
 
-  // Group transactions by category
+  // Group transactions by category and sort with recurring expenses at the top
   const groupedTransactions = useMemo(() => {
     const groups: { [key: string]: Transaction[] } = {};
-    filteredTransactions.forEach((transaction) => {
+    
+    // Sort transactions: recurring expenses first, then by date (newest first)
+    const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+      // Primary sort: recurring expenses first
+      const aIsRecurring = isRecurringTransaction(a);
+      const bIsRecurring = isRecurringTransaction(b);
+      
+      if (aIsRecurring && !bIsRecurring) return -1; // a comes first
+      if (!aIsRecurring && bIsRecurring) return 1;  // b comes first
+      
+      // Secondary sort: by date (newest first) when both have same recurring status
+      const dateComparison = b.date - a.date;
+      if (dateComparison !== 0) return dateComparison;
+      
+      // Tertiary sort: by ID for stable sorting when dates are equal
+      return (b.id || '').localeCompare(a.id || '');
+    });
+    
+    sortedTransactions.forEach((transaction) => {
       if (!groups[transaction.category]) {
         groups[transaction.category] = [];
       }
       groups[transaction.category].push(transaction);
     });
     return groups;
-  }, [filteredTransactions]);
+  }, [filteredTransactions, isRecurringTransaction]);
 
   // Calculate totals
   const totalAmount = useMemo(() => {
