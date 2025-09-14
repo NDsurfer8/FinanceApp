@@ -540,7 +540,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     budgetCategories.forEach((category) => {
       const spent = categorySpending[category.name] || 0;
 
-      if (spent >= category.monthlyLimit && category.monthlyLimit > 0) {
+      // Only calculate over-budget if a limit is set (monthlyLimit > 0)
+      if (category.monthlyLimit > 0 && spent > category.monthlyLimit) {
         const overAmount = spent - category.monthlyLimit;
         totalOverBudget += overAmount;
       }
@@ -565,7 +566,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       // Only show "at budget limit" if there's actual spending
       const hasSpendingAtLimit = budgetCategories.some((category) => {
         const spent = categorySpending[category.name] || 0;
-        return spent === category.monthlyLimit && category.monthlyLimit > 0;
+        return category.monthlyLimit > 0 && spent === category.monthlyLimit;
       });
 
       if (hasSpendingAtLimit) {
