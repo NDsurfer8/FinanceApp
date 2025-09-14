@@ -1004,6 +1004,43 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   }}
                 />
               </View>
+
+              {/* Progress Percentage and Arrow */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginTop: 8,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Ionicons
+                    name="arrow-forward"
+                    size={14}
+                    color={colors.textSecondary}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {totalIncome > 0
+                      ? `${(
+                          (categories.reduce(
+                            (sum, cat) => sum + cat.monthlyLimit,
+                            0
+                          ) /
+                            totalIncome) *
+                          100
+                        ).toFixed(1)}% of income budgeted`
+                      : "0% of income budgeted"}
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
         </View>
