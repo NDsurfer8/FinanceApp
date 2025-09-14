@@ -1193,19 +1193,25 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   </Text>
                 </View>
 
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    color: colors.text,
-                  }}
-                >
-                  {formatCurrency(spending.actual)}
-                  <Text style={{ color: colors.textSecondary }}>
-                    {" "}
-                    of {formatCurrency(category.monthlyLimit)}
+                <View style={{ flex: 1, alignItems: "flex-end" }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "600",
+                      color: colors.text,
+                      textAlign: "right",
+                    }}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.8}
+                  >
+                    {formatCurrency(spending.actual)}
+                    <Text style={{ color: colors.textSecondary }}>
+                      {" "}
+                      of {formatCurrency(category.monthlyLimit)}
+                    </Text>
                   </Text>
-                </Text>
+                </View>
               </View>
 
               {/* Progress Bar */}
