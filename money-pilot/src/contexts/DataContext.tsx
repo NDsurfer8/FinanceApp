@@ -1027,8 +1027,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
                       notificationData.count || 1
                     );
                   }
-                } else {
-                  // Webhook notifications disabled by user
                 }
               } catch (notifError) {
                 // Failed to send webhook notification
