@@ -1074,7 +1074,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
           >
             <Ionicons
               name="settings-outline"
-              size={18}
+              size={22}
               color={colors.primary}
             />
           </TouchableOpacity>
