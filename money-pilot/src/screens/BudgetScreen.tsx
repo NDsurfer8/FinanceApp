@@ -529,25 +529,6 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           amount: formatCurrency(totalOverBudget),
         }),
       });
-    } else if (
-      totalOverBudget === 0 &&
-      Object.keys(categorySpending).length > 0
-    ) {
-      // Only show "at budget limit" if there's actual spending
-      const hasSpendingAtLimit = budgetCategories.some((category) => {
-        const spent = categorySpending[category.name] || 0;
-        return category.monthlyLimit > 0 && spent === category.monthlyLimit;
-      });
-
-      if (hasSpendingAtLimit) {
-        insights.push({
-          id: "over-budget-warning",
-          type: "warning",
-          icon: "warning",
-          title: t("budget.over_budget_warning"),
-          message: t("budget.at_budget_limit_message"),
-        });
-      }
     }
 
     return insights;

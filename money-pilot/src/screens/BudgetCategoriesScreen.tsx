@@ -506,6 +506,12 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
   const monthlyGoalsContribution = goals
     .filter((goal) => goal.monthlyContribution > 0)
     .reduce((sum, goal) => sum + goal.monthlyContribution, 0);
+  //when recurring expenses are added we now automatically set the limit to the total recurring expenses
+  const totalRecurringExpenses = recurringTransactions
+    .filter((rt) => rt.type === "expense" && rt.isActive)
+    .reduce((sum, rt) => sum + rt.amount, 0);
+
+  console.log("totalRecurringExpenses", totalRecurringExpenses);
 
   // Calculate total budget based on user settings
   const totalBudget =
@@ -513,6 +519,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     (includeSavings ? savingsAmount : 0) -
     (includeDebtPayoff ? debtPayoffAmount : 0) -
     (includeGoalContributions ? monthlyGoalsContribution : 0);
+
+  console.log("totalBudget", totalBudget);
 
   // Calculate available amount for allocation
   const availableAmount = useMemo(() => {
@@ -533,6 +541,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     tempCategoryLimit,
     newCategoryLimit,
   ]);
+  console.log("availableAmount", availableAmount);
 
   const getCategorySpending = (categoryName: string) => {
     // Get actual spending from transactions in this category

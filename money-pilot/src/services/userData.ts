@@ -2166,6 +2166,20 @@ export const saveRecurringTransaction = async (
       updatedAt: Date.now(),
     });
 
+    // If this is a recurring expense, automatically set the budget category limit
+    if (recurringTransaction.type === "expense") {
+      try {
+        await updateBudgetCategoryLimit(
+          recurringTransaction.userId,
+          recurringTransaction.category,
+          recurringTransaction.amount
+        );
+      } catch (budgetError) {
+        // Don't fail the recurring transaction creation if budget update fails
+        console.error("Error updating budget category limit:", budgetError);
+      }
+    }
+
     return transactionId;
   } catch (error) {
     console.error("Error saving recurring transaction:", error);
@@ -2920,6 +2934,40 @@ export const getUserBudgetCategories = async (
       { id: "15", name: "Business", monthlyLimit: 0, color: "#20B2AA" },
       { id: "16", name: "Other Expenses", monthlyLimit: 0, color: "#C0C0C0" },
     ];
+  }
+};
+
+// Update budget category limit for a specific category
+export const updateBudgetCategoryLimit = async (
+  userId: string,
+  categoryName: string,
+  newLimit: number
+): Promise<void> => {
+  try {
+    const categories = await getUserBudgetCategories(userId);
+
+    // Find the category and update its limit
+    const categoryIndex = categories.findIndex(
+      (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
+    );
+
+    if (categoryIndex !== -1) {
+      categories[categoryIndex].monthlyLimit = newLimit;
+      await saveBudgetCategories(categories, userId);
+    } else {
+      // If category doesn't exist, create a new one
+      const newCategory: BudgetCategory = {
+        id: Date.now().toString(),
+        name: categoryName,
+        monthlyLimit: newLimit,
+        color: "#4ECDC4", // Default color
+      };
+      categories.push(newCategory);
+      await saveBudgetCategories(categories, userId);
+    }
+  } catch (error) {
+    console.error("Error updating budget category limit:", error);
+    throw error;
   }
 };
 
