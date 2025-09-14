@@ -35,7 +35,6 @@ import { getProjectedTransactionsForMonth } from "../services/transactionService
 import { timestampToDateString } from "../utils/dateUtils";
 import { FloatingAIChatbot } from "../components/FloatingAIChatbot";
 import { useScrollDetection } from "../hooks/useScrollDetection";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface BudgetScreenProps {
   navigation: any;
