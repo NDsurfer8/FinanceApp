@@ -57,7 +57,14 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
 }) => {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { refreshTransactions, refreshRecurringTransactions } = useData();
+  const {
+    refreshTransactions,
+    refreshRecurringTransactions,
+    updateTransactionsOptimistically,
+    updateRecurringTransactionsOptimistically,
+    transactions: allTransactionsFromContext,
+    recurringTransactions: allRecurringTransactionsFromContext,
+  } = useData();
   const { t } = useTranslation();
   const { formatCurrency, selectedCurrency } = useCurrency();
 
@@ -218,17 +225,35 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
     });
   }, [allTransactions, searchQuery, selectedCategory]);
 
-  // Group transactions by category
+  // Group transactions by category and sort with recurring expenses at the top
   const groupedTransactions = useMemo(() => {
     const groups: { [key: string]: Transaction[] } = {};
-    filteredTransactions.forEach((transaction) => {
+
+    // Sort transactions: recurring expenses first, then by date (newest first)
+    const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+      // Primary sort: recurring expenses first
+      const aIsRecurring = isRecurringTransaction(a);
+      const bIsRecurring = isRecurringTransaction(b);
+
+      if (aIsRecurring && !bIsRecurring) return -1; // a comes first
+      if (!aIsRecurring && bIsRecurring) return 1; // b comes first
+
+      // Secondary sort: by date (newest first) when both have same recurring status
+      const dateComparison = b.date - a.date;
+      if (dateComparison !== 0) return dateComparison;
+
+      // Tertiary sort: by ID for stable sorting when dates are equal
+      return (b.id || "").localeCompare(a.id || "");
+    });
+
+    sortedTransactions.forEach((transaction) => {
       if (!groups[transaction.category]) {
         groups[transaction.category] = [];
       }
       groups[transaction.category].push(transaction);
     });
     return groups;
-  }, [filteredTransactions]);
+  }, [filteredTransactions, isRecurringTransaction]);
 
   // Calculate totals
   const totalAmount = useMemo(() => {
@@ -621,9 +646,79 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                                         });
                                       }
 
-                                      // Refresh data to update smart insights immediately
-                                      await refreshTransactions();
-                                      await refreshRecurringTransactions();
+                                      // Update data optimistically to avoid full refresh
+                                      if (
+                                        transaction.id?.startsWith("projected-")
+                                      ) {
+                                        // For projected transactions:
+                                        // 1. Update the recurring transaction's totalOccurrences
+                                        const updatedRecurringTransactions =
+                                          allRecurringTransactionsFromContext.map(
+                                            (rt) => {
+                                              if (
+                                                rt.id ===
+                                                transaction.recurringTransactionId
+                                              ) {
+                                                return {
+                                                  ...rt,
+                                                  totalOccurrences:
+                                                    (rt.totalOccurrences || 0) +
+                                                    1,
+                                                  lastGeneratedDate: Date.now(),
+                                                };
+                                              }
+                                              return rt;
+                                            }
+                                          );
+                                        updateRecurringTransactionsOptimistically(
+                                          updatedRecurringTransactions
+                                        );
+
+                                        // 2. Add the new actual transaction to the transactions list
+                                        const newActualTransaction = {
+                                          id: transaction.id.replace(
+                                            "projected-",
+                                            ""
+                                          ), // Remove projected prefix
+                                          description: transaction.description,
+                                          amount: transaction.amount,
+                                          type: transaction.type,
+                                          category: transaction.category,
+                                          date: transaction.date, // Use the same date as projected transaction
+                                          userId: user.uid,
+                                          recurringTransactionId:
+                                            transaction.recurringTransactionId,
+                                          status: "paid" as const,
+                                          matchedAt: Date.now(),
+                                          createdAt: transaction.date, // Use the same date to maintain position
+                                        };
+
+                                        const updatedTransactions = [
+                                          ...allTransactionsFromContext,
+                                          newActualTransaction,
+                                        ];
+                                        updateTransactionsOptimistically(
+                                          updatedTransactions
+                                        );
+                                      } else {
+                                        // For actual transactions: update the transaction status
+                                        const updatedTransactions =
+                                          allTransactionsFromContext.map(
+                                            (t) => {
+                                              if (t.id === transaction.id) {
+                                                return {
+                                                  ...t,
+                                                  status: "paid",
+                                                  matchedAt: Date.now(),
+                                                };
+                                              }
+                                              return t;
+                                            }
+                                          );
+                                        updateTransactionsOptimistically(
+                                          updatedTransactions
+                                        );
+                                      }
                                     } catch (error) {
                                       console.error(
                                         "Error marking as paid:",

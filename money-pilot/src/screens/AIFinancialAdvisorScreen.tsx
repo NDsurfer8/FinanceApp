@@ -683,6 +683,24 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       "budget allocation",
       "budget management",
       "budget planning",
+      "left to spend",
+      "left to plan",
+      "available amount",
+      "budgeted amount",
+      "remaining budget",
+      "budget summary",
+      "how much can i spend",
+      "how much left",
+      "budget status",
+      "budget progress",
+      "category spending",
+      "expense categories",
+      "budget overview",
+      "financial planning",
+      "money allocation",
+      "spending plan",
+      "budget tracker",
+      "budget report",
     ];
 
     const lowerQuestion = question.toLowerCase();
@@ -875,6 +893,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     const shouldIncludeBudgetCategories = userQuestion
       ? isBudgetRelatedQuestion(userQuestion)
       : false;
+    // Calculate comprehensive budget data in the new format
     const budgetCategoriesWithSpending = shouldIncludeBudgetCategories
       ? budgetCategories.map((category) => {
           // Calculate actual spending for this category in the selected month
@@ -886,16 +905,48 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
             (sum, t) => sum + t.amount,
             0
           );
-          const remaining = Math.max(0, category.monthlyLimit - actualSpending);
-          const isOverBudget = actualSpending > category.monthlyLimit;
+
+          // Calculate projected spending from recurring transactions for this category
+          const projectedSpending = recurringTransactions
+            .filter(
+              (rt) =>
+                rt.isActive &&
+                rt.type === "expense" &&
+                rt.category.toLowerCase() === category.name.toLowerCase()
+            )
+            .reduce((sum, rt) => {
+              // Check if this recurring transaction should occur this month
+              const startDate = new Date(rt.startDate || rt.date);
+              const currentDate = new Date();
+
+              // If recurring transaction started before or during this month
+              if (startDate <= currentDate) {
+                // Check if there's already an actual transaction for this recurring transaction this month
+                const hasActualTransaction = monthlyTransactions.some(
+                  (t) => t.recurringTransactionId === rt.id
+                );
+
+                // Only add projected amount if no actual transaction exists
+                if (!hasActualTransaction) {
+                  return sum + rt.amount;
+                }
+              }
+              return sum;
+            }, 0);
+
+          const totalSpending = actualSpending + projectedSpending;
+          const remaining = Math.max(0, category.monthlyLimit - totalSpending);
+          const isOverBudget = totalSpending > category.monthlyLimit;
           const percentageUsed =
             category.monthlyLimit > 0
-              ? (actualSpending / category.monthlyLimit) * 100
+              ? (totalSpending / category.monthlyLimit) * 100
               : 0;
 
           return {
             ...category,
             actualSpending,
+            projectedSpending,
+            totalSpending,
             remaining,
             isOverBudget,
             percentageUsed: Math.round(percentageUsed),
@@ -903,6 +954,48 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           };
         })
       : [];
+
+    // Calculate total budget summary data
+    const totalBudgetedAmount = budgetCategoriesWithSpending.reduce(
+      (sum, cat) => sum + cat.monthlyLimit,
+      0
+    );
+
+    const totalActualSpending = budgetCategoriesWithSpending.reduce(
+      (sum, cat) => sum + cat.actualSpending,
+      0
+    );
+
+    const totalProjectedSpending = budgetCategoriesWithSpending.reduce(
+      (sum, cat) => sum + cat.projectedSpending,
+      0
+    );
+
+    const totalRemaining = budgetCategoriesWithSpending.reduce(
+      (sum, cat) => sum + cat.remaining,
+      0
+    );
+
+    // Calculate financial flow correctly:
+    // Net Income = Income - Expenses (what's left after all expenses)
+    // Safe to Spend = Net Income - Savings - Debt Payoff - Financial Goals (discretionary spending)
+    const calculatedNetIncome = monthlyIncome - monthlyExpenses;
+    const savingsAmount = budgetSettings?.savingsPercentage
+      ? (monthlyIncome * budgetSettings.savingsPercentage) / 100
+      : 0;
+    const debtPayoffAmount = budgetSettings?.debtPayoffPercentage
+      ? (monthlyIncome * budgetSettings.debtPayoffPercentage) / 100
+      : 0;
+
+    // Safe to spend = Net Income - Savings - Debt Payoff - Financial Goals
+    const safeToSpend =
+      calculatedNetIncome -
+      savingsAmount -
+      debtPayoffAmount -
+      totalMonthlyGoalContributions;
+
+    // Left to plan = Safe to Spend - Already Budgeted Amount
+    const leftToPlan = safeToSpend - totalBudgetedAmount;
 
     return {
       monthlyIncome,
@@ -925,6 +1018,28 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       allTransactions: transactions, // Keep all transactions for reference
       recurringTransactions: allRecurringTransactions,
       budgetCategories: budgetCategoriesWithSpending,
+      // New comprehensive budget data with correct financial terminology
+      budgetSummary: {
+        // Income and Expenses
+        monthlyIncome,
+        monthlyExpenses,
+        netIncome: calculatedNetIncome, // Income - Expenses (what's left after all expenses)
+
+        // Allocations from Net Income
+        savingsAmount, // Percentage of income allocated to savings
+        debtPayoffAmount, // Percentage of income allocated to debt payoff
+        goalsAmount: totalMonthlyGoalContributions, // Amount allocated to financial goals
+
+        // Available Spending
+        safeToSpend, // Net Income - Savings - Debt Payoff - Goals (discretionary spending)
+        leftToPlan, // Safe to Spend - Already Budgeted Amount
+
+        // Budget Categories
+        totalBudgetedAmount, // Total allocated across all categories
+        totalActualSpending, // Total spent across all categories
+        totalProjectedSpending, // Total planned spending across all categories
+        totalRemaining, // Total remaining budget across all categories
+      },
     };
   };
 

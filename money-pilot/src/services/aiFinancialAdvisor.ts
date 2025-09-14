@@ -21,6 +21,27 @@ export interface FinancialSnapshot {
   allTransactions?: any[]; // All transactions for reference
   recurringTransactions?: any[]; // Full recurring transaction data
   budgetCategories?: any[]; // Budget categories with spending analysis
+  budgetSummary?: {
+    // Income and Expenses
+    monthlyIncome: number;
+    monthlyExpenses: number;
+    netIncome: number; // Income - Expenses (what's left after all expenses)
+
+    // Allocations from Net Income
+    savingsAmount: number; // Percentage of income allocated to savings
+    debtPayoffAmount: number; // Percentage of income allocated to debt payoff
+    goalsAmount: number; // Amount allocated to financial goals
+
+    // Available Spending
+    safeToSpend: number; // Net Income - Savings - Debt Payoff - Goals (discretionary spending)
+    leftToPlan: number; // Safe to Spend - Already Budgeted Amount
+
+    // Budget Categories
+    totalBudgetedAmount: number; // Total allocated across all categories
+    totalActualSpending: number; // Total spent across all categories
+    totalProjectedSpending: number; // Total planned spending across all categories
+    totalRemaining: number; // Total remaining budget across all categories
+  };
 }
 
 class AIFinancialAdvisorService {
