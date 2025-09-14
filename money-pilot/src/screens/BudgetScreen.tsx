@@ -397,23 +397,23 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       });
     }
 
-    // Smart Import Insights - Count transactions marked as paid this month
-    const currentMonth = new Date();
-    const currentMonthNum = currentMonth.getMonth();
-    const currentYear = currentMonth.getFullYear();
+    // Smart Import Insights - Count transactions marked as paid in the selected month
+    const selectedMonthNum = selectedMonth.getMonth();
+    const selectedYear = selectedMonth.getFullYear();
 
     const markedAsPaidThisMonth = transactions.filter((transaction) => {
       const transactionDate = new Date(transaction.date);
-      const isInCurrentMonth =
-        transactionDate.getMonth() === currentMonthNum &&
-        transactionDate.getFullYear() === currentYear;
+      const isInSelectedMonth =
+        transactionDate.getMonth() === selectedMonthNum &&
+        transactionDate.getFullYear() === selectedYear;
 
       // Count transactions that were created from recurring transactions and marked as paid
+      // Include both auto-matched (with bankTransactionId) and manually marked (with matchedAt)
       return (
-        isInCurrentMonth &&
+        isInSelectedMonth &&
         transaction.recurringTransactionId &&
         transaction.status === "paid" &&
-        transaction.bankTransactionId
+        (transaction.bankTransactionId || transaction.matchedAt)
       );
     });
 
@@ -433,11 +433,11 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
     const currentMonthTransactions = transactions.filter((transaction) => {
       const transactionDate = new Date(transaction.date);
-      const isInCurrentMonth =
-        transactionDate.getMonth() === currentMonthNum &&
-        transactionDate.getFullYear() === currentYear;
+      const isInSelectedMonth =
+        transactionDate.getMonth() === selectedMonthNum &&
+        transactionDate.getFullYear() === selectedYear;
 
-      if (!isInCurrentMonth || transaction.type !== "expense") return false;
+      if (!isInSelectedMonth || transaction.type !== "expense") return false;
 
       // If this transaction was created from a recurring transaction and marked as paid,
       // exclude it because we should use the recurring transaction template instead
@@ -464,13 +464,13 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     // Add all recurring expenses for this month (including projected ones)
     const allRecurringExpenses = transactions.filter((transaction) => {
       const transactionDate = new Date(transaction.date);
-      const isInCurrentMonth =
-        transactionDate.getMonth() === currentMonthNum &&
-        transactionDate.getFullYear() === currentYear;
+      const isInSelectedMonth =
+        transactionDate.getMonth() === selectedMonthNum &&
+        transactionDate.getFullYear() === selectedYear;
 
       // Include all transactions that were created from recurring transactions
       return (
-        isInCurrentMonth &&
+        isInSelectedMonth &&
         transaction.recurringTransactionId &&
         transaction.type === "expense"
       );
@@ -485,8 +485,8 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
 
     // For current month, also add projected recurring expenses that don't have actual transactions yet
     const isCurrentMonth =
-      currentMonthNum === new Date().getMonth() &&
-      currentYear === new Date().getFullYear();
+      selectedMonthNum === new Date().getMonth() &&
+      selectedYear === new Date().getFullYear();
 
     if (isCurrentMonth) {
       recurringTransactions

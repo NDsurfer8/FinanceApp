@@ -444,11 +444,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         transactionDate.getFullYear() === currentYear;
 
       // Count transactions that were created from recurring transactions and marked as paid
+      // Include both auto-matched (with bankTransactionId) and manually marked (with matchedAt)
       return (
         isInCurrentMonth &&
         transaction.recurringTransactionId &&
         transaction.status === "paid" &&
-        transaction.bankTransactionId
+        (transaction.bankTransactionId || transaction.matchedAt)
       );
     });
 

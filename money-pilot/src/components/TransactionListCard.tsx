@@ -620,6 +620,10 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                                           matchedAt: Date.now(),
                                         });
                                       }
+
+                                      // Refresh data to update smart insights immediately
+                                      await refreshTransactions();
+                                      await refreshRecurringTransactions();
                                     } catch (error) {
                                       console.error(
                                         "Error marking as paid:",
