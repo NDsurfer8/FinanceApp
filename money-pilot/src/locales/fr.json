@@ -545,7 +545,13 @@
     "of_budget_used": "du budget utilisé",
     "no_budget_set": "Aucun budget défini",
     "monthly_limit": "Limite Mensuelle",
-    "of_income": "du revenu"
+    "of_income": "du revenu",
+    "income": "Revenus",
+    "budgeted": "Budgétisé",
+    "left_to_plan": "Restant à planifier",
+    "percentage_of_income_budgeted": "{{percentage}}% du revenu budgétisé",
+    "zero_percentage_budgeted": "0% du revenu budgétisé",
+    "budget_categories": "Catégories de Budget"
   },
   "categories": {
     "rent": "Loyer",

@@ -545,7 +545,13 @@
     "of_budget_used": "del presupuesto usado",
     "no_budget_set": "Sin presupuesto establecido",
     "monthly_limit": "Límite Mensual",
-    "of_income": "del ingreso"
+    "of_income": "del ingreso",
+    "income": "Ingresos",
+    "budgeted": "Presupuestado",
+    "left_to_plan": "Restante para planificar",
+    "percentage_of_income_budgeted": "{{percentage}}% del ingreso presupuestado",
+    "zero_percentage_budgeted": "0% del ingreso presupuestado",
+    "budget_categories": "Categorías de Presupuesto"
   },
   "categories": {
     "rent": "Alquiler",

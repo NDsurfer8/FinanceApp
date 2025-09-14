@@ -875,7 +875,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     marginBottom: 4,
                   }}
                 >
-                  Income
+                  {t("budget_categories.income")}
                 </Text>
                 <Text
                   style={{
@@ -917,7 +917,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     marginBottom: 4,
                   }}
                 >
-                  Budgeted
+                  {t("budget_categories.budgeted")}
                 </Text>
                 <Text
                   style={{
@@ -961,7 +961,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     marginBottom: 4,
                   }}
                 >
-                  Left to plan
+                  {t("budget_categories.left_to_plan")}
                 </Text>
                 <Text
                   style={{
@@ -1029,15 +1029,17 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     }}
                   >
                     {totalIncome > 0
-                      ? `${(
-                          (categories.reduce(
-                            (sum, cat) => sum + cat.monthlyLimit,
-                            0
-                          ) /
-                            totalIncome) *
-                          100
-                        ).toFixed(1)}% of income budgeted`
-                      : "0% of income budgeted"}
+                      ? t("budget_categories.percentage_of_income_budgeted", {
+                          percentage: (
+                            (categories.reduce(
+                              (sum, cat) => sum + cat.monthlyLimit,
+                              0
+                            ) /
+                              totalIncome) *
+                            100
+                          ).toFixed(1),
+                        })
+                      : t("budget_categories.zero_percentage_budgeted")}
                   </Text>
                 </View>
               </View>
@@ -1061,7 +1063,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
               color: colors.text,
             }}
           >
-            Budget Categories
+            {t("budget_categories.budget_categories")}
           </Text>
           <TouchableOpacity
             onPress={() => setShowBudgetSettingsModal(true)}

@@ -545,7 +545,13 @@
     "of_budget_used": "बजट का उपयोग किया गया",
     "no_budget_set": "कोई बजट सेट नहीं",
     "monthly_limit": "मासिक सीमा",
-    "of_income": "आय का"
+    "of_income": "आय का",
+    "income": "आय",
+    "budgeted": "बजटित",
+    "left_to_plan": "योजना बनाने के लिए शेष",
+    "percentage_of_income_budgeted": "{{percentage}}% आय बजटित",
+    "zero_percentage_budgeted": "0% आय बजटित",
+    "budget_categories": "बजट श्रेणियां"
   },
   "categories": {
     "rent": "किराया",

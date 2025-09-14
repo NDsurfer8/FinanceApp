@@ -545,7 +545,13 @@
     "of_budget_used": "do orçamento usado",
     "no_budget_set": "Nenhum orçamento definido",
     "monthly_limit": "Limite Mensal",
-    "of_income": "da renda"
+    "of_income": "da renda",
+    "income": "Renda",
+    "budgeted": "Orçado",
+    "left_to_plan": "Restante para planejar",
+    "percentage_of_income_budgeted": "{{percentage}}% da renda orçada",
+    "zero_percentage_budgeted": "0% da renda orçada",
+    "budget_categories": "Categorias de Orçamento"
   },
   "categories": {
     "rent": "Aluguel",

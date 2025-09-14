@@ -545,7 +545,13 @@
     "of_budget_used": "من الميزانية المستخدمة",
     "no_budget_set": "لم يتم تعيين ميزانية",
     "monthly_limit": "الحد الشهري",
-    "of_income": "من الدخل"
+    "of_income": "من الدخل",
+    "income": "الدخل",
+    "budgeted": "مُدرج في الميزانية",
+    "left_to_plan": "متبقي للتخطيط",
+    "percentage_of_income_budgeted": "{{percentage}}% من الدخل مُدرج في الميزانية",
+    "zero_percentage_budgeted": "0% من الدخل مُدرج في الميزانية",
+    "budget_categories": "فئات الميزانية"
   },
   "categories": {
     "rent": "إيجار",

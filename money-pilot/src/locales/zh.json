@@ -545,7 +545,13 @@
     "of_budget_used": "的预算已使用",
     "no_budget_set": "未设置预算",
     "monthly_limit": "月度限额",
-    "of_income": "的收入"
+    "of_income": "的收入",
+    "income": "收入",
+    "budgeted": "已预算",
+    "left_to_plan": "待规划",
+    "percentage_of_income_budgeted": "{{percentage}}%的收入已预算",
+    "zero_percentage_budgeted": "0%的收入已预算",
+    "budget_categories": "预算类别"
   },
   "categories": {
     "rent": "租金",

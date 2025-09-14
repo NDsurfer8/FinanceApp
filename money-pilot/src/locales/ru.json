@@ -545,7 +545,13 @@
     "of_budget_used": "бюджета использовано",
     "no_budget_set": "Бюджет не установлен",
     "monthly_limit": "Месячный Лимит",
-    "of_income": "от дохода"
+    "of_income": "от дохода",
+    "income": "Доход",
+    "budgeted": "Забюджетировано",
+    "left_to_plan": "Осталось спланировать",
+    "percentage_of_income_budgeted": "{{percentage}}% дохода забюджетировано",
+    "zero_percentage_budgeted": "0% дохода забюджетировано",
+    "budget_categories": "Категории Бюджета"
   },
   "categories": {
     "rent": "Аренда",

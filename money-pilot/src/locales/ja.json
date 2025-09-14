@@ -545,7 +545,13 @@
     "of_budget_used": "の予算を使用",
     "no_budget_set": "予算が設定されていません",
     "monthly_limit": "月次制限",
-    "of_income": "の収入"
+    "of_income": "の収入",
+    "income": "収入",
+    "budgeted": "予算化済み",
+    "left_to_plan": "計画に残り",
+    "percentage_of_income_budgeted": "{{percentage}}%の収入が予算化済み",
+    "zero_percentage_budgeted": "0%の収入が予算化済み",
+    "budget_categories": "予算カテゴリ"
   },
   "categories": {
     "rent": "家賃",

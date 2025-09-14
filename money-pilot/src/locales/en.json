@@ -545,7 +545,13 @@
     "of_budget_used": "of budget used",
     "no_budget_set": "No budget set",
     "monthly_limit": "Monthly Limit",
-    "of_income": "of income"
+    "of_income": "of income",
+    "income": "Income",
+    "budgeted": "Budgeted",
+    "left_to_plan": "Left to plan",
+    "percentage_of_income_budgeted": "{{percentage}}% of income budgeted",
+    "zero_percentage_budgeted": "0% of income budgeted",
+    "budget_categories": "Budget Categories"
   },
   "goals": {
     "title": "Goals",
