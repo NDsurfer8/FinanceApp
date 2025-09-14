@@ -644,6 +644,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     fontWeight: "700",
                     color: colors.success,
                   }}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.6}
                 >
                   {formatCurrency(
                     goals.reduce((sum, goal) => sum + goal.targetAmount, 0)
@@ -666,6 +669,9 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                     fontWeight: "700",
                     color: colors.warning,
                   }}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.6}
                 >
                   {formatCurrency(
                     goals.reduce((sum, goal) => sum + goal.currentAmount, 0)
@@ -1007,7 +1013,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         textAlign: "center",
                       }}
                       numberOfLines={1}
-                      ellipsizeMode="tail"
+                      adjustsFontSizeToFit={true}
+                      minimumFontScale={0.7}
                     >
                       {formatCurrency(goal.targetAmount)}
                     </Text>
@@ -1043,7 +1050,8 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
                         textAlign: "center",
                       }}
                       numberOfLines={1}
-                      ellipsizeMode="tail"
+                      adjustsFontSizeToFit={true}
+                      minimumFontScale={0.7}
                     >
                       {formatCurrency(goal.monthlyContribution)}
                     </Text>
