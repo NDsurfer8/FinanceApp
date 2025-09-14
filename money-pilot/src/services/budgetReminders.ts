@@ -79,21 +79,17 @@ export class BudgetReminderService {
 
       const totalIncome = individualIncome + activeRecurringIncome;
 
-      // Calculate expenses including recurring expenses that's been marked as paid
+      // Calculate expenses including all active recurring expenses (planned expenses, regardless of payment status)
       const individualExpenses = monthlyTransactions
         .filter((t) => t.type === "expense" && !t.recurringTransactionId)
         .reduce((sum, t) => sum + t.amount, 0);
 
-      const paidRecurringExpenses = monthlyTransactions
-        .filter(
-          (t) =>
-            t.type === "expense" &&
-            t.recurringTransactionId &&
-            t.status === "paid"
-        )
-        .reduce((sum, t) => sum + t.amount, 0);
+      // Get all active recurring expenses for current month (planned expenses, regardless of payment status)
+      const activeRecurringExpenses = recurringTransactions
+        .filter((rt) => rt.type === "expense" && rt.isActive)
+        .reduce((sum, rt) => sum + rt.amount, 0);
 
-      const totalExpenses = individualExpenses + paidRecurringExpenses;
+      const totalExpenses = individualExpenses + activeRecurringExpenses;
 
       // Calculate remaining balance like in budget summary
       const netIncome = totalIncome - totalExpenses;
@@ -472,23 +468,20 @@ export class BudgetReminderService {
           (categorySpending[category] || 0) + transaction.amount;
       });
 
-      // Add recurring expenses that have been marked as paid this month
-      const paidRecurringExpenses = transactions.filter((transaction) => {
-        const transactionDate = new Date(transaction.date);
-        return (
-          transactionDate.getMonth() === currentMonth &&
-          transactionDate.getFullYear() === currentYear &&
-          transaction.recurringTransactionId &&
-          transaction.status === "paid" &&
-          transaction.type === "expense"
-        );
-      });
+      // Add all active recurring expenses for current month (planned expenses, regardless of payment status)
+      const activeRecurringExpenses = recurringTransactions
+        .filter((rt) => rt.type === "expense" && rt.isActive)
+        .reduce((sum, rt) => sum + rt.amount, 0);
 
-      paidRecurringExpenses.forEach((transaction) => {
-        const category = transaction.category;
-        categorySpending[category] =
-          (categorySpending[category] || 0) + transaction.amount;
-      });
+      // Distribute recurring expenses across categories (simplified approach)
+      // This ensures all recurring expenses are counted in budget calculations
+      recurringTransactions
+        .filter((rt) => rt.type === "expense" && rt.isActive)
+        .forEach((rt) => {
+          const category = rt.category;
+          categorySpending[category] =
+            (categorySpending[category] || 0) + rt.amount;
+        });
 
       // Check each budget category for over-budget spending
       const overBudgetCategories: Array<{
@@ -501,6 +494,7 @@ export class BudgetReminderService {
 
       budgetCategories.forEach((category) => {
         const spent = categorySpending[category.name] || 0;
+
         if (spent > category.monthlyLimit && category.monthlyLimit > 0) {
           const overAmount = spent - category.monthlyLimit;
           totalOverBudget += overAmount;
@@ -535,11 +529,13 @@ export class BudgetReminderService {
     daysLeft: number;
   }> {
     try {
-      const [transactions, budgetSettings, goals] = await Promise.all([
-        getUserTransactions(userId),
-        getUserBudgetSettings(userId),
-        getUserGoals(userId),
-      ]);
+      const [transactions, budgetSettings, goals, recurringTransactions] =
+        await Promise.all([
+          getUserTransactions(userId),
+          getUserBudgetSettings(userId),
+          getUserGoals(userId),
+          getUserRecurringTransactions(userId),
+        ]);
 
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
@@ -560,6 +556,11 @@ export class BudgetReminderService {
         .filter((t: any) => t.type === "expense")
         .reduce((sum: number, t: any) => sum + t.amount, 0);
 
+      // Add all active recurring expenses (planned expenses, regardless of payment status)
+      const totalRecurringExpenses = recurringTransactions
+        .filter((rt) => rt.type === "expense" && rt.isActive)
+        .reduce((sum, rt) => sum + rt.amount, 0);
+
       // Calculate remaining balance like in budget summary
       const netIncome = totalIncome - totalExpenses;
       const savingsPercent = budgetSettings?.savingsPercentage || 20;
@@ -576,7 +577,11 @@ export class BudgetReminderService {
 
       const debtPayoffAmount = totalIncome * (debtPayoffPercent / 100);
       const discretionaryIncome =
-        netIncome - savingsAmount - debtPayoffAmount - totalGoalContributions;
+        netIncome -
+        savingsAmount -
+        debtPayoffAmount -
+        totalGoalContributions -
+        totalRecurringExpenses;
       const remainingBalance = discretionaryIncome;
 
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
