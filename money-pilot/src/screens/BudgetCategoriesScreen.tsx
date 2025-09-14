@@ -833,98 +833,56 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
             </TouchableOpacity>
           }
         />
-        {/* Summary Card */}
+        {/* Budget Summary Card */}
         <View
           style={{
             backgroundColor: colors.surface,
-            borderRadius: 16,
-            padding: 20,
-            marginBottom: 16,
+            borderRadius: 20,
+            padding: 24,
+            marginBottom: 24,
             shadowColor: colors.shadow,
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 2 },
-            elevation: 3,
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
           }}
         >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 12,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "700",
-                color: colors.text,
-                flex: 1,
-              }}
-            >
-              {selectedMonth.toLocaleDateString("en-US", {
-                month: "long",
-                year: "numeric",
-              })}{" "}
-              {t("budget_categories.overview")}
-            </Text>
-            <TouchableOpacity
-              onPress={() => setShowBudgetSettingsModal(true)}
-              style={{
-                backgroundColor: colors.surfaceSecondary,
-                padding: 10,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: colors.border,
-                shadowColor: colors.shadow,
-                shadowOpacity: 0.06,
-                shadowRadius: 3,
-                shadowOffset: { width: 0, height: 1 },
-                elevation: 1,
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="settings-outline"
-                size={18}
-                color={colors.primary}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <View style={{ gap: 16 }}>
-            {/* Income Section */}
-            <View>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: colors.textSecondary,
-                  marginBottom: 8,
-                }}
-              >
-                {t("budget_categories.starting_point")}
-              </Text>
+          <View style={{ gap: 20 }}>
+            {/* Income */}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  paddingVertical: 6,
-                  paddingHorizontal: 12,
                   backgroundColor: colors.surfaceSecondary,
-                  borderRadius: 8,
+                  padding: 12,
+                  borderRadius: 12,
+                  marginRight: 16,
+                  width: 50,
+                  height: 50,
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}
               >
-                <Text style={{ fontSize: 16, color: colors.text }}>
-                  {t("budget_categories.total_income")}
+                <Ionicons name="trending-up" size={20} color={colors.success} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    marginBottom: 4,
+                  }}
+                >
+                  Income
                 </Text>
                 <Text
                   style={{
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: "700",
                     color: colors.success,
+                    letterSpacing: -0.3,
                   }}
                 >
                   {formatCurrency(totalIncome)}
@@ -932,251 +890,41 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
               </View>
             </View>
 
-            {/* Deductions Section */}
-            <View>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: colors.textSecondary,
-                  marginBottom: 8,
-                }}
-              >
-                {t("budget_categories.automatic_allocations")}
-              </Text>
+            {/* Budgeted */}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
                   backgroundColor: colors.surfaceSecondary,
-                  borderRadius: 8,
                   padding: 12,
-                  gap: 8,
-                }}
-              >
-                {/* Savings */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Ionicons
-                      name={
-                        includeSavings ? "checkmark-circle" : "close-circle"
-                      }
-                      size={16}
-                      color={includeSavings ? colors.success : colors.error}
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.text,
-                        textDecorationLine: includeSavings
-                          ? "none"
-                          : "line-through",
-                      }}
-                    >
-                      {t("budget_categories.savings_percentage", {
-                        percentage: savingsPercentage,
-                      })}
-                    </Text>
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: includeSavings
-                        ? colors.error
-                        : colors.textSecondary,
-                      textDecorationLine: includeSavings
-                        ? "none"
-                        : "line-through",
-                    }}
-                  >
-                    {includeSavings ? "-" : ""}
-                    {formatCurrency(savingsAmount)}
-                  </Text>
-                </View>
-
-                {/* Debt Payoff */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Ionicons
-                      name={
-                        includeDebtPayoff ? "checkmark-circle" : "close-circle"
-                      }
-                      size={16}
-                      color={includeDebtPayoff ? colors.success : colors.error}
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.text,
-                        textDecorationLine: includeDebtPayoff
-                          ? "none"
-                          : "line-through",
-                      }}
-                    >
-                      {t("budget_categories.debt_payoff_percentage", {
-                        percentage: debtPayoffPercentage,
-                      })}
-                    </Text>
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: includeDebtPayoff
-                        ? colors.error
-                        : colors.textSecondary,
-                      textDecorationLine: includeDebtPayoff
-                        ? "none"
-                        : "line-through",
-                    }}
-                  >
-                    {includeDebtPayoff ? "-" : ""}
-                    {formatCurrency(debtPayoffAmount)}
-                  </Text>
-                </View>
-
-                {/* Goal Contributions */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Ionicons
-                      name={
-                        includeGoalContributions
-                          ? "checkmark-circle"
-                          : "close-circle"
-                      }
-                      size={16}
-                      color={
-                        includeGoalContributions ? colors.success : colors.error
-                      }
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.text,
-                        textDecorationLine: includeGoalContributions
-                          ? "none"
-                          : "line-through",
-                      }}
-                    >
-                      {t("budget_categories.goal_contributions")}
-                    </Text>
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: includeGoalContributions
-                        ? colors.error
-                        : colors.textSecondary,
-                      textDecorationLine: includeGoalContributions
-                        ? "none"
-                        : "line-through",
-                    }}
-                  >
-                    {includeGoalContributions ? "-" : ""}
-                    {formatCurrency(monthlyGoalsContribution)}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Available Budget Section */}
-            <View>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: colors.textSecondary,
-                  marginBottom: 8,
-                }}
-              >
-                {t("budget_categories.available_for_categories")}
-              </Text>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
+                  borderRadius: 12,
+                  marginRight: 16,
+                  width: 50,
+                  height: 50,
+                  justifyContent: "center",
                   alignItems: "center",
-                  paddingVertical: 8,
-                  paddingHorizontal: 12,
-                  backgroundColor:
-                    totalBudget < 0
-                      ? colors.error + "15"
-                      : colors.primary + "15",
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor:
-                    totalBudget < 0
-                      ? colors.error + "30"
-                      : colors.primary + "30",
                 }}
               >
+                <Ionicons name="bar-chart" size={20} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
                 <Text
                   style={{
-                    fontSize: 16,
+                    fontSize: 14,
+                    color: colors.textSecondary,
                     fontWeight: "600",
-                    color: colors.text,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    marginBottom: 4,
                   }}
                 >
-                  {t("budget_categories.total_budget")}
+                  Budgeted
                 </Text>
                 <Text
                   style={{
                     fontSize: 20,
                     fontWeight: "700",
-                    color: totalBudget < 0 ? colors.error : colors.primary,
-                  }}
-                >
-                  {formatCurrency(totalBudget)}
-                </Text>
-              </View>
-
-              {/* Allocated to Categories */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  paddingVertical: 6,
-                  paddingHorizontal: 12,
-                  backgroundColor: colors.surface,
-                  borderRadius: 8,
-                  marginTop: 8,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                  }}
-                >
-                  {t("budget_categories.allocated_to_categories")}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    color: colors.text,
+                    color: colors.primary,
+                    letterSpacing: -0.3,
                   }}
                 >
                   {formatCurrency(
@@ -1185,358 +933,284 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                 </Text>
               </View>
             </View>
+
+            {/* Left to plan */}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  backgroundColor: colors.surfaceSecondary,
+                  padding: 12,
+                  borderRadius: 12,
+                  marginRight: 16,
+                  width: 50,
+                  height: 50,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Ionicons name="wallet" size={20} color={colors.warning} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    marginBottom: 4,
+                  }}
+                >
+                  Left to plan
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: colors.warning,
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  {formatCurrency(availableAmount)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Progress Bar */}
+            <View style={{ marginTop: 8 }}>
+              <View
+                style={{
+                  height: 8,
+                  backgroundColor: colors.border,
+                  borderRadius: 4,
+                  overflow: "hidden",
+                }}
+              >
+                <View
+                  style={{
+                    width: `${
+                      totalIncome > 0
+                        ? (categories.reduce(
+                            (sum, cat) => sum + cat.monthlyLimit,
+                            0
+                          ) /
+                            totalIncome) *
+                          100
+                        : 0
+                    }%`,
+                    height: "100%",
+                    backgroundColor: colors.primary,
+                    borderRadius: 4,
+                  }}
+                />
+              </View>
+            </View>
           </View>
         </View>
 
-        {/* Search Bar */}
+        {/* Categories Header */}
         <View
           style={{
-            backgroundColor: colors.surface,
-            borderRadius: 12,
-            padding: 16,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
             marginBottom: 16,
-            shadowColor: colors.shadow,
-            shadowOpacity: 0.04,
-            shadowRadius: 6,
-            shadowOffset: { width: 0, height: 1 },
-            elevation: 2,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "700",
+              color: colors.text,
+            }}
+          >
+            Budget Categories
+          </Text>
+          <TouchableOpacity
+            onPress={() => setShowBudgetSettingsModal(true)}
+            style={{
+              backgroundColor: colors.surfaceSecondary,
+              padding: 8,
+              borderRadius: 8,
+            }}
+            activeOpacity={0.7}
+          >
             <Ionicons
-              name="search"
+              name="settings-outline"
               size={18}
-              color={colors.textSecondary}
-              style={{ marginRight: 12 }}
+              color={colors.primary}
             />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder={t("budget_categories.search_placeholder")}
-              placeholderTextColor={colors.inputPlaceholder}
-              style={{
-                flex: 1,
-                fontSize: 16,
-                color: colors.text,
-                padding: 0,
-              }}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                onPress={() => setSearchQuery("")}
-                style={{
-                  padding: 4,
-                  borderRadius: 12,
-                  backgroundColor: colors.surfaceSecondary,
-                }}
-              >
-                <Ionicons name="close" size={16} color={colors.textSecondary} />
-              </TouchableOpacity>
-            )}
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Categories List */}
         {filteredCategories.map((category) => {
           const spending = getCategorySpending(category.name);
-          const remaining = category.monthlyLimit - spending.actual;
           const progressPercentage =
             category.monthlyLimit > 0
               ? Math.min((spending.actual / category.monthlyLimit) * 100, 100)
               : 0;
 
+          // Get category icon based on name
+          const getCategoryIcon = (categoryName: string) => {
+            const iconMap: { [key: string]: string } = {
+              Business: "briefcase",
+              Rent: "home",
+              "Car Payment": "car",
+              Insurance: "shield",
+              Utilities: "flash",
+              Internet: "wifi",
+              Phone: "call",
+              Subscriptions: "card",
+              "Credit Card": "card",
+              "Loan Payment": "document-text",
+              Food: "restaurant",
+              Transportation: "car",
+              Health: "medical",
+              Entertainment: "musical-notes",
+              Shopping: "bag",
+              "Other Expenses": "ellipsis-horizontal",
+            };
+            return iconMap[categoryName] || "ellipsis-horizontal";
+          };
+
           return (
-            <View
+            <TouchableOpacity
               key={category.id}
+              onPress={() => openEditModal(category)}
               style={{
                 backgroundColor: colors.surface,
                 borderRadius: 16,
-                padding: 18,
+                padding: 20,
                 marginBottom: 12,
                 shadowColor: colors.shadow,
                 shadowOpacity: 0.06,
                 shadowRadius: 8,
                 shadowOffset: { width: 0, height: 2 },
                 elevation: 3,
+                position: "relative",
               }}
+              activeOpacity={0.7}
             >
+              {/* Over Budget Badge - Top Left */}
+              {isCategoryOverBudget(category) && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -6,
+                    left: 12,
+                    backgroundColor: colors.error,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 8,
+                    zIndex: 1,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: "700",
+                      color: colors.buttonText,
+                    }}
+                  >
+                    OVER
+                  </Text>
+                </View>
+              )}
+
               {/* Category Header */}
               <View
                 style={{
                   flexDirection: "row",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: 14,
+                  marginBottom: 12,
                 }}
               >
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <View
                     style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: 5,
-                      backgroundColor: category.color,
-                      marginRight: 10,
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      backgroundColor: colors.surfaceSecondary,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      marginRight: 16,
                     }}
-                  />
+                  >
+                    <Ionicons
+                      name={getCategoryIcon(category.name) as any}
+                      size={20}
+                      color={colors.textSecondary}
+                    />
+                  </View>
                   <Text
                     style={{
                       fontSize: 16,
-                      fontWeight: "700",
+                      fontWeight: "600",
                       color: colors.text,
                     }}
                   >
                     {translateCategoryName(category.name)}
                   </Text>
-                  {isCategoryOverBudget(category) && (
-                    <View
-                      style={{
-                        marginLeft: 8,
-                        backgroundColor: colors.error,
-                        paddingHorizontal: 8,
-                        paddingVertical: 2,
-                        borderRadius: 10,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          fontWeight: "700",
-                          color: colors.buttonText,
-                        }}
-                      >
-                        OVER
-                      </Text>
-                    </View>
-                  )}
                 </View>
 
-                <View style={{ flexDirection: "row", gap: 6 }}>
-                  <TouchableOpacity
-                    onPress={() => openEditModal(category)}
-                    style={{
-                      padding: 6,
-                      borderRadius: 6,
-                      backgroundColor: colors.surfaceSecondary,
-                    }}
-                  >
-                    <Ionicons name="pencil" size={24} color={colors.primary} />
-                  </TouchableOpacity>
-
-                  {/* Only show delete button for user-added categories */}
-                  {!isDefaultCategory(category.name) && (
-                    <TouchableOpacity
-                      onPress={() => deleteCategory(category.id)}
-                      style={{
-                        padding: 6,
-                        borderRadius: 6,
-                        backgroundColor: colors.error,
-                      }}
-                    >
-                      <Ionicons
-                        name="trash"
-                        size={24}
-                        color={colors.buttonText}
-                      />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-
-              {/* Budget vs Actual */}
-              <View style={{ gap: 10 }}>
-                <View
+                <Text
                   style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    paddingVertical: 3,
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: colors.text,
                   }}
                 >
-                  <Text style={{ fontSize: 18, color: colors.textSecondary }}>
-                    {t("budget_categories.monthly_limit")}
+                  {formatCurrency(spending.actual)}
+                  <Text style={{ color: colors.textSecondary }}>
+                    {" "}
+                    of {formatCurrency(category.monthlyLimit)}
                   </Text>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "600",
-                      color: colors.text,
-                    }}
-                  >
-                    {formatCurrency(category.monthlyLimit)}
-                    {totalIncome > 0 && (
-                      <Text
-                        style={{ fontSize: 14, color: colors.textSecondary }}
-                      >
-                        {" "}
-                        (
-                        {((category.monthlyLimit / totalIncome) * 100).toFixed(
-                          1
-                        )}
-                        % {t("budget_categories.of_income")})
-                      </Text>
-                    )}
-                  </Text>
-                </View>
-
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    paddingVertical: 3,
-                  }}
-                >
-                  <Text style={{ fontSize: 16, color: colors.textSecondary }}>
-                    {t("budget_categories.spent")}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color:
-                        spending.actual === 0
-                          ? colors.textSecondary
-                          : colors.error,
-                    }}
-                  >
-                    {spending.actual === 0
-                      ? t("budget_categories.no_spending_yet")
-                      : formatCurrency(spending.actual)}
-                  </Text>
-                </View>
-
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    paddingVertical: 3,
-                  }}
-                >
-                  <Text style={{ fontSize: 16, color: colors.textSecondary }}>
-                    {t("budget_categories.remaining")}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "600",
-                      color: remaining >= 0 ? colors.success : colors.error,
-                    }}
-                  >
-                    {remaining >= 0
-                      ? formatCurrency(remaining)
-                      : formatCurrency(0)}
-                  </Text>
-                </View>
+                </Text>
               </View>
 
               {/* Progress Bar */}
-              <View style={{ marginTop: 14 }}>
+              <View
+                style={{
+                  height: 8,
+                  backgroundColor: colors.border,
+                  borderRadius: 4,
+                  overflow: "hidden",
+                }}
+              >
                 <View
                   style={{
-                    height: 10,
-                    backgroundColor: colors.border,
-                    borderRadius: 5,
-                    overflow: "hidden",
+                    width: `${Math.min(progressPercentage, 100)}%`,
+                    height: "100%",
+                    backgroundColor:
+                      progressPercentage >= 100
+                        ? colors.error
+                        : progressPercentage >= 80
+                        ? colors.warning
+                        : colors.primary,
+                    borderRadius: 4,
                   }}
-                >
+                />
+                {/* Over-budget indicator */}
+                {progressPercentage > 100 && (
                   <View
                     style={{
-                      width: `${progressPercentage}%`,
-                      height: 18,
-                      backgroundColor:
-                        progressPercentage > 100
-                          ? colors.error
-                          : colors.primary,
-                      borderRadius: 3,
+                      position: "absolute",
+                      right: 0,
+                      top: 0,
+                      width: `${Math.min(progressPercentage - 100, 20)}%`,
+                      height: "100%",
+                      backgroundColor: colors.error,
+                      borderRadius: 4,
                     }}
                   />
-                </View>
-                <Text
-                  style={{
-                    fontSize: 11,
-                    color: colors.textSecondary,
-                    marginTop: 3,
-                    textAlign: "center",
-                  }}
-                >
-                  {category.monthlyLimit > 0
-                    ? `${progressPercentage.toFixed(1)}% ${t(
-                        "budget_categories.of_budget_used"
-                      )}`
-                    : t("budget_categories.no_budget_set")}
-                </Text>
-                {isCategoryOverBudget(category) && (
-                  <View
-                    style={{
-                      marginTop: 8,
-                      padding: 8,
-                      backgroundColor: colors.error + "15",
-                      borderRadius: 8,
-                      borderWidth: 1,
-                      borderColor: colors.error + "30",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        color: colors.error,
-                        textAlign: "center",
-                        fontWeight: "600",
-                      }}
-                    >
-                      ⚠️ Over budget by{" "}
-                      {formatCurrency(spending.actual - category.monthlyLimit)}
-                    </Text>
-                  </View>
                 )}
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
-
-        {/* No Results Message */}
-        {searchQuery.length > 0 && filteredCategories.length === 0 && (
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 16,
-              padding: 24,
-              alignItems: "center",
-              shadowColor: colors.shadow,
-              shadowOpacity: 0.06,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 2 },
-              elevation: 3,
-            }}
-          >
-            <Ionicons
-              name="search"
-              size={32}
-              color={colors.textSecondary}
-              style={{ marginBottom: 12 }}
-            />
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-                color: colors.text,
-                marginBottom: 8,
-              }}
-            >
-              No categories found
-            </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                color: colors.textSecondary,
-                textAlign: "center",
-              }}
-            >
-              Try adjusting your search terms or add a new category
-            </Text>
-          </View>
-        )}
       </ScrollView>
 
       {/* Add/Edit Category Modal */}
@@ -1773,6 +1447,35 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                   </Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Delete Button - Only show when editing and not a default category */}
+              {editingCategory && !isDefaultCategory(editingCategory.name) && (
+                <TouchableOpacity
+                  onPress={() => {
+                    closeModal();
+                    deleteCategory(editingCategory.id);
+                  }}
+                  style={{
+                    backgroundColor: colors.error + "15",
+                    padding: 16,
+                    borderRadius: 12,
+                    alignItems: "center",
+                    marginTop: 12,
+                    borderWidth: 1,
+                    borderColor: colors.error + "30",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: colors.error,
+                      fontSize: 16,
+                      fontWeight: "600",
+                    }}
+                  >
+                    Delete Category
+                  </Text>
+                </TouchableOpacity>
+              )}
             </ScrollView>
           </View>
         </View>
