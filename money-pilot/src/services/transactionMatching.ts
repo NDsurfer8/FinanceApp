@@ -36,7 +36,7 @@ export interface PendingTransaction {
 
 class TransactionMatchingService {
   private readonly MATCH_TOLERANCE_DAYS = 14; // Days to look for matches
-  private readonly AMOUNT_TOLERANCE = 0.01; // Exact amount match required
+  private readonly AMOUNT_TOLERANCE = 1.0; // Dollar-level matching (within $1)
   private readonly MIN_MATCH_CONFIDENCE = 60; // Minimum confidence for auto-matching
 
   /**
