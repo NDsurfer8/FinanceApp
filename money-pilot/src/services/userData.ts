@@ -2172,7 +2172,7 @@ export const saveRecurringTransaction = async (
         await updateBudgetCategoryLimit(
           recurringTransaction.userId,
           recurringTransaction.category,
-          recurringTransaction.amount
+          0 // Amount is calculated inside the function
         );
       } catch (budgetError) {
         // Don't fail the recurring transaction creation if budget update fails
@@ -2941,25 +2941,36 @@ export const getUserBudgetCategories = async (
 export const updateBudgetCategoryLimit = async (
   userId: string,
   categoryName: string,
-  newLimit: number
+  newLimit: number // This parameter is now ignored, as the limit is calculated internally
 ): Promise<void> => {
   try {
     const categories = await getUserBudgetCategories(userId);
 
-    // Find the category and update its limit
+    // Get all recurring transactions for this user to calculate total for this category
+    const recurringTransactions = await getUserRecurringTransactions(userId);
+    const totalRecurringForCategory = recurringTransactions
+      .filter(
+        (rt) =>
+          rt.type === "expense" &&
+          rt.isActive &&
+          rt.category.toLowerCase() === categoryName.toLowerCase()
+      )
+      .reduce((sum, rt) => sum + rt.amount, 0);
+
+    // Find the category and update its limit to the total of all recurring expenses
     const categoryIndex = categories.findIndex(
       (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
     );
 
     if (categoryIndex !== -1) {
-      categories[categoryIndex].monthlyLimit = newLimit;
+      categories[categoryIndex].monthlyLimit = totalRecurringForCategory;
       await saveBudgetCategories(categories, userId);
     } else {
       // If category doesn't exist, create a new one
       const newCategory: BudgetCategory = {
         id: Date.now().toString(),
         name: categoryName,
-        monthlyLimit: newLimit,
+        monthlyLimit: totalRecurringForCategory,
         color: "#4ECDC4", // Default color
       };
       categories.push(newCategory);
