@@ -108,14 +108,7 @@ export class BudgetReminderService {
         .filter((rt) => rt.type === "income" && rt.isActive)
         .reduce((sum, rt) => sum + rt.amount, 0);
 
-      console.log("💰 [Budget Reminders] Individual income:", individualIncome);
-      console.log(
-        "🔄 [Budget Reminders] Active recurring income:",
-        activeRecurringIncome
-      );
-
       const totalIncome = individualIncome + activeRecurringIncome;
-      console.log("💰 [Budget Reminders] Total income:", totalIncome);
 
       // Calculate expenses including all active recurring expenses (planned expenses)
       const individualExpenses = monthlyTransactions
@@ -338,11 +331,21 @@ export class BudgetReminderService {
         const category = overBudgetCategories[0];
         body = `${
           category.categoryName
-        } is over budget by $${category.overAmount.toFixed(2)}.`;
+        } is over budget by $${category.overAmount.toFixed(
+          2
+        )} (spent $${category.spent.toFixed(2)} of $${category.limit.toFixed(
+          2
+        )}).`;
       } else {
-        body = `You're over budget in ${
+        // Show specific categories when multiple
+        const categoryDetails = overBudgetCategories
+          .map(
+            (cat) => `${cat.categoryName}: $${cat.overAmount.toFixed(2)} over`
+          )
+          .join(", ");
+        body = `Over budget in ${
           overBudgetCategories.length
-        } categories by $${totalOverBudget.toFixed(2)} total.`;
+        } categories (${totalOverBudget.toFixed(2)} total): ${categoryDetails}`;
       }
 
       // Use a consistent ID to prevent duplicates
@@ -610,23 +613,20 @@ export class BudgetReminderService {
           (categorySpending[category] || 0) + transaction.amount;
       });
 
-      // Add recurring expenses that have been marked as paid this month
-      const paidRecurringExpenses = transactions.filter((transaction) => {
-        const transactionDate = new Date(transaction.date);
-        return (
-          transactionDate.getMonth() === currentMonth &&
-          transactionDate.getFullYear() === currentYear &&
-          transaction.recurringTransactionId &&
-          transaction.status === "paid" &&
-          transaction.type === "expense"
-        );
-      });
+      // Add all active recurring expenses for current month (planned expenses, regardless of payment status)
+      const activeRecurringExpenses = recurringTransactions
+        .filter((rt) => rt.type === "expense" && rt.isActive)
+        .reduce((sum, rt) => sum + rt.amount, 0);
 
-      paidRecurringExpenses.forEach((transaction) => {
-        const category = transaction.category;
-        categorySpending[category] =
-          (categorySpending[category] || 0) + transaction.amount;
-      });
+      // Distribute recurring expenses across categories (this is a simplified approach)
+      // In a real implementation, you'd want to track which recurring transactions belong to which categories
+      recurringTransactions
+        .filter((rt) => rt.type === "expense" && rt.isActive)
+        .forEach((rt) => {
+          const category = rt.category;
+          categorySpending[category] =
+            (categorySpending[category] || 0) + rt.amount;
+        });
 
       // Check each budget category for over-budget spending
       const overBudgetCategories: Array<{
@@ -642,6 +642,7 @@ export class BudgetReminderService {
         if (spent > category.monthlyLimit && category.monthlyLimit > 0) {
           const overAmount = spent - category.monthlyLimit;
           totalOverBudget += overAmount;
+
           overBudgetCategories.push({
             categoryName: category.name,
             spent,
