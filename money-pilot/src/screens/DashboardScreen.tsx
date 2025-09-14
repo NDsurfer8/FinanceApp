@@ -492,29 +492,49 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         (categorySpending[category] || 0) + transaction.amount;
     });
 
-    // Find recurring expenses that have been marked as paid this month
-    const paidRecurringExpenses = transactions.filter((transaction) => {
+    // Find all recurring expenses for this month (regardless of status)
+    const allRecurringExpenses = transactions.filter((transaction) => {
       const transactionDate = new Date(transaction.date);
       const isInCurrentMonth =
         transactionDate.getMonth() === currentMonthNum &&
         transactionDate.getFullYear() === currentYear;
 
-      // Only include transactions that were created from recurring transactions and marked as paid
-      // (either through bank import with bankTransactionId OR manually marked as paid)
+      // Include all transactions that were created from recurring transactions
       return (
         isInCurrentMonth &&
         transaction.recurringTransactionId &&
-        transaction.status === "paid" &&
         transaction.type === "expense"
       );
     });
 
-    paidRecurringExpenses.forEach((transaction) => {
+    allRecurringExpenses.forEach((transaction) => {
       const category = transaction.category;
 
       categorySpending[category] =
         (categorySpending[category] || 0) + transaction.amount;
     });
+
+    // For current month, also add projected recurring expenses that don't have actual transactions yet
+    const isCurrentMonth =
+      currentMonthNum === new Date().getMonth() &&
+      currentYear === new Date().getFullYear();
+
+    if (isCurrentMonth) {
+      recurringTransactions
+        .filter((rt) => rt.isActive && rt.type === "expense")
+        .forEach((rt) => {
+          // Check if there's already an actual transaction for this recurring transaction this month
+          const hasActualTransaction = allRecurringExpenses.some(
+            (t) => t.recurringTransactionId === rt.id
+          );
+
+          // Only add projected amount if no actual transaction exists
+          if (!hasActualTransaction) {
+            categorySpending[rt.category] =
+              (categorySpending[rt.category] || 0) + rt.amount;
+          }
+        });
+    }
 
     budgetCategories.forEach((category) => {
       const spent = categorySpending[category.name] || 0;

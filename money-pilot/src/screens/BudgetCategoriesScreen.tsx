@@ -185,80 +185,8 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
 
   // Check if a category is over budget
   const isCategoryOverBudget = (category: BudgetCategory) => {
-    const targetMonth = selectedMonth.getMonth();
-    const targetYear = selectedMonth.getFullYear();
-
-    // Get actual spending for this category (transactions + recurring)
-    // Exclude transactions that were created from recurring transactions to avoid double counting
-    const categoryTransactions = transactions.filter((t) => {
-      const transactionDate = new Date(t.date);
-      return (
-        transactionDate.getMonth() === targetMonth &&
-        transactionDate.getFullYear() === targetYear &&
-        t.type === "expense" &&
-        t.category === category.name &&
-        !t.recurringTransactionId // Exclude transactions created from recurring transactions
-      );
-    });
-
-    const categoryRecurring = recurringTransactions.filter((rt) => {
-      // Only include recurring expenses that are active in the selected month
-      if (
-        rt.type !== "expense" ||
-        !rt.isActive ||
-        rt.category !== category.name
-      )
-        return false;
-
-      // Check if the recurring transaction was created before or during the selected month
-      const startDate = new Date(rt.startDate || rt.date);
-      const startMonth = startDate.getMonth();
-      const startYear = startDate.getFullYear();
-
-      // If start date is after the selected month, exclude it
-      if (
-        startYear > targetYear ||
-        (startYear === targetYear && startMonth > targetMonth)
-      ) {
-        return false;
-      }
-
-      // If there's an end date, check if the selected month is before the end date
-      if (rt.endDate) {
-        const endDate = new Date(rt.endDate);
-        const endMonth = endDate.getMonth();
-        const endYear = endDate.getFullYear();
-
-        // If selected month is after the end date, exclude it
-        if (
-          targetYear > endYear ||
-          (targetYear === endYear && targetMonth > endMonth)
-        ) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-
-    // Only include recurring expenses that have been marked as paid this month
-    const paidRecurringExpenses = transactions.filter((t) => {
-      const transactionDate = new Date(t.date);
-      return (
-        transactionDate.getMonth() === targetMonth &&
-        transactionDate.getFullYear() === targetYear &&
-        t.type === "expense" &&
-        t.category === category.name &&
-        t.recurringTransactionId &&
-        t.status === "paid"
-      );
-    });
-
-    const actualSpending =
-      categoryTransactions.reduce((sum, t) => sum + t.amount, 0) +
-      paidRecurringExpenses.reduce((sum, t) => sum + t.amount, 0);
-
-    return actualSpending > category.monthlyLimit;
+    const spending = getCategorySpending(category.name);
+    return spending.actual > category.monthlyLimit;
   };
 
   // Handle input focus and scroll to input
@@ -608,15 +536,47 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
 
   const getCategorySpending = (categoryName: string) => {
     // Get actual spending from transactions in this category
-    // Only count actual transactions that have been paid/spent
     const actualSpending = monthlyTransactions
       .filter((t) => t.category.toLowerCase() === categoryName.toLowerCase())
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Note: We no longer count recurring transactions in budget categories
-    // Budget categories should only show money that has actually been spent
-    // Recurring transactions are projected/planned spending, not actual spending
-    const totalActualSpending = actualSpending;
+    // For current month, also include projected recurring transactions
+    const isCurrentMonth =
+      selectedMonth.getMonth() === new Date().getMonth() &&
+      selectedMonth.getFullYear() === new Date().getFullYear();
+
+    let projectedSpending = 0;
+    if (isCurrentMonth) {
+      // Calculate projected spending from active recurring transactions for this category
+      projectedSpending = recurringTransactions
+        .filter(
+          (rt) =>
+            rt.isActive &&
+            rt.type === "expense" &&
+            rt.category.toLowerCase() === categoryName.toLowerCase()
+        )
+        .reduce((sum, rt) => {
+          // Check if this recurring transaction should occur this month
+          const startDate = new Date(rt.startDate || rt.date);
+          const currentDate = new Date();
+
+          // If recurring transaction started before or during this month
+          if (startDate <= currentDate) {
+            // Check if there's already an actual transaction for this recurring transaction this month
+            const hasActualTransaction = monthlyTransactions.some(
+              (t) => t.recurringTransactionId === rt.id
+            );
+
+            // Only add projected amount if no actual transaction exists
+            if (!hasActualTransaction) {
+              return sum + rt.amount;
+            }
+          }
+          return sum;
+        }, 0);
+    }
+
+    const totalActualSpending = actualSpending + projectedSpending;
 
     // Get the budget limit for this category
     const category = categories.find(

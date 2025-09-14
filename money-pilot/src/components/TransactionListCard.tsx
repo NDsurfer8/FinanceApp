@@ -79,6 +79,11 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
 
   // Check if a recurring transaction should show Mark Paid button
   const shouldShowMarkPaidButton = (transaction: Transaction): boolean => {
+    // Don't show if already optimistically marked as paid
+    if (optimisticallyPaid.has(transaction.id || "")) {
+      return false;
+    }
+
     // For actual transactions: show if it's a recurring expense that's not paid
     if (transaction.id && !transaction.id.startsWith("projected-")) {
       return (
@@ -109,6 +114,17 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
   };
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [optimisticallyPaid, setOptimisticallyPaid] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Clear optimistic state when transactions refresh and we have new data
+  React.useEffect(() => {
+    // Only clear if we have transactions and the optimistic state is not empty
+    if (transactions.length > 0 && optimisticallyPaid.size > 0) {
+      setOptimisticallyPaid(new Set());
+    }
+  }, [transactions, optimisticallyPaid.size]);
 
   // Helper function to translate category names
   const translateCategory = (category: string): string => {
@@ -136,11 +152,19 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
   // Get all transactions including projected ones
   const allTransactions = useMemo(() => {
     const baseTransactions = [...transactions];
+
     if (isFutureMonth) {
       baseTransactions.push(...projectedTransactions);
+    } else {
+      // For current month, only add projected transactions that haven't been optimistically paid
+      const filteredProjected = projectedTransactions.filter(
+        (projected) => !optimisticallyPaid.has(projected.id || "")
+      );
+      baseTransactions.push(...filteredProjected);
     }
+
     return baseTransactions;
-  }, [transactions, projectedTransactions, isFutureMonth]);
+  }, [transactions, projectedTransactions, isFutureMonth, optimisticallyPaid]);
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -432,7 +456,13 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                                 opacity: 0.7,
                               }}
                               onPress={async () => {
-                                if (user) {
+                                if (user && transaction.id) {
+                                  // Optimistically update UI immediately
+                                  setOptimisticallyPaid(
+                                    (prev) =>
+                                      new Set([...prev, transaction.id!])
+                                  );
+
                                   try {
                                     // Check if this is a projected transaction or actual transaction
                                     if (
@@ -466,6 +496,9 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                                       console.log(
                                         `✅ Created and marked projected transaction as paid: ${transactionId}`
                                       );
+
+                                      // Don't add optimistic transaction - let the natural refresh handle it
+                                      // This prevents duplicates while still hiding the button
 
                                       // Update the recurring transaction's totalOccurrences
                                       if (transaction.recurringTransactionId) {
@@ -508,14 +541,20 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
                                       );
                                     }
 
-                                    // Refresh transactions and recurring transactions to update UI
-                                    await refreshTransactions();
-                                    await refreshRecurringTransactions();
+                                    // Don't refresh immediately - let the optimistic UI handle it
+                                    // The refresh will happen naturally when the component re-renders
                                   } catch (error) {
                                     console.error(
                                       "Error marking as paid:",
                                       error
                                     );
+                                    // Revert optimistic update on error
+                                    setOptimisticallyPaid((prev) => {
+                                      const newSet = new Set(prev);
+                                      newSet.delete(transaction.id!);
+                                      return newSet;
+                                    });
+                                    // No optimistic transactions to clean up
                                   }
                                 }
                               }}
