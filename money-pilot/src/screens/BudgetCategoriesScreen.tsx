@@ -631,15 +631,6 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     );
     const budgetLimit = category?.monthlyLimit || 0;
 
-    // DEBUG: Log category spending calculations
-    console.log(`=== CATEGORY: ${categoryName.toUpperCase()} ===`);
-    console.log("  - Actual Spending:", actualSpending);
-    console.log("  - Projected Spending:", projectedSpending);
-    console.log("  - Total Spending:", totalActualSpending);
-    console.log("  - Budget Limit:", budgetLimit);
-    console.log("  - Remaining:", budgetLimit - totalActualSpending);
-    console.log("=====================================");
-
     // Calculate remaining budget
     const remaining = budgetLimit - totalActualSpending;
 
@@ -833,7 +824,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     setTempCategoryLimit("");
   };
 
-  // Filter and sort categories - overbudget items first, then alphabetically
+  // Filter and sort categories - prioritize categories with limits or spending
   const filteredCategories = categories
     .filter((category) =>
       category.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -841,12 +832,22 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     .sort((a, b) => {
       const aOverBudget = isCategoryOverBudget(a);
       const bOverBudget = isCategoryOverBudget(b);
+      const aSpending = getCategorySpending(a.name);
+      const bSpending = getCategorySpending(b.name);
 
-      // If one is over budget and the other isn't, prioritize the overbudget one
+      // Check if categories have limits or spending
+      const aHasActivity = a.monthlyLimit > 0 || aSpending.actual > 0;
+      const bHasActivity = b.monthlyLimit > 0 || bSpending.actual > 0;
+
+      // First priority: Over budget items
       if (aOverBudget && !bOverBudget) return -1;
       if (!aOverBudget && bOverBudget) return 1;
 
-      // If both are over budget or both are not over budget, sort alphabetically
+      // Second priority: Categories with limits or spending
+      if (aHasActivity && !bHasActivity) return -1;
+      if (!aHasActivity && bHasActivity) return 1;
+
+      // Third priority: Sort alphabetically
       return a.name.localeCompare(b.name);
     });
 
