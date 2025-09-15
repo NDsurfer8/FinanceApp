@@ -259,12 +259,6 @@ class TransactionMatchingService {
     pendingTransaction: PendingTransaction,
     bankTransaction: any
   ): Promise<TransactionMatch | null> {
-    console.log(`🔍 Evaluating match:`);
-    console.log(
-      `  Manual: ${pendingTransaction.description} - $${pendingTransaction.amount}`
-    );
-    console.log(`  Bank: ${bankTransaction.name} - $${bankTransaction.amount}`);
-
     // Check amount match (exact)
     const amountDiff = Math.abs(
       pendingTransaction.amount - Math.abs(bankTransaction.amount)

@@ -81,7 +81,6 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
   const shouldShowMarkPaidButton = (transaction: Transaction): boolean => {
     // Don't show if already optimistically marked as paid
     if (optimisticallyPaid.has(transaction.id || "")) {
-      console.log(`🔍 Button hidden - optimistically paid: ${transaction.id}`);
       return false;
     }
 
@@ -125,7 +124,6 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
       return shouldShow;
     }
 
-    console.log(`🔍 No conditions met for ${transaction.id}, returning false`);
     return false;
   };
   const [searchQuery, setSearchQuery] = useState("");
@@ -221,24 +219,24 @@ export const TransactionListCard: React.FC<TransactionListCardProps> = ({
   // Group transactions by category and sort with recurring expenses at the top
   const groupedTransactions = useMemo(() => {
     const groups: { [key: string]: Transaction[] } = {};
-    
+
     // Sort transactions: recurring expenses first, then by date (newest first)
     const sortedTransactions = [...filteredTransactions].sort((a, b) => {
       // Primary sort: recurring expenses first
       const aIsRecurring = isRecurringTransaction(a);
       const bIsRecurring = isRecurringTransaction(b);
-      
+
       if (aIsRecurring && !bIsRecurring) return -1; // a comes first
-      if (!aIsRecurring && bIsRecurring) return 1;  // b comes first
-      
+      if (!aIsRecurring && bIsRecurring) return 1; // b comes first
+
       // Secondary sort: by date (newest first) when both have same recurring status
       const dateComparison = b.date - a.date;
       if (dateComparison !== 0) return dateComparison;
-      
+
       // Tertiary sort: by ID for stable sorting when dates are equal
-      return (b.id || '').localeCompare(a.id || '');
+      return (b.id || "").localeCompare(a.id || "");
     });
-    
+
     sortedTransactions.forEach((transaction) => {
       if (!groups[transaction.category]) {
         groups[transaction.category] = [];
