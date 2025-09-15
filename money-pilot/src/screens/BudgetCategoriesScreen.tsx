@@ -1253,7 +1253,11 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                     <Ionicons
                       name={getCategoryIcon(category.name) as any}
                       size={20}
-                      color={colors.textSecondary}
+                      color={
+                        category.monthlyLimit > 0 || spending.actual > 0
+                          ? colors.primary
+                          : colors.textSecondary
+                      }
                     />
                   </View>
                   <Text
