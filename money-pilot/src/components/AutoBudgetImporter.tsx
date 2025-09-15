@@ -286,7 +286,6 @@ export const AutoBudgetImporter: React.FC<AutoBudgetImporterProps> = ({
           );
 
           if (isMatch) {
-            console.log(`✅ Transaction matched: ${transaction.name}`);
             matchedCount++;
 
             // Update progress to show matching status

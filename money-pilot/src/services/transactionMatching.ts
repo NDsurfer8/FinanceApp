@@ -108,7 +108,6 @@ class TransactionMatchingService {
         );
 
         if (match) {
-          console.log(`🎯 Match found! Confidence: ${match.matchConfidence}%`);
 
           if (match.matchConfidence >= this.MIN_MATCH_CONFIDENCE) {
             // Auto-match and mark transaction as paid
@@ -243,7 +242,6 @@ class TransactionMatchingService {
         }
       }
     } else {
-      console.log("📋 No recurring transactions found in database");
     }
 
     console.log(
@@ -302,7 +300,6 @@ class TransactionMatchingService {
       bankTransaction
     );
 
-    console.log(`✅ Match criteria met! Confidence: ${confidence}%`);
 
     return {
       manualTransactionId: pendingTransaction.id,
