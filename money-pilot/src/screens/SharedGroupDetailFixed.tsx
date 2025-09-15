@@ -192,12 +192,15 @@ export default function SharedGroupDetailFixed({
 
         await loadGroupFinancialData(realGroup);
       } else {
-        Alert.alert("Error", "Group not found");
+        Alert.alert(t("common.error"), t("group_detail.group_not_found_error"));
         navigation.goBack();
       }
     } catch (error) {
       console.error("Error loading group data:", error);
-      Alert.alert("Error", "Failed to load group data");
+      Alert.alert(
+        t("common.error"),
+        t("group_detail.failed_to_load_group_data")
+      );
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -385,10 +388,16 @@ export default function SharedGroupDetailFixed({
       // Refresh all group data
       await loadGroupData();
 
-      Alert.alert(t("common.success"), "Group data refreshed successfully!");
+      Alert.alert(
+        t("common.success"),
+        t("group_detail.group_data_refreshed_success")
+      );
     } catch (error) {
       console.error("Error refreshing group data:", error);
-      Alert.alert("Error", "Failed to refresh group data. Please try again.");
+      Alert.alert(
+        t("common.error"),
+        t("group_detail.failed_to_refresh_group_data")
+      );
     }
   };
 
@@ -730,7 +739,7 @@ export default function SharedGroupDetailFixed({
             >
               {t("group_detail.assets")}
             </Text>
-            <Text 
+            <Text
               style={[styles.breakdownAmount, { color: colors.success }]}
               numberOfLines={1}
               adjustsFontSizeToFit={true}
@@ -745,7 +754,7 @@ export default function SharedGroupDetailFixed({
             >
               {t("group_detail.debts")}
             </Text>
-            <Text 
+            <Text
               style={[styles.breakdownAmount, { color: colors.error }]}
               numberOfLines={1}
               adjustsFontSizeToFit={true}
@@ -779,7 +788,7 @@ export default function SharedGroupDetailFixed({
 
       <View style={styles.incomeSection}>
         <View style={styles.incomeMain}>
-          <Text 
+          <Text
             style={[styles.incomeAmount, { color: colors.text }]}
             numberOfLines={1}
             adjustsFontSizeToFit={true}

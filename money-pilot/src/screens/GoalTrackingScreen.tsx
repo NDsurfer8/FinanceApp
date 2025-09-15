@@ -241,7 +241,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
 
   const handleAddGoal = async () => {
     if (!user) {
-      Alert.alert("Error", "You must be logged in to add goals");
+      Alert.alert(t("common.error"), t("goals.must_be_logged_in"));
       return;
     }
 
@@ -250,7 +250,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
       !newGoal.targetAmount ||
       !newGoal.monthlyContribution
     ) {
-      Alert.alert("Error", "Please fill in all required fields");
+      Alert.alert(t("common.error"), t("goals.fill_all_fields"));
       return;
     }
 
@@ -294,7 +294,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           category: "savings",
           priority: "medium",
         });
-        Alert.alert(t("common.success"), "Goal updated successfully!");
+        Alert.alert(t("common.success"), t("goals.goal_updated_successfully"));
       } else {
         // Create new goal
         const goal: FinancialGoal = {
@@ -338,13 +338,15 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
           category: "savings",
           priority: "medium",
         });
-        Alert.alert(t("common.success"), "Goal added successfully!");
+        Alert.alert(t("common.success"), t("goals.goal_added_successfully"));
       }
     } catch (error) {
       console.error("Error saving goal:", error);
       Alert.alert(
-        "Error",
-        `Failed to ${isEditMode ? "update" : "add"} goal. Please try again.`
+        t("common.error"),
+        isEditMode
+          ? t("goals.failed_to_update_goal")
+          : t("goals.failed_to_add_goal")
       );
 
       // Revert optimistic update on error
@@ -376,10 +378,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
 
       await updateGoal(updatedGoal);
       await refreshInBackground(); // Reload goals from database
-      Alert.alert(t("common.success"), "Goal updated successfully!");
+      Alert.alert(t("common.success"), t("goals.goal_updated_successfully"));
     } catch (error) {
       console.error("Error updating goal:", error);
-      Alert.alert("Error", "Failed to update goal. Please try again.");
+      Alert.alert(t("common.error"), t("goals.failed_to_update_goal"));
     }
   };
 
@@ -389,62 +391,56 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     setDeleteLoading(true);
 
     try {
-      Alert.alert(
-        "Delete Goal",
-        "Are you sure you want to delete this goal? This action cannot be undone.",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-            onPress: () => {
+      Alert.alert(t("goals.delete_goal"), t("goals.delete_goal_confirmation"), [
+        {
+          text: t("common.cancel"),
+          style: "cancel",
+          onPress: () => {
+            setDeleteLoading(false);
+          },
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Optimistic update - remove from UI immediately
+              const updatedGoals = goals.filter((g) => g.id !== editingGoal.id);
+              updateDataOptimistically({ goals: updatedGoals });
+
+              // Delete from database in background
+              await removeGoal(user.uid, editingGoal.id!);
+
+              setShowAddModal(false);
+              setIsEditMode(false);
+              setEditingGoal(null);
+              setNewGoal({
+                name: "",
+                targetAmount: "",
+                currentAmount: "",
+                monthlyContribution: "",
+                targetDate: formatDateToLocalString(
+                  new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                ),
+                category: "savings",
+                priority: "medium",
+              });
+              Alert.alert(
+                t("common.success"),
+                t("goals.goal_deleted_successfully")
+              );
+            } catch (error) {
+              console.error("Error deleting goal:", error);
+              Alert.alert(t("common.error"), t("goals.failed_to_delete_goal"));
+
+              // Revert optimistic update on error
+              await refreshInBackground();
+            } finally {
               setDeleteLoading(false);
-            },
+            }
           },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                // Optimistic update - remove from UI immediately
-                const updatedGoals = goals.filter(
-                  (g) => g.id !== editingGoal.id
-                );
-                updateDataOptimistically({ goals: updatedGoals });
-
-                // Delete from database in background
-                await removeGoal(user.uid, editingGoal.id!);
-
-                setShowAddModal(false);
-                setIsEditMode(false);
-                setEditingGoal(null);
-                setNewGoal({
-                  name: "",
-                  targetAmount: "",
-                  currentAmount: "",
-                  monthlyContribution: "",
-                  targetDate: formatDateToLocalString(
-                    new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-                  ),
-                  category: "savings",
-                  priority: "medium",
-                });
-                Alert.alert(t("common.success"), "Goal deleted successfully!");
-              } catch (error) {
-                console.error("Error deleting goal:", error);
-                Alert.alert(
-                  "Error",
-                  "Failed to delete goal. Please try again."
-                );
-
-                // Revert optimistic update on error
-                await refreshInBackground();
-              } finally {
-                setDeleteLoading(false);
-              }
-            },
-          },
-        ]
-      );
+        },
+      ]);
     } catch (error) {
       console.error("Error in delete confirmation:", error);
       setDeleteLoading(false);
@@ -463,7 +459,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
     try {
       const goalToUpdate = goals.find((goal) => goal.id === editingGoalId);
       if (!goalToUpdate) {
-        Alert.alert("Error", "Goal not found");
+        Alert.alert(t("common.error"), t("goals.goal_not_found"));
         return;
       }
 
@@ -477,7 +473,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
       ) {
         const numValue = parseFloat(editingValue);
         if (isNaN(numValue) || numValue < 0) {
-          Alert.alert("Error", "Please enter a valid amount");
+          Alert.alert(t("common.error"), t("goals.enter_valid_amount"));
           return;
         }
         newValue = numValue;
@@ -485,7 +481,7 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
         // Validate date format
         const dateValue = new Date(editingValue);
         if (isNaN(dateValue.getTime())) {
-          Alert.alert("Error", "Please enter a valid date (YYYY-MM-DD)");
+          Alert.alert(t("common.error"), t("goals.enter_valid_date"));
           return;
         }
         newValue = editingValue;
@@ -512,10 +508,10 @@ export const GoalTrackingScreen: React.FC<GoalTrackingScreenProps> = ({
 
       // Reload goals
       await refreshInBackground();
-      Alert.alert(t("common.success"), "Goal updated successfully!");
+      Alert.alert(t("common.success"), t("goals.goal_updated_successfully"));
     } catch (error) {
       console.error("Error updating goal:", error);
-      Alert.alert("Error", "Failed to update goal");
+      Alert.alert(t("common.error"), t("goals.failed_to_update"));
     }
   };
 

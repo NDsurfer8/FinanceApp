@@ -538,7 +538,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       });
     } catch (error) {
       console.error("Error playing audio:", error);
-      Alert.alert("Audio Error", "Could not play audio response");
+      Alert.alert(t("common.audio_error"), t("common.could_not_play_audio"));
     }
   };
 
@@ -951,10 +951,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
     // Rate limiting: prevent requests faster than 2 seconds apart
     const now = Date.now();
     if (now - lastRequestTime < 2000) {
-      Alert.alert(
-        "Please wait",
-        "You're sending messages too quickly. Please wait a moment."
-      );
+      Alert.alert(t("common.please_wait"), t("common.sending_too_quickly"));
       return;
     }
     setLastRequestTime(now);
@@ -966,8 +963,8 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
 
       if (!usageCheck.canUse) {
         Alert.alert(
-          "AI Usage Limit Reached",
-          `You've used all ${usageCheck.limit} AI questions for this period. Go to Settings to upgrade to premium for unlimited AI access!`
+          t("common.ai_usage_limit_reached"),
+          t("common.ai_usage_limit_message", { limit: usageCheck.limit })
         );
         return;
       }
@@ -1747,9 +1744,9 @@ Original Request: ${basePrompt}
 
     if (!isRemoving) {
       Alert.alert(
-        "Feedback Submitted",
-        `Thank you for your feedback! Vectra is learning your preferences to provide better responses.`,
-        [{ text: "OK" }]
+        t("common.feedback_submitted"),
+        t("common.thank_you_feedback"),
+        [{ text: t("common.ok") }]
       );
     }
   };
@@ -1758,10 +1755,10 @@ Original Request: ${basePrompt}
   const handleCopy = async (text: string) => {
     try {
       await Clipboard.setString(text);
-      Alert.alert("Copied!", "Response copied to clipboard.");
+      Alert.alert(t("common.copied"), t("common.response_copied"));
     } catch (error) {
       console.error("Error copying to clipboard:", error);
-      Alert.alert("Error", "Failed to copy to clipboard.");
+      Alert.alert(t("common.error"), t("common.failed_to_copy"));
     }
   };
 
@@ -1818,10 +1815,10 @@ Original Request: ${basePrompt}
       // Reset plan request state
       setIsPlanRequest(false);
 
-      Alert.alert(t("common.success"), "Plan saved to your account!");
+      Alert.alert(t("common.success"), t("common.plan_saved"));
     } catch (error) {
       console.error("Error saving plan from message:", error);
-      Alert.alert("Error", "Failed to save plan. Please try again.");
+      Alert.alert(t("common.error"), t("common.failed_to_save_plan"));
     }
   };
 
@@ -1989,12 +1986,12 @@ Original Request: ${basePrompt}
           <TouchableOpacity
             onPress={() => {
               Alert.alert(
-                "Clear Chat History",
-                "Are you sure you want to clear all chat history? This action cannot be undone.",
+                t("common.clear_chat_history"),
+                t("common.clear_chat_confirmation"),
                 [
-                  { text: "Cancel", style: "cancel" },
+                  { text: t("common.cancel"), style: "cancel" },
                   {
-                    text: "Clear",
+                    text: t("common.clear"),
                     style: "destructive",
                     onPress: clearChatHistory,
                   },
