@@ -274,7 +274,7 @@ interface Message {
 }
 
 // Chat history configuration
-const MAX_MESSAGES = 30; // Keep last 50 messages
+const MAX_MESSAGES = 5; // Keep last 50 messages
 const CHAT_HISTORY_KEY = "ai_financial_advisor_chat_history";
 
 export const AIFinancialAdvisorScreen: React.FC = () => {
@@ -707,6 +707,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       return isInSelectedMonth;
     });
 
+    // Calculate actual income and expenses from transactions
     const actualMonthlyIncome = monthlyTransactions
       .filter((t) => t.type === "income")
       .reduce((sum, t) => sum + t.amount, 0);
@@ -715,66 +716,36 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       .filter((t) => t.type === "expense")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Calculate recurring monthly income and expenses - only those active during the selected month
-    // Prioritize recurring transactions over individual paid transactions
-    const activeRecurringIncome = recurringTransactions.filter((t) => {
-      if (t.type !== "income" || !t.isActive) return false;
+    // Get recurring expenses that do NOT have corresponding actual transactions
+    // (to avoid double counting - we only want to add recurring amounts when there's no actual transaction)
+    const recurringExpensesWithoutActualTransactions =
+      recurringTransactions.filter((rt) => {
+        if (rt.type !== "expense" || !rt.isActive) return false;
 
-      // Check if the recurring transaction was active during the selected month
-      const startDate = t.startDate ? new Date(t.startDate) : null;
-      const endDate = t.endDate ? new Date(t.endDate) : null;
+        // Check if there's NO actual transaction with this recurringTransactionId
+        const hasActualTransaction = monthlyTransactions.some(
+          (t) => t.recurringTransactionId === rt.id
+        );
 
-      // If no start date, assume it was always active (backward compatibility)
-      if (!startDate) return true;
+        return !hasActualTransaction;
+      });
 
-      // Check if the selected month is after or on the start date
-      const selectedMonthStart = new Date(targetYear, targetMonthNum, 1);
-      const selectedMonthEnd = new Date(targetYear, targetMonthNum + 1, 0); // Last day of month
+    // Get recurring income that do NOT have corresponding actual transactions
+    const recurringIncomeWithoutActualTransactions =
+      recurringTransactions.filter((rt) => {
+        if (rt.type !== "income" || !rt.isActive) return false;
 
-      // Transaction must have started by the end of the selected month
-      if (startDate > selectedMonthEnd) return false;
+        // Check if there's NO actual transaction with this recurringTransactionId
+        const hasActualTransaction = monthlyTransactions.some(
+          (t) => t.recurringTransactionId === rt.id
+        );
 
-      // If there's an end date, transaction must not have ended before the start of the selected month
-      if (endDate && endDate < selectedMonthStart) return false;
+        return !hasActualTransaction;
+      });
 
-      return true;
-    });
-
-    const activeRecurringExpenses = recurringTransactions.filter((t) => {
-      if (t.type !== "expense" || !t.isActive) return false;
-
-      // Check if the recurring transaction was active during the selected month
-      const startDate = t.startDate ? new Date(t.startDate) : null;
-      const endDate = t.endDate ? new Date(t.endDate) : null;
-
-      // If no start date, assume it was always active (backward compatibility)
-      if (!startDate) return true;
-
-      // Check if the selected month is after or on the start date
-      const selectedMonthStart = new Date(targetYear, targetMonthNum, 1);
-      const selectedMonthEnd = new Date(targetYear, targetMonthNum + 1, 0); // Last day of month
-
-      // Transaction must have started by the end of the selected month
-      if (startDate > selectedMonthEnd) return false;
-
-      // If there's an end date, transaction must not have ended before the start of the selected month
-      if (endDate && endDate < selectedMonthStart) return false;
-
-      return true;
-    });
-
-    const recurringMonthlyIncome = activeRecurringIncome.reduce((sum, rt) => {
-      let monthlyAmount = rt.amount;
-      if (rt.frequency === "weekly") {
-        monthlyAmount = rt.amount * 4; // 4 weeks in a month
-      } else if (rt.frequency === "biweekly") {
-        monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
-      }
-      return sum + monthlyAmount;
-    }, 0);
-
-    const recurringMonthlyExpenses = activeRecurringExpenses.reduce(
-      (sum, rt) => {
+    // Calculate recurring amounts only for those WITHOUT actual transactions
+    const recurringMonthlyExpenses =
+      recurringExpensesWithoutActualTransactions.reduce((sum, rt) => {
         let monthlyAmount = rt.amount;
         if (rt.frequency === "weekly") {
           monthlyAmount = rt.amount * 4; // 4 weeks in a month
@@ -782,11 +753,20 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
         }
         return sum + monthlyAmount;
-      },
-      0
-    );
+      }, 0);
 
-    // Total monthly amounts including recurring
+    const recurringMonthlyIncome =
+      recurringIncomeWithoutActualTransactions.reduce((sum, rt) => {
+        let monthlyAmount = rt.amount;
+        if (rt.frequency === "weekly") {
+          monthlyAmount = rt.amount * 4; // 4 weeks in a month
+        } else if (rt.frequency === "biweekly") {
+          monthlyAmount = rt.amount * 2; // 2 bi-weekly periods in a month
+        }
+        return sum + monthlyAmount;
+      }, 0);
+
+    // Total monthly amounts - recurring amounts only added when there's no actual transaction
     const monthlyIncome = actualMonthlyIncome + recurringMonthlyIncome;
     const monthlyExpenses = actualMonthlyExpenses + recurringMonthlyExpenses;
     const netIncome = monthlyIncome - monthlyExpenses;
@@ -870,6 +850,8 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
           // Calculate actual spending from transactions in this category
           const categoryTransactions = monthlyTransactions.filter((t) => {
             return (
+              t.category &&
+              category.name &&
               t.category.toLowerCase() === category.name.toLowerCase() &&
               t.type === "expense"
             );
@@ -893,6 +875,8 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
                 (rt) =>
                   rt.isActive &&
                   rt.type === "expense" &&
+                  rt.category &&
+                  category.name &&
                   rt.category.toLowerCase() === category.name.toLowerCase()
               )
               .reduce((sum, rt) => {
@@ -951,7 +935,7 @@ export const AIFinancialAdvisorScreen: React.FC = () => {
       totalSavings,
       netWorth,
       goals,
-      recurringExpenses,
+      recurringExpenses: recurringExpensesWithoutActualTransactions, // Only recurring expenses without actual transactions (to avoid double counting)
       assets,
       debts,
       transactions: monthlyTransactions, // Only selected month transactions
