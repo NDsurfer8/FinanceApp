@@ -112,7 +112,6 @@ class RevenueCatService {
         }
 
         this.isInitialized = true;
-        console.log("RevenueCat initialized successfully");
 
         // Set up customer info update listener
         this.setupCustomerInfoUpdateListener();
@@ -188,12 +187,6 @@ class RevenueCatService {
 
       const fetchTime = Date.now() - startTime;
 
-      console.log("RevenueCat: Offerings fetched successfully:", {
-        current: offerings.current?.identifier,
-        available: Object.keys(offerings.all),
-        fetchTime: `${fetchTime}ms`,
-      });
-
       return offerings.current;
     } catch (error: any) {
       console.error("Failed to get offerings:", {
@@ -267,9 +260,7 @@ class RevenueCatService {
   // Force refresh customer info from RevenueCat servers
   async refreshCustomerInfo(): Promise<CustomerInfo> {
     try {
-      console.log("RevenueCat: Forcing customer info refresh from servers");
       const customerInfo = await Purchases.getCustomerInfo();
-      console.log("RevenueCat: Customer info refreshed successfully");
       return customerInfo;
     } catch (error) {
       console.error("Failed to refresh customer info:", error);
@@ -351,7 +342,6 @@ class RevenueCatService {
         !hasNonSubscriptionPurchases &&
         !hasSubscriptionHistory;
 
-      console.log("User eligible for intro offer:", isEligible);
       return isEligible;
     } catch (error) {
       console.error("Failed to check intro offer eligibility:", error);
@@ -422,7 +412,6 @@ class RevenueCatService {
       const offerings = await this.getOfferings();
 
       const loadTime = Date.now() - startTime;
-      console.log(`RevenueCat: Paywall prepared in ${loadTime}ms`);
 
       return {
         isReady: !!offerings,
@@ -465,8 +454,6 @@ class RevenueCatService {
           }
         });
       });
-
-      console.log("RevenueCat: Customer info update listener set up");
     } catch (error) {
       console.error("Failed to set up customer info update listener:", error);
     }
