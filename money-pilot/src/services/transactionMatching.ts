@@ -108,7 +108,6 @@ class TransactionMatchingService {
         );
 
         if (match) {
-
           if (match.matchConfidence >= this.MIN_MATCH_CONFIDENCE) {
             // Auto-match and mark transaction as paid
             await this.autoMatch(userId, match);
@@ -299,7 +298,6 @@ class TransactionMatchingService {
       pendingTransaction,
       bankTransaction
     );
-
 
     return {
       manualTransactionId: pendingTransaction.id,
