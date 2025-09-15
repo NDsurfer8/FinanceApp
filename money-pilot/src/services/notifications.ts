@@ -322,6 +322,120 @@ export class NotificationService {
     });
   }
 
+  // Schedule dynamic budget reminder that calculates values when sent
+  async scheduleDynamicBudgetReminder(
+    userId: string,
+    reminderType: "daily" | "weekly" | "monthly",
+    triggerTime: Date
+  ): Promise<string> {
+    return this.scheduleNotification({
+      id: `budget-reminder-${reminderType}-${userId}`,
+      title: "💰 Budget Update",
+      body: "Calculating your current budget status...",
+      data: {
+        type: "dynamic-budget-reminder",
+        userId,
+        reminderType,
+        needsCalculation: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: triggerTime,
+      },
+    });
+  }
+
+  // Calculate and send dynamic budget reminder with current values
+  private async calculateAndSendDynamicBudgetReminder(
+    userId: string,
+    reminderType: "daily" | "weekly" | "monthly"
+  ): Promise<void> {
+    try {
+      // Import budget reminder service to get current status
+      const { budgetReminderService } = await import("./budgetReminders");
+
+      // Get current budget status
+      const budgetStatus = await budgetReminderService.getCurrentBudgetStatus(
+        userId
+      );
+
+      const { remainingBudget, daysLeft } = budgetStatus;
+
+      let title = "💰 Budget Update";
+      let body = "";
+
+      if (reminderType === "daily") {
+        const dailyBudget = daysLeft > 0 ? remainingBudget / daysLeft : 0;
+        const isOverBudget = remainingBudget < 0;
+
+        if (isOverBudget) {
+          title = "⚠️ Daily Budget Alert";
+          body = `You're over budget this month. Daily limit: $${Math.abs(
+            dailyBudget
+          ).toFixed(2)}`;
+        } else {
+          title = "📅 Daily Budget";
+          body = `You have $${remainingBudget.toFixed(
+            2
+          )} remaining this month. Daily budget: $${dailyBudget.toFixed(2)}`;
+        }
+      } else if (reminderType === "weekly") {
+        const weeksLeft = Math.ceil(daysLeft / 7);
+        const weeklyBudget = weeksLeft > 0 ? remainingBudget / weeksLeft : 0;
+        const isOverBudget = remainingBudget < 0;
+
+        if (isOverBudget) {
+          title = "⚠️ Weekly Budget Alert";
+          body = `You're over budget this month. Consider reducing expenses.`;
+        } else {
+          title = "📊 Weekly Budget Check";
+          body = `You have $${remainingBudget.toFixed(
+            2
+          )} remaining this month. Weekly budget: $${weeklyBudget.toFixed(2)}`;
+        }
+      } else if (reminderType === "monthly") {
+        const isOverBudget = remainingBudget < 0;
+        const isNearLimit =
+          budgetStatus.budgetLimit > 0 &&
+          remainingBudget < budgetStatus.budgetLimit * 0.2;
+
+        if (isOverBudget) {
+          title = "⚠️ Budget Alert";
+          body = `You're $${Math.abs(remainingBudget).toFixed(
+            2
+          )} over budget this month.`;
+        } else if (isNearLimit) {
+          title = "⚠️ Budget Warning";
+          body = `Only $${remainingBudget.toFixed(
+            2
+          )} left in your budget this month.`;
+        } else {
+          title = "💰 Budget Update";
+          body = `You have $${remainingBudget.toFixed(
+            2
+          )} remaining this month.`;
+        }
+      }
+
+      // Send the actual notification with current values
+      await this.scheduleNotification({
+        id: `budget-reminder-${reminderType}-${userId}-${Date.now()}`,
+        title,
+        body,
+        data: {
+          type: "budget-reminder",
+          reminderType,
+          remainingBudget,
+          daysLeft,
+          calculatedAt: Date.now(),
+        },
+        trigger: null, // Send immediately
+      });
+    } catch (error) {
+      console.error("Error calculating dynamic budget reminder:", error);
+    }
+  }
+
   async scheduleWeeklyBudgetCheck(): Promise<string> {
     // Check if user has budget reminders enabled
     const budgetRemindersEnabled = await AsyncStorage.getItem(
@@ -691,6 +805,21 @@ export class NotificationService {
     } catch (error) {
       console.error("Error incrementing badge:", error);
     }
+
+    // Handle dynamic budget reminder calculations
+    const data = notification.request.content.data;
+    if (data?.type === "dynamic-budget-reminder" && data?.needsCalculation) {
+      try {
+        const userId = data.userId as string;
+        const reminderType = data.reminderType as
+          | "daily"
+          | "weekly"
+          | "monthly";
+        await this.calculateAndSendDynamicBudgetReminder(userId, reminderType);
+      } catch (error) {
+        console.error("Error calculating dynamic budget reminder:", error);
+      }
+    }
   };
 
   private handleNotificationResponse = async (
@@ -708,6 +837,7 @@ export class NotificationService {
 
     switch (data?.type) {
       case "budget-reminder":
+      case "dynamic-budget-reminder":
         // Navigate to budget screen
         break;
       case "category-over-budget":
