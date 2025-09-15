@@ -551,7 +551,10 @@
     "left_to_plan": "योजना बनाने के लिए शेष",
     "percentage_of_income_budgeted": "{{percentage}}% आय बजटित",
     "zero_percentage_budgeted": "0% आय बजटित",
-    "budget_categories": "बजट श्रेणियां"
+    "budget_categories": "बजट श्रेणियां",
+    "clear_all_spending_limits": "सभी खर्च सीमाएं साफ करें",
+    "clear_all_spending_limits_confirmation": "क्या आप वाकई सभी खर्च सीमाएं साफ करना चाहते हैं? यह सभी श्रेणी सीमाओं को $0 पर सेट कर देगा।",
+    "error_clearing_limits": "खर्च सीमाएं साफ करने में विफल। कृपया पुनः प्रयास करें।"
   },
   "categories": {
     "rent": "किराया",

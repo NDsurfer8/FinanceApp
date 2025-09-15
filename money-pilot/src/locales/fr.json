@@ -551,7 +551,10 @@
     "left_to_plan": "Restant à planifier",
     "percentage_of_income_budgeted": "{{percentage}}% du revenu budgétisé",
     "zero_percentage_budgeted": "0% du revenu budgétisé",
-    "budget_categories": "Catégories de Budget"
+    "budget_categories": "Catégories de Budget",
+    "clear_all_spending_limits": "Effacer Toutes les Limites de Dépenses",
+    "clear_all_spending_limits_confirmation": "Êtes-vous sûr de vouloir effacer toutes les limites de dépenses ? Cela définira toutes les limites de catégorie à 0 $.",
+    "error_clearing_limits": "Échec de l'effacement des limites de dépenses. Veuillez réessayer."
   },
   "categories": {
     "rent": "Loyer",

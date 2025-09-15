@@ -551,7 +551,10 @@
     "left_to_plan": "Restante para planificar",
     "percentage_of_income_budgeted": "{{percentage}}% del ingreso presupuestado",
     "zero_percentage_budgeted": "0% del ingreso presupuestado",
-    "budget_categories": "Categorías de Presupuesto"
+    "budget_categories": "Categorías de Presupuesto",
+    "clear_all_spending_limits": "Limpiar Todos los Límites de Gasto",
+    "clear_all_spending_limits_confirmation": "¿Estás seguro de que quieres limpiar todos los límites de gasto? Esto establecerá todos los límites de categoría en $0.",
+    "error_clearing_limits": "Error al limpiar los límites de gasto. Por favor, inténtalo de nuevo."
   },
   "categories": {
     "rent": "Alquiler",

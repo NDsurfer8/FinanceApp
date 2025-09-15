@@ -551,7 +551,10 @@
     "left_to_plan": "計画に残り",
     "percentage_of_income_budgeted": "{{percentage}}%の収入が予算化済み",
     "zero_percentage_budgeted": "0%の収入が予算化済み",
-    "budget_categories": "予算カテゴリ"
+    "budget_categories": "予算カテゴリ",
+    "clear_all_spending_limits": "すべての支出制限をクリア",
+    "clear_all_spending_limits_confirmation": "すべての支出制限をクリアしてもよろしいですか？これによりすべてのカテゴリ制限が$0に設定されます。",
+    "error_clearing_limits": "支出制限のクリアに失敗しました。再試行してください。"
   },
   "categories": {
     "rent": "家賃",

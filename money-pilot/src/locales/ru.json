@@ -551,7 +551,10 @@
     "left_to_plan": "Осталось спланировать",
     "percentage_of_income_budgeted": "{{percentage}}% дохода забюджетировано",
     "zero_percentage_budgeted": "0% дохода забюджетировано",
-    "budget_categories": "Категории Бюджета"
+    "budget_categories": "Категории Бюджета",
+    "clear_all_spending_limits": "Очистить Все Лимиты Расходов",
+    "clear_all_spending_limits_confirmation": "Вы уверены, что хотите очистить все лимиты расходов? Это установит все лимиты категорий в $0.",
+    "error_clearing_limits": "Не удалось очистить лимиты расходов. Попробуйте еще раз."
   },
   "categories": {
     "rent": "Аренда",

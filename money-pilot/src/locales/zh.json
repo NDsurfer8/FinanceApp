@@ -551,7 +551,10 @@
     "left_to_plan": "待规划",
     "percentage_of_income_budgeted": "{{percentage}}%的收入已预算",
     "zero_percentage_budgeted": "0%的收入已预算",
-    "budget_categories": "预算类别"
+    "budget_categories": "预算类别",
+    "clear_all_spending_limits": "清除所有支出限额",
+    "clear_all_spending_limits_confirmation": "您确定要清除所有支出限额吗？这将把所有类别限额设置为$0。",
+    "error_clearing_limits": "清除支出限额失败。请重试。"
   },
   "categories": {
     "rent": "租金",

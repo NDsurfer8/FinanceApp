@@ -368,6 +368,44 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
     loadCategories();
   }, [user?.uid]);
 
+  // Clear all spending limits (set limits to 0)
+  const clearAllSpendingLimits = () => {
+    Alert.alert(
+      t("budget_categories.clear_all_spending_limits"),
+      t("budget_categories.clear_all_spending_limits_confirmation"),
+      [
+        {
+          text: t("common.cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("common.yes"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const clearedCategories = categories.map((category) => ({
+                ...category,
+                monthlyLimit: 0,
+              }));
+
+              await saveBudgetCategories(clearedCategories, user?.uid || "");
+              setCategories(clearedCategories);
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success
+              );
+            } catch (error) {
+              console.error("Error clearing spending limits:", error);
+              Alert.alert(
+                t("common.error"),
+                t("budget_categories.error_clearing_limits")
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Refresh budget settings when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
@@ -592,6 +630,15 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
       (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
     );
     const budgetLimit = category?.monthlyLimit || 0;
+
+    // DEBUG: Log category spending calculations
+    console.log(`=== CATEGORY: ${categoryName.toUpperCase()} ===`);
+    console.log("  - Actual Spending:", actualSpending);
+    console.log("  - Projected Spending:", projectedSpending);
+    console.log("  - Total Spending:", totalActualSpending);
+    console.log("  - Budget Limit:", budgetLimit);
+    console.log("  - Remaining:", budgetLimit - totalActualSpending);
+    console.log("=====================================");
 
     // Calculate remaining budget
     const remaining = budgetLimit - totalActualSpending;
@@ -1074,21 +1121,36 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
           >
             {t("budget_categories.budget_categories")}
           </Text>
-          <TouchableOpacity
-            onPress={() => setShowBudgetSettingsModal(true)}
-            style={{
-              backgroundColor: colors.surfaceSecondary,
-              padding: 8,
-              borderRadius: 8,
-            }}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="settings-outline"
-              size={22}
-              color={colors.primary}
-            />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <TouchableOpacity
+              onPress={clearAllSpendingLimits}
+              style={{
+                backgroundColor: colors.error + "15",
+                padding: 8,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: colors.error + "30",
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trash-outline" size={20} color={colors.error} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowBudgetSettingsModal(true)}
+              style={{
+                backgroundColor: colors.surfaceSecondary,
+                padding: 8,
+                borderRadius: 8,
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="settings-outline"
+                size={22}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Categories List */}

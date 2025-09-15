@@ -551,7 +551,10 @@
     "left_to_plan": "Noch zu planen",
     "percentage_of_income_budgeted": "{{percentage}}% des Einkommens eingeplant",
     "zero_percentage_budgeted": "0% des Einkommens eingeplant",
-    "budget_categories": "Budget-Kategorien"
+    "budget_categories": "Budget-Kategorien",
+    "clear_all_spending_limits": "Alle Ausgabenlimits löschen",
+    "clear_all_spending_limits_confirmation": "Sind Sie sicher, dass Sie alle Ausgabenlimits löschen möchten? Dies setzt alle Kategorielimits auf 0 $.",
+    "error_clearing_limits": "Fehler beim Löschen der Ausgabenlimits. Bitte versuchen Sie es erneut."
   },
   "categories": {
     "rent": "Miete",

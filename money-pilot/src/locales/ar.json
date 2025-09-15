@@ -551,7 +551,10 @@
     "left_to_plan": "متبقي للتخطيط",
     "percentage_of_income_budgeted": "{{percentage}}% من الدخل مُدرج في الميزانية",
     "zero_percentage_budgeted": "0% من الدخل مُدرج في الميزانية",
-    "budget_categories": "فئات الميزانية"
+    "budget_categories": "فئات الميزانية",
+    "clear_all_spending_limits": "مسح جميع حدود الإنفاق",
+    "clear_all_spending_limits_confirmation": "هل أنت متأكد من أنك تريد مسح جميع حدود الإنفاق؟ سيتم تعيين جميع حدود الفئات إلى $0.",
+    "error_clearing_limits": "فشل في مسح حدود الإنفاق. يرجى المحاولة مرة أخرى."
   },
   "categories": {
     "rent": "إيجار",

@@ -551,7 +551,10 @@
     "left_to_plan": "Left to plan",
     "percentage_of_income_budgeted": "{{percentage}}% of income budgeted",
     "zero_percentage_budgeted": "0% of income budgeted",
-    "budget_categories": "Budget Categories"
+    "budget_categories": "Budget Categories",
+    "clear_all_spending_limits": "Clear All Spending Limits",
+    "clear_all_spending_limits_confirmation": "Are you sure you want to clear all spending limits? This will set all category limits to $0.",
+    "error_clearing_limits": "Failed to clear spending limits. Please try again."
   },
   "goals": {
     "title": "Goals",

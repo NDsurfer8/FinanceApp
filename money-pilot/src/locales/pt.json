@@ -551,7 +551,10 @@
     "left_to_plan": "Restante para planejar",
     "percentage_of_income_budgeted": "{{percentage}}% da renda orçada",
     "zero_percentage_budgeted": "0% da renda orçada",
-    "budget_categories": "Categorias de Orçamento"
+    "budget_categories": "Categorias de Orçamento",
+    "clear_all_spending_limits": "Limpar Todos os Limites de Gasto",
+    "clear_all_spending_limits_confirmation": "Tem certeza de que deseja limpar todos os limites de gasto? Isso definirá todos os limites de categoria como $0.",
+    "error_clearing_limits": "Falha ao limpar os limites de gasto. Tente novamente."
   },
   "categories": {
     "rent": "Aluguel",
