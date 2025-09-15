@@ -333,7 +333,6 @@
     "bills_paid_success": "Bills Paid! ✅",
     "bills_paid_success_message": "{{count}} recurring bills marked as paid this month",
     "over_budget_warning": "Over Budget! ⚠️",
-    "over_budget_message": "You're {{amount}} over budget this month",
     "at_budget_limit_message": "You've reached your budget limit this month",
     "review_categories": "Review Categories"
   },
@@ -349,8 +348,6 @@
     "current": "Current",
     "excellent_discretionary_savings": "Excellent Discretionary Savings!",
     "excellent_discretionary_savings_message": "You have {{rate}}% of your income available for additional savings",
-    "over_budget": "Over Budget",
-    "over_budget_message": "Your expenses and allocations exceed your income",
     "high_expense_ratio": "High Expense Ratio",
     "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
     "active_month": "Active Month",
@@ -378,13 +375,7 @@
     "category_name": "Category Name",
     "auto_import": "Auto Import",
     "import_transactions": "Import Transactions",
-    "available_transactions": "Available Transactions",
-    "bills_paid_success": "Bills Paid! ✅",
-    "bills_paid_success_message": "{{count}} recurring bills marked as paid this month",
-    "over_budget_warning": "Over Budget! ⚠️",
-    "over_budget_message": "You're {{amount}} over budget this month",
-    "at_budget_limit_message": "You've reached your budget limit this month",
-    "review_categories": "Review Categories"
+    "available_transactions": "Available Transactions"
   },
   "transactions": {
     "title": "Transactions",
@@ -615,7 +606,6 @@
     "monthly_contribution_placeholder": "500",
     "select_date": "Select Date",
     "update_goal": "Update Goal",
-    "delete_goal": "Delete Goal",
     "deleting": "Deleting...",
     "select_target_date": "Select Target Date",
     "save_goal": "Save Goal",
