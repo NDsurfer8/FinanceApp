@@ -220,7 +220,8 @@
     "select_at_least_one_transaction": "يرجى اختيار معاملة واحدة على الأقل للاستيراد.",
     "partial_success": "نجاح جزئي",
     "partial_success_message": "تم استيراد {{saved}} معاملة بنجاح.\n\n{{failed}} معاملة فشلت في الحفظ (ربما بسبب مشاكل اتصال مؤقتة).\n\nيمكنك محاولة استيراد المعاملات الفاشلة مرة أخرى.",
-    "net_worth": "صافي الثروة"
+    "net_worth": "صافي الثروة",
+    "default_cannot_change": "افتراضي - لا يمكن تغييره"
   },
   "transactions": {
     "title": "المعاملات",

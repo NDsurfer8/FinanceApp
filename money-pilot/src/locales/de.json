@@ -220,7 +220,8 @@
     "select_at_least_one_transaction": "Bitte wählen Sie mindestens eine Transaktion zum Importieren aus.",
     "partial_success": "Teilweiser Erfolg",
     "partial_success_message": "{{saved}} Transaktionen erfolgreich importiert.\n\n{{failed}} Transaktionen konnten nicht gespeichert werden (wahrscheinlich aufgrund temporärer Verbindungsprobleme).\n\nSie können versuchen, die fehlgeschlagenen Transaktionen erneut zu importieren.",
-    "net_worth": "Nettovermögen"
+    "net_worth": "Nettovermögen",
+    "default_cannot_change": "Standard - Kann nicht geändert werden"
   },
   "transactions": {
     "title": "Transaktionen",

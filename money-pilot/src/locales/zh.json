@@ -220,7 +220,8 @@
     "select_at_least_one_transaction": "请至少选择一笔交易进行导入。",
     "partial_success": "部分成功",
     "partial_success_message": "成功导入{{saved}}笔交易。\n\n{{failed}}笔交易保存失败（可能是由于临时连接问题）。\n\n您可以再次尝试导入失败的交易。",
-    "net_worth": "净资产"
+    "net_worth": "净资产",
+    "default_cannot_change": "默认 - 无法更改"
   },
   "transactions": {
     "title": "交易",

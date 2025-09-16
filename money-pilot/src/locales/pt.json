@@ -220,7 +220,8 @@
     "select_at_least_one_transaction": "Por favor, selecione pelo menos uma transação para importar.",
     "partial_success": "Sucesso Parcial",
     "partial_success_message": "{{saved}} transações importadas com sucesso.\n\n{{failed}} transações falharam ao salvar (provavelmente devido a problemas de conexão temporários).\n\nVocê pode tentar importar as transações falhadas novamente.",
-    "net_worth": "Patrimônio Líquido"
+    "net_worth": "Patrimônio Líquido",
+    "default_cannot_change": "Padrão - Não pode ser alterado"
   },
   "transactions": {
     "title": "Transações",

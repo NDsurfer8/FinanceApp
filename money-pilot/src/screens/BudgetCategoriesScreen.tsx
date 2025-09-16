@@ -1393,12 +1393,12 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       marginBottom: 8,
                     }}
                   >
-                    Category Name
+                    {t("budget.category_name")}
                     {editingCategory &&
                       isDefaultCategory(editingCategory.name) && (
                         <Text style={{ color: colors.warning, fontSize: 12 }}>
                           {" "}
-                          (Default - Cannot Change)
+                          ({t("budget.default_cannot_change")})
                         </Text>
                       )}
                   </Text>
@@ -1543,7 +1543,7 @@ export const BudgetCategoriesScreen: React.FC<BudgetCategoriesScreenProps> = ({
                       fontWeight: "600",
                     }}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Text>
                 </TouchableOpacity>
 

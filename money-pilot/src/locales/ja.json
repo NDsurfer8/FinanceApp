@@ -220,7 +220,8 @@
     "select_at_least_one_transaction": "インポートするために少なくとも1つの取引を選択してください。",
     "partial_success": "部分的成功",
     "partial_success_message": "{{saved}}件の取引が正常にインポートされました。\n\n{{failed}}件の取引の保存に失敗しました（一時的な接続の問題が原因の可能性があります）。\n\n失敗した取引を再度インポートしてみることができます。",
-    "net_worth": "純資産"
+    "net_worth": "純資産",
+    "default_cannot_change": "デフォルト - 変更不可"
   },
   "transactions": {
     "title": "取引",

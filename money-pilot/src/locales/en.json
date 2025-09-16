@@ -381,6 +381,7 @@
     "delete_category": "Delete Category",
     "budget_amount": "Budget Amount",
     "category_name": "Category Name",
+    "default_cannot_change": "Default - Cannot Change",
     "auto_import": "Auto Import",
     "import_transactions": "Import Transactions",
     "available_transactions": "Available Transactions"
