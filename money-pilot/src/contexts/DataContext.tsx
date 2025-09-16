@@ -950,7 +950,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         if (plaidData.transactionsSyncAvailable) {
           shouldRefresh = true;
           refreshReason = "transactions";
-          notificationData = { type: "transactions", count: 1 };
+          notificationData = { type: "transactions" };
           break; // Found a reason to refresh, no need to check other banks
         } else if (plaidData.hasNewAccounts) {
           shouldRefresh = true;
@@ -965,7 +965,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         ) {
           shouldRefresh = true;
           refreshReason = "sync_updates";
-          notificationData = { type: "transactions", count: 1 };
+          notificationData = { type: "transactions" };
           break; // Found a reason to refresh, no need to check other banks
         }
       }
@@ -982,6 +982,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           // Processing webhook refresh after debounce
 
           try {
+            // Clear cache to ensure fresh data for webhook-triggered refreshes
+            await AsyncStorage.removeItem(BANK_DATA_CACHE_KEY);
+            await AsyncStorage.removeItem(BANK_DATA_TIMESTAMP_KEY);
+
             await refreshBankData(true);
 
             // Clear all relevant flags after successful refresh for all banks
@@ -1020,9 +1024,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
                 if (isEnabled === "true") {
                   if (notificationData.type === "transactions") {
-                    await notificationService.notifyNewTransactions(
-                      notificationData.count || 1
-                    );
+                    await notificationService.notifyNewTransactions();
                   } else if (notificationData.type === "accounts") {
                     await notificationService.notifyNewAccounts(
                       notificationData.count || 1

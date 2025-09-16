@@ -715,16 +715,13 @@ export class NotificationService {
   }
 
   // Webhook notification methods for real-time updates
-  async notifyNewTransactions(transactionCount: number): Promise<string> {
+  async notifyNewTransactions(): Promise<string> {
     const notification = {
       id: `webhook-transactions-${Date.now()}`,
       title: "🔄 New Transactions Available",
-      body: `${transactionCount} new transaction${
-        transactionCount !== 1 ? "s" : ""
-      } have been synced from your bank.`,
+      body: "New transactions have been synced from your bank.",
       data: {
         type: "webhook-transactions",
-        transactionCount,
         timestamp: Date.now(),
       },
       trigger: null, // Send immediately
