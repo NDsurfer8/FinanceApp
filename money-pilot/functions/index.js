@@ -145,6 +145,8 @@ exports.createLinkToken = onCall(
         country_codes: ["US"],
         language: "en",
         redirect_uri: "https://vectorfi-888.web.app/plaid-redirect",
+        webhook:
+          "https://us-central1-vectorfi-888.cloudfunctions.net/plaidWebhook",
       };
 
       const createTokenResponse = await client.linkTokenCreate(request);
