@@ -10,7 +10,7 @@
 const { onCall, onRequest } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const functions = require("firebase-functions");
-const { defineSecret, defineString } = require("firebase-functions/params");
+const { defineSecret } = require("firebase-functions/params");
 
 // Load environment variables
 require("dotenv").config();
@@ -39,16 +39,12 @@ function getPlaidClient(clientId, secret) {
     return null;
   }
 
-  // Validate environment - use Firebase Functions v2 parameter
-  const environment = plaidEnv.value();
-  if (
-    environment !== "production" &&
-    environment !== "development" &&
-    environment !== "sandbox"
-  ) {
-    console.error(`Invalid Plaid environment: ${environment}`);
-    return null;
-  }
+  // Detect environment from client ID (same logic as webhook handler)
+  const environment = clientId.includes("sandbox")
+    ? "sandbox"
+    : clientId.includes("development")
+    ? "development"
+    : "production";
 
   // Use appropriate secret based on environment
   let secretToUse;
@@ -1131,8 +1127,44 @@ exports.aiFeedback = onCall(async (data, context) => {
   }
 });
 
-// Helper: fetch Plaid JWK without the SDK (keeps deps light)
+// JWK Cache - in-memory + RTDB backup for cold starts
+const jwkCache = new Map();
+const JWK_CACHE_TTL = 20 * 60 * 1000; // 20 minutes
+
+// Helper: fetch Plaid JWK with caching (reduces API calls significantly)
 async function fetchPlaidJwk(kid, env, clientId, secret) {
+  const cacheKey = `${env}:${kid}`;
+  const now = Date.now();
+
+  // Check in-memory cache first
+  const cached = jwkCache.get(cacheKey);
+  if (cached && now - cached.timestamp < JWK_CACHE_TTL) {
+    console.log(`JWK cache hit for ${kid} (${env})`);
+    return cached.jwk;
+  }
+
+  // Check RTDB cache (survives cold starts)
+  try {
+    const { getDatabase } = require("firebase-admin/database");
+    const db = getDatabase();
+    const rtdbCacheRef = db.ref(`plaid_jwk_cache/${cacheKey}`);
+    const rtdbSnapshot = await rtdbCacheRef.get();
+
+    if (rtdbSnapshot.exists()) {
+      const rtdbData = rtdbSnapshot.val();
+      if (now - rtdbData.timestamp < JWK_CACHE_TTL) {
+        console.log(`JWK RTDB cache hit for ${kid} (${env})`);
+        // Update in-memory cache
+        jwkCache.set(cacheKey, rtdbData);
+        return rtdbData.jwk;
+      }
+    }
+  } catch (error) {
+    console.warn("Failed to check RTDB JWK cache:", error.message);
+  }
+
+  // Cache miss - fetch from Plaid
+  console.log(`JWK cache miss for ${kid} (${env}) - fetching from Plaid`);
   const base =
     env === "production"
       ? "https://production.plaid.com"
@@ -1154,7 +1186,23 @@ async function fetchPlaidJwk(kid, env, clientId, secret) {
     throw new Error(`Failed to fetch JWK (${res.status}): ${text}`);
   }
   const json = await res.json();
-  return json.key; // JWK
+  const jwk = json.key;
+
+  // Cache the result
+  const cacheData = { jwk, timestamp: now };
+  jwkCache.set(cacheKey, cacheData);
+
+  // Also cache in RTDB for cold start survival
+  try {
+    const { getDatabase } = require("firebase-admin/database");
+    const db = getDatabase();
+    const rtdbCacheRef = db.ref(`plaid_jwk_cache/${cacheKey}`);
+    await rtdbCacheRef.set(cacheData);
+  } catch (error) {
+    console.warn("Failed to cache JWK in RTDB:", error.message);
+  }
+
+  return jwk;
 }
 
 // Proper Plaid Webhook Handler with JWT verification and DB-backed idempotency
@@ -1323,26 +1371,43 @@ exports.plaidWebhook = onRequest(
           );
           break;
         case "ACCOUNTS":
-          await handleAccountsWebhook(
-            db,
-            userId,
-            webhook_code,
-            item_id,
-            webhookData.new_accounts
-          );
+          // Only process accounts webhook if we have new accounts or specific codes
+          if (
+            webhook_code === "NEW_ACCOUNTS_AVAILABLE" ||
+            webhookData.new_accounts?.length > 0
+          ) {
+            await handleAccountsWebhook(
+              db,
+              userId,
+              webhook_code,
+              item_id,
+              webhookData.new_accounts
+            );
+          } else {
+            // Skip processing for other account webhook codes to reduce API calls
+            console.log(
+              `Skipping accounts webhook ${webhook_code} - no new accounts`
+            );
+          }
           break;
         case "TRANSACTIONS":
-          // Enhanced debouncing: batch ALL transaction webhooks to reduce API calls
-          const batchKey = `${item_id}_${webhook_code}`;
-          await db.ref(`plaid_webhooks/batch/${batchKey}`).set({
-            userId,
-            webhook_type,
-            webhook_code,
-            receivedAt: Date.now(),
-            processed: false,
-            // Add debouncing: only process if no other webhook received in last 30 seconds
-            debounceUntil: Date.now() + 30000,
-          });
+          // Smart transaction processing: only SYNC_UPDATES_AVAILABLE gets immediate processing
+          if (webhook_code === "SYNC_UPDATES_AVAILABLE") {
+            // Process immediately for sync updates
+            await handleTransactionsWebhook(db, userId, webhook_code, item_id);
+          } else {
+            // Batch all other transaction webhooks to reduce API calls
+            const batchKey = `${item_id}_${webhook_code}`;
+            await db.ref(`plaid_webhooks/batch/${batchKey}`).set({
+              userId,
+              webhook_type,
+              webhook_code,
+              receivedAt: Date.now(),
+              processed: false,
+              // Add debouncing: only process if no other webhook received in last 30 seconds
+              debounceUntil: Date.now() + 30000,
+            });
+          }
           break;
         case "INCOME":
           await handleIncomeWebhook(db, userId, webhook_code, item_id);

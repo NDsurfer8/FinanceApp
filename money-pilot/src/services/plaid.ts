@@ -271,6 +271,7 @@ class PlaidService {
 
   // Enhanced debouncing for link token creation to prevent rate limiting
   private lastLinkTokenCall = 0;
+  private firstLinkTokenCall = 0; // Track first attempt for proper time calculation
   private readonly LINK_TOKEN_DEBOUNCE = 2000; // Reduced to 2 seconds for better UX
   private readonly MAX_LINK_ATTEMPTS = 5; // Increased to 5 attempts for better UX
   private linkAttemptCount = 0;
@@ -308,18 +309,22 @@ class PlaidService {
     // Reset attempt count if enough time has passed
     if (timeSinceLastCall > this.LINK_ATTEMPT_RESET_TIME) {
       this.linkAttemptCount = 0;
+      this.firstLinkTokenCall = 0; // Reset first attempt tracking
     }
 
     // Check if we've exceeded maximum attempts with graceful degradation
     if (this.linkAttemptCount >= this.MAX_LINK_ATTEMPTS) {
-      const timeSinceFirstAttempt =
-        now -
-        (this.lastLinkTokenCall -
-          (this.MAX_LINK_ATTEMPTS - 1) * this.LINK_TOKEN_DEBOUNCE);
+      // Track first attempt time properly
+      if (this.firstLinkTokenCall === 0) {
+        this.firstLinkTokenCall = now;
+      }
+
+      const timeSinceFirstAttempt = now - this.firstLinkTokenCall;
 
       // If it's been more than 30 seconds since first attempt, allow one more try
       if (timeSinceFirstAttempt > this.GRACEFUL_DEGRADATION_TIME) {
         this.linkAttemptCount = Math.max(0, this.linkAttemptCount - 2); // Reset some attempts
+        this.firstLinkTokenCall = now; // Reset first attempt time
       } else {
         const waitTime = Math.ceil(this.LINK_ATTEMPT_RESET_TIME / 1000);
         throw new Error(
