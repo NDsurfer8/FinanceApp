@@ -463,7 +463,8 @@
     "select_currency": "Seleccionar Moneda",
     "search_currencies": "Buscar monedas...",
     "no_currencies_found": "No se encontraron monedas",
-    "currency_change_failed": "Error al cambiar la moneda. Inténtalo de nuevo."
+    "currency_change_failed": "Error al cambiar la moneda. Inténtalo de nuevo.",
+    "auto_import_transactions": "Auto-Importar"
   },
   "premium": {
     "title": "Características Premium",

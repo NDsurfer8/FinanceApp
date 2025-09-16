@@ -463,7 +463,8 @@
     "select_currency": "اختر العملة",
     "search_currencies": "البحث عن العملات...",
     "no_currencies_found": "لم يتم العثور على عملات",
-    "currency_change_failed": "فشل في تغيير العملة. يرجى المحاولة مرة أخرى."
+    "currency_change_failed": "فشل في تغيير العملة. يرجى المحاولة مرة أخرى.",
+    "auto_import_transactions": "الاستيراد التلقائي"
   },
   "premium": {
     "title": "الميزات المميزة",

@@ -463,7 +463,8 @@
     "select_currency": "选择货币",
     "search_currencies": "搜索货币...",
     "no_currencies_found": "未找到货币",
-    "currency_change_failed": "货币更改失败。请重试。"
+    "currency_change_failed": "货币更改失败。请重试。",
+    "auto_import_transactions": "自动导入"
   },
   "premium": {
     "title": "高级功能",

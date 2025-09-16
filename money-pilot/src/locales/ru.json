@@ -463,7 +463,8 @@
     "select_currency": "Выбрать Валюту",
     "search_currencies": "Поиск валют...",
     "no_currencies_found": "Валюты не найдены",
-    "currency_change_failed": "Не удалось изменить валюту. Попробуйте еще раз."
+    "currency_change_failed": "Не удалось изменить валюту. Попробуйте еще раз.",
+    "auto_import_transactions": "Авто-Импорт"
   },
   "premium": {
     "title": "Премиум Функции",

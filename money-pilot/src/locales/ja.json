@@ -463,7 +463,8 @@
     "select_currency": "通貨を選択",
     "search_currencies": "通貨を検索...",
     "no_currencies_found": "通貨が見つかりません",
-    "currency_change_failed": "通貨の変更に失敗しました。もう一度お試しください。"
+    "currency_change_failed": "通貨の変更に失敗しました。もう一度お試しください。",
+    "auto_import_transactions": "自動インポート"
   },
   "premium": {
     "title": "プレミアム機能",

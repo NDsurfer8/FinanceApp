@@ -463,7 +463,8 @@
     "select_currency": "Sélectionner la Devise",
     "search_currencies": "Rechercher des devises...",
     "no_currencies_found": "Aucune devise trouvée",
-    "currency_change_failed": "Échec du changement de devise. Veuillez réessayer."
+    "currency_change_failed": "Échec du changement de devise. Veuillez réessayer.",
+    "auto_import_transactions": "Auto-Importation"
   },
   "premium": {
     "title": "Fonctionnalités Premium",

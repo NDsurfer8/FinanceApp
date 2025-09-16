@@ -463,7 +463,8 @@
     "select_currency": "मुद्रा चुनें",
     "search_currencies": "मुद्राएं खोजें...",
     "no_currencies_found": "कोई मुद्रा नहीं मिली",
-    "currency_change_failed": "मुद्रा बदलने में विफल। कृपया पुनः प्रयास करें।"
+    "currency_change_failed": "मुद्रा बदलने में विफल। कृपया पुनः प्रयास करें।",
+    "auto_import_transactions": "ऑटो-इम्पोर्ट"
   },
   "premium": {
     "title": "प्रीमियम सुविधाएं",

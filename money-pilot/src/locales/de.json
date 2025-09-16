@@ -463,7 +463,8 @@
     "select_currency": "Währung Auswählen",
     "search_currencies": "Währungen suchen...",
     "no_currencies_found": "Keine Währungen gefunden",
-    "currency_change_failed": "Währungswechsel fehlgeschlagen. Bitte versuchen Sie es erneut."
+    "currency_change_failed": "Währungswechsel fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "auto_import_transactions": "Auto-Import"
   },
   "premium": {
     "title": "Premium-Funktionen",

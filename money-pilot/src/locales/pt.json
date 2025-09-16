@@ -463,7 +463,8 @@
     "select_currency": "Selecionar Moeda",
     "search_currencies": "Pesquisar moedas...",
     "no_currencies_found": "Nenhuma moeda encontrada",
-    "currency_change_failed": "Falha ao alterar moeda. Tente novamente."
+    "currency_change_failed": "Falha ao alterar moeda. Tente novamente.",
+    "auto_import_transactions": "Auto-Importar"
   },
   "premium": {
     "title": "Recursos Premium",
