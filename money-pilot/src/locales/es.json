@@ -172,7 +172,8 @@
     "review_categories": "Revisar Categorías",
     "high_expense_ratio": "High Expense Ratio",
     "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
-    "over_budget_message": "Tus gastos y asignaciones exceden tus ingresos"
+    "over_budget_message": "Tus gastos y asignaciones exceden tus ingresos",
+    "over_budget": "Over Budget"
   },
   "budget": {
     "title": "Presupuesto",

@@ -287,6 +287,8 @@
     "emergency_fund_complete_message": "You have {{progress}}% of your 6-month target",
     "high_debt_ratio": "High Debt Ratio",
     "high_debt_ratio_message": "{{ratio}}% of assets are debt",
+    "over_budget": "Over Budget",
+    "over_budget_message": "You're over budget by {{amount}}",
     "emergency_fund_progress": "Emergency Fund Progress",
     "emergency_fund_progress_message": "{{progress}}% of 3-month goal",
     "build_emergency_fund": "Build Emergency Fund",

@@ -172,7 +172,8 @@
     "review_categories": "श्रेणियों की समीक्षा करें",
     "high_expense_ratio": "High Expense Ratio",
     "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
-    "over_budget_message": "आपके खर्च और आवंटन आपकी आय से अधिक हैं"
+    "over_budget_message": "आपके खर्च और आवंटन आपकी आय से अधिक हैं",
+    "over_budget": "Over Budget"
   },
   "budget": {
     "title": "बजट",

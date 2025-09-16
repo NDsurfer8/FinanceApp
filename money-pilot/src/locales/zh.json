@@ -172,7 +172,8 @@
     "review_categories": "查看分类",
     "high_expense_ratio": "High Expense Ratio",
     "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
-    "over_budget_message": "您的支出和分配超过了收入"
+    "over_budget_message": "您的支出和分配超过了收入",
+    "over_budget": "Over Budget"
   },
   "budget": {
     "title": "预算",

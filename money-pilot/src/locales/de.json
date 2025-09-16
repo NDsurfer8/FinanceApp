@@ -172,7 +172,8 @@
     "review_categories": "Kategorien Überprüfen",
     "high_expense_ratio": "High Expense Ratio",
     "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
-    "over_budget_message": "Ihre Ausgaben und Zuweisungen übersteigen Ihr Einkommen"
+    "over_budget_message": "Ihre Ausgaben und Zuweisungen übersteigen Ihr Einkommen",
+    "over_budget": "Over Budget"
   },
   "budget": {
     "title": "Budget",

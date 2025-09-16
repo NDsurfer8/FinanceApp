@@ -172,7 +172,8 @@
     "review_categories": "مراجعة الفئات",
     "high_expense_ratio": "High Expense Ratio",
     "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
-    "over_budget_message": "نفقاتك وتخصيصاتك تتجاوز دخلك"
+    "over_budget_message": "نفقاتك وتخصيصاتك تتجاوز دخلك",
+    "over_budget": "Over Budget"
   },
   "budget": {
     "title": "الميزانية",

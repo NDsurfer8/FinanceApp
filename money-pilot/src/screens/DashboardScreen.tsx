@@ -320,13 +320,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           }),
         });
       } else if (discretionarySavingsRate < 0) {
-        insights.push({
-          id: "spending-more-than-income",
-          type: "warning",
-          icon: "alert-circle",
-          title: t("dashboard.over_budget"),
-          message: t("dashboard.over_budget_message"),
-        });
+        // This will be handled by the consolidated over-budget logic below
+        // to avoid duplicate alerts
       }
     }
 
@@ -547,14 +542,21 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
     console.log("📊 Total over budget:", totalOverBudget);
 
-    if (totalOverBudget > 0) {
+    // Consolidated over-budget logic to prevent duplicates
+    // Check both category over-budget and overall spending vs income
+    const isOverBudget =
+      totalOverBudget > 0 || (monthlyIncome > 0 && availableAmount < 0);
+    const overBudgetAmount =
+      totalOverBudget > 0 ? totalOverBudget : Math.abs(availableAmount);
+
+    if (isOverBudget) {
       insights.push({
-        id: "over-budget-warning",
+        id: "over-budget-consolidated",
         type: "warning",
         icon: "warning",
         title: t("dashboard.over_budget_warning"),
         message: t("dashboard.over_budget_message", {
-          amount: formatCurrency(totalOverBudget),
+          amount: formatCurrency(overBudgetAmount),
         }),
       });
     } else if (
@@ -569,7 +571,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
       if (hasSpendingAtLimit) {
         insights.push({
-          id: "over-budget-warning",
+          id: "at-budget-limit",
           type: "warning",
           icon: "warning",
           title: t("dashboard.over_budget_warning"),

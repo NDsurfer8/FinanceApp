@@ -172,7 +172,8 @@
     "review_categories": "カテゴリを確認",
     "high_expense_ratio": "High Expense Ratio",
     "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
-    "over_budget_message": "支出と配分が収入を超えています"
+    "over_budget_message": "支出と配分が収入を超えています",
+    "over_budget": "Over Budget"
   },
   "budget": {
     "title": "予算",
