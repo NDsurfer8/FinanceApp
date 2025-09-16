@@ -43,7 +43,9 @@
     "response_copied": "تم نسخ الاستجابة إلى الحافظة.",
     "clear_chat_history": "مسح تاريخ المحادثة",
     "clear_chat_confirmation": "هل أنت متأكد من أنك تريد مسح جميع تاريخ المحادثة؟ لا يمكن التراجع عن هذا الإجراء.",
-    "clear": "مسح"
+    "clear": "مسح",
+    "select": "Select",
+    "selected": "Selected"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -102,8 +104,6 @@
     "net_worth": "صافي القيمة",
     "welcome_new": "مرحباً، {{name}}",
     "welcome_back": "مرحباً بعودتك، {{name}}",
-    "over_budget": "تجاوز الميزانية",
-    "over_budget_message": "مصروفاتك وتخصيصاتك تتجاوز دخلك",
     "high_debt_ratio": "نسبة دين عالية",
     "high_debt_ratio_message": "{{ratio}}% من الأصول هي ديون",
     "active_month": "شهر نشط",
@@ -168,9 +168,11 @@
     "bills_paid_success": "تم دفع الفواتير! ✅",
     "bills_paid_success_message": "{{count}} فاتورة متكررة تم تمييزها كمدفوعة هذا الشهر",
     "over_budget_warning": "تجاوز الميزانية! ⚠️",
-    "over_budget_message": "لقد تجاوزت ميزانيتك بمبلغ {{amount}} هذا الشهر",
     "at_budget_limit_message": "لقد وصلت إلى حد ميزانيتك هذا الشهر",
-    "review_categories": "مراجعة الفئات"
+    "review_categories": "مراجعة الفئات",
+    "high_expense_ratio": "High Expense Ratio",
+    "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
+    "over_budget_message": "نفقاتك وتخصيصاتك تتجاوز دخلك"
   },
   "budget": {
     "title": "الميزانية",
@@ -190,7 +192,7 @@
     "bills_paid_success": "تم دفع الفواتير! ✅",
     "bills_paid_success_message": "{{count}} فاتورة متكررة تم تمييزها كمدفوعة هذا الشهر",
     "over_budget_warning": "تجاوز الميزانية! ⚠️",
-    "over_budget_message": "لقد تجاوزت ميزانيتك بمبلغ {{amount}} هذا الشهر",
+    "over_budget_message": "مصروفاتك وتخصيصاتك تتجاوز دخلك",
     "at_budget_limit_message": "لقد وصلت إلى حد ميزانيتك هذا الشهر",
     "review_categories": "مراجعة الفئات",
     "monthly_planning": "التخطيط الشهري",
@@ -203,7 +205,6 @@
     "excellent_discretionary_savings": "مدخرات ممتازة!",
     "excellent_discretionary_savings_message": "لديك {{rate}}% من دخلك متاح للادخار الإضافي",
     "over_budget": "تجاوز الميزانية",
-    "over_budget_message": "مصروفاتك وتخصيصاتك تتجاوز دخلك",
     "high_expense_ratio": "نسبة مصروفات عالية",
     "high_expense_ratio_message": "{{ratio}}% من الدخل يذهب للمصروفات",
     "active_month": "شهر نشط",
@@ -352,7 +353,6 @@
     "monthly_contribution_placeholder": "500",
     "select_date": "اختر التاريخ",
     "update_goal": "تحديث الهدف",
-    "delete_goal": "حذف الهدف",
     "deleting": "جاري الحذف...",
     "select_target_date": "اختر تاريخ الهدف",
     "save_goal": "حفظ الهدف",
@@ -1183,7 +1183,7 @@
     "connect_bank_description": "قم بتوصيل حسابك المصرفي لاستيراد المعاملات تلقائياً إلى ميزانيتك.",
     "close": "إغلاق",
     "importing_transactions": "جاري استيراد المعاملات...",
-    "saving": "جاري الحفظ:",
+    "saving": "جاري حفظ المعاملات...",
     "import": "استيراد",
     "current_month": "الشهر الحالي",
     "smart_import_summary": "ملخص الاستيراد الذكي",
@@ -1215,7 +1215,6 @@
     "summary": "ملخص الاستيراد",
     "transactions_found": "تم العثور على {{count}} معاملة جديدة",
     "selected_count": "تم تحديد {{count}} معاملة",
-    "saving": "جاري حفظ المعاملات...",
     "save_selected": "حفظ {{count}} معاملة محددة",
     "add_selected": "إضافة {{count}} معاملة محددة",
     "adding_transactions": "جاري إضافة المعاملات...",
@@ -1227,7 +1226,8 @@
     "filter_by_bank": "تصفية حسب البنك",
     "all_banks": "جميع البنوك",
     "new_transactions_imported": "معاملات جديدة مستوردة",
-    "recurring_transactions_marked_paid": "معاملات متكررة تم تحديدها كمُدفوعة"
+    "recurring_transactions_marked_paid": "معاملات متكررة تم تحديدها كمُدفوعة",
+    "saving_old": "Saving:"
   },
   "transaction_list_card": {
     "transactions": "المعاملات",

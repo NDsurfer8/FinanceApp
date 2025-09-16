@@ -43,7 +43,9 @@
     "response_copied": "Ответ скопирован в буфер обмена.",
     "clear_chat_history": "Очистить Историю Чата",
     "clear_chat_confirmation": "Вы уверены, что хотите очистить всю историю чата? Это действие нельзя отменить.",
-    "clear": "Очистить"
+    "clear": "Очистить",
+    "select": "Select",
+    "selected": "Selected"
   },
   "auth": {
     "login": "Войти",
@@ -102,8 +104,6 @@
     "net_worth": "Чистая стоимость",
     "welcome_new": "Добро пожаловать, {{name}}",
     "welcome_back": "Добро пожаловать обратно, {{name}}",
-    "over_budget": "Превышение бюджета",
-    "over_budget_message": "Ваши расходы и выделения превышают ваш доход",
     "high_debt_ratio": "Высокое соотношение долга",
     "high_debt_ratio_message": "{{ratio}}% активов составляют долги",
     "active_month": "Активный месяц",
@@ -168,9 +168,11 @@
     "bills_paid_success": "Счета Оплачены! ✅",
     "bills_paid_success_message": "{{count}} повторяющихся счетов отмечены как оплаченные в этом месяце",
     "over_budget_warning": "Превышение Бюджета! ⚠️",
-    "over_budget_message": "Вы превысили бюджет на {{amount}} в этом месяце",
     "at_budget_limit_message": "Вы достигли лимита бюджета в этом месяце",
-    "review_categories": "Просмотреть Категории"
+    "review_categories": "Просмотреть Категории",
+    "high_expense_ratio": "High Expense Ratio",
+    "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
+    "over_budget_message": "Ваши расходы и ассигнования превышают ваш доход"
   },
   "budget": {
     "title": "Бюджет",
@@ -190,7 +192,7 @@
     "bills_paid_success": "Счета Оплачены! ✅",
     "bills_paid_success_message": "{{count}} повторяющихся счетов отмечены как оплаченные в этом месяце",
     "over_budget_warning": "Превышение Бюджета! ⚠️",
-    "over_budget_message": "Вы превысили бюджет на {{amount}} в этом месяце",
+    "over_budget_message": "Ваши расходы и распределения превышают ваш доход",
     "at_budget_limit_message": "Вы достигли лимита бюджета в этом месяце",
     "review_categories": "Просмотреть Категории",
     "monthly_planning": "Ежемесячное Планирование",
@@ -203,7 +205,6 @@
     "excellent_discretionary_savings": "Отличные Дискреционные Сбережения!",
     "excellent_discretionary_savings_message": "У вас есть {{rate}}% вашего дохода доступно для дополнительных сбережений",
     "over_budget": "Превышение Бюджета",
-    "over_budget_message": "Ваши расходы и распределения превышают ваш доход",
     "high_expense_ratio": "Высокое Соотношение Расходов",
     "high_expense_ratio_message": "{{ratio}}% дохода идет на расходы",
     "active_month": "Активный Месяц",
@@ -324,7 +325,7 @@
     "goal_added_successfully": "Цель успешно добавлена!",
     "failed_to_update_goal": "Не удалось обновить цель. Пожалуйста, попробуйте еще раз.",
     "failed_to_add_goal": "Не удалось добавить цель. Пожалуйста, попробуйте еще раз.",
-    "delete_goal": "Удалить Цель",
+    "delete_goal": "Удалить цель",
     "delete_goal_confirmation": "Вы уверены, что хотите удалить эту цель? Это действие нельзя отменить.",
     "goal_deleted_successfully": "Цель успешно удалена!",
     "failed_to_delete_goal": "Не удалось удалить цель. Пожалуйста, попробуйте еще раз.",
@@ -352,7 +353,6 @@
     "monthly_contribution_placeholder": "500",
     "select_date": "Выбрать дату",
     "update_goal": "Обновить цель",
-    "delete_goal": "Удалить цель",
     "deleting": "Удаление...",
     "select_target_date": "Выбрать целевую дату",
     "save_goal": "Сохранить цель",
@@ -1183,7 +1183,7 @@
     "connect_bank_description": "Подключите свой банковский счет для автоматического импорта транзакций в ваш бюджет.",
     "close": "Закрыть",
     "importing_transactions": "Импорт Транзакций...",
-    "saving": "Сохранение:",
+    "saving": "Сохранение транзакций...",
     "import": "Импорт",
     "current_month": "Текущий Месяц",
     "smart_import_summary": "Сводка Умного Импорта",
@@ -1215,7 +1215,6 @@
     "summary": "Сводка Импорта",
     "transactions_found": "Найдено {{count}} новых транзакций",
     "selected_count": "Выбрано {{count}} транзакций",
-    "saving": "Сохранение транзакций...",
     "save_selected": "Сохранить {{count}} Выбранных Транзакций",
     "add_selected": "Добавить {{count}} Выбранных Транзакций",
     "adding_transactions": "Добавление транзакций...",
@@ -1227,7 +1226,8 @@
     "filter_by_bank": "Фильтр по Банку",
     "all_banks": "Все Банки",
     "new_transactions_imported": "новые транзакции импортированы",
-    "recurring_transactions_marked_paid": "повторяющиеся транзакции отмечены как оплаченные"
+    "recurring_transactions_marked_paid": "повторяющиеся транзакции отмечены как оплаченные",
+    "saving_old": "Saving:"
   },
   "transaction_list_card": {
     "transactions": "транзакции",

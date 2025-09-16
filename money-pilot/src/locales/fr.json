@@ -43,7 +43,9 @@
     "response_copied": "Réponse copiée dans le presse-papiers.",
     "clear_chat_history": "Effacer l'Historique du Chat",
     "clear_chat_confirmation": "Êtes-vous sûr de vouloir effacer tout l'historique du chat ? Cette action ne peut pas être annulée.",
-    "clear": "Effacer"
+    "clear": "Effacer",
+    "select": "Select",
+    "selected": "Selected"
   },
   "auth": {
     "login": "Connexion",
@@ -102,8 +104,6 @@
     "net_worth": "Valeur Nette",
     "welcome_new": "Bienvenue, {{name}}",
     "welcome_back": "Bon retour, {{name}}",
-    "over_budget": "Dépassement de budget",
-    "over_budget_message": "Vos dépenses et allocations dépassent vos revenus",
     "high_debt_ratio": "Ratio d'endettement élevé",
     "high_debt_ratio_message": "{{ratio}}% des actifs sont des dettes",
     "active_month": "Mois actif",
@@ -168,9 +168,11 @@
     "bills_paid_success": "Factures Payées ! ✅",
     "bills_paid_success_message": "{{count}} factures récurrentes marquées comme payées ce mois-ci",
     "over_budget_warning": "Dépassement de Budget ! ⚠️",
-    "over_budget_message": "Vous avez dépassé votre budget de {{amount}} ce mois-ci",
     "at_budget_limit_message": "Vous avez atteint votre limite de budget ce mois-ci",
-    "review_categories": "Examiner les Catégories"
+    "review_categories": "Examiner les Catégories",
+    "high_expense_ratio": "High Expense Ratio",
+    "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
+    "over_budget_message": "Vos dépenses et allocations dépassent vos revenus"
   },
   "budget": {
     "title": "Budget",
@@ -190,7 +192,7 @@
     "bills_paid_success": "Factures Payées ! ✅",
     "bills_paid_success_message": "{{count}} factures récurrentes marquées comme payées ce mois-ci",
     "over_budget_warning": "Dépassement de Budget ! ⚠️",
-    "over_budget_message": "Vous avez dépassé votre budget de {{amount}} ce mois-ci",
+    "over_budget_message": "Vos dépenses et allocations dépassent vos revenus",
     "at_budget_limit_message": "Vous avez atteint votre limite de budget ce mois-ci",
     "review_categories": "Examiner les Catégories",
     "monthly_planning": "Planification Mensuelle",
@@ -203,7 +205,6 @@
     "excellent_discretionary_savings": "Excellentes Épargnes Discrétionnaires !",
     "excellent_discretionary_savings_message": "Vous avez {{rate}}% de vos revenus disponibles pour des épargnes supplémentaires",
     "over_budget": "Dépassement de Budget",
-    "over_budget_message": "Vos dépenses et allocations dépassent vos revenus",
     "high_expense_ratio": "Ratio de Dépenses Élevé",
     "high_expense_ratio_message": "{{ratio}}% des revenus vont aux dépenses",
     "active_month": "Mois Actif",
@@ -352,7 +353,6 @@
     "monthly_contribution_placeholder": "500",
     "select_date": "Sélectionner la Date",
     "update_goal": "Mettre à Jour l'Objectif",
-    "delete_goal": "Supprimer l'Objectif",
     "deleting": "Suppression...",
     "select_target_date": "Sélectionner la Date Objectif",
     "save_goal": "Sauvegarder l'Objectif",
@@ -1183,7 +1183,7 @@
     "connect_bank_description": "Connectez votre compte bancaire pour importer automatiquement les transactions dans votre budget.",
     "close": "Fermer",
     "importing_transactions": "Importation des Transactions...",
-    "saving": "Sauvegarde:",
+    "saving": "Sauvegarde des transactions...",
     "import": "Importer",
     "current_month": "Mois Actuel",
     "smart_import_summary": "Résumé d'Importation Intelligente",
@@ -1215,7 +1215,6 @@
     "summary": "Résumé d'Importation",
     "transactions_found": "{{count}} nouvelles transactions trouvées",
     "selected_count": "{{count}} transactions sélectionnées",
-    "saving": "Sauvegarde des transactions...",
     "save_selected": "Sauvegarder {{count}} Transactions Sélectionnées",
     "add_selected": "Ajouter {{count}} Transactions Sélectionnées",
     "adding_transactions": "Ajout des transactions...",
@@ -1227,7 +1226,8 @@
     "filter_by_bank": "Filtrer par Banque",
     "all_banks": "Toutes les Banques",
     "new_transactions_imported": "nouvelles transactions importées",
-    "recurring_transactions_marked_paid": "transactions récurrentes marquées comme payées"
+    "recurring_transactions_marked_paid": "transactions récurrentes marquées comme payées",
+    "saving_old": "Saving:"
   },
   "transaction_list_card": {
     "transactions": "transactions",

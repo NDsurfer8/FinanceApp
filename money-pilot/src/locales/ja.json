@@ -43,7 +43,9 @@
     "response_copied": "応答がクリップボードにコピーされました。",
     "clear_chat_history": "チャット履歴をクリア",
     "clear_chat_confirmation": "すべてのチャット履歴をクリアしてもよろしいですか？この操作は元に戻せません。",
-    "clear": "クリア"
+    "clear": "クリア",
+    "select": "Select",
+    "selected": "Selected"
   },
   "auth": {
     "login": "ログイン",
@@ -102,8 +104,6 @@
     "net_worth": "純資産",
     "welcome_new": "ようこそ、{{name}}さん",
     "welcome_back": "おかえりなさい、{{name}}さん",
-    "over_budget": "予算超過",
-    "over_budget_message": "支出と配分が収入を超えています",
     "high_debt_ratio": "高い負債比率",
     "high_debt_ratio_message": "資産の{{ratio}}%が負債です",
     "active_month": "アクティブ月",
@@ -168,9 +168,11 @@
     "bills_paid_success": "請求書支払済み！✅",
     "bills_paid_success_message": "今月{{count}}件の定期請求書が支払済みとしてマークされました",
     "over_budget_warning": "予算超過！⚠️",
-    "over_budget_message": "今月{{amount}}予算を超過しています",
     "at_budget_limit_message": "今月の予算制限に達しました",
-    "review_categories": "カテゴリを確認"
+    "review_categories": "カテゴリを確認",
+    "high_expense_ratio": "High Expense Ratio",
+    "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
+    "over_budget_message": "支出と配分が収入を超えています"
   },
   "budget": {
     "title": "予算",
@@ -190,7 +192,7 @@
     "bills_paid_success": "請求書支払済み！✅",
     "bills_paid_success_message": "今月{{count}}件の定期請求書が支払済みとしてマークされました",
     "over_budget_warning": "予算超過！⚠️",
-    "over_budget_message": "今月{{amount}}予算を超過しています",
+    "over_budget_message": "支出と配分が収入を超えています",
     "at_budget_limit_message": "今月の予算制限に達しました",
     "review_categories": "カテゴリを確認",
     "monthly_planning": "月次計画",
@@ -203,7 +205,6 @@
     "excellent_discretionary_savings": "優秀な裁量的貯蓄！",
     "excellent_discretionary_savings_message": "追加貯蓄のために収入の{{rate}}%が利用可能です",
     "over_budget": "予算超過",
-    "over_budget_message": "支出と配分が収入を超えています",
     "high_expense_ratio": "高い支出比率",
     "high_expense_ratio_message": "収入の{{ratio}}%が支出に使われています",
     "active_month": "アクティブな月",
@@ -352,7 +353,6 @@
     "monthly_contribution_placeholder": "500",
     "select_date": "日付を選択",
     "update_goal": "目標を更新",
-    "delete_goal": "目標を削除",
     "deleting": "削除中...",
     "select_target_date": "目標日を選択",
     "save_goal": "目標を保存",
@@ -1183,7 +1183,7 @@
     "connect_bank_description": "銀行口座を接続して、取引を自動的に予算にインポートします。",
     "close": "閉じる",
     "importing_transactions": "取引をインポート中...",
-    "saving": "保存中:",
+    "saving": "取引を保存中...",
     "import": "インポート",
     "current_month": "今月",
     "smart_import_summary": "スマートインポートサマリー",
@@ -1215,7 +1215,6 @@
     "summary": "インポートサマリー",
     "transactions_found": "{{count}}件の新しい取引が見つかりました",
     "selected_count": "{{count}}件の取引が選択されています",
-    "saving": "取引を保存中...",
     "save_selected": "{{count}}件の選択された取引を保存",
     "add_selected": "{{count}}件の選択された取引を追加",
     "adding_transactions": "取引を追加中...",
@@ -1227,7 +1226,8 @@
     "filter_by_bank": "銀行でフィルター",
     "all_banks": "すべての銀行",
     "new_transactions_imported": "新しい取引をインポートしました",
-    "recurring_transactions_marked_paid": "定期取引を支払済みとしてマークしました"
+    "recurring_transactions_marked_paid": "定期取引を支払済みとしてマークしました",
+    "saving_old": "Saving:"
   },
   "transaction_list_card": {
     "transactions": "取引",

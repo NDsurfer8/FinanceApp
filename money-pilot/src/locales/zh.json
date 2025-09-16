@@ -43,7 +43,9 @@
     "response_copied": "响应已复制到剪贴板。",
     "clear_chat_history": "清除聊天记录",
     "clear_chat_confirmation": "您确定要清除所有聊天记录吗？此操作无法撤销。",
-    "clear": "清除"
+    "clear": "清除",
+    "select": "Select",
+    "selected": "Selected"
   },
   "auth": {
     "login": "登录",
@@ -111,8 +113,6 @@
     "smart_insights": "智能洞察",
     "welcome_new": "欢迎，{{name}}",
     "welcome_back": "欢迎回来，{{name}}",
-    "over_budget": "超出预算",
-    "over_budget_message": "您的支出和分配超过了收入",
     "high_debt_ratio": "高债务比率",
     "high_debt_ratio_message": "{{ratio}}%的资产是债务",
     "active_month": "活跃月份",
@@ -168,9 +168,11 @@
     "bills_paid_success": "账单已支付！✅",
     "bills_paid_success_message": "本月标记为已支付的{{count}}笔定期账单",
     "over_budget_warning": "超预算！⚠️",
-    "over_budget_message": "您本月超预算{{amount}}",
     "at_budget_limit_message": "您本月已达到预算限制",
-    "review_categories": "查看分类"
+    "review_categories": "查看分类",
+    "high_expense_ratio": "High Expense Ratio",
+    "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
+    "over_budget_message": "您的支出和分配超过了收入"
   },
   "budget": {
     "title": "预算",
@@ -190,7 +192,7 @@
     "bills_paid_success": "账单已支付！✅",
     "bills_paid_success_message": "本月标记为已支付的{{count}}笔定期账单",
     "over_budget_warning": "超预算！⚠️",
-    "over_budget_message": "您本月超预算{{amount}}",
+    "over_budget_message": "您的支出和分配超过了收入",
     "at_budget_limit_message": "您本月已达到预算限制",
     "review_categories": "查看分类",
     "monthly_planning": "月度规划",
@@ -203,7 +205,6 @@
     "excellent_discretionary_savings": "优秀的可自由支配储蓄！",
     "excellent_discretionary_savings_message": "您有{{rate}}%的收入可用于额外储蓄",
     "over_budget": "超出预算",
-    "over_budget_message": "您的支出和分配超过了收入",
     "high_expense_ratio": "高支出比率",
     "high_expense_ratio_message": "{{ratio}}%的收入用于支出",
     "active_month": "活跃月份",
@@ -352,7 +353,6 @@
     "monthly_contribution_placeholder": "500",
     "select_date": "选择日期",
     "update_goal": "更新目标",
-    "delete_goal": "删除目标",
     "deleting": "删除中...",
     "select_target_date": "选择目标日期",
     "save_goal": "保存目标",
@@ -1183,7 +1183,7 @@
     "connect_bank_description": "连接您的银行账户以自动将交易导入到您的预算中。",
     "close": "关闭",
     "importing_transactions": "正在导入交易...",
-    "saving": "保存中:",
+    "saving": "正在保存交易...",
     "import": "导入",
     "current_month": "当前月份",
     "smart_import_summary": "智能导入摘要",
@@ -1215,7 +1215,6 @@
     "summary": "导入摘要",
     "transactions_found": "找到 {{count}} 笔新交易",
     "selected_count": "已选择 {{count}} 笔交易",
-    "saving": "正在保存交易...",
     "save_selected": "保存 {{count}} 笔选中的交易",
     "add_selected": "添加 {{count}} 笔选中的交易",
     "adding_transactions": "正在添加交易...",
@@ -1227,7 +1226,8 @@
     "filter_by_bank": "按银行筛选",
     "all_banks": "所有银行",
     "new_transactions_imported": "新交易已导入",
-    "recurring_transactions_marked_paid": "定期交易已标记为已付"
+    "recurring_transactions_marked_paid": "定期交易已标记为已付",
+    "saving_old": "Saving:"
   },
   "transaction_list_card": {
     "transactions": "交易",

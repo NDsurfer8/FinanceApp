@@ -43,7 +43,9 @@
     "response_copied": "प्रतिक्रिया क्लिपबोर्ड में कॉपी की गई।",
     "clear_chat_history": "चैट इतिहास साफ करें",
     "clear_chat_confirmation": "क्या आप वाकई सभी चैट इतिहास साफ करना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।",
-    "clear": "साफ करें"
+    "clear": "साफ करें",
+    "select": "Select",
+    "selected": "Selected"
   },
   "auth": {
     "login": "लॉग इन",
@@ -102,8 +104,6 @@
     "net_worth": "शुद्ध संपत्ति",
     "welcome_new": "स्वागत है, {{name}}",
     "welcome_back": "वापस स्वागत है, {{name}}",
-    "over_budget": "बजट से अधिक",
-    "over_budget_message": "आपके खर्च और आवंटन आपकी आय से अधिक हैं",
     "high_debt_ratio": "उच्च ऋण अनुपात",
     "high_debt_ratio_message": "{{ratio}}% संपत्ति ऋण है",
     "active_month": "सक्रिय महीना",
@@ -168,9 +168,11 @@
     "bills_paid_success": "बिल भुगतान! ✅",
     "bills_paid_success_message": "इस महीने {{count}} आवर्ती बिल भुगतान के रूप में चिह्नित किए गए",
     "over_budget_warning": "बजट से अधिक! ⚠️",
-    "over_budget_message": "आप इस महीने {{amount}} बजट से अधिक खर्च कर रहे हैं",
     "at_budget_limit_message": "आपने इस महीने अपनी बजट सीमा तक पहुंच गए हैं",
-    "review_categories": "श्रेणियों की समीक्षा करें"
+    "review_categories": "श्रेणियों की समीक्षा करें",
+    "high_expense_ratio": "High Expense Ratio",
+    "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
+    "over_budget_message": "आपके खर्च और आवंटन आपकी आय से अधिक हैं"
   },
   "budget": {
     "title": "बजट",
@@ -190,7 +192,7 @@
     "bills_paid_success": "बिल भुगतान! ✅",
     "bills_paid_success_message": "इस महीने {{count}} आवर्ती बिल भुगतान के रूप में चिह्नित किए गए",
     "over_budget_warning": "बजट से अधिक! ⚠️",
-    "over_budget_message": "आप इस महीने {{amount}} बजट से अधिक खर्च कर रहे हैं",
+    "over_budget_message": "आपके व्यय और आवंटन आपकी आय से अधिक हैं",
     "at_budget_limit_message": "आपने इस महीने अपनी बजट सीमा तक पहुंच गए हैं",
     "review_categories": "श्रेणियों की समीक्षा करें",
     "monthly_planning": "मासिक योजना",
@@ -203,7 +205,6 @@
     "excellent_discretionary_savings": "उत्कृष्ट विवेकाधीन बचत!",
     "excellent_discretionary_savings_message": "आपके पास अतिरिक्त बचत के लिए {{rate}}% आय उपलब्ध है",
     "over_budget": "बजट से अधिक",
-    "over_budget_message": "आपके व्यय और आवंटन आपकी आय से अधिक हैं",
     "high_expense_ratio": "उच्च व्यय अनुपात",
     "high_expense_ratio_message": "{{ratio}}% आय व्यय में जाती है",
     "active_month": "सक्रिय महीना",
@@ -352,7 +353,6 @@
     "monthly_contribution_placeholder": "500",
     "select_date": "तिथि चुनें",
     "update_goal": "लक्ष्य अपडेट करें",
-    "delete_goal": "लक्ष्य हटाएं",
     "deleting": "हटा रहे हैं...",
     "select_target_date": "लक्ष्य तिथि चुनें",
     "save_goal": "लक्ष्य सहेजें",
@@ -1183,7 +1183,7 @@
     "connect_bank_description": "अपने बैंक खाते को जोड़ें ताकि लेनदेन को अपने बजट में स्वचालित रूप से आयात किया जा सके।",
     "close": "बंद करें",
     "importing_transactions": "लेनदेन आयात कर रहे हैं...",
-    "saving": "सहेज रहे हैं:",
+    "saving": "लेनदेन सहेज रहे हैं...",
     "import": "आयात करें",
     "current_month": "वर्तमान महीना",
     "smart_import_summary": "स्मार्ट आयात सारांश",
@@ -1215,7 +1215,6 @@
     "summary": "आयात सारांश",
     "transactions_found": "{{count}} नए लेनदेन मिले",
     "selected_count": "{{count}} लेनदेन चयनित",
-    "saving": "लेनदेन सहेज रहे हैं...",
     "save_selected": "{{count}} चयनित लेनदेन सहेजें",
     "add_selected": "{{count}} चयनित लेनदेन जोड़ें",
     "adding_transactions": "लेनदेन जोड़ रहे हैं...",
@@ -1227,7 +1226,8 @@
     "filter_by_bank": "बैंक के अनुसार फ़िल्टर करें",
     "all_banks": "सभी बैंक",
     "new_transactions_imported": "नए लेनदेन आयात किए गए",
-    "recurring_transactions_marked_paid": "आवर्ती लेनदेन भुगतान किया गया चिह्नित"
+    "recurring_transactions_marked_paid": "आवर्ती लेनदेन भुगतान किया गया चिह्नित",
+    "saving_old": "Saving:"
   },
   "transaction_list_card": {
     "transactions": "लेनदेन",

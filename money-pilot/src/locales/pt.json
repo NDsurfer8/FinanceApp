@@ -43,7 +43,9 @@
     "response_copied": "Resposta copiada para a área de transferência.",
     "clear_chat_history": "Limpar Histórico do Chat",
     "clear_chat_confirmation": "Tem certeza de que deseja limpar todo o histórico do chat? Esta ação não pode ser desfeita.",
-    "clear": "Limpar"
+    "clear": "Limpar",
+    "select": "Select",
+    "selected": "Selected"
   },
   "auth": {
     "login": "Entrar",
@@ -102,8 +104,6 @@
     "net_worth": "Patrimônio Líquido",
     "welcome_new": "Bem-vindo, {{name}}",
     "welcome_back": "Bem-vindo de volta, {{name}}",
-    "over_budget": "Acima do Orçamento",
-    "over_budget_message": "Suas despesas e alocações excedem sua renda",
     "high_debt_ratio": "Alta Taxa de Endividamento",
     "high_debt_ratio_message": "{{ratio}}% dos ativos são dívidas",
     "active_month": "Mês Ativo",
@@ -168,9 +168,11 @@
     "bills_paid_success": "Contas Pagas! ✅",
     "bills_paid_success_message": "{{count}} contas recorrentes marcadas como pagas este mês",
     "over_budget_warning": "Acima do Orçamento! ⚠️",
-    "over_budget_message": "Você está {{amount}} acima do orçamento este mês",
     "at_budget_limit_message": "Você atingiu seu limite de orçamento este mês",
-    "review_categories": "Revisar Categorias"
+    "review_categories": "Revisar Categorias",
+    "high_expense_ratio": "High Expense Ratio",
+    "high_expense_ratio_message": "{{ratio}}% of income goes to expenses",
+    "over_budget_message": "Suas despesas e alocações excedem sua renda"
   },
   "budget": {
     "title": "Orçamento",
@@ -190,7 +192,7 @@
     "bills_paid_success": "Contas Pagas! ✅",
     "bills_paid_success_message": "{{count}} contas recorrentes marcadas como pagas este mês",
     "over_budget_warning": "Acima do Orçamento! ⚠️",
-    "over_budget_message": "Você está {{amount}} acima do orçamento este mês",
+    "over_budget_message": "Suas despesas e alocações excedem sua renda",
     "at_budget_limit_message": "Você atingiu seu limite de orçamento este mês",
     "review_categories": "Revisar Categorias",
     "monthly_planning": "Planejamento Mensal",
@@ -203,7 +205,6 @@
     "excellent_discretionary_savings": "Excelentes Poupanças Discricionárias!",
     "excellent_discretionary_savings_message": "Você tem {{rate}}% da sua renda disponível para poupanças adicionais",
     "over_budget": "Acima do Orçamento",
-    "over_budget_message": "Suas despesas e alocações excedem sua renda",
     "high_expense_ratio": "Alta Proporção de Despesas",
     "high_expense_ratio_message": "{{ratio}}% da renda vai para despesas",
     "active_month": "Mês Ativo",
@@ -352,7 +353,6 @@
     "monthly_contribution_placeholder": "500",
     "select_date": "Selecionar Data",
     "update_goal": "Atualizar Objetivo",
-    "delete_goal": "Excluir Objetivo",
     "deleting": "Excluindo...",
     "select_target_date": "Selecionar Data da Meta",
     "save_goal": "Salvar Objetivo",
@@ -1183,7 +1183,7 @@
     "connect_bank_description": "Conecte sua conta bancária para importar automaticamente transações para seu orçamento.",
     "close": "Fechar",
     "importing_transactions": "Importando Transações...",
-    "saving": "Salvando:",
+    "saving": "Salvando transações...",
     "import": "Importar",
     "current_month": "Mês Atual",
     "smart_import_summary": "Resumo de Importação Inteligente",
@@ -1215,7 +1215,6 @@
     "summary": "Resumo da Importação",
     "transactions_found": "{{count}} novas transações encontradas",
     "selected_count": "{{count}} transações selecionadas",
-    "saving": "Salvando transações...",
     "save_selected": "Salvar {{count}} Transações Selecionadas",
     "add_selected": "Adicionar {{count}} Transações Selecionadas",
     "adding_transactions": "Adicionando transações...",
@@ -1227,7 +1226,8 @@
     "filter_by_bank": "Filtrar por Banco",
     "all_banks": "Todos os Bancos",
     "new_transactions_imported": "novas transações importadas",
-    "recurring_transactions_marked_paid": "transações recorrentes marcadas como pagas"
+    "recurring_transactions_marked_paid": "transações recorrentes marcadas como pagas",
+    "saving_old": "Saving:"
   },
   "transaction_list_card": {
     "transactions": "transações",
