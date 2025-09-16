@@ -7,7 +7,7 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-const { onCall } = require("firebase-functions/v2/https");
+const { onCall, onRequest } = require("firebase-functions/v2/https");
 const functions = require("firebase-functions");
 const { defineSecret, defineString } = require("firebase-functions/params");
 
@@ -18,9 +18,6 @@ require("dotenv").config();
 const plaidClientId = defineSecret("PLAID_CLIENT_ID");
 const plaidSecret = defineSecret("PLAID_SECRET");
 const plaidSecretSandbox = defineSecret("PLAID_SECRET_SANDBOX");
-
-// Define Plaid environment
-const plaidEnv = defineString("PLAID_ENV", { default: "production" });
 
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
@@ -1133,93 +1130,153 @@ exports.aiFeedback = onCall(async (data, context) => {
   }
 });
 
-// Rate limiting for webhook processing
-const webhookProcessingTimes = new Map();
-const WEBHOOK_COOLDOWN = 10000; // 10 seconds per item_id
+// Helper: fetch Plaid JWK without the SDK (keeps deps light)
+async function fetchPlaidJwk(kid, env, clientId, secret) {
+  const base =
+    env === "production"
+      ? "https://production.plaid.com"
+      : env === "development"
+      ? "https://development.plaid.com"
+      : "https://sandbox.plaid.com";
 
-// Plaid webhook IP addresses for verification
-const PLAID_WEBHOOK_IPS = [
-  "52.21.26.131",
-  "52.21.47.157",
-  "52.41.247.19",
-  "52.88.82.239",
-];
+  const res = await fetch(`${base}/webhook_verification_key/get`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "PLAID-CLIENT-ID": clientId,
+      "PLAID-SECRET": secret,
+    },
+    body: JSON.stringify({ key_id: kid }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch JWK (${res.status}): ${text}`);
+  }
+  const json = await res.json();
+  return json.key; // JWK
+}
 
-// Simple Plaid Webhook Handler for Production
-exports.plaidWebhook = onCall(
+// Proper Plaid Webhook Handler with JWT verification and DB-backed idempotency
+exports.plaidWebhook = onRequest(
   {
-    secrets: [plaidClientId, plaidSecret, plaidSecretSandbox],
+    region: "us-central1",
+    secrets: [plaidClientId, plaidSecret],
+    // rawBody is available by default in v2
   },
-  async (data, context) => {
+  async (req, res) => {
     try {
-      // Verify webhook source (optional but recommended)
-      if (context && context.rawRequest) {
-        const clientIP =
-          context.rawRequest.ip || context.rawRequest.connection?.remoteAddress;
-        if (clientIP && !PLAID_WEBHOOK_IPS.includes(clientIP)) {
-          // Note: We don't reject here as IPs can change, but we log for monitoring
-        }
-      }
+      if (req.method !== "POST")
+        return res.status(405).send("Method Not Allowed");
 
-      // Extract webhook data from the nested structure
-      const webhookData = data.data || data;
-      const { webhook_type, webhook_code, item_id, error, new_accounts } =
-        webhookData;
-
-      // Rate limiting: prevent processing same item_id too frequently
-      const now = Date.now();
-      const lastProcessed = webhookProcessingTimes.get(item_id) || 0;
-
-      if (now - lastProcessed < WEBHOOK_COOLDOWN) {
-        return { success: true, rateLimited: true };
-      }
-
-      webhookProcessingTimes.set(item_id, now);
-
-      // Import Firebase Admin SDK for database operations
-      const { initializeApp } = require("firebase-admin/app");
+      // Ensure Admin initialized
+      const { initializeApp, getApps } = require("firebase-admin/app");
       const { getDatabase } = require("firebase-admin/database");
+      const crypto = require("crypto");
 
-      // Initialize Firebase Admin if not already initialized
-      if (!global.firebaseAdminInitialized) {
-        initializeApp();
-        global.firebaseAdminInitialized = true;
-      }
-
+      if (!getApps().length) initializeApp();
       const db = getDatabase();
 
-      // Find user by item_id in the new multiple-bank structure
-      const usersRef = db.ref("users");
-      const snapshot = await usersRef.once("value");
-      const users = snapshot.val();
+      // 1) Verify Plaid signature (JWT + body hash)
+      const verificationHeader =
+        req.get("Plaid-Verification") || req.get("plaid-verification");
+      if (!verificationHeader)
+        return res.status(400).send("Missing Plaid-Verification header");
 
-      let userId = null;
-      if (users) {
-        for (const [uid, userData] of Object.entries(users)) {
-          // Check new multiple-bank structure first
-          if (
-            userData.plaid_connections &&
-            userData.plaid_connections[item_id]
-          ) {
-            userId = uid;
-            break;
-          }
-          // Fallback to legacy single-bank structure
-          if (userData.plaid && userData.plaid.itemId === item_id) {
-            userId = uid;
-            break;
+      // dynamic import because 'jose' is ESM-only
+      const { jwtVerify, decodeProtectedHeader, importJWK } = await import(
+        "jose"
+      );
+
+      const clientId = plaidClientId.value();
+      const secret = plaidSecret.value();
+
+      // Detect environment from client ID
+      const env = clientId.includes("sandbox")
+        ? "sandbox"
+        : clientId.includes("development")
+        ? "development"
+        : "production";
+
+      const { kid } = decodeProtectedHeader(verificationHeader);
+      if (!kid) return res.status(400).send("Invalid JWT (missing kid)");
+
+      const jwk = await fetchPlaidJwk(kid, env, clientId, secret);
+      const key = await importJWK(jwk, "ES256");
+
+      // Verify JWT (also enforces exp/iat); allow small skew
+      const { payload } = await jwtVerify(verificationHeader, key, {
+        maxTokenAge: "5 min",
+        clockTolerance: 5, // seconds
+      });
+
+      // Hash the raw body exactly as received
+      const raw = req.rawBody?.toString("utf8") ?? JSON.stringify(req.body);
+      const bodyHash = crypto
+        .createHash("sha256")
+        .update(raw, "utf8")
+        .digest("hex");
+      if (payload.request_body_sha256 !== bodyHash) {
+        return res.status(400).send("Bad signature (body hash mismatch)");
+      }
+
+      // 2) Parse webhook & resolve uid quickly via index
+      const webhookData = JSON.parse(raw);
+      const { webhook_type, webhook_code, item_id } = webhookData || {};
+      if (!item_id) return res.status(200).json({ ok: true, noItem: true });
+
+      // Fast O(1) lookup — write this when you link an Item:
+      // db.ref(`plaid_index/itemToUid/${item_id}`).set(uid)
+      const uidSnap = await db.ref(`plaid_index/itemToUid/${item_id}`).get();
+      let userId = uidSnap.val();
+
+      // Fallback to scanning users if index doesn't exist
+      if (!userId) {
+        console.log(`Item ${item_id} not found in index, scanning users...`);
+        const usersRef = db.ref("users");
+        const snapshot = await usersRef.once("value");
+        const users = snapshot.val();
+
+        if (users) {
+          for (const [uid, userData] of Object.entries(users)) {
+            if (
+              userData.plaid_connections &&
+              userData.plaid_connections[item_id]
+            ) {
+              userId = uid;
+              // Update index for future lookups
+              await db.ref(`plaid_index/itemToUid/${item_id}`).set(uid);
+              break;
+            }
           }
         }
       }
 
-      if (!userId) {
-        return { success: true };
+      if (!userId) return res.status(200).json({ ok: true, unknownItem: true });
+
+      // 3) Idempotency (DB-backed; works across instances/cold starts)
+      // Using JWT iat (issued-at) to make a stable key per webhook delivery
+      const issuedAt = payload.iat || Date.now();
+      const idemKey = `${item_id}:${webhook_type}:${webhook_code}:${issuedAt}`;
+      const idemRef = db.ref(`plaid_webhooks/processed/${idemKey}`);
+
+      const idemTx = await idemRef.transaction((cur) => cur || Date.now(), {
+        applyLocally: false,
+      });
+      if (!idemTx.committed) {
+        // Already processed this exact delivery — ack quickly
+        return res.status(200).json({ ok: true, duplicate: true });
       }
 
-      // Update Firebase based on webhook type
+      // 4) Do your lightweight updates (keep under ~10s; Plaid retries on slow/5xx)
       switch (webhook_type) {
         case "ITEM":
-          await handleItemWebhook(db, userId, webhook_code, item_id, error);
+          await handleItemWebhook(
+            db,
+            userId,
+            webhook_code,
+            item_id,
+            webhookData.error
+          );
           break;
         case "ACCOUNTS":
           await handleAccountsWebhook(
@@ -1227,22 +1284,28 @@ exports.plaidWebhook = onCall(
             userId,
             webhook_code,
             item_id,
-            new_accounts
+            webhookData.new_accounts
           );
           break;
         case "TRANSACTIONS":
           await handleTransactionsWebhook(db, userId, webhook_code, item_id);
+          // Optional: enqueue for a worker to call /transactions/sync with your cursor
+          // await db.ref("plaid_webhooks/inbox").push({ userId, item_id, webhook_type, webhook_code, receivedAt: Date.now() });
           break;
         case "INCOME":
           await handleIncomeWebhook(db, userId, webhook_code, item_id);
           break;
         default:
+          // Unknown/unused type — ack to avoid retries
+          break;
       }
 
-      return { success: true };
-    } catch (error) {
-      console.error("Error processing Plaid webhook:", error);
-      throw new Error("Failed to process webhook");
+      // 5) Always 200 once handled/enqueued so Plaid doesn't retry
+      return res.status(200).json({ ok: true });
+    } catch (err) {
+      console.error("Plaid webhook error:", err);
+      // If verification failed or we didn't enqueue, 400 so Plaid can retry
+      return res.status(400).send("Webhook handling failed");
     }
   }
 );

@@ -17,6 +17,7 @@
     "dotenv": "^17.2.1",
     "firebase-admin": "^11.8.0",
     "firebase-functions": "^4.3.1",
+    "jose": "^6.1.0",
     "openai": "^5.15.0",
     "plaid": "^18.0.0"
   },
