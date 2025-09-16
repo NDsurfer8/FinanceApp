@@ -95,15 +95,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     isBankDataLoading,
     bankTransactions,
     isBankConnected,
+    connectedBanks,
   } = useData();
-  const [connectedBankInfo, setConnectedBankInfo] = useState<
-    | {
-        name: string;
-        accounts: PlaidAccount[];
-        itemId: string;
-      }[]
-    | null
-  >(null);
   const [loading, setLoading] = useState(false);
   const [emailVerificationLoading, setEmailVerificationLoading] =
     useState(false);
@@ -242,15 +235,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           setBankConnectionLoading(false);
         }
 
-        if (connected) {
-          const bankInfo = await plaidService.getConnectedBankInfo();
-          setConnectedBankInfo(bankInfo);
-        } else {
-          setConnectedBankInfo(null);
-        }
+        // Bank connection status is now managed by DataContext
       } catch (error) {
         console.error("Failed to check bank connection:", error);
-        setConnectedBankInfo(null);
       }
     };
 
@@ -293,16 +280,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           try {
             const connected = await plaidService.isBankConnected();
 
-            if (connected) {
-              const bankInfo = await plaidService.getConnectedBankInfo();
-              setConnectedBankInfo(bankInfo);
-            } else {
-              setConnectedBankInfo(null);
-            }
+            // Bank connection status is now managed by DataContext
             (global as any).lastBankCheckTime = Date.now();
           } catch (error) {
             console.error("Failed to check bank connection on focus:", error);
-            setConnectedBankInfo(null);
           }
         };
 
@@ -627,18 +608,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             onSuccess={async () => {
               // Bank connected successfully
 
-              // Get the bank information after successful connection
+              // Bank information is now managed by DataContext
+              // Refresh bank data to load transactions
               try {
-                const bankInfo = await plaidService.getConnectedBankInfo();
-                setConnectedBankInfo(bankInfo);
-
-                // Refresh bank data to load transactions
-                // Refreshing bank data after connection
                 await refreshBankData(true);
-                // Bank data refreshed successfully
               } catch (error) {
                 console.error(
-                  "Failed to get bank info after connection:",
+                  "Failed to refresh bank data after connection:",
                   error
                 );
               }
@@ -653,19 +629,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           />
           {isBankConnected ? (
             <View style={{ marginTop: 12 }}>
-              {connectedBankInfo && connectedBankInfo.length > 0 && (
+              {connectedBanks && connectedBanks.length > 0 && (
                 <Text
                   style={{
                     color: colors.textSecondary,
                     fontSize: 12,
                   }}
                 >
-                  {connectedBankInfo.reduce(
+                  {connectedBanks.reduce(
                     (total, bank) => total + bank.accounts.length,
                     0
                   )}{" "}
                   {t("settings.account", {
-                    count: connectedBankInfo.reduce(
+                    count: connectedBanks.reduce(
                       (total, bank) => total + bank.accounts.length,
                       0
                     ),

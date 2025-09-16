@@ -406,39 +406,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     []
   );
 
-  // Global refresh coordination to prevent multiple simultaneous calls
-  const globalRefreshState = useRef({
-    isRefreshing: false,
-    lastRefreshTime: 0,
-    pendingCallbacks: [] as Array<() => void>,
-  });
-
-  // Refresh bank data with sophisticated logic and global coordination
+  // Refresh bank data with smart caching
   const refreshBankData = useCallback(
     async (forceRefresh = false) => {
       // Add debouncing property to the function
       (refreshBankData as any).lastCallTime =
         (refreshBankData as any).lastCallTime || 0;
       try {
-        // Enhanced debouncing: prevent rapid successive calls
+        // Simple debouncing: prevent rapid successive calls
         const now = Date.now();
         const lastCall = (refreshBankData as any).lastCallTime || 0;
         const timeSinceLastCall = now - lastCall;
 
-        // Don't allow calls more frequent than 10 seconds apart (increased from 5)
-        if (timeSinceLastCall < 10000 && !forceRefresh) {
+        // Don't allow calls more frequent than 5 seconds apart
+        if (timeSinceLastCall < 5000 && !forceRefresh) {
           console.log("Bank data refresh skipped - too soon since last call");
           return;
-        }
-
-        // Global coordination: prevent multiple simultaneous refreshes
-        if (globalRefreshState.current.isRefreshing && !forceRefresh) {
-          console.log(
-            "Bank data refresh skipped - already refreshing globally"
-          );
-          return new Promise<void>((resolve) => {
-            globalRefreshState.current.pendingCallbacks.push(resolve);
-          });
         }
 
         // Don't load if already loading locally
@@ -458,10 +441,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           }
         }
 
-        // Update last call time and set global refresh state
+        // Update last call time
         (refreshBankData as any).lastCallTime = now;
-        globalRefreshState.current.isRefreshing = true;
-        globalRefreshState.current.lastRefreshTime = now;
 
         setIsBankDataLoading(true);
         isBankDataLoadingRef.current = true;
@@ -653,14 +634,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       } finally {
         setIsBankDataLoading(false);
         isBankDataLoadingRef.current = false;
-
-        // Clear global refresh state and resolve pending callbacks
-        globalRefreshState.current.isRefreshing = false;
-        const pendingCallbacks = globalRefreshState.current.pendingCallbacks;
-        globalRefreshState.current.pendingCallbacks = [];
-
-        // Resolve all pending callbacks
-        pendingCallbacks.forEach((callback) => callback());
       }
     },
     [loadCachedBankData, saveBankDataToCache, analyzeRecurringPatterns]
