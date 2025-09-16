@@ -8,6 +8,7 @@
  */
 
 const { onCall, onRequest } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const functions = require("firebase-functions");
 const { defineSecret, defineString } = require("firebase-functions/params");
 
@@ -1187,6 +1188,12 @@ exports.plaidWebhook = onRequest(
         "jose"
       );
 
+      // Polyfill crypto for jose library in Node.js environment
+      if (typeof globalThis.crypto === "undefined") {
+        const { webcrypto } = require("crypto");
+        globalThis.crypto = webcrypto;
+      }
+
       const clientId = plaidClientId.value();
       const secret = plaidSecret.value();
 
@@ -1253,7 +1260,44 @@ exports.plaidWebhook = onRequest(
 
       if (!userId) return res.status(200).json({ ok: true, unknownItem: true });
 
-      // 3) Idempotency (DB-backed; works across instances/cold starts)
+      // 3) Enhanced rate limiting per item_id (prevent rapid successive calls)
+      const rateLimitKey = `rate_limit:${item_id}`;
+      const rateLimitRef = db.ref(`plaid_webhooks/rate_limits/${rateLimitKey}`);
+      const now = Date.now();
+      const RATE_LIMIT_WINDOW = 60000; // 60 seconds (increased from 30)
+      const MAX_CALLS_PER_WINDOW = 3; // Reduced from 5 to 3
+
+      const rateLimitTx = await rateLimitRef.transaction(
+        (cur) => {
+          if (!cur || now - cur.lastCall > RATE_LIMIT_WINDOW) {
+            return { lastCall: now, count: 1, firstCall: now };
+          }
+          if (cur.count >= MAX_CALLS_PER_WINDOW) {
+            // Max 3 calls per 60 seconds
+            return cur; // Don't update, will be rejected
+          }
+          return {
+            lastCall: cur.lastCall,
+            count: cur.count + 1,
+            firstCall: cur.firstCall || now,
+          };
+        },
+        { applyLocally: false }
+      );
+
+      if (
+        !rateLimitTx.committed ||
+        rateLimitTx.snapshot.val()?.count > MAX_CALLS_PER_WINDOW
+      ) {
+        console.log(
+          `Rate limit exceeded for item ${item_id} (${
+            rateLimitTx.snapshot.val()?.count || 0
+          }/${MAX_CALLS_PER_WINDOW} calls)`
+        );
+        return res.status(200).json({ ok: true, rateLimited: true });
+      }
+
+      // 4) Idempotency (DB-backed; works across instances/cold starts)
       // Using JWT iat (issued-at) to make a stable key per webhook delivery
       const issuedAt = payload.iat || Date.now();
       const idemKey = `${item_id}:${webhook_type}:${webhook_code}:${issuedAt}`;
@@ -1267,7 +1311,7 @@ exports.plaidWebhook = onRequest(
         return res.status(200).json({ ok: true, duplicate: true });
       }
 
-      // 4) Do your lightweight updates (keep under ~10s; Plaid retries on slow/5xx)
+      // 5) Smart webhook processing with enhanced batching and debouncing
       switch (webhook_type) {
         case "ITEM":
           await handleItemWebhook(
@@ -1288,9 +1332,17 @@ exports.plaidWebhook = onRequest(
           );
           break;
         case "TRANSACTIONS":
-          await handleTransactionsWebhook(db, userId, webhook_code, item_id);
-          // Optional: enqueue for a worker to call /transactions/sync with your cursor
-          // await db.ref("plaid_webhooks/inbox").push({ userId, item_id, webhook_type, webhook_code, receivedAt: Date.now() });
+          // Enhanced debouncing: batch ALL transaction webhooks to reduce API calls
+          const batchKey = `${item_id}_${webhook_code}`;
+          await db.ref(`plaid_webhooks/batch/${batchKey}`).set({
+            userId,
+            webhook_type,
+            webhook_code,
+            receivedAt: Date.now(),
+            processed: false,
+            // Add debouncing: only process if no other webhook received in last 30 seconds
+            debounceUntil: Date.now() + 30000,
+          });
           break;
         case "INCOME":
           await handleIncomeWebhook(db, userId, webhook_code, item_id);
@@ -1306,6 +1358,84 @@ exports.plaidWebhook = onRequest(
       console.error("Plaid webhook error:", err);
       // If verification failed or we didn't enqueue, 400 so Plaid can retry
       return res.status(400).send("Webhook handling failed");
+    }
+  }
+);
+
+// Process batched webhooks every 5 minutes to reduce API calls
+exports.processBatchedWebhooks = onSchedule(
+  {
+    schedule: "every 5 minutes",
+    region: "us-central1",
+  },
+  async (event) => {
+    try {
+      const { initializeApp, getApps } = require("firebase-admin/app");
+      const { getDatabase } = require("firebase-admin/database");
+
+      if (!getApps().length) initializeApp();
+      const db = getDatabase();
+
+      // Get all batched webhooks
+      const batchRef = db.ref("plaid_webhooks/batch");
+      const snapshot = await batchRef.once("value");
+      const batches = snapshot.val();
+
+      if (!batches) return;
+
+      // Process each batched webhook with enhanced debouncing
+      for (const [batchKey, batchData] of Object.entries(batches)) {
+        if (batchData.processed) continue;
+
+        // Check if debounce period has passed
+        const now = Date.now();
+        if (batchData.debounceUntil && now < batchData.debounceUntil) {
+          console.log(
+            `Debouncing webhook ${batchKey} until ${new Date(
+              batchData.debounceUntil
+            ).toISOString()}`
+          );
+          continue;
+        }
+
+        try {
+          // Extract item_id from batchKey (format: item_id_webhook_code)
+          const itemId = batchKey.split("_")[0];
+
+          // Process the batched webhook
+          await handleTransactionsWebhook(
+            db,
+            batchData.userId,
+            batchData.webhook_code,
+            itemId
+          );
+
+          // Mark as processed
+          await db.ref(`plaid_webhooks/batch/${batchKey}`).update({
+            processed: true,
+            processedAt: Date.now(),
+          });
+
+          console.log(
+            `Processed batched webhook for item ${itemId} (${batchData.webhook_code})`
+          );
+        } catch (error) {
+          console.error(
+            `Error processing batched webhook for ${batchKey}:`,
+            error
+          );
+        }
+      }
+
+      // Clean up old processed batches (older than 1 hour)
+      const oneHourAgo = Date.now() - 60 * 60 * 1000;
+      for (const [batchKey, batchData] of Object.entries(batches)) {
+        if (batchData.processed && batchData.processedAt < oneHourAgo) {
+          await db.ref(`plaid_webhooks/batch/${batchKey}`).remove();
+        }
+      }
+    } catch (error) {
+      console.error("Error processing batched webhooks:", error);
     }
   }
 );
