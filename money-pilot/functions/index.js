@@ -8,7 +8,6 @@
  */
 
 const { onCall, onRequest } = require("firebase-functions/v2/https");
-const { onSchedule } = require("firebase-functions/v2/scheduler");
 const functions = require("firebase-functions");
 const { defineSecret } = require("firebase-functions/params");
 
@@ -1127,90 +1126,11 @@ exports.aiFeedback = onCall(async (data, context) => {
   }
 });
 
-// JWK Cache - in-memory + RTDB backup for cold starts
-const jwkCache = new Map();
-const JWK_CACHE_TTL = 20 * 60 * 1000; // 20 minutes
-
-// Helper: fetch Plaid JWK with caching (reduces API calls significantly)
-async function fetchPlaidJwk(kid, env, clientId, secret) {
-  const cacheKey = `${env}:${kid}`;
-  const now = Date.now();
-
-  // Check in-memory cache first
-  const cached = jwkCache.get(cacheKey);
-  if (cached && now - cached.timestamp < JWK_CACHE_TTL) {
-    console.log(`JWK cache hit for ${kid} (${env})`);
-    return cached.jwk;
-  }
-
-  // Check RTDB cache (survives cold starts)
-  try {
-    const { getDatabase } = require("firebase-admin/database");
-    const db = getDatabase();
-    const rtdbCacheRef = db.ref(`plaid_jwk_cache/${cacheKey}`);
-    const rtdbSnapshot = await rtdbCacheRef.get();
-
-    if (rtdbSnapshot.exists()) {
-      const rtdbData = rtdbSnapshot.val();
-      if (now - rtdbData.timestamp < JWK_CACHE_TTL) {
-        console.log(`JWK RTDB cache hit for ${kid} (${env})`);
-        // Update in-memory cache
-        jwkCache.set(cacheKey, rtdbData);
-        return rtdbData.jwk;
-      }
-    }
-  } catch (error) {
-    console.warn("Failed to check RTDB JWK cache:", error.message);
-  }
-
-  // Cache miss - fetch from Plaid
-  console.log(`JWK cache miss for ${kid} (${env}) - fetching from Plaid`);
-  const base =
-    env === "production"
-      ? "https://production.plaid.com"
-      : env === "development"
-      ? "https://development.plaid.com"
-      : "https://sandbox.plaid.com";
-
-  const res = await fetch(`${base}/webhook_verification_key/get`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "PLAID-CLIENT-ID": clientId,
-      "PLAID-SECRET": secret,
-    },
-    body: JSON.stringify({ key_id: kid }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Failed to fetch JWK (${res.status}): ${text}`);
-  }
-  const json = await res.json();
-  const jwk = json.key;
-
-  // Cache the result
-  const cacheData = { jwk, timestamp: now };
-  jwkCache.set(cacheKey, cacheData);
-
-  // Also cache in RTDB for cold start survival
-  try {
-    const { getDatabase } = require("firebase-admin/database");
-    const db = getDatabase();
-    const rtdbCacheRef = db.ref(`plaid_jwk_cache/${cacheKey}`);
-    await rtdbCacheRef.set(cacheData);
-  } catch (error) {
-    console.warn("Failed to cache JWK in RTDB:", error.message);
-  }
-
-  return jwk;
-}
-
-// Proper Plaid Webhook Handler with JWT verification and DB-backed idempotency
+// Simple Plaid Webhook Handler - just update the connection
 exports.plaidWebhook = onRequest(
   {
     region: "us-central1",
     secrets: [plaidClientId, plaidSecret],
-    // rawBody is available by default in v2
   },
   async (req, res) => {
     try {
@@ -1220,423 +1140,93 @@ exports.plaidWebhook = onRequest(
       // Ensure Admin initialized
       const { initializeApp, getApps } = require("firebase-admin/app");
       const { getDatabase } = require("firebase-admin/database");
-      const crypto = require("crypto");
 
       if (!getApps().length) initializeApp();
       const db = getDatabase();
 
-      // 1) Verify Plaid signature (JWT + body hash)
-      const verificationHeader =
-        req.get("Plaid-Verification") || req.get("plaid-verification");
-      if (!verificationHeader)
-        return res.status(400).send("Missing Plaid-Verification header");
+      // Parse webhook data
+      const webhookData = req.body;
+      const { webhook_type, webhook_code, item_id } = webhookData || {};
 
-      // dynamic import because 'jose' is ESM-only
-      const { jwtVerify, decodeProtectedHeader, importJWK } = await import(
-        "jose"
+      console.log(
+        `📡 Webhook received: ${webhook_type}/${webhook_code} for item ${item_id}`
       );
 
-      // Polyfill crypto for jose library in Node.js environment
-      if (typeof globalThis.crypto === "undefined") {
-        const { webcrypto } = require("crypto");
-        globalThis.crypto = webcrypto;
+      if (!item_id) {
+        console.log("❌ No item_id in webhook data");
+        return res.status(200).json({ ok: true, noItem: true });
       }
 
-      const clientId = plaidClientId.value();
-      const secret = plaidSecret.value();
+      // Find user by scanning plaid_connections
+      const usersRef = db.ref("users");
+      const snapshot = await usersRef.once("value");
+      const users = snapshot.val();
 
-      // Detect environment from client ID
-      const env = clientId.includes("sandbox")
-        ? "sandbox"
-        : clientId.includes("development")
-        ? "development"
-        : "production";
-
-      const { kid } = decodeProtectedHeader(verificationHeader);
-      if (!kid) return res.status(400).send("Invalid JWT (missing kid)");
-
-      const jwk = await fetchPlaidJwk(kid, env, clientId, secret);
-      const key = await importJWK(jwk, "ES256");
-
-      // Verify JWT (also enforces exp/iat); allow small skew
-      const { payload } = await jwtVerify(verificationHeader, key, {
-        maxTokenAge: "5 min",
-        clockTolerance: 5, // seconds
-      });
-
-      // Hash the raw body exactly as received
-      const raw = req.rawBody?.toString("utf8") ?? JSON.stringify(req.body);
-      const bodyHash = crypto
-        .createHash("sha256")
-        .update(raw, "utf8")
-        .digest("hex");
-      if (payload.request_body_sha256 !== bodyHash) {
-        return res.status(400).send("Bad signature (body hash mismatch)");
-      }
-
-      // 2) Parse webhook & resolve uid quickly via index
-      const webhookData = JSON.parse(raw);
-      const { webhook_type, webhook_code, item_id } = webhookData || {};
-      if (!item_id) return res.status(200).json({ ok: true, noItem: true });
-
-      // Fast O(1) lookup — write this when you link an Item:
-      // db.ref(`plaid_index/itemToUid/${item_id}`).set(uid)
-      const uidSnap = await db.ref(`plaid_index/itemToUid/${item_id}`).get();
-      let userId = uidSnap.val();
-
-      // Fallback to scanning users if index doesn't exist
-      if (!userId) {
-        console.log(`Item ${item_id} not found in index, scanning users...`);
-        const usersRef = db.ref("users");
-        const snapshot = await usersRef.once("value");
-        const users = snapshot.val();
-
-        if (users) {
-          for (const [uid, userData] of Object.entries(users)) {
-            if (
-              userData.plaid_connections &&
-              userData.plaid_connections[item_id]
-            ) {
-              userId = uid;
-              // Update index for future lookups
-              await db.ref(`plaid_index/itemToUid/${item_id}`).set(uid);
-              break;
-            }
+      let userId = null;
+      if (users) {
+        for (const [uid, userData] of Object.entries(users)) {
+          if (
+            userData.plaid_connections &&
+            userData.plaid_connections[item_id]
+          ) {
+            userId = uid;
+            break;
           }
         }
       }
 
-      if (!userId) return res.status(200).json({ ok: true, unknownItem: true });
+      if (!userId) {
+        console.log(`❌ No user found for item ${item_id}`);
+        return res.status(200).json({ ok: true, unknownItem: true });
+      }
 
-      // 3) Enhanced rate limiting per item_id (prevent rapid successive calls)
-      const rateLimitKey = `rate_limit:${item_id}`;
-      const rateLimitRef = db.ref(`plaid_webhooks/rate_limits/${rateLimitKey}`);
-      const now = Date.now();
-      const RATE_LIMIT_WINDOW = 60000; // 60 seconds (increased from 30)
-      const MAX_CALLS_PER_WINDOW = 3; // Reduced from 5 to 3
+      console.log(`✅ Found user ${userId} for item ${item_id}`);
 
-      const rateLimitTx = await rateLimitRef.transaction(
-        (cur) => {
-          if (!cur || now - cur.lastCall > RATE_LIMIT_WINDOW) {
-            return { lastCall: now, count: 1, firstCall: now };
-          }
-          if (cur.count >= MAX_CALLS_PER_WINDOW) {
-            // Max 3 calls per 60 seconds
-            return cur; // Don't update, will be rejected
-          }
-          return {
-            lastCall: cur.lastCall,
-            count: cur.count + 1,
-            firstCall: cur.firstCall || now,
-          };
-        },
-        { applyLocally: false }
+      // Update the connection with webhook info
+      const userPlaidRef = db.ref(
+        `users/${userId}/plaid_connections/${item_id}`
       );
 
-      if (
-        !rateLimitTx.committed ||
-        rateLimitTx.snapshot.val()?.count > MAX_CALLS_PER_WINDOW
-      ) {
-        console.log(
-          `Rate limit exceeded for item ${item_id} (${
-            rateLimitTx.snapshot.val()?.count || 0
-          }/${MAX_CALLS_PER_WINDOW} calls)`
-        );
-        return res.status(200).json({ ok: true, rateLimited: true });
-      }
+      const updates = {
+        lastUpdated: Date.now(),
+        lastWebhook: {
+          type: webhook_type,
+          code: webhook_code,
+          timestamp: Date.now(),
+        },
+      };
 
-      // 4) Idempotency (DB-backed; works across instances/cold starts)
-      // Using JWT iat (issued-at) to make a stable key per webhook delivery
-      const issuedAt = payload.iat || Date.now();
-      const idemKey = `${item_id}:${webhook_type}:${webhook_code}:${issuedAt}`;
-      const idemRef = db.ref(`plaid_webhooks/processed/${idemKey}`);
-
-      const idemTx = await idemRef.transaction((cur) => cur || Date.now(), {
-        applyLocally: false,
-      });
-      if (!idemTx.committed) {
-        // Already processed this exact delivery — ack quickly
-        return res.status(200).json({ ok: true, duplicate: true });
-      }
-
-      // 5) Smart webhook processing with enhanced batching and debouncing
+      // Add specific updates based on webhook type
       switch (webhook_type) {
-        case "ITEM":
-          await handleItemWebhook(
-            db,
-            userId,
-            webhook_code,
-            item_id,
-            webhookData.error
-          );
+        case "TRANSACTIONS":
+          if (webhook_code === "SYNC_UPDATES_AVAILABLE") {
+            updates.transactionsSyncAvailable = true;
+            updates.lastTransactionsSync = Date.now();
+          }
           break;
         case "ACCOUNTS":
-          // Only process accounts webhook if we have new accounts or specific codes
-          if (
-            webhook_code === "NEW_ACCOUNTS_AVAILABLE" ||
-            webhookData.new_accounts?.length > 0
-          ) {
-            await handleAccountsWebhook(
-              db,
-              userId,
-              webhook_code,
-              item_id,
-              webhookData.new_accounts
-            );
-          } else {
-            // Skip processing for other account webhook codes to reduce API calls
-            console.log(
-              `Skipping accounts webhook ${webhook_code} - no new accounts`
-            );
+          if (webhook_code === "NEW_ACCOUNTS_AVAILABLE") {
+            updates.hasNewAccounts = true;
+            updates.newAccountsAvailableAt = Date.now();
           }
           break;
-        case "TRANSACTIONS":
-          // Smart transaction processing: only SYNC_UPDATES_AVAILABLE gets immediate processing
-          if (webhook_code === "SYNC_UPDATES_AVAILABLE") {
-            // Process immediately for sync updates
-            await handleTransactionsWebhook(db, userId, webhook_code, item_id);
-          } else {
-            // Batch all other transaction webhooks to reduce API calls
-            const batchKey = `${item_id}_${webhook_code}`;
-            await db.ref(`plaid_webhooks/batch/${batchKey}`).set({
-              userId,
-              webhook_type,
-              webhook_code,
-              receivedAt: Date.now(),
-              processed: false,
-              // Add debouncing: only process if no other webhook received in last 30 seconds
-              debounceUntil: Date.now() + 30000,
-            });
+        case "ITEM":
+          if (webhook_code === "ITEM_LOGIN_REQUIRED") {
+            updates.status = "ITEM_LOGIN_REQUIRED";
+            updates.error = "Bank credentials expired";
           }
-          break;
-        case "INCOME":
-          await handleIncomeWebhook(db, userId, webhook_code, item_id);
-          break;
-        default:
-          // Unknown/unused type — ack to avoid retries
           break;
       }
 
-      // 5) Always 200 once handled/enqueued so Plaid doesn't retry
+      await userPlaidRef.update(updates);
+      console.log(
+        `✅ Updated connection for item ${item_id} with webhook data`
+      );
+
       return res.status(200).json({ ok: true });
     } catch (err) {
       console.error("Plaid webhook error:", err);
-      // If verification failed or we didn't enqueue, 400 so Plaid can retry
       return res.status(400).send("Webhook handling failed");
     }
   }
 );
-
-// Process batched webhooks every 5 minutes to reduce API calls
-exports.processBatchedWebhooks = onSchedule(
-  {
-    schedule: "every 5 minutes",
-    region: "us-central1",
-  },
-  async (event) => {
-    try {
-      const { initializeApp, getApps } = require("firebase-admin/app");
-      const { getDatabase } = require("firebase-admin/database");
-
-      if (!getApps().length) initializeApp();
-      const db = getDatabase();
-
-      // Get all batched webhooks
-      const batchRef = db.ref("plaid_webhooks/batch");
-      const snapshot = await batchRef.once("value");
-      const batches = snapshot.val();
-
-      if (!batches) return;
-
-      // Process each batched webhook with enhanced debouncing
-      for (const [batchKey, batchData] of Object.entries(batches)) {
-        if (batchData.processed) continue;
-
-        // Check if debounce period has passed
-        const now = Date.now();
-        if (batchData.debounceUntil && now < batchData.debounceUntil) {
-          console.log(
-            `Debouncing webhook ${batchKey} until ${new Date(
-              batchData.debounceUntil
-            ).toISOString()}`
-          );
-          continue;
-        }
-
-        try {
-          // Extract item_id from batchKey (format: item_id_webhook_code)
-          const itemId = batchKey.split("_")[0];
-
-          // Process the batched webhook
-          await handleTransactionsWebhook(
-            db,
-            batchData.userId,
-            batchData.webhook_code,
-            itemId
-          );
-
-          // Mark as processed
-          await db.ref(`plaid_webhooks/batch/${batchKey}`).update({
-            processed: true,
-            processedAt: Date.now(),
-          });
-
-          console.log(
-            `Processed batched webhook for item ${itemId} (${batchData.webhook_code})`
-          );
-        } catch (error) {
-          console.error(
-            `Error processing batched webhook for ${batchKey}:`,
-            error
-          );
-        }
-      }
-
-      // Clean up old processed batches (older than 1 hour)
-      const oneHourAgo = Date.now() - 60 * 60 * 1000;
-      for (const [batchKey, batchData] of Object.entries(batches)) {
-        if (batchData.processed && batchData.processedAt < oneHourAgo) {
-          await db.ref(`plaid_webhooks/batch/${batchKey}`).remove();
-        }
-      }
-    } catch (error) {
-      console.error("Error processing batched webhooks:", error);
-    }
-  }
-);
-
-// Handle ITEM webhooks
-async function handleItemWebhook(db, userId, webhook_code, item_id, error) {
-  const userPlaidRef = db.ref(`users/${userId}/plaid_connections/${item_id}`);
-  const updates = {
-    lastUpdated: Date.now(),
-    lastWebhook: {
-      type: "ITEM",
-      code: webhook_code,
-      timestamp: Date.now(),
-    },
-  };
-
-  switch (webhook_code) {
-    case "ITEM_LOGIN_REQUIRED":
-      updates.status = "ITEM_LOGIN_REQUIRED";
-      updates.error = error || "Bank credentials expired";
-      break;
-    case "ITEM_PENDING_EXPIRATION":
-      updates.status = "PENDING_EXPIRATION";
-      updates.expirationWarning = true;
-      break;
-    case "ITEM_PENDING_DISCONNECT":
-      updates.status = "PENDING_DISCONNECT";
-      updates.disconnectWarning = true;
-      break;
-    case "ITEM_LOGIN_REPAIRED":
-      updates.status = "connected";
-      updates.error = null;
-      updates.expirationWarning = false;
-      updates.disconnectWarning = false;
-      break;
-    default:
-      return;
-  }
-
-  await userPlaidRef.update(updates);
-}
-
-// Handle ACCOUNTS webhooks
-async function handleAccountsWebhook(
-  db,
-  userId,
-  webhook_code,
-  item_id,
-  new_accounts
-) {
-  const userPlaidRef = db.ref(`users/${userId}/plaid_connections/${item_id}`);
-  const updates = {
-    lastUpdated: Date.now(),
-    lastWebhook: {
-      type: "ACCOUNTS",
-      code: webhook_code,
-      timestamp: Date.now(),
-    },
-  };
-
-  switch (webhook_code) {
-    case "NEW_ACCOUNTS_AVAILABLE":
-      updates.hasNewAccounts = true;
-      updates.newAccounts = new_accounts;
-      updates.newAccountsAvailableAt = Date.now();
-      break;
-    default:
-      return;
-  }
-
-  await userPlaidRef.update(updates);
-}
-
-// Handle TRANSACTIONS webhooks
-async function handleTransactionsWebhook(db, userId, webhook_code, item_id) {
-  const userPlaidRef = db.ref(`users/${userId}/plaid_connections/${item_id}`);
-  const updates = {
-    lastUpdated: Date.now(),
-    lastWebhook: {
-      type: "TRANSACTIONS",
-      code: webhook_code,
-      timestamp: Date.now(),
-    },
-  };
-
-  switch (webhook_code) {
-    case "SYNC_UPDATES_AVAILABLE":
-      // New transactions are available for sync
-      updates.transactionsSyncAvailable = true;
-      updates.lastTransactionsSync = Date.now();
-
-      break;
-    case "INITIAL_UPDATE":
-      // Initial transaction sync completed
-      updates.initialSyncComplete = true;
-      updates.initialSyncCompletedAt = Date.now();
-
-      break;
-    case "HISTORICAL_UPDATE":
-      // Historical transaction sync completed
-      updates.historicalSyncComplete = true;
-      updates.historicalSyncCompletedAt = Date.now();
-
-      break;
-    case "DEFAULT_UPDATE":
-      // Default transaction update
-      updates.lastTransactionUpdate = Date.now();
-
-      break;
-    default:
-      return;
-  }
-
-  await userPlaidRef.update(updates);
-}
-
-// Handle INCOME webhooks
-async function handleIncomeWebhook(db, userId, webhook_code, item_id) {
-  const userPlaidRef = db.ref(`users/${userId}/plaid_connections/${item_id}`);
-  const updates = {
-    lastUpdated: Date.now(),
-    lastWebhook: {
-      type: "INCOME",
-      code: webhook_code,
-      timestamp: Date.now(),
-    },
-  };
-
-  switch (webhook_code) {
-    case "VERIFICATION_STATUS_PROCESSING_COMPLETE":
-      updates.incomeVerificationComplete = true;
-      updates.incomeVerificationCompletedAt = Date.now();
-      break;
-    default:
-      return;
-  }
-
-  await userPlaidRef.update(updates);
-}

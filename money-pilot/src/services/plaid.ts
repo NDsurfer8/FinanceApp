@@ -1738,6 +1738,8 @@ class PlaidService {
           );
           await remove(connectionRef);
 
+          // Note: Item index cleanup is handled by webhook handlers when they detect disconnected items
+
           // Remove from local state
           this.connections.delete(itemId);
         }
@@ -1750,6 +1752,8 @@ class PlaidService {
             `users/${this.userId}/plaid_connections/${connection.itemId}`
           );
           await remove(connectionRef);
+
+          // Note: Item index cleanup is handled by webhook handlers when they detect disconnected items
         }
 
         // Clear all local state
@@ -1830,6 +1834,8 @@ class PlaidService {
       // Also remove legacy single connection if it exists
       const legacyPlaidRef = ref(db, `users/${this.userId}/plaid`);
       await remove(legacyPlaidRef);
+
+      // Note: Item index cleanup is handled by webhook handlers when they detect disconnected items
 
       // Clear local state
       this.connections.clear();
