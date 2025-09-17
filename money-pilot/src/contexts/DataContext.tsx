@@ -767,18 +767,38 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
       // Simple check for new transactions
       let hasNewTransactions = false;
+      let totalNewTransactions = 0;
       for (const [itemId, connectionData] of Object.entries(plaidConnections)) {
         const plaidData = connectionData as any;
         if (plaidData.transactionsSyncAvailable) {
           hasNewTransactions = true;
-          break;
+          totalNewTransactions += plaidData.newTransactionsCount || 1;
         }
       }
 
       // Simple refresh if new transactions
       if (hasNewTransactions) {
         if (webhookTimer) clearTimeout(webhookTimer);
-        webhookTimer = setTimeout(() => {
+        webhookTimer = setTimeout(async () => {
+          // Send notification first
+          try {
+            const { notificationService } = await import(
+              "../services/notifications"
+            );
+            await notificationService.notifyNewTransactions(
+              totalNewTransactions
+            );
+            console.log(
+              `📱 Sent new transactions notification for ${totalNewTransactions} transactions`
+            );
+          } catch (error) {
+            console.error(
+              "Error sending new transactions notification:",
+              error
+            );
+          }
+
+          // Then refresh the data
           refreshBankData(false);
         }, 2000); // 2 second delay
       }

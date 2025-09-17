@@ -1200,8 +1200,16 @@ exports.plaidWebhook = onRequest(
       switch (webhook_type) {
         case "TRANSACTIONS":
           if (webhook_code === "SYNC_UPDATES_AVAILABLE") {
-            updates.transactionsSyncAvailable = true;
-            updates.lastTransactionsSync = Date.now();
+            // Only mark as available if there are actually new transactions
+            const newTransactionsCount = webhookData.new_transactions || 0;
+            if (newTransactionsCount > 0) {
+              updates.transactionsSyncAvailable = true;
+              updates.newTransactionsCount = newTransactionsCount;
+              updates.lastTransactionsSync = Date.now();
+              console.log(`📊 Found ${newTransactionsCount} new transactions`);
+            } else {
+              console.log("📊 No new transactions in webhook");
+            }
           }
           break;
         case "ACCOUNTS":
