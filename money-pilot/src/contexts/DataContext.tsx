@@ -982,11 +982,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           // Processing webhook refresh after debounce
 
           try {
-            // Clear cache to ensure fresh data for webhook-triggered refreshes
-            await AsyncStorage.removeItem(BANK_DATA_CACHE_KEY);
-            await AsyncStorage.removeItem(BANK_DATA_TIMESTAMP_KEY);
+            // Get current transaction count before refresh
+            const currentTransactionCount = bankTransactions.length;
 
-            await refreshBankData(true);
+            // First, try a quick refresh without clearing cache to check for new transactions
+            await refreshBankData(false);
+
+            // Check if there are actually new transactions
+            const hasNewTransactions =
+              bankTransactions.length > currentTransactionCount;
+
+            // New transactions should appear automatically through incremental updates
+            if (hasNewTransactions) {
+              console.log(
+                `📱 New transactions detected (${currentTransactionCount} -> ${bankTransactions.length})`
+              );
+            } else {
+              console.log(
+                `📱 No new transactions found (${currentTransactionCount} -> ${bankTransactions.length})`
+              );
+            }
 
             // Clear all relevant flags after successful refresh for all banks
             const updates: any = {};
@@ -1015,8 +1030,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               await plaidService.queuePlaidStatusUpdate(updates);
             }
 
-            // Send notification if we have notification data and user has enabled them
-            if (notificationData) {
+            // Send notification only if we have notification data, user has enabled them, AND there are actually new transactions
+            if (notificationData && hasNewTransactions) {
               try {
                 // Check if user has enabled this type of notification
                 const notificationKey = `notification_webhook-${notificationData.type}`;
@@ -1035,7 +1050,15 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
                 }
               } catch (notifError) {
                 // Failed to send webhook notification
+                console.error(
+                  "Error sending webhook notification:",
+                  notifError
+                );
               }
+            } else if (notificationData && !hasNewTransactions) {
+              console.log(
+                `📱 Webhook received but no new transactions found (${currentTransactionCount} -> ${bankTransactions.length}) - skipping notification`
+              );
             }
 
             // Update last processed time
