@@ -2,6 +2,9 @@ import { Alert } from "react-native";
 import { ref, set, get, remove, update } from "firebase/database";
 import { db } from "../services/firebase";
 import { encryptFields, decryptFields } from "./encryption";
+import { logger } from "../utils/logger";
+import { errorTracker } from "../utils/errorTracker";
+import { withRetry, retryConditions } from "../utils/retry";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getAuth } from "firebase/auth";
 import {
@@ -136,16 +139,45 @@ class PlaidService {
     }
   }
 
-  // Get all connected banks
+  // Get all connected banks with flexible status matching
   getConnectedBanks(): PlaidConnection[] {
-    return Array.from(this.connections.values()).filter(
-      (conn) => conn.status === "connected"
-    );
+    return Array.from(this.connections.values()).filter((conn) => {
+      // More flexible status matching
+      const status = conn.status?.toLowerCase();
+      return (
+        status === "connected" ||
+        status === "active" ||
+        status === "valid" ||
+        status === "ok" ||
+        status === null ||
+        status === undefined ||
+        // If status is missing, assume connected (backward compatibility)
+        !conn.status
+      );
+    });
   }
 
   // Get connection by item ID
   getConnection(itemId: string): PlaidConnection | null {
     return this.connections.get(itemId) || null;
+  }
+
+  // Debug method to check encryption status
+  async debugEncryptionStatus(): Promise<void> {
+    logger.debug("Encryption Status Check", {
+      totalConnections: this.connections.size,
+      userId: this.userId,
+    });
+
+    for (const [itemId, connection] of this.connections.entries()) {
+      logger.debug(`Connection ${itemId}`, {
+        hasAccessToken: !!connection.accessToken,
+        hasInstitution: !!connection.institution,
+        institutionName: connection.institution?.name,
+        status: connection.status,
+        accountsCount: connection.accounts?.length || 0,
+      });
+    }
   }
 
   // Get all connections (including disconnected ones)
@@ -1084,92 +1116,211 @@ class PlaidService {
     }
   }
 
-  // Check if bank is connected
+  // Check if bank is connected with detailed logging
   async isBankConnected(): Promise<boolean> {
     if (!this.userId) {
+      console.log("🔍 isBankConnected: No userId, returning false");
       return false;
     }
 
     try {
+      console.log(`🔍 isBankConnected: Checking for user ${this.userId}`);
+
       // First check if user still exists in Firebase
       const userRef = ref(db, `users/${this.userId}`);
       const userSnapshot = await get(userRef);
 
       if (!userSnapshot.exists()) {
-        // User account has been deleted, clear local state and return false
+        console.log(
+          "🔍 isBankConnected: User account deleted, clearing connections"
+        );
         this.connections.clear();
         return false;
       }
 
       // Load connections from Firebase
+      console.log("🔍 isBankConnected: Loading connections from Firebase");
       await this.loadConnectionsFromFirebase();
-      return this.hasAnyBankConnected();
+
+      const connectedBanks = this.getConnectedBanks();
+      const isConnected = connectedBanks.length > 0;
+
+      console.log(
+        `🔍 isBankConnected: Found ${connectedBanks.length} connected banks:`,
+        connectedBanks.map((bank) => ({
+          itemId: bank.itemId,
+          institution: bank.institution?.name,
+          status: bank.status,
+        }))
+      );
+
+      return isConnected;
     } catch (error: any) {
       // Handle permission denied errors (user account deleted)
       if (
         error?.code === "PERMISSION_DENIED" ||
         error?.message?.includes("Permission denied")
       ) {
+        console.log(
+          "🔍 isBankConnected: Permission denied, clearing connections"
+        );
         this.connections.clear();
         return false;
       }
 
-      console.error("PlaidService: Error checking bank connection:", error);
+      console.error(
+        "🔍 isBankConnected: Error checking bank connection:",
+        error
+      );
       return false;
     }
   }
 
-  // Load all connections from Firebase
+  // Load all connections from Firebase with detailed logging
   private async loadConnectionsFromFirebase(): Promise<void> {
     if (!this.userId) {
+      console.log("🔍 loadConnectionsFromFirebase: No userId");
       return;
     }
 
     try {
+      console.log(
+        `🔍 loadConnectionsFromFirebase: Loading for user ${this.userId}`
+      );
+
       // First try new format
       const plaidRef = ref(db, `users/${this.userId}/plaid_connections`);
       const snapshot = await get(plaidRef);
 
       if (snapshot.exists()) {
         const connectionsData = snapshot.val();
+        console.log(
+          `🔍 loadConnectionsFromFirebase: Found ${
+            Object.keys(connectionsData || {}).length
+          } connections in Firebase`
+        );
+
         if (connectionsData) {
-          // Decrypt and load all connections
+          // Decrypt and load all connections with robust error handling
           for (const [itemId, connectionData] of Object.entries(
             connectionsData
           )) {
             try {
+              // Try to decrypt the connection data
               const decryptedData = await decryptFields(connectionData as any, [
                 "accessToken",
                 "institution",
                 "accounts",
               ]);
 
+              // Validate that we have the essential data
+              if (
+                !decryptedData.accessToken &&
+                !(connectionData as any).accessToken
+              ) {
+                console.warn(
+                  `⚠️ Connection ${itemId} missing access token, skipping`
+                );
+                continue;
+              }
+
+              // Create connection with fallback values
               const connection: PlaidConnection = {
                 itemId,
-                accessToken: decryptedData.accessToken,
-                institution: decryptedData.institution,
-                accounts: decryptedData.accounts || [],
+                accessToken:
+                  decryptedData.accessToken ||
+                  (connectionData as any).accessToken,
+                institution: decryptedData.institution ||
+                  (connectionData as any).institution || {
+                    name: "Unknown Bank",
+                  },
+                accounts:
+                  decryptedData.accounts ||
+                  (connectionData as any).accounts ||
+                  [],
                 connectedAt: (connectionData as any).connectedAt,
                 status: (connectionData as any).status || "connected",
                 lastUpdated: (connectionData as any).lastUpdated,
               };
 
-              this.connections.set(itemId, connection);
+              // Validate connection has minimum required data
+              if (connection.accessToken && connection.institution) {
+                this.connections.set(itemId, connection);
+                console.log(
+                  `✅ Loaded connection ${itemId} for ${connection.institution.name}`
+                );
+              } else {
+                console.warn(
+                  `⚠️ Connection ${itemId} missing required data, skipping`
+                );
+              }
             } catch (decryptError) {
               console.error(
-                `Error decrypting connection ${itemId}:`,
+                `❌ Error processing connection ${itemId}:`,
                 decryptError
               );
+
+              // Try to create a basic connection with unencrypted data as fallback
+              try {
+                const fallbackConnection: PlaidConnection = {
+                  itemId,
+                  accessToken: (connectionData as any).accessToken,
+                  institution: (connectionData as any).institution || {
+                    name: "Unknown Bank",
+                  },
+                  accounts: (connectionData as any).accounts || [],
+                  connectedAt: (connectionData as any).connectedAt,
+                  status: (connectionData as any).status || "connected",
+                  lastUpdated: (connectionData as any).lastUpdated,
+                };
+
+                // Only add if we have minimum required data
+                if (
+                  fallbackConnection.accessToken &&
+                  fallbackConnection.institution
+                ) {
+                  this.connections.set(itemId, fallbackConnection);
+                  console.log(
+                    `🔄 Loaded fallback connection ${itemId} for ${fallbackConnection.institution.name}`
+                  );
+                } else {
+                  console.warn(
+                    `⚠️ Fallback connection ${itemId} also missing required data`
+                  );
+                }
+              } catch (fallbackError) {
+                console.error(
+                  `❌ Fallback also failed for connection ${itemId}:`,
+                  fallbackError
+                );
+              }
             }
           }
+          console.log(
+            `🔍 loadConnectionsFromFirebase: Successfully loaded ${this.connections.size} connections`
+          );
           return;
+        } else {
+          console.log(
+            "🔍 loadConnectionsFromFirebase: No connections data found"
+          );
         }
+      } else {
+        console.log(
+          "🔍 loadConnectionsFromFirebase: No plaid_connections node found"
+        );
       }
 
       // If new format doesn't exist, try to migrate legacy format
+      console.log(
+        "🔍 loadConnectionsFromFirebase: Attempting legacy migration"
+      );
       await this.migrateLegacyConnection();
     } catch (error) {
-      console.error("Error loading connections from Firebase:", error);
+      console.error(
+        "🔍 loadConnectionsFromFirebase: Error loading connections from Firebase:",
+        error
+      );
     }
   }
 
