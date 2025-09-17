@@ -85,28 +85,17 @@ class PlaidService {
   private auth = getAuth();
   private isLinkInitialized = false;
   private onBankConnectedCallbacks: (() => void)[] = [];
-  private pendingTransactionsRequest: Promise<PlaidTransaction[]> | null = null;
-  private pendingAccountsRequest: Promise<PlaidAccount[]> | null = null;
+  // Simple cache to prevent excessive API calls
   private requestCache: Map<string, { data: any; timestamp: number }> =
     new Map();
-  private readonly CACHE_DURATION = 60000; // 1 minute (increased from 30 seconds)
-  private readonly ACCOUNTS_CACHE_DURATION = 600000; // 10 minutes for accounts (increased from 5 minutes)
-  private readonly TRANSACTIONS_CACHE_DURATION = 300000; // 5 minutes for transactions (increased from 1 minute)
-
-  // Request queue to prevent concurrent API calls
-  private requestQueue: Array<() => Promise<any>> = [];
-  private isProcessingQueue = false;
-
-  // Global rate limiting across all connections
-  private lastGlobalRequestTime = 0;
-  private readonly GLOBAL_RATE_LIMIT_MS = 1000; // 1 second between any requests
+  private readonly CACHE_DURATION = 300000; // 5 minutes
 
   // Set user ID for Firebase operations
   setUserId(userId: string) {
     this.userId = userId;
   }
 
-  // Clear all PlaidService state (useful when user logs out or account is deleted)
+  // Clear all PlaidService state
   clearState() {
     this.connections.clear();
     this.userId = null;
@@ -118,11 +107,7 @@ class PlaidService {
   private optimizeMemoryUsage(): void {
     // Clear old cache entries to prevent memory buildup
     const now = Date.now();
-    const maxCacheAge = Math.max(
-      this.CACHE_DURATION,
-      this.ACCOUNTS_CACHE_DURATION,
-      this.TRANSACTIONS_CACHE_DURATION
-    );
+    const maxCacheAge = this.CACHE_DURATION;
 
     const entries = Array.from(this.requestCache.entries());
     for (const [key, value] of entries) {
@@ -188,68 +173,6 @@ class PlaidService {
   }
 
   // Apply global rate limiting across all connections
-  private async applyGlobalRateLimit(): Promise<void> {
-    const now = Date.now();
-    const timeSinceLastRequest = now - this.lastGlobalRequestTime;
-
-    if (timeSinceLastRequest < this.GLOBAL_RATE_LIMIT_MS) {
-      const waitTime = this.GLOBAL_RATE_LIMIT_MS - timeSinceLastRequest;
-      await new Promise((resolve) => setTimeout(resolve, waitTime));
-    }
-
-    this.lastGlobalRequestTime = Date.now();
-  }
-
-  // Queue Plaid API requests to prevent concurrent calls with timeout
-  private async queueRequest<T>(
-    request: () => Promise<T>,
-    timeoutMs: number = 30000
-  ): Promise<T> {
-    return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        reject(new Error(`Request timed out after ${timeoutMs}ms`));
-      }, timeoutMs);
-
-      this.requestQueue.push(async () => {
-        try {
-          // Apply global rate limiting
-          await this.applyGlobalRateLimit();
-
-          const result = await request();
-          clearTimeout(timeoutId);
-          resolve(result);
-        } catch (error) {
-          clearTimeout(timeoutId);
-          reject(error);
-        }
-      });
-      this.processQueue();
-    });
-  }
-
-  // Process the request queue sequentially
-  private async processQueue() {
-    if (this.isProcessingQueue || this.requestQueue.length === 0) {
-      return;
-    }
-
-    this.isProcessingQueue = true;
-
-    while (this.requestQueue.length > 0) {
-      const request = this.requestQueue.shift();
-      if (request) {
-        try {
-          await request();
-        } catch (error) {
-          console.error("Error processing queued request:", error);
-        }
-        // Add delay between requests to prevent rate limiting
-        await new Promise((resolve) => setTimeout(resolve, 500)); // Reduced from 1000ms to 500ms
-      }
-    }
-
-    this.isProcessingQueue = false;
-  }
 
   // Check if cached data is still valid
   private isCacheValid(cacheKey: string, customDuration?: number): boolean {
@@ -778,8 +701,6 @@ class PlaidService {
 
       // Clear cache to ensure fresh data
       this.requestCache.clear();
-      this.pendingTransactionsRequest = null;
-      this.pendingAccountsRequest = null;
 
       // Trigger callbacks to notify that bank is connected
       this.triggerBankConnectedCallbacks();
@@ -834,39 +755,23 @@ class PlaidService {
       throw new Error("No bank connections available");
     }
 
-    const cacheKey = this.getCacheKey("all_accounts", {
-      connectionCount: connectedBanks.length,
-    });
+    const cacheKey = `accounts_${connectedBanks.length}`;
 
-    // Check cache first with extended duration for accounts
-    if (this.isCacheValid(cacheKey, this.ACCOUNTS_CACHE_DURATION)) {
+    // Check cache first
+    if (this.isCacheValid(cacheKey, this.CACHE_DURATION)) {
       return this.requestCache.get(cacheKey)!.data;
     }
 
-    // Check if there's already a pending request
-    if (this.pendingAccountsRequest) {
-      return this.pendingAccountsRequest;
-    }
+    // Simple fetch
+    const result = await this._fetchAllAccounts();
 
-    // Create the request promise with queuing
-    this.pendingAccountsRequest = this.queueRequest(() =>
-      this._fetchAllAccounts()
-    );
+    // Cache the result
+    this.requestCache.set(cacheKey, {
+      data: result,
+      timestamp: Date.now(),
+    });
 
-    try {
-      const result = await this.pendingAccountsRequest;
-
-      // Cache the result
-      this.requestCache.set(cacheKey, {
-        data: result,
-        timestamp: Date.now(),
-      });
-
-      return result;
-    } finally {
-      // Clear the pending request after completion
-      this.pendingAccountsRequest = null;
-    }
+    return result;
   }
 
   // Private method to fetch accounts from all connected banks
@@ -1017,45 +922,43 @@ class PlaidService {
       throw new Error("No bank connections available");
     }
 
-    const cacheKey = this.getCacheKey("all_transactions", {
-      startDate,
-      endDate,
-      connectionCount: connectedBanks.length,
-    });
+    const cacheKey = `transactions_${startDate}_${endDate}`;
 
-    // Check cache first with extended duration for transactions
-    if (this.isCacheValid(cacheKey, this.TRANSACTIONS_CACHE_DURATION)) {
+    // Check cache first
+    if (this.isCacheValid(cacheKey, this.CACHE_DURATION)) {
       return this.requestCache.get(cacheKey)!.data;
     }
 
-    // Check if there's already a pending request
-    if (this.pendingTransactionsRequest) {
-      return this.pendingTransactionsRequest;
+    // Simple fetch with basic retry
+    let retryCount = 0;
+    const maxRetries = 3;
+
+    while (retryCount < maxRetries) {
+      try {
+        const result = await this._fetchAllTransactions(startDate, endDate);
+
+        // Cache the result
+        this.requestCache.set(cacheKey, {
+          data: result,
+          timestamp: Date.now(),
+        });
+
+        return result;
+      } catch (error) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          throw error;
+        }
+        // Simple 2 second delay
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
     }
 
-    // Create the request promise with retry logic and queuing
-    this.pendingTransactionsRequest = this.queueRequest(() =>
-      this._fetchAllTransactionsWithRetry(startDate, endDate)
-    );
-
-    try {
-      const result = await this.pendingTransactionsRequest;
-
-      // Cache the result
-      this.requestCache.set(cacheKey, {
-        data: result,
-        timestamp: Date.now(),
-      });
-
-      return result;
-    } finally {
-      // Clear the pending request after completion
-      this.pendingTransactionsRequest = null;
-    }
+    throw new Error("Failed to fetch transactions after retries");
   }
 
-  // Private method to fetch transactions from all connected banks with retry logic
-  private async _fetchAllTransactionsWithRetry(
+  // Simple method to fetch transactions from all connected banks
+  private async _fetchAllTransactions(
     startDate: string,
     endDate: string
   ): Promise<PlaidTransaction[]> {
@@ -1077,26 +980,6 @@ class PlaidService {
           error
         );
 
-        // Check for token errors and attempt to refresh for this specific connection
-        const tokenRefreshed = await this.handleTokenErrorForConnection(
-          error,
-          connection
-        );
-        if (tokenRefreshed) {
-          try {
-            const bankTransactions = await this._fetchTransactionsForConnection(
-              connection,
-              startDate,
-              endDate
-            );
-            allTransactions.push(...bankTransactions);
-          } catch (retryError) {
-            console.error(
-              `❌ Retry failed for ${connection.institution.name}:`,
-              retryError
-            );
-          }
-        }
         // Continue with other banks even if one fails
       }
     }
@@ -1107,82 +990,24 @@ class PlaidService {
     );
   }
 
-  // Fetch transactions for a specific connection with retry logic
+  // Simple method to fetch transactions for a specific connection
   private async _fetchTransactionsForConnection(
     connection: PlaidConnection,
     startDate: string,
     endDate: string
   ): Promise<PlaidTransaction[]> {
-    for (let attempt = 0; attempt <= this.MAX_RETRIES; attempt++) {
-      try {
-        const transactions = await this._fetchTransactions(
-          connection.accessToken,
-          startDate,
-          endDate
-        );
-
-        // Add bank information to each transaction
-        const bankTransactions = transactions.map((transaction) => ({
-          ...transaction,
-          institution: connection.institution.name,
-          itemId: connection.itemId,
-        }));
-
-        return bankTransactions;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-
-        // Check for rate limit errors
-        if (
-          errorMessage.includes("RATE_LIMIT") ||
-          errorMessage.includes("rate limit")
-        ) {
-          const backoffTime = Math.min(30000 * Math.pow(2, attempt), 300000); // Max 5 minutes
-          await new Promise((resolve) => setTimeout(resolve, backoffTime));
-          continue;
-        }
-
-        // If it's a PRODUCT_NOT_READY error and we haven't exceeded retries
-        if (
-          (errorMessage.includes("400") ||
-            errorMessage.includes("PRODUCT_NOT_READY") ||
-            errorMessage.includes("not yet ready") ||
-            errorMessage.includes("product_not_ready") ||
-            errorMessage.includes("Product not ready") ||
-            errorMessage.includes("product not ready")) &&
-          attempt < this.MAX_RETRIES
-        ) {
-          const delay =
-            this.RETRY_DELAYS[attempt] ||
-            this.RETRY_DELAYS[this.RETRY_DELAYS.length - 1];
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          continue;
-        }
-
-        // Only throw user-facing errors when retries are exhausted
-        if (
-          (errorMessage.includes("400") ||
-            errorMessage.includes("PRODUCT_NOT_READY") ||
-            errorMessage.includes("not yet ready") ||
-            errorMessage.includes("product_not_ready") ||
-            errorMessage.includes("Product not ready") ||
-            errorMessage.includes("product not ready")) &&
-          attempt >= this.MAX_RETRIES
-        ) {
-          throw new Error(
-            `Bank data for ${connection.institution.name} is still being processed. Please try refreshing in a few minutes.`
-          );
-        }
-
-        // For other errors, throw the original error
-        throw error;
-      }
-    }
-
-    throw new Error(
-      `Max retries exceeded for transaction fetch from ${connection.institution.name}`
+    const transactions = await this._fetchTransactions(
+      connection.accessToken,
+      startDate,
+      endDate
     );
+
+    // Add bank information to each transaction
+    return transactions.map((transaction) => ({
+      ...transaction,
+      institution: connection.institution.name,
+      itemId: connection.itemId,
+    }));
   }
 
   // Helper method to check if we're requesting a full 3-month range
@@ -1675,8 +1500,6 @@ class PlaidService {
 
       // Clear cache and pending requests
       this.requestCache.clear();
-      this.pendingTransactionsRequest = null;
-      this.pendingAccountsRequest = null;
     } catch (error) {
       console.error("PlaidService: Error handling logout:", error);
     }
@@ -1762,8 +1585,6 @@ class PlaidService {
 
       // Clear cache and pending requests
       this.requestCache.clear();
-      this.pendingTransactionsRequest = null;
-      this.pendingAccountsRequest = null;
 
       // Trigger callbacks to notify that bank connection status has changed
       this.triggerBankConnectedCallbacks();
@@ -1873,11 +1694,7 @@ class PlaidService {
       // Clear all local state
       this.connections.clear();
       this.onBankConnectedCallbacks = [];
-      this.pendingTransactionsRequest = null;
-      this.pendingAccountsRequest = null;
       this.requestCache.clear();
-      this.requestQueue = [];
-      this.isProcessingQueue = false;
       this.isLinkInitialized = false;
       this.userId = null;
     } catch (error) {

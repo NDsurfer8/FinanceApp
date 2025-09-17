@@ -406,47 +406,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     []
   );
 
-  // Refresh bank data with smart caching
+  // Simple refresh bank data - no race conditions
   const refreshBankData = useCallback(
     async (forceRefresh = false) => {
-      // Add debouncing property to the function
-      (refreshBankData as any).lastCallTime =
-        (refreshBankData as any).lastCallTime || 0;
+      // Simple check: if already loading, skip
+      if (isBankDataLoadingRef.current && !forceRefresh) {
+        console.log("Bank data refresh skipped - already loading");
+        return;
+      }
+
+      setIsBankDataLoading(true);
+      isBankDataLoadingRef.current = true;
+
       try {
-        // Simple debouncing: prevent rapid successive calls
-        const now = Date.now();
-        const lastCall = (refreshBankData as any).lastCallTime || 0;
-        const timeSinceLastCall = now - lastCall;
-
-        // Don't allow calls more frequent than 5 seconds apart
-        if (timeSinceLastCall < 5000 && !forceRefresh) {
-          console.log("Bank data refresh skipped - too soon since last call");
-          return;
-        }
-
-        // Don't load if already loading locally
-        if (isBankDataLoadingRef.current && !forceRefresh) {
-          return;
-        }
-
-        // Smart app refresh detection
-        const appStartTime = (global as any).appStartTime || now;
-        const isAppJustStarted = now - appStartTime < 30000; // 30 seconds after app start
-
-        if (isAppJustStarted && !forceRefresh) {
-          // For app refresh, try cache first before making API calls
-          const cacheLoaded = await loadCachedBankData();
-          if (cacheLoaded) {
-            return;
-          }
-        }
-
-        // Update last call time
-        (refreshBankData as any).lastCallTime = now;
-
-        setIsBankDataLoading(true);
-        isBankDataLoadingRef.current = true;
-
         const connected = await plaidService.isBankConnected();
         setIsBankConnected(connected);
 
@@ -461,59 +433,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           return;
         }
 
-        // Try to load from cache first (unless forcing refresh)
+        // Try cache first (unless forcing refresh)
         if (!forceRefresh) {
           const cacheLoaded = await loadCachedBankData();
           if (cacheLoaded) {
-            // Check if we have recurring suggestions in cache
-            if (bankRecurringSuggestions.length === 0) {
-              // Force refresh to regenerate recurring suggestions
-              forceRefresh = true;
-            } else {
-              setIsBankDataLoading(false);
-              return;
-            }
+            setIsBankDataLoading(false);
+            return;
           }
         }
 
-        // Smart fetch strategy based on cache status and app refresh context
-        const lastFetch = bankDataLastUpdated?.getTime() || 0;
-        const timeSinceLastFetch = now - lastFetch;
+        // Simple fetch: get 3 months of data
+        const startDate = formatDateToLocalString(
+          new Date(Date.now() - 3 * 30 * 24 * 60 * 60 * 1000)
+        );
+        const endDate = formatDateToLocalString(new Date());
 
-        let startDate: string;
-        let endDate = formatDateToLocalString(new Date());
-        let fetchStrategy: "full" | "incremental" | "recurring-only";
-
-        if (forceRefresh || lastFetch === 0) {
-          // First time or force refresh: get 3 months of data for recurring analysis
-          startDate = formatDateToLocalString(
-            new Date(Date.now() - 3 * 30 * 24 * 60 * 60 * 1000)
-          );
-          fetchStrategy = "full";
-        } else if (timeSinceLastFetch > TRANSACTION_UPDATE_INTERVAL) {
-          // Check for new transactions (incremental update)
-          const lastTransactionDate = await AsyncStorage.getItem(
-            LAST_TRANSACTION_DATE_KEY
-          );
-          startDate =
-            lastTransactionDate ||
-            formatDateToLocalString(
-              new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-            ); // Fallback to 7 days
-          fetchStrategy = "incremental";
-        } else {
-          // Cache is fresh, no need to fetch
-          setIsBankDataLoading(false);
-          return;
-        }
-
-        // Retry logic for when Plaid data isn't ready yet
-        let retryCount = 0;
-        const maxRetries = 5; // Increased from 3 to 5 for better reliability
-        const baseRetryDelay = 2000; // 2 seconds base delay
-
+        // Simple fetch with basic retry
         let transactions: any[] = [];
         let accounts: any[] = [];
+        let retryCount = 0;
+        const maxRetries = 3;
 
         while (retryCount < maxRetries) {
           try {
@@ -521,115 +460,44 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               plaidService.getTransactions(startDate, endDate),
               plaidService.getAccounts(),
             ]);
-
-            // Check if we got 0 transactions but have connected banks (data still processing)
-            if (transactions.length === 0 && accounts.length > 0) {
-              const isInitialFetch =
-                fetchStrategy === "full" || lastFetch === 0;
-
-              if (isInitialFetch && retryCount < maxRetries - 1) {
-                retryCount++;
-                const retryDelay = baseRetryDelay * Math.pow(2, retryCount - 1);
-                await new Promise((resolve) => setTimeout(resolve, retryDelay));
-                continue; // Continue the retry loop
-              }
-            }
-
-            break; // Success, exit retry loop
+            break; // Success
           } catch (error: any) {
-            const errorMessage = error.message || String(error);
-
-            // Check if it's a "no data yet" error that we should retry
-            const isRetryableError =
-              errorMessage.includes("no transactions") ||
-              errorMessage.includes("no data") ||
-              errorMessage.includes("empty") ||
-              errorMessage.includes("not available") ||
-              errorMessage.includes("processing") ||
-              errorMessage.includes("PRODUCT_NOT_READY") ||
-              errorMessage.includes("product not ready") ||
-              errorMessage.includes("not yet ready") ||
-              errorMessage.includes("still being processed") ||
-              errorMessage.includes("RATE_LIMIT") ||
-              errorMessage.includes("rate limit") ||
-              errorMessage.includes("429") ||
-              errorMessage.includes("too many requests");
-
-            if (isRetryableError && retryCount < maxRetries - 1) {
-              retryCount++;
-              // Exponential backoff: 2s, 4s, 8s, 16s, 32s
-              const retryDelay = baseRetryDelay * Math.pow(2, retryCount - 1);
-              await new Promise((resolve) => setTimeout(resolve, retryDelay));
-              continue;
-            } else {
-              // Not a retryable error or max retries reached, throw the error
+            retryCount++;
+            if (retryCount >= maxRetries) {
               throw error;
             }
+            // Simple 2 second delay
+            await new Promise((resolve) => setTimeout(resolve, 2000));
           }
         }
 
+        // Set data
+        setBankTransactions(transactions);
         setBankAccounts(accounts);
-
-        // Handle case where we still have 0 transactions after all retries
-        if (transactions.length === 0 && fetchStrategy === "incremental") {
-          setIsBankDataLoading(false);
-          return;
-        }
-
-        let allTransactions = transactions;
-
-        // For incremental updates, merge with existing cached data
-        if (fetchStrategy === "incremental" && lastFetch > 0) {
-          const cachedData = await AsyncStorage.getItem(BANK_DATA_CACHE_KEY);
-          if (cachedData) {
-            const parsedData = JSON.parse(cachedData);
-            const existingTransactions = parsedData.transactions || [];
-
-            // Merge and deduplicate transactions
-            const transactionMap = new Map();
-            [...existingTransactions, ...transactions].forEach((t) => {
-              const key = `${t.name}_${t.amount}_${t.date}`;
-              transactionMap.set(key, t);
-            });
-
-            allTransactions = Array.from(transactionMap.values());
-          }
-        }
-
-        setBankTransactions(allTransactions);
-
-        // Analyze recurring patterns (only for full refresh or if we have significant new data)
-        const suggestions = analyzeRecurringPatterns(allTransactions);
-        setBankRecurringSuggestions(suggestions);
         setBankDataLastUpdated(new Date());
 
+        // Analyze recurring patterns
+        const suggestions = analyzeRecurringPatterns(transactions);
+        setBankRecurringSuggestions(suggestions);
+
         // Save to cache
-        await saveBankDataToCache(allTransactions, suggestions, accounts);
+        await saveBankDataToCache(transactions, suggestions, accounts);
       } catch (error) {
         console.error("Failed to load bank data:", error);
 
-        // Check if it's a token error that requires reconnection
+        // Simple error handling
         const errorMessage =
           error instanceof Error ? error.message : String(error);
         const isTokenError =
           errorMessage.includes("INVALID_ACCESS_TOKEN") ||
           errorMessage.includes("ITEM_LOGIN_REQUIRED") ||
-          errorMessage.includes("ITEM_ERROR") ||
-          errorMessage.includes("access token") ||
           errorMessage.includes("401") ||
           errorMessage.includes("403");
 
         if (isTokenError) {
-          console.warn("🔑 Token error detected, user needs to reconnect bank");
-          setBankConnectionError(
-            "Your bank connection has expired. Please reconnect your bank account to continue."
-          );
-          // Don't set isBankConnected to false immediately, let the user see the error
-          // and decide whether to reconnect
+          setBankConnectionError("Bank connection expired. Please reconnect.");
         } else {
-          setIsBankConnected(false);
-          setConnectedBanks([]);
-          setBankConnectionError(null);
+          setBankConnectionError("Failed to load bank data. Please try again.");
         }
       } finally {
         setIsBankDataLoading(false);
@@ -725,32 +593,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     []
   );
 
-  // Auto-load bank data when connection status changes (optimized)
+  // Simple auto-load bank data when connection status changes
   useEffect(() => {
-    // Add startup coordination to prevent initialization cascade
     if (
       user &&
       isBankConnected &&
-      bankRecurringSuggestions.length === 0 &&
       !isBankDataLoading &&
-      bankTransactions.length === 0 && // Only auto-load if we have no transactions at all
-      !(refreshBankData as any).isInitializing && // Prevent multiple simultaneous calls
-      !(refreshBankData as any).hasAutoLoaded && // Prevent multiple auto-loads
-      !(refreshBankData as any).isAppStarting // Prevent app startup cascade
+      bankTransactions.length === 0
     ) {
-      (refreshBankData as any).isInitializing = true;
-      (refreshBankData as any).hasAutoLoaded = true;
-      refreshBankData(true).finally(() => {
-        (refreshBankData as any).isInitializing = false;
-      });
+      refreshBankData(true);
     }
-  }, [
-    user,
-    isBankConnected,
-    bankRecurringSuggestions.length,
-    bankTransactions.length,
-    isBankDataLoading,
-  ]);
+  }, [user, isBankConnected, isBankDataLoading, bankTransactions.length]);
 
   // Load data when user changes (optimized for app refresh)
   useEffect(() => {
@@ -896,245 +749,44 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     handleSubscriptionExpiration();
   }, [subscriptionStatus?.isPremium, disconnectBankAndClearData]);
 
-  // Real-time webhook monitoring for automatic data updates
+  // Simple webhook monitoring
   useEffect(() => {
-    // Webhook monitoring useEffect triggered
-
     if (!user?.uid || !isBankConnected) {
-      // Stopping webhook monitoring - no user or bank connection
       setIsWebhookMonitoringActive(false);
       return;
     }
 
-    // Setting up real-time webhook monitoring for user
     setIsWebhookMonitoringActive(true);
+    let webhookTimer: NodeJS.Timeout | null = null;
 
-    // Webhook monitoring ACTIVE - listening for updates
-
-    // 🔒 SECURITY: Never log sensitive financial data
-    // - No access tokens, account numbers, or transaction details
-    // - Only log metadata, status, and non-sensitive identifiers
-    // - Use hashes or truncated values for debugging when needed
-
-    // Webhook debouncing to prevent rapid successive calls
-    let webhookDebounceTimer: NodeJS.Timeout | null = null;
-    let lastWebhookProcessed = 0;
-    const WEBHOOK_DEBOUNCE_MS = 2000; // 2 second debounce
-
-    // Listen to Plaid webhook status changes in real-time for multiple banks
+    // Simple webhook monitoring
     const plaidConnectionsRef = ref(db, `users/${user.uid}/plaid_connections`);
     const unsubscribe = onValue(plaidConnectionsRef, async (snapshot) => {
       const plaidConnections = snapshot.val();
-
       if (!plaidConnections) return;
 
-      // Debounce webhook processing to prevent rapid successive calls
-      const now = Date.now();
-      if (now - lastWebhookProcessed < WEBHOOK_DEBOUNCE_MS) {
-        // Webhook debounced, skipping rapid update
-        return;
-      }
-
-      // Webhook status update received for multiple banks
-
-      // Smart webhook handling: consolidate multiple webhook events into single refresh
-      let shouldRefresh = false;
-      let refreshReason = "";
-      let notificationData: { type: string; count?: number } | null = null;
-
-      // Check all bank connections for webhook conditions
+      // Simple check for new transactions
+      let hasNewTransactions = false;
       for (const [itemId, connectionData] of Object.entries(plaidConnections)) {
         const plaidData = connectionData as any;
-
-        // Check all webhook conditions and determine if refresh is needed
         if (plaidData.transactionsSyncAvailable) {
-          shouldRefresh = true;
-          refreshReason = "transactions";
-          notificationData = { type: "transactions" };
-          break; // Found a reason to refresh, no need to check other banks
-        } else if (plaidData.hasNewAccounts) {
-          shouldRefresh = true;
-          refreshReason = "accounts";
-          const newAccountsCount =
-            plaidData.lastWebhook?.newAccounts?.length || 1;
-          notificationData = { type: "accounts", count: newAccountsCount };
-          break; // Found a reason to refresh, no need to check other banks
-        } else if (
-          plaidData.lastWebhook?.type === "TRANSACTIONS" &&
-          plaidData.lastWebhook?.code === "SYNC_UPDATES_AVAILABLE"
-        ) {
-          shouldRefresh = true;
-          refreshReason = "sync_updates";
-          notificationData = { type: "transactions" };
-          break; // Found a reason to refresh, no need to check other banks
+          hasNewTransactions = true;
+          break;
         }
       }
 
-      // Single refresh call for all webhook events
-      if (shouldRefresh) {
-        // Clear any existing debounce timer
-        if (webhookDebounceTimer) {
-          clearTimeout(webhookDebounceTimer);
-        }
-
-        // Set debounce timer to process webhook
-        webhookDebounceTimer = setTimeout(async () => {
-          // Processing webhook refresh after debounce
-
-          try {
-            // Get current transaction count before refresh
-            const currentTransactionCount = bankTransactions.length;
-
-            // First, try a quick refresh without clearing cache to check for new transactions
-            await refreshBankData(false);
-
-            // Check if there are actually new transactions
-            const hasNewTransactions =
-              bankTransactions.length > currentTransactionCount;
-
-            // New transactions should appear automatically through incremental updates
-            if (hasNewTransactions) {
-              console.log(
-                `📱 New transactions detected (${currentTransactionCount} -> ${bankTransactions.length})`
-              );
-            } else {
-              console.log(
-                `📱 No new transactions found (${currentTransactionCount} -> ${bankTransactions.length})`
-              );
-            }
-
-            // Clear all relevant flags after successful refresh for all banks
-            const updates: any = {};
-            for (const [itemId, connectionData] of Object.entries(
-              plaidConnections
-            )) {
-              const plaidData = connectionData as any;
-              const bankUpdates: any = {};
-
-              if (plaidData.transactionsSyncAvailable) {
-                bankUpdates.transactionsSyncAvailable = false;
-              }
-              if (plaidData.hasNewAccounts) {
-                bankUpdates.hasNewAccounts = false;
-              }
-
-              // Only add updates for this bank if there are changes
-              if (Object.keys(bankUpdates).length > 0) {
-                updates[itemId] = bankUpdates;
-              }
-            }
-
-            // Only update Firebase if we have changes to make
-            if (Object.keys(updates).length > 0) {
-              // Use batched updates to reduce Firebase writes
-              await plaidService.queuePlaidStatusUpdate(updates);
-            }
-
-            // Send notification only if we have notification data, user has enabled them, AND there are actually new transactions
-            if (notificationData && hasNewTransactions) {
-              try {
-                // Check if user has enabled this type of notification
-                const notificationKey = `notification_webhook-${notificationData.type}`;
-                const isEnabled = await AsyncStorage.getItem(notificationKey);
-
-                if (isEnabled === "true") {
-                  if (notificationData.type === "transactions") {
-                    await notificationService.notifyNewTransactions();
-                  } else if (notificationData.type === "accounts") {
-                    await notificationService.notifyNewAccounts(
-                      notificationData.count || 1
-                    );
-                  }
-                } else {
-                  // Webhook notifications disabled by user
-                }
-              } catch (notifError) {
-                // Failed to send webhook notification
-                console.error(
-                  "Error sending webhook notification:",
-                  notifError
-                );
-              }
-            } else if (notificationData && !hasNewTransactions) {
-              console.log(
-                `📱 Webhook received but no new transactions found (${currentTransactionCount} -> ${bankTransactions.length}) - skipping notification`
-              );
-            }
-
-            // Update last processed time
-            lastWebhookProcessed = Date.now();
-          } catch (error) {
-            // 🔒 SECURE: Log error type, not sensitive details
-            console.error("DataContext: Failed to auto-refresh bank data:", {
-              errorType: error?.constructor?.name || "Unknown",
-              errorMessage: (error as any)?.message || "No message",
-              hasStack: !!(error as any)?.stack,
-              // ✅ Never log: access tokens, account numbers, transaction data
-            });
-          }
-        }, WEBHOOK_DEBOUNCE_MS);
-      }
-
-      // Handle bank connection issues and send notifications
-      // Check all banks for connection issues
-      for (const [itemId, connectionData] of Object.entries(plaidConnections)) {
-        const plaidData = connectionData as any;
-
-        if (plaidData.lastWebhook?.type === "ITEM") {
-          // Check if connection issue notifications are enabled
-          const connectionNotificationsEnabled = await AsyncStorage.getItem(
-            "notification_webhook-connection-issues"
-          );
-
-          if (connectionNotificationsEnabled === "true") {
-            switch (plaidData.lastWebhook?.code) {
-              case "ITEM_LOGIN_REQUIRED":
-                try {
-                  await notificationService.notifyBankConnectionIssue(
-                    "login_required",
-                    "Your bank credentials have expired. Please reconnect your account."
-                  );
-                } catch (notifError) {
-                  // Failed to send connection issue notification
-                }
-                break;
-              case "ITEM_PENDING_EXPIRATION":
-                try {
-                  await notificationService.notifyBankConnectionIssue(
-                    "expiring_soon",
-                    "Your bank connection will expire soon. Please reconnect to maintain access."
-                  );
-                } catch (notifError) {
-                  // Failed to send connection issue notification
-                }
-                break;
-              case "ITEM_PENDING_DISCONNECT":
-                try {
-                  await notificationService.notifyBankConnectionIssue(
-                    "disconnecting",
-                    "Your bank connection is being disconnected. Please reconnect if you want to continue using this feature."
-                  );
-                } catch (notifError) {
-                  // Failed to send connection issue notification
-                }
-                break;
-            }
-          } else {
-            // Connection issue notifications disabled by user
-          }
-        }
+      // Simple refresh if new transactions
+      if (hasNewTransactions) {
+        if (webhookTimer) clearTimeout(webhookTimer);
+        webhookTimer = setTimeout(() => {
+          refreshBankData(false);
+        }, 2000); // 2 second delay
       }
     });
 
     return () => {
-      // Cleaning up webhook monitoring
       setIsWebhookMonitoringActive(false);
-
-      // Clear any pending debounce timer
-      if (webhookDebounceTimer) {
-        clearTimeout(webhookDebounceTimer);
-      }
-
+      if (webhookTimer) clearTimeout(webhookTimer);
       off(plaidConnectionsRef);
       unsubscribe();
     };
