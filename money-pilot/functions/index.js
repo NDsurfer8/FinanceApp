@@ -1210,6 +1210,19 @@ exports.plaidWebhook = onRequest(
             } else {
               console.log("📊 No new transactions in webhook");
             }
+          } else if (webhook_code === "HISTORICAL_UPDATE") {
+            // Historical updates can also contain new transactions
+            const newTransactionsCount = webhookData.new_transactions || 0;
+            if (newTransactionsCount > 0) {
+              updates.transactionsSyncAvailable = true;
+              updates.newTransactionsCount = newTransactionsCount;
+              updates.lastTransactionsSync = Date.now();
+              console.log(
+                `📊 Historical update found ${newTransactionsCount} new transactions`
+              );
+            } else {
+              console.log("📊 Historical update - no new transactions");
+            }
           }
           break;
         case "ACCOUNTS":
