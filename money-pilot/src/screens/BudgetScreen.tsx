@@ -162,13 +162,13 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     });
   };
 
-  // Helper function to check if a bank transaction already exists as a saved individual transaction
+  // Helper function to check if a bank transaction already exists as a saved individual transaction or recurring transaction
   const isTransactionAlreadyImported = async (
     bankTransaction: any
   ): Promise<boolean> => {
     if (!user?.uid) return false;
 
-    // First check if this bank transaction was already imported by checking bankTransactionId
+    // First check if this bank transaction was already imported by checking bankTransactionId in regular transactions
     const alreadyImportedById = transactions.some((budgetTransaction: any) => {
       return budgetTransaction.bankTransactionId === bankTransaction.id;
     });
@@ -177,29 +177,66 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
       return true;
     }
 
+    // Check if this bank transaction was converted to a recurring transaction by checking bankTransactionId
+    const convertedToRecurring = recurringTransactions.some(
+      (recurringTransaction: any) => {
+        return recurringTransaction.bankTransactionId === bankTransaction.id;
+      }
+    );
+
+    if (convertedToRecurring) {
+      return true;
+    }
+
     // Check if it already exists as a saved transaction based on content matching
     const bankDate = new Date(bankTransaction.date);
     const bankAmount = Math.abs(bankTransaction.amount);
     const bankName = bankTransaction.name?.toLowerCase() || "";
 
-    return transactions.some((budgetTransaction: any) => {
-      const budgetDate = new Date(budgetTransaction.date);
-      const budgetAmount = Math.abs(budgetTransaction.amount);
-      const budgetName = budgetTransaction.description?.toLowerCase() || "";
+    // Check regular transactions
+    const existsInRegularTransactions = transactions.some(
+      (budgetTransaction: any) => {
+        const budgetDate = new Date(budgetTransaction.date);
+        const budgetAmount = Math.abs(budgetTransaction.amount);
+        const budgetName = budgetTransaction.description?.toLowerCase() || "";
 
-      // Check if dates are within 1 day of each other (to account for timezone differences)
-      const dateDiff = Math.abs(bankDate.getTime() - budgetDate.getTime());
-      const oneDayInMs = 24 * 60 * 60 * 1000;
+        // Check if dates are within 1 day of each other (to account for timezone differences)
+        const dateDiff = Math.abs(bankDate.getTime() - budgetDate.getTime());
+        const oneDayInMs = 24 * 60 * 60 * 1000;
 
-      // Check if amounts match (within $0.01 tolerance for rounding differences)
-      const amountDiff = Math.abs(bankAmount - budgetAmount);
+        // Check if amounts match (within $0.01 tolerance for rounding differences)
+        const amountDiff = Math.abs(bankAmount - budgetAmount);
 
-      // Check if names are similar (basic fuzzy matching)
-      const nameSimilarity =
-        bankName.includes(budgetName) || budgetName.includes(bankName);
+        // Check if names are similar (basic fuzzy matching)
+        const nameSimilarity =
+          bankName.includes(budgetName) || budgetName.includes(bankName);
 
-      return dateDiff <= oneDayInMs && amountDiff <= 0.01 && nameSimilarity;
-    });
+        return dateDiff <= oneDayInMs && amountDiff <= 0.01 && nameSimilarity;
+      }
+    );
+
+    if (existsInRegularTransactions) {
+      return true;
+    }
+
+    // Check recurring transactions for content matching
+    const existsInRecurringTransactions = recurringTransactions.some(
+      (recurringTransaction: any) => {
+        const recurringAmount = Math.abs(recurringTransaction.amount);
+        const recurringName = recurringTransaction.name?.toLowerCase() || "";
+
+        // Check if amounts match (within $0.01 tolerance for rounding differences)
+        const amountDiff = Math.abs(bankAmount - recurringAmount);
+
+        // Check if names are similar (basic fuzzy matching)
+        const nameSimilarity =
+          bankName.includes(recurringName) || recurringName.includes(bankName);
+
+        return amountDiff <= 0.01 && nameSimilarity;
+      }
+    );
+
+    return existsInRecurringTransactions;
   };
 
   // Calculate available transactions for import (excluding already imported ones)
@@ -214,6 +251,7 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     bankTransactions,
     selectedMonth,
     transactions,
+    recurringTransactions,
     user?.uid,
   ]);
 

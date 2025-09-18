@@ -237,6 +237,22 @@ export const createRecurringTransaction = async (
           recurringTransactionId: transactionId,
           isProjected: false,
           isManual: true, // Mark as manual transaction for matching
+          // Preserve bank transaction metadata if this recurring transaction was created from a bank transaction (only if defined)
+          ...(recurringTransaction.bankTransactionId && {
+            bankTransactionId: recurringTransaction.bankTransactionId,
+          }),
+          ...(recurringTransaction.sourceAccountId && {
+            sourceAccountId: recurringTransaction.sourceAccountId,
+          }),
+          ...(recurringTransaction.sourceInstitution && {
+            sourceInstitution: recurringTransaction.sourceInstitution,
+          }),
+          ...(recurringTransaction.sourceItemId && {
+            sourceItemId: recurringTransaction.sourceItemId,
+          }),
+          ...(recurringTransaction.isAutoImported !== undefined && {
+            isAutoImported: recurringTransaction.isAutoImported,
+          }),
         };
 
         await createTransaction(firstTransaction);
@@ -663,6 +679,22 @@ export const convertProjectedToActual = async (
       recurringTransactionId: recurringTransactionId,
       isProjected: false,
       isManual: true, // Mark as manual transaction for matching
+      // Preserve bank transaction metadata if this recurring transaction was created from a bank transaction (only if defined)
+      ...(recurringTransaction.bankTransactionId && {
+        bankTransactionId: recurringTransaction.bankTransactionId,
+      }),
+      ...(recurringTransaction.sourceAccountId && {
+        sourceAccountId: recurringTransaction.sourceAccountId,
+      }),
+      ...(recurringTransaction.sourceInstitution && {
+        sourceInstitution: recurringTransaction.sourceInstitution,
+      }),
+      ...(recurringTransaction.sourceItemId && {
+        sourceItemId: recurringTransaction.sourceItemId,
+      }),
+      ...(recurringTransaction.isAutoImported !== undefined && {
+        isAutoImported: recurringTransaction.isAutoImported,
+      }),
     };
 
     const transactionId = await createTransaction(actualTransaction);

@@ -192,6 +192,12 @@ export interface RecurringTransaction {
   lastGeneratedDate?: number; // Last time a transaction was generated
   nextDueDate?: number; // Next expected occurrence
   totalOccurrences?: number; // Count of times generated
+  // Bank transaction metadata (preserved when converting from bank transaction)
+  bankTransactionId?: string; // ID of original bank transaction
+  sourceAccountId?: string; // Plaid account_id for auto-imported transactions
+  sourceInstitution?: string; // Bank name for auto-imported transactions
+  sourceItemId?: string; // Plaid item_id for auto-imported transactions
+  isAutoImported?: boolean; // Flag to distinguish manual vs auto-imported recurring transactions
 }
 
 // ===== SHARED FINANCE INTERFACES =====

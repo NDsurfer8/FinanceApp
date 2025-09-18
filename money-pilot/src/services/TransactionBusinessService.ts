@@ -27,15 +27,45 @@ export class TransactionBusinessService {
       );
       const { removeTransaction } = await import("./userData");
 
+      // Preserve bank transaction metadata before removing original transaction
+      const bankTransactionMetadata = {
+        bankTransactionId: transaction.bankTransactionId,
+        sourceAccountId: transaction.sourceAccountId,
+        sourceInstitution: transaction.sourceInstitution,
+        sourceItemId: transaction.sourceItemId,
+        isAutoImported: transaction.isAutoImported,
+      };
+
       // Remove the original transaction from database
       if (!transaction.id) {
         throw new Error("Transaction ID is required");
       }
       await removeTransaction(userId, transaction.id);
 
-      // Create the recurring transaction
+      // Create the recurring transaction with preserved bank metadata
+      // Filter out undefined values to prevent Firebase errors
+      const recurringTransactionWithMetadata = {
+        ...template,
+        // Preserve bank transaction metadata in the recurring template (only if defined)
+        ...(bankTransactionMetadata.bankTransactionId && {
+          bankTransactionId: bankTransactionMetadata.bankTransactionId,
+        }),
+        ...(bankTransactionMetadata.sourceAccountId && {
+          sourceAccountId: bankTransactionMetadata.sourceAccountId,
+        }),
+        ...(bankTransactionMetadata.sourceInstitution && {
+          sourceInstitution: bankTransactionMetadata.sourceInstitution,
+        }),
+        ...(bankTransactionMetadata.sourceItemId && {
+          sourceItemId: bankTransactionMetadata.sourceItemId,
+        }),
+        ...(bankTransactionMetadata.isAutoImported !== undefined && {
+          isAutoImported: bankTransactionMetadata.isAutoImported,
+        }),
+      };
+
       const recurringTransactionId = await createRecurringTransaction(
-        template,
+        recurringTransactionWithMetadata,
         selectedMonth
       );
 

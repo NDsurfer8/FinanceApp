@@ -29,9 +29,45 @@ export interface RecurringTransactionTemplate {
   createdAt: number;
   updatedAt: number;
   totalOccurrences?: number;
+  // Bank transaction metadata (preserved when converting from bank transaction)
+  bankTransactionId?: string; // ID of original bank transaction
+  sourceAccountId?: string; // Plaid account_id for auto-imported transactions
+  sourceInstitution?: string; // Bank name for auto-imported transactions
+  sourceItemId?: string; // Plaid item_id for auto-imported transactions
+  isAutoImported?: boolean; // Flag to distinguish manual vs auto-imported recurring transactions
 }
 
 export class TransactionActionsService {
+  /**
+   * Checks if a recurring transaction was created from a bank transaction
+   */
+  static isRecurringFromBankTransaction(
+    recurringTransaction: RecurringTransaction
+  ): boolean {
+    return Boolean(
+      recurringTransaction.isAutoImported ||
+        recurringTransaction.bankTransactionId ||
+        recurringTransaction.sourceAccountId
+    );
+  }
+
+  /**
+   * Gets the bank source information for a recurring transaction
+   */
+  static getBankSourceInfo(recurringTransaction: RecurringTransaction): {
+    institution?: string;
+    accountId?: string;
+    itemId?: string;
+    bankTransactionId?: string;
+  } {
+    return {
+      institution: recurringTransaction.sourceInstitution,
+      accountId: recurringTransaction.sourceAccountId,
+      itemId: recurringTransaction.sourceItemId,
+      bankTransactionId: recurringTransaction.bankTransactionId,
+    };
+  }
+
   /**
    * Determines what actions are available for a transaction
    */
