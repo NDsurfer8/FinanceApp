@@ -902,8 +902,6 @@
     "new_transaction_alerts_description": "当银行有新交易时获得通知",
     "new_account_alerts": "新账户警报",
     "new_account_alerts_description": "检测到新银行账户时获得通知",
-    "connection_issue_alerts": "连接问题警报",
-    "connection_issue_alerts_description": "获得银行连接问题的通知",
     "notifications_enabled": "通知已启用",
     "notifications_enabled_description": "您将收到财务提醒和更新",
     "permissions_required": "需要权限",

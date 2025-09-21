@@ -155,16 +155,6 @@ export const NotificationSettingsScreen: React.FC<
           enabled: false,
           type: "webhook-accounts",
         },
-        {
-          id: "webhook-connection-issues",
-          title: t("notification_settings.connection_issue_alerts"),
-          description: t(
-            "notification_settings.connection_issue_alerts_description"
-          ),
-          icon: "alert-circle",
-          enabled: false,
-          type: "webhook-issue",
-        },
       ];
 
       const savedSettings = await Promise.all(
@@ -362,11 +352,6 @@ export const NotificationSettingsScreen: React.FC<
         case "webhook-accounts":
           // Webhook notifications are handled automatically by the system
           // Webhook account notifications enabled
-          break;
-
-        case "webhook-issue":
-          // Webhook notifications are handled automatically by the system
-          // Webhook connection issue notifications enabled
           break;
       }
     } catch (error) {

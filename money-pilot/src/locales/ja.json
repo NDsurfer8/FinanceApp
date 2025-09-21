@@ -902,8 +902,6 @@
     "new_transaction_alerts_description": "銀行から新しい取引が到着した時に通知を受け取る",
     "new_account_alerts": "新しい口座アラート",
     "new_account_alerts_description": "新しい銀行口座が検出された時に通知を受け取る",
-    "connection_issue_alerts": "接続問題アラート",
-    "connection_issue_alerts_description": "銀行接続の問題について通知を受け取る",
     "notifications_enabled": "通知が有効",
     "notifications_enabled_description": "財務リマインダーとアップデートを受け取ります",
     "permissions_required": "権限が必要",

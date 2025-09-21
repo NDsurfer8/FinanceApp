@@ -902,8 +902,6 @@
     "new_transaction_alerts_description": "Получайте уведомления о новых транзакциях от вашего банка",
     "new_account_alerts": "Предупреждения о Новых Счетах",
     "new_account_alerts_description": "Получайте уведомления при обнаружении новых банковских счетов",
-    "connection_issue_alerts": "Предупреждения о Проблемах Соединения",
-    "connection_issue_alerts_description": "Получайте уведомления о проблемах банковского соединения",
     "notifications_enabled": "Уведомления Включены",
     "notifications_enabled_description": "Вы будете получать финансовые напоминания и обновления",
     "permissions_required": "Требуются Разрешения",

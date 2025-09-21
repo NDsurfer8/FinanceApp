@@ -902,8 +902,6 @@
     "new_transaction_alerts_description": "Recevez des notifications quand de nouvelles transactions arrivent de votre banque",
     "new_account_alerts": "Alertes de Nouveaux Comptes",
     "new_account_alerts_description": "Recevez des notifications quand de nouveaux comptes bancaires sont détectés",
-    "connection_issue_alerts": "Alertes de Problèmes de Connexion",
-    "connection_issue_alerts_description": "Recevez des notifications sur les problèmes de connexion bancaire",
     "notifications_enabled": "Notifications Activées",
     "notifications_enabled_description": "Vous recevrez des rappels financiers et des mises à jour",
     "permissions_required": "Permissions Requises",

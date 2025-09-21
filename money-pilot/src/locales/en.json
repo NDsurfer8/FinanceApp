@@ -1130,8 +1130,6 @@
     "new_transaction_alerts_description": "Get notified when new transactions arrive from your bank",
     "new_account_alerts": "New Account Alerts",
     "new_account_alerts_description": "Get notified when new bank accounts are detected",
-    "connection_issue_alerts": "Connection Issue Alerts",
-    "connection_issue_alerts_description": "Get notified about bank connection problems",
     "notifications_enabled": "Notifications Enabled",
     "notifications_enabled_description": "You'll receive financial reminders and updates",
     "permissions_required": "Permissions Required",

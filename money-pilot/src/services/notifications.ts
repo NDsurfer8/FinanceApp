@@ -564,27 +564,6 @@ export class NotificationService {
     return this.scheduleNotificationWithPush(notification);
   }
 
-  async notifyBankConnectionIssue(
-    issueType: string,
-    message: string
-  ): Promise<string> {
-    const notification = {
-      id: `webhook-issue-${Date.now()}`,
-      title: "⚠️ Bank Connection Issue",
-      body: message,
-      data: {
-        type: "webhook-issue",
-        issueType,
-        message,
-        timestamp: Date.now(),
-      },
-      trigger: null, // Send immediately
-    };
-
-    // Expo automatically handles both local and push notifications
-    return this.scheduleNotificationWithPush(notification);
-  }
-
   // Setup notification listeners
   setupNotificationListeners(
     onNotificationReceived?: (notification: Notifications.Notification) => void,
@@ -693,9 +672,6 @@ export class NotificationService {
 
       case "goal-reminder":
         // Navigate to goals screen
-        break;
-      case "webhook-issue":
-        // Navigate to settings or bank connection screen
         break;
     }
   };

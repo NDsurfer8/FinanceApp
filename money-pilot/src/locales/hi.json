@@ -902,8 +902,6 @@
     "new_transaction_alerts_description": "जब आपके बैंक से नए लेनदेन आते हैं तो सूचना प्राप्त करें",
     "new_account_alerts": "नए खाता अलर्ट",
     "new_account_alerts_description": "जब नए बैंक खाते का पता चलता है तो सूचना प्राप्त करें",
-    "connection_issue_alerts": "कनेक्शन समस्या अलर्ट",
-    "connection_issue_alerts_description": "बैंक कनेक्शन समस्याओं के बारे में सूचना प्राप्त करें",
     "notifications_enabled": "अधिसूचनाएं सक्षम",
     "notifications_enabled_description": "आपको वित्तीय अनुस्मारक और अपडेट मिलेंगे",
     "permissions_required": "अनुमतियां आवश्यक",

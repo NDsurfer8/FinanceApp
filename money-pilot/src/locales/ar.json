@@ -902,8 +902,6 @@
     "new_transaction_alerts_description": "احصل على إشعارات عند وصول معاملات جديدة من بنكك",
     "new_account_alerts": "تنبيهات الحسابات الجديدة",
     "new_account_alerts_description": "احصل على إشعارات عند اكتشاف حسابات بنكية جديدة",
-    "connection_issue_alerts": "تنبيهات مشاكل الاتصال",
-    "connection_issue_alerts_description": "احصل على إشعارات حول مشاكل الاتصال المصرفي",
     "notifications_enabled": "الإشعارات مفعلة",
     "notifications_enabled_description": "ستتلقى تذكيرات مالية وتحديثات",
     "permissions_required": "الأذونات مطلوبة",
