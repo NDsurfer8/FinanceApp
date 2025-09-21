@@ -522,6 +522,23 @@ export const saveTransaction = async (
       console.error("Error updating bill reminders:", error);
     }
 
+    // Update budget reminders when new transactions are added (only if enabled)
+    try {
+      const budgetRemindersEnabled = await AsyncStorage.getItem(
+        `notification_budget-reminders`
+      );
+      const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
+
+      if (isBudgetRemindersEnabled) {
+        const { budgetReminderService } = await import("./budgetReminders");
+        await budgetReminderService.updateBudgetRemindersOnTransactionChange(
+          transaction.userId
+        );
+      }
+    } catch (error) {
+      console.error("Error updating budget reminders:", error);
+    }
+
     // Track transaction entry for weekly streak
     try {
       const { trackTransactionEntry } = await import("./weeklyStreakService");
@@ -834,6 +851,23 @@ export const updateTransaction = async (
       }
     } catch (error) {
       console.error("Error updating bill reminders:", error);
+    }
+
+    // Update budget reminders when transactions are updated (only if enabled)
+    try {
+      const budgetRemindersEnabled = await AsyncStorage.getItem(
+        `notification_budget-reminders`
+      );
+      const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
+
+      if (isBudgetRemindersEnabled) {
+        const { budgetReminderService } = await import("./budgetReminders");
+        await budgetReminderService.updateBudgetRemindersOnTransactionChange(
+          transaction.userId
+        );
+      }
+    } catch (error) {
+      console.error("Error updating budget reminders:", error);
     }
   } catch (error) {
     console.error("Error updating transaction:", error);

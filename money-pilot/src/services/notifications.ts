@@ -300,122 +300,30 @@ export class NotificationService {
     return await Notifications.getAllScheduledNotificationsAsync();
   }
 
-  // Financial notification types with proper trigger types
-  async scheduleBudgetReminder(date: Date, amount: number): Promise<string> {
-    // Schedule for next month on the 1st at 9 AM
-    const nextMonth = new Date();
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    nextMonth.setDate(1);
-    nextMonth.setHours(9, 0, 0, 0);
-
-    return this.scheduleNotification({
-      id: `budget-reminder-${Date.now()}`,
-      title: "💰 Budget Reminder",
-      body: `Don't forget to track your expenses! You have $${amount.toFixed(
-        2
-      )} remaining this month.`,
-      data: { type: "budget-reminder", amount },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: nextMonth,
-      },
-    });
-  }
-
-  // Schedule dynamic budget reminder that calculates values when sent
-  async scheduleDynamicBudgetReminder(
-    userId: string,
-    reminderType: "daily" | "weekly" | "monthly",
-    triggerTime: Date
-  ): Promise<string> {
-    return this.scheduleNotification({
-      id: `budget-reminder-${reminderType}-${userId}`,
-      title: "💰 Budget Update",
-      body: "Calculating your current budget status...",
-      data: {
-        type: "dynamic-budget-reminder",
-        userId,
-        reminderType,
-        needsCalculation: true,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: triggerTime,
-      },
-    });
-  }
-
   // Calculate and send dynamic budget reminder with current values
-  private async calculateAndSendDynamicBudgetReminder(
+  async calculateAndSendDynamicBudgetReminder(
     userId: string,
-    reminderType: "daily" | "weekly" | "monthly"
+    reminderType: "urgent" | "weekly" | "monthly"
   ): Promise<void> {
     try {
       // Import budget reminder service to get current status
-      const { budgetReminderService } = await import("./budgetReminders");
+      const { budgetReminderService, createBudgetNotificationContent } =
+        await import("./budgetReminders");
 
-      // Get current budget status
+      // Get current budget status (this will have the latest data)
       const budgetStatus = await budgetReminderService.getCurrentBudgetStatus(
         userId
       );
+      const { remainingBudget, daysLeft, totalIncome, totalExpenses } =
+        budgetStatus;
 
-      const { remainingBudget, daysLeft } = budgetStatus;
-
-      let title = "💰 Budget Update";
-      let body = "";
-
-      if (reminderType === "daily") {
-        const dailyBudget = daysLeft > 0 ? remainingBudget / daysLeft : 0;
-        const isOverBudget = remainingBudget < 0;
-
-        if (isOverBudget) {
-          title = "⚠️ Daily Budget Alert";
-          body = `You're over budget this month. Daily limit: $${Math.abs(
-            dailyBudget
-          ).toFixed(2)}`;
-        } else {
-          title = "📅 Daily Budget";
-          body = `You have $${remainingBudget.toFixed(
-            2
-          )} remaining this month. Daily budget: $${dailyBudget.toFixed(2)}`;
-        }
-      } else if (reminderType === "weekly") {
-        const weeksLeft = Math.ceil(daysLeft / 7);
-        const weeklyBudget = weeksLeft > 0 ? remainingBudget / weeksLeft : 0;
-        const isOverBudget = remainingBudget < 0;
-
-        if (isOverBudget) {
-          title = "⚠️ Weekly Budget Alert";
-          body = `You're over budget this month. Consider reducing expenses.`;
-        } else {
-          title = "📊 Weekly Budget Check";
-          body = `You have $${remainingBudget.toFixed(
-            2
-          )} remaining this month. Weekly budget: $${weeklyBudget.toFixed(2)}`;
-        }
-      } else if (reminderType === "monthly") {
-        const isOverBudget = remainingBudget < 0;
-        const isNearLimit =
-          budgetStatus.budgetLimit > 0 &&
-          remainingBudget < budgetStatus.budgetLimit * 0.2;
-
-        if (isOverBudget) {
-          title = "⚠️ Budget Alert";
-          body = `You're $${Math.abs(remainingBudget).toFixed(
-            2
-          )} over budget this month.`;
-        } else if (isNearLimit) {
-          title = "⚠️ Budget Warning";
-          body = `Only $${remainingBudget.toFixed(
-            2
-          )} left in your budget this month.`;
-        } else {
-          title = "💰 Budget Update";
-          body = `You have $${remainingBudget.toFixed(
-            2
-          )} remaining this month.`;
-        }
-      }
+      // Use shared utility to create notification content
+      const { title, body } = createBudgetNotificationContent(
+        reminderType,
+        remainingBudget,
+        daysLeft,
+        totalIncome
+      );
 
       // Send the actual notification with current values
       await this.scheduleNotification({
@@ -427,115 +335,17 @@ export class NotificationService {
           reminderType,
           remainingBudget,
           daysLeft,
+          totalIncome,
+          totalExpenses,
           calculatedAt: Date.now(),
         },
         trigger: null, // Send immediately
       });
+
+      console.log(`📱 Dynamic budget reminder sent: ${title} - ${body}`);
     } catch (error) {
       console.error("Error calculating dynamic budget reminder:", error);
     }
-  }
-
-  async scheduleWeeklyBudgetCheck(): Promise<string> {
-    // Check if user has budget reminders enabled
-    const budgetRemindersEnabled = await AsyncStorage.getItem(
-      `notification_budget-reminders`
-    );
-    const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
-
-    if (!isBudgetRemindersEnabled) {
-      return "";
-    }
-
-    // Check if we already have a weekly budget check scheduled
-    const existingNotifications = await this.getScheduledNotifications();
-    const existingWeeklyCheck = existingNotifications.find(
-      (notification) =>
-        notification.content.data?.type === "weekly-budget-check"
-    );
-
-    if (existingWeeklyCheck) {
-      return existingWeeklyCheck.identifier;
-    }
-
-    // Schedule for next Sunday at 10 AM
-    const now = new Date();
-    const nextSunday = new Date(now);
-
-    // Find next Sunday (or today if it's Sunday and before 10 AM)
-    const isTodaySunday = now.getDay() === 0;
-    const isBefore10AM = now.getHours() < 10;
-
-    if (isTodaySunday && isBefore10AM) {
-      // Today is Sunday and it's before 10 AM, schedule for today
-      nextSunday.setHours(10, 0, 0, 0);
-    } else {
-      // Find next Sunday
-      const daysUntilSunday = (7 - now.getDay()) % 7;
-      nextSunday.setDate(
-        now.getDate() + (daysUntilSunday === 0 ? 7 : daysUntilSunday)
-      );
-      nextSunday.setHours(10, 0, 0, 0);
-    }
-
-    const notificationId = await this.scheduleNotification({
-      id: `weekly-budget-check-${Date.now()}`,
-      title: "📊 Weekly Budget Check",
-      body: "Time to review your budget progress! See how you're doing this month.",
-      data: {
-        type: "weekly-budget-check",
-        shouldReschedule: true, // Flag to reschedule after firing
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: nextSunday,
-      },
-    });
-
-    return notificationId;
-  }
-
-  // Reschedule the next weekly budget check (called after notification fires)
-  async rescheduleWeeklyBudgetCheck(): Promise<string> {
-    // Check if user still has budget reminders enabled
-    const budgetRemindersEnabled = await AsyncStorage.getItem(
-      `notification_budget-reminders`
-    );
-    const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
-
-    if (!isBudgetRemindersEnabled) {
-      return "";
-    }
-
-    // Cancel existing weekly budget check
-    const existingNotifications = await this.getScheduledNotifications();
-    const existingWeeklyCheck = existingNotifications.find(
-      (notification) =>
-        notification.content.data?.type === "weekly-budget-check"
-    );
-
-    if (existingWeeklyCheck) {
-      await this.cancelNotification(existingWeeklyCheck.identifier);
-    }
-
-    // Schedule the next one (7 days from now)
-    const nextWeek = new Date();
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    nextWeek.setHours(10, 0, 0, 0);
-
-    return this.scheduleNotification({
-      id: `weekly-budget-check-${Date.now()}`,
-      title: "📊 Weekly Budget Check",
-      body: "Time to review your budget progress! See how you're doing this month.",
-      data: {
-        type: "weekly-budget-check",
-        shouldReschedule: true,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: nextWeek,
-      },
-    });
   }
 
   // Cancel all weekly budget check notifications
@@ -813,7 +623,7 @@ export class NotificationService {
       try {
         const userId = data.userId as string;
         const reminderType = data.reminderType as
-          | "daily"
+          | "urgent"
           | "weekly"
           | "monthly";
         await this.calculateAndSendDynamicBudgetReminder(userId, reminderType);
@@ -848,9 +658,12 @@ export class NotificationService {
         // Navigate to dashboard to review budget progress
         // Reschedule the next weekly notification
         if (data?.shouldReschedule) {
-          this.rescheduleWeeklyBudgetCheck().catch((error) =>
-            console.error("Error rescheduling weekly budget check:", error)
-          );
+          const { budgetReminderService } = await import("./budgetReminders");
+          budgetReminderService
+            .rescheduleWeeklyBudgetCheck()
+            .catch((error) =>
+              console.error("Error rescheduling weekly budget check:", error)
+            );
         }
         break;
       case "bill-reminder":

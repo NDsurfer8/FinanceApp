@@ -12,6 +12,7 @@ import { RootStackParamList } from "../types/navigation";
 import { useAuth } from "../hooks/useAuth";
 import { notificationService } from "../services/notifications";
 import { billReminderService } from "../services/billReminders";
+import { budgetReminderService } from "../services/budgetReminders";
 import { UserProvider } from "../context/UserContext";
 import { DataProvider } from "../contexts/DataContext";
 import { SubscriptionProvider } from "../contexts/SubscriptionContext";
@@ -297,13 +298,15 @@ export const MainApp: React.FC = () => {
           budgetCategories && budgetCategories.length > 0;
 
         // Check if user has enabled budget reminder notifications
-        const budgetRemindersEnabled = await AsyncStorage.getItem(
-          `notification_budget-reminders`
+        const { checkNotificationPermission } = await import(
+          "../services/budgetReminders"
         );
-        const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
+        const isBudgetRemindersEnabled = await checkNotificationPermission(
+          "budget-reminders"
+        );
 
         if (hasBudgetCategories && isBudgetRemindersEnabled) {
-          await notificationService.scheduleWeeklyBudgetCheck();
+          await budgetReminderService.scheduleWeeklyBudgetCheck();
         }
       }
     } catch (error) {

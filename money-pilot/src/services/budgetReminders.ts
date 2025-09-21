@@ -9,6 +9,63 @@ import {
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+// Shared utility for creating budget notification content
+export const createBudgetNotificationContent = (
+  reminderType: "urgent" | "weekly" | "monthly",
+  remainingBudget: number,
+  daysLeft: number,
+  totalIncome: number
+): { title: string; body: string } => {
+  let title = "💰 Budget Update";
+  let body = "";
+
+  if (reminderType === "urgent") {
+    const isOverBudget = remainingBudget < 0;
+    const isLowBudget = remainingBudget < totalIncome * 0.1;
+
+    if (isOverBudget) {
+      title = "⚠️ Budget Alert";
+      body = `You're $${Math.abs(remainingBudget).toFixed(
+        2
+      )} over budget this month. Consider reducing expenses.`;
+    } else {
+      title = "⚠️ Low Budget Warning";
+      body = `Only $${remainingBudget.toFixed(
+        2
+      )} left in your budget this month (${daysLeft} days remaining).`;
+    }
+  } else if (reminderType === "weekly") {
+    const dailyBudget = remainingBudget / daysLeft;
+    title = "📊 End of Month Budget Check";
+    body = `You have $${remainingBudget.toFixed(
+      2
+    )} remaining this month. Daily budget: $${dailyBudget.toFixed(2)}`;
+  } else if (reminderType === "monthly") {
+    const weeklyBudget = remainingBudget / Math.ceil(daysLeft / 7);
+    title = "💰 Monthly Budget Update";
+    body = `You have $${remainingBudget.toFixed(
+      2
+    )} remaining this month. Weekly budget: $${weeklyBudget.toFixed(2)}`;
+  }
+
+  return { title, body };
+};
+
+// Shared utility for checking notification permissions
+export const checkNotificationPermission = async (
+  notificationType: string
+): Promise<boolean> => {
+  try {
+    const enabled = await AsyncStorage.getItem(
+      `notification_${notificationType}`
+    );
+    return enabled === "true";
+  } catch (error) {
+    console.error(`Error checking ${notificationType} permission:`, error);
+    return false;
+  }
+};
+
 export interface BudgetReminder {
   id: string;
   type: "monthly" | "weekly" | "daily";
@@ -32,10 +89,9 @@ export class BudgetReminderService {
   async scheduleAllBudgetReminders(userId: string): Promise<void> {
     try {
       // Check if budget reminders are enabled before scheduling
-      const budgetRemindersEnabled = await AsyncStorage.getItem(
-        `notification_budget-reminders`
+      const isBudgetRemindersEnabled = await checkNotificationPermission(
+        "budget-reminders"
       );
-      const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
 
       if (!isBudgetRemindersEnabled) {
         // If not enabled, just cancel existing reminders and return
@@ -114,85 +170,124 @@ export class BudgetReminderService {
       await this.scheduleCategoryOverBudgetNotifications(userId);
 
       // Schedule weekly budget check notification
-      await notificationService.scheduleWeeklyBudgetCheck();
+      await this.scheduleWeeklyBudgetCheck();
     } catch (error) {
       console.error("Error scheduling budget reminders:", error);
     }
   }
 
-  // Schedule monthly budget reminder
-  async scheduleMonthlyBudgetReminder(
-    remainingBudget: number,
-    budgetLimit: number
-  ): Promise<void> {
+  // Schedule weekly budget check notification
+  async scheduleWeeklyBudgetCheck(): Promise<string> {
     try {
-      // Check if budget reminders are enabled before scheduling
-      const budgetRemindersEnabled = await AsyncStorage.getItem(
-        `notification_budget-reminders`
+      // Check if user has budget reminders enabled
+      const isBudgetRemindersEnabled = await checkNotificationPermission(
+        "budget-reminders"
       );
-      const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
 
       if (!isBudgetRemindersEnabled) {
-        return; // Budget reminders are disabled
+        return "";
       }
+
+      // Check if we already have a weekly budget check scheduled
+      const existingNotifications =
+        await notificationService.getScheduledNotifications();
+      const existingWeeklyCheck = existingNotifications.find(
+        (notification) =>
+          notification.content.data?.type === "weekly-budget-check"
+      );
+
+      if (existingWeeklyCheck) {
+        return existingWeeklyCheck.identifier;
+      }
+
+      // Schedule for next Sunday at 10 AM
       const now = new Date();
-      const daysInMonth = new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
-        0
-      ).getDate();
-      const daysLeft = daysInMonth - now.getDate();
+      const nextSunday = new Date(now);
 
-      if (daysLeft <= 0) return; // End of month
+      // Find next Sunday (or today if it's Sunday and before 10 AM)
+      const isTodaySunday = now.getDay() === 0;
+      const isBefore10AM = now.getHours() < 10;
 
-      const dailyBudget = remainingBudget / daysLeft;
-      const isOverBudget = remainingBudget < 0;
-      const isNearLimit =
-        budgetLimit > 0 && remainingBudget < budgetLimit * 0.2; // Less than 20% left
-
-      let title = "💰 Budget Update";
-      let body = `You have $${remainingBudget.toFixed(
-        2
-      )} remaining this month.`;
-
-      if (isOverBudget) {
-        title = "⚠️ Budget Alert";
-        body = `You're $${Math.abs(remainingBudget).toFixed(
-          2
-        )} over budget this month.`;
-      } else if (isNearLimit) {
-        title = "⚠️ Budget Warning";
-        body = `Only $${remainingBudget.toFixed(
-          2
-        )} left in your budget this month.`;
+      if (isTodaySunday && isBefore10AM) {
+        // Today is Sunday and it's before 10 AM, schedule for today
+        nextSunday.setHours(10, 0, 0, 0);
+      } else {
+        // Find next Sunday
+        const daysUntilSunday = (7 - now.getDay()) % 7;
+        nextSunday.setDate(
+          now.getDate() + (daysUntilSunday === 0 ? 7 : daysUntilSunday)
+        );
+        nextSunday.setHours(10, 0, 0, 0);
       }
 
-      // Schedule for tomorrow morning
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(9, 0, 0, 0); // 9 AM
-
-      await notificationService.scheduleNotification({
-        id: `budget-reminder-monthly`,
-        title,
-        body,
+      const notificationId = await notificationService.scheduleNotification({
+        id: `weekly-budget-check-${Date.now()}`,
+        title: "📊 Weekly Budget Check",
+        body: "Time to review your budget progress! See how you're doing this month.",
         data: {
-          type: "budget-reminder",
-          reminderType: "monthly",
-          remainingBudget,
-          budgetLimit,
-          daysLeft,
+          type: "weekly-budget-check",
+          shouldReschedule: true, // Flag to reschedule after firing
         },
         trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds: Math.max(
-            300, // Minimum 5 minute delay
-            Math.floor((tomorrow.getTime() - Date.now()) / 1000)
-          ),
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: nextSunday,
+        },
+      });
+
+      return notificationId;
+    } catch (error) {
+      console.error("Error scheduling weekly budget check:", error);
+      return "";
+    }
+  }
+
+  // Reschedule the next weekly budget check (called after notification fires)
+  async rescheduleWeeklyBudgetCheck(): Promise<string> {
+    try {
+      // Check if user still has budget reminders enabled
+      const isBudgetRemindersEnabled = await checkNotificationPermission(
+        "budget-reminders"
+      );
+
+      if (!isBudgetRemindersEnabled) {
+        return "";
+      }
+
+      // Cancel existing weekly budget check
+      const existingNotifications =
+        await notificationService.getScheduledNotifications();
+      const existingWeeklyCheck = existingNotifications.find(
+        (notification) =>
+          notification.content.data?.type === "weekly-budget-check"
+      );
+
+      if (existingWeeklyCheck) {
+        await notificationService.cancelNotification(
+          existingWeeklyCheck.identifier
+        );
+      }
+
+      // Schedule the next one (7 days from now)
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      nextWeek.setHours(10, 0, 0, 0);
+
+      return await notificationService.scheduleNotification({
+        id: `weekly-budget-check-${Date.now()}`,
+        title: "📊 Weekly Budget Check",
+        body: "Time to review your budget progress! See how you're doing this month.",
+        data: {
+          type: "weekly-budget-check",
+          shouldReschedule: true,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: nextWeek,
         },
       });
     } catch (error) {
-      console.error("Error scheduling monthly budget reminder:", error);
+      console.error("Error rescheduling weekly budget check:", error);
+      return "";
     }
   }
 
@@ -200,10 +295,9 @@ export class BudgetReminderService {
   async scheduleCategoryOverBudgetNotifications(userId: string): Promise<void> {
     try {
       // Check if budget reminders are enabled before scheduling
-      const budgetRemindersEnabled = await AsyncStorage.getItem(
-        `notification_budget-reminders`
+      const isBudgetRemindersEnabled = await checkNotificationPermission(
+        "budget-reminders"
       );
-      const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
 
       if (!isBudgetRemindersEnabled) {
         return; // Budget reminders are disabled
@@ -266,152 +360,13 @@ export class BudgetReminderService {
     }
   }
 
-  // Schedule weekly budget reminder
-  async scheduleWeeklyBudgetReminder(
-    remainingBudget: number,
-    budgetLimit: number
-  ): Promise<void> {
-    try {
-      // Check if budget reminders are enabled before scheduling
-      const budgetRemindersEnabled = await AsyncStorage.getItem(
-        `notification_budget-reminders`
-      );
-      const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
-
-      if (!isBudgetRemindersEnabled) {
-        return; // Budget reminders are disabled
-      }
-      const now = new Date();
-      const daysInMonth = new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
-        0
-      ).getDate();
-      const daysLeft = daysInMonth - now.getDate();
-
-      if (daysLeft <= 0) return; // End of month
-
-      // Calculate weekly budget (remaining budget for the rest of the month)
-      const weeksLeft = Math.ceil(daysLeft / 7);
-      const weeklyBudget = remainingBudget / weeksLeft;
-      const isOverBudget = remainingBudget < 0;
-
-      let title = "📊 Weekly Budget Check";
-      let body = `You have $${remainingBudget.toFixed(
-        2
-      )} remaining this month. Weekly budget: $${weeklyBudget.toFixed(2)}`;
-
-      if (isOverBudget) {
-        title = "⚠️ Weekly Budget Alert";
-        body = `You're over budget this month. Consider reducing expenses.`;
-      }
-
-      // Schedule for tomorrow morning
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(8, 0, 0, 0); // 8 AM
-
-      await notificationService.scheduleNotification({
-        id: `budget-reminder-weekly`,
-        title,
-        body,
-        data: {
-          type: "budget-reminder",
-          reminderType: "weekly",
-          remainingBudget,
-          weeklyBudget,
-          weeksLeft,
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds: Math.max(
-            300, // Minimum 5 minute delay
-            Math.floor((tomorrow.getTime() - Date.now()) / 1000)
-          ),
-        },
-      });
-    } catch (error) {
-      console.error("Error scheduling weekly budget reminder:", error);
-    }
-  }
-
-  // Schedule daily budget reminder
-  async scheduleDailyBudgetReminder(
-    remainingBudget: number,
-    budgetLimit: number
-  ): Promise<void> {
-    try {
-      // Check if budget reminders are enabled before scheduling
-      const budgetRemindersEnabled = await AsyncStorage.getItem(
-        `notification_budget-reminders`
-      );
-      const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
-
-      if (!isBudgetRemindersEnabled) {
-        return; // Budget reminders are disabled
-      }
-      const now = new Date();
-      const daysInMonth = new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
-        0
-      ).getDate();
-      const daysLeft = daysInMonth - now.getDate();
-
-      if (daysLeft <= 0) return; // End of month
-
-      const dailyBudget = remainingBudget / daysLeft;
-      const isOverBudget = remainingBudget < 0;
-
-      let title = "📅 Daily Budget";
-      let body = `You have $${remainingBudget.toFixed(
-        2
-      )} remaining this month. Daily budget: $${dailyBudget.toFixed(2)}`;
-
-      if (isOverBudget) {
-        title = "⚠️ Daily Budget Alert";
-        body = `You're over budget this month. Daily limit: $${Math.abs(
-          dailyBudget
-        ).toFixed(2)}`;
-      }
-
-      // Schedule for tomorrow morning
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(7, 0, 0, 0); // 7 AM
-
-      await notificationService.scheduleNotification({
-        id: `budget-reminder-daily`,
-        title,
-        body,
-        data: {
-          type: "budget-reminder",
-          reminderType: "daily",
-          remainingBudget,
-          dailyBudget,
-          daysLeft,
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds: Math.max(
-            300, // Minimum 5 minute delay
-            Math.floor((tomorrow.getTime() - Date.now()) / 1000)
-          ),
-        },
-      });
-    } catch (error) {
-      console.error("Error scheduling daily budget reminder:", error);
-    }
-  }
-
-  // Schedule dynamic budget reminders that calculate values when sent
+  // Schedule smart budget reminders that calculate values at scheduling time
   async scheduleDynamicBudgetReminders(userId: string): Promise<void> {
     try {
       // Check if budget reminders are enabled before scheduling
-      const budgetRemindersEnabled = await AsyncStorage.getItem(
-        `notification_budget-reminders`
+      const isBudgetRemindersEnabled = await checkNotificationPermission(
+        "budget-reminders"
       );
-      const isBudgetRemindersEnabled = budgetRemindersEnabled === "true";
 
       if (!isBudgetRemindersEnabled) {
         return; // Budget reminders are disabled
@@ -420,52 +375,72 @@ export class BudgetReminderService {
       // Cancel existing budget reminders first
       await this.cancelAllBudgetReminders();
 
-      const now = new Date();
-      const daysInMonth = new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
-        0
-      ).getDate();
-      const daysLeft = daysInMonth - now.getDate();
+      // Get current budget status to determine what type of reminder to send
+      const budgetStatus = await this.getCurrentBudgetStatus(userId);
+      const { remainingBudget, daysLeft, totalIncome, totalExpenses } =
+        budgetStatus;
 
       if (daysLeft <= 0) return; // End of month
 
-      // Schedule daily reminder for tomorrow morning at 7 AM
-      const tomorrowMorning = new Date();
-      tomorrowMorning.setDate(tomorrowMorning.getDate() + 1);
-      tomorrowMorning.setHours(7, 0, 0, 0);
+      // Determine the most appropriate reminder type based on current status
+      const isOverBudget = remainingBudget < 0;
+      const isNearEndOfMonth = daysLeft <= 7;
+      const isLowBudget = remainingBudget < totalIncome * 0.1; // Less than 10% of income left
 
-      await notificationService.scheduleDynamicBudgetReminder(
-        userId,
-        "daily",
-        tomorrowMorning
+      let reminderType: "urgent" | "weekly" | "monthly" = "monthly";
+      let triggerTime: Date;
+
+      if (isOverBudget || isLowBudget) {
+        // Urgent reminder - send tomorrow morning
+        reminderType = "urgent";
+        triggerTime = new Date();
+        triggerTime.setDate(triggerTime.getDate() + 1);
+        triggerTime.setHours(8, 0, 0, 0);
+      } else if (isNearEndOfMonth) {
+        // Weekly reminder for end of month
+        reminderType = "weekly";
+        triggerTime = new Date();
+        triggerTime.setDate(triggerTime.getDate() + 1);
+        triggerTime.setHours(9, 0, 0, 0);
+      } else {
+        // Monthly reminder - send in a week
+        reminderType = "monthly";
+        triggerTime = new Date();
+        triggerTime.setDate(triggerTime.getDate() + 7);
+        triggerTime.setHours(10, 0, 0, 0);
+      }
+
+      // Use shared utility to create notification content
+      const { title, body } = createBudgetNotificationContent(
+        reminderType,
+        remainingBudget,
+        daysLeft,
+        totalIncome
       );
 
-      // Schedule weekly reminder for tomorrow morning at 8 AM
-      const tomorrowMorning8AM = new Date();
-      tomorrowMorning8AM.setDate(tomorrowMorning8AM.getDate() + 1);
-      tomorrowMorning8AM.setHours(8, 0, 0, 0);
+      // Schedule the single, smart reminder with dynamic calculation flag
+      await notificationService.scheduleNotification({
+        id: `budget-reminder-${reminderType}-${userId}`,
+        title: "💰 Budget Update", // Placeholder title - will be calculated at notification time
+        body: "Calculating your current budget status...", // Placeholder body - will be calculated at notification time
+        data: {
+          type: "dynamic-budget-reminder",
+          userId,
+          reminderType,
+          needsCalculation: true,
+          scheduledAt: Date.now(),
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: triggerTime,
+        },
+      });
 
-      await notificationService.scheduleDynamicBudgetReminder(
-        userId,
-        "weekly",
-        tomorrowMorning8AM
+      console.log(
+        `Smart budget reminder scheduled: ${reminderType} for ${triggerTime.toLocaleDateString()}`
       );
-
-      // Schedule monthly reminder for tomorrow morning at 9 AM
-      const tomorrowMorning9AM = new Date();
-      tomorrowMorning9AM.setDate(tomorrowMorning9AM.getDate() + 1);
-      tomorrowMorning9AM.setHours(9, 0, 0, 0);
-
-      await notificationService.scheduleDynamicBudgetReminder(
-        userId,
-        "monthly",
-        tomorrowMorning9AM
-      );
-
-      console.log("Dynamic budget reminders scheduled successfully");
     } catch (error) {
-      console.error("Error scheduling dynamic budget reminders:", error);
+      console.error("Error scheduling smart budget reminders:", error);
     }
   }
 
@@ -479,8 +454,8 @@ export class BudgetReminderService {
         const data = notification.content.data;
         if (
           data?.type === "budget-reminder" ||
-          data?.type === "weekly-budget-check" ||
-          data?.type === "dynamic-budget-reminder"
+          data?.type === "dynamic-budget-reminder" ||
+          data?.type === "weekly-budget-check"
         ) {
           await notificationService.cancelNotification(notification.identifier);
         }
@@ -489,6 +464,96 @@ export class BudgetReminderService {
       console.log("All budget reminders cancelled");
     } catch (error) {
       console.error("Error cancelling budget reminders:", error);
+    }
+  }
+
+  // Reschedule budget reminders when financial data changes
+  async rescheduleBudgetReminders(userId: string): Promise<void> {
+    try {
+      // Check if budget reminders are enabled
+      const isBudgetRemindersEnabled = await checkNotificationPermission(
+        "budget-reminders"
+      );
+
+      if (!isBudgetRemindersEnabled) {
+        return;
+      }
+
+      // Cancel existing reminders and schedule new ones with updated data
+      await this.scheduleDynamicBudgetReminders(userId);
+      console.log("Budget reminders rescheduled with updated data");
+    } catch (error) {
+      console.error("Error rescheduling budget reminders:", error);
+    }
+  }
+
+  // Update budget reminders when new transactions are added
+  async updateBudgetRemindersOnTransactionChange(
+    userId: string
+  ): Promise<void> {
+    try {
+      // Check if budget reminders are enabled
+      const isBudgetRemindersEnabled = await checkNotificationPermission(
+        "budget-reminders"
+      );
+
+      if (!isBudgetRemindersEnabled) {
+        return;
+      }
+
+      // Get current budget status to see if reminder type should change
+      const budgetStatus = await this.getCurrentBudgetStatus(userId);
+      const { remainingBudget, daysLeft, totalIncome } = budgetStatus;
+
+      if (daysLeft <= 0) return; // End of month
+
+      // Determine if we need to reschedule based on new budget status
+      const isOverBudget = remainingBudget < 0;
+      const isNearEndOfMonth = daysLeft <= 7;
+      const isLowBudget = remainingBudget < totalIncome * 0.1;
+
+      // Check if current scheduled reminder type matches new status
+      const scheduledNotifications =
+        await notificationService.getScheduledNotifications();
+      const existingBudgetReminder = scheduledNotifications.find(
+        (n) =>
+          n.content.data?.type === "dynamic-budget-reminder" &&
+          n.content.data?.userId === userId
+      );
+
+      if (existingBudgetReminder) {
+        const currentReminderType =
+          existingBudgetReminder.content.data?.reminderType;
+        let shouldReschedule = false;
+
+        // Determine if we need to reschedule based on urgency changes
+        if (isOverBudget || isLowBudget) {
+          shouldReschedule = currentReminderType !== "urgent";
+        } else if (isNearEndOfMonth) {
+          shouldReschedule = currentReminderType !== "weekly";
+        } else {
+          shouldReschedule = currentReminderType !== "monthly";
+        }
+
+        if (shouldReschedule) {
+          console.log(
+            `📊 Budget status changed, rescheduling reminder from ${currentReminderType} to new type`
+          );
+          await this.scheduleDynamicBudgetReminders(userId);
+        } else {
+          console.log(
+            `📊 Budget status updated, keeping current ${currentReminderType} reminder`
+          );
+        }
+      } else {
+        // No existing reminder, schedule one
+        await this.scheduleDynamicBudgetReminders(userId);
+      }
+    } catch (error) {
+      console.error(
+        "Error updating budget reminders on transaction change:",
+        error
+      );
     }
   }
 
