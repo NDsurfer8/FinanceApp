@@ -330,6 +330,142 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     // Projected transactions available
   }
 
+  // Determine if selected month is current month
+  const isCurrentMonth =
+    selectedMonth.getMonth() === new Date().getMonth() &&
+    selectedMonth.getFullYear() === new Date().getFullYear();
+
+  // Calculate recurring income for past months (when no projected transactions are available)
+  const recurringIncomeForPastMonths =
+    !isFutureMonth && !isCurrentMonth
+      ? recurringTransactions
+          .filter((rt) => {
+            if (rt.type !== "income" || !rt.isActive) return false;
+
+            // Check if the recurring transaction was active during the selected month
+            const startDate = new Date(rt.startDate || rt.date);
+            const startMonth = startDate.getMonth();
+            const startYear = startDate.getFullYear();
+            const targetMonth = selectedMonth.getMonth();
+            const targetYear = selectedMonth.getFullYear();
+
+            // If start date is after the selected month, exclude it
+            if (
+              startYear > targetYear ||
+              (startYear === targetYear && startMonth > targetMonth)
+            ) {
+              return false;
+            }
+
+            // If there's an end date, check if the selected month is before the end date
+            if (rt.endDate) {
+              const endDate = new Date(rt.endDate);
+              const endMonth = endDate.getMonth();
+              const endYear = endDate.getFullYear();
+
+              // If selected month is after the end date, exclude it
+              if (
+                targetYear > endYear ||
+                (targetYear === endYear && targetMonth > endMonth)
+              ) {
+                return false;
+              }
+            }
+
+            // Check if there's already an actual transaction for this recurring transaction this month
+            const hasActualTransaction = selectedMonthTransactions.some(
+              (t) => t.recurringTransactionId === rt.id
+            );
+
+            // Only include if no actual transaction exists
+            return !hasActualTransaction;
+          })
+          .reduce((sum: number, rt: any) => {
+            let monthlyAmount = rt.amount;
+            if (rt.frequency === "weekly") {
+              monthlyAmount = rt.amount * 4;
+            } else if (rt.frequency === "biweekly") {
+              monthlyAmount = rt.amount * 2;
+            }
+            return sum + monthlyAmount;
+          }, 0)
+      : 0;
+
+  // Create virtual transactions for recurring income in past months to show in TransactionListCard
+  const virtualRecurringIncomeTransactions =
+    !isFutureMonth && !isCurrentMonth
+      ? recurringTransactions
+          .filter((rt) => {
+            if (rt.type !== "income" || !rt.isActive) return false;
+
+            // Check if the recurring transaction was active during the selected month
+            const startDate = new Date(rt.startDate || rt.date);
+            const startMonth = startDate.getMonth();
+            const startYear = startDate.getFullYear();
+            const targetMonth = selectedMonth.getMonth();
+            const targetYear = selectedMonth.getFullYear();
+
+            // If start date is after the selected month, exclude it
+            if (
+              startYear > targetYear ||
+              (startYear === targetYear && startMonth > targetMonth)
+            ) {
+              return false;
+            }
+
+            // If there's an end date, check if the selected month is before the end date
+            if (rt.endDate) {
+              const endDate = new Date(rt.endDate);
+              const endMonth = endDate.getMonth();
+              const endYear = endDate.getFullYear();
+
+              // If selected month is after the end date, exclude it
+              if (
+                targetYear > endYear ||
+                (targetYear === endYear && targetMonth > endMonth)
+              ) {
+                return false;
+              }
+            }
+
+            // Check if there's already an actual transaction for this recurring transaction this month
+            const hasActualTransaction = selectedMonthTransactions.some(
+              (t) => t.recurringTransactionId === rt.id
+            );
+
+            // Only include if no actual transaction exists
+            return !hasActualTransaction;
+          })
+          .map((rt: any) => {
+            let monthlyAmount = rt.amount;
+            if (rt.frequency === "weekly") {
+              monthlyAmount = rt.amount * 4;
+            } else if (rt.frequency === "biweekly") {
+              monthlyAmount = rt.amount * 2;
+            }
+
+            // Create a virtual transaction for display
+            return {
+              id: `virtual-recurring-income-${
+                rt.id
+              }-${selectedMonth.getTime()}`,
+              amount: monthlyAmount,
+              type: "income" as const,
+              category: rt.category,
+              description: rt.name,
+              date: new Date(
+                selectedMonth.getFullYear(),
+                selectedMonth.getMonth(),
+                1
+              ).getTime(),
+              userId: user?.uid || "",
+              recurringTransactionId: rt.id,
+              isProjected: true,
+              isVirtual: true, // Mark as virtual for display purposes
+            };
+          })
+      : [];
+
   const incomeTransactions = allMonthTransactions.filter(
     (t) => t.type === "income"
   );
@@ -337,8 +473,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
     (t) => t.type === "expense"
   );
 
-  // Calculate totals including projected transactions
-  const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
+  // Calculate totals including projected transactions and recurring income for past months
+  const totalIncome =
+    incomeTransactions.reduce((sum, t) => sum + t.amount, 0) +
+    recurringIncomeForPastMonths;
   const totalExpenses = expenseTransactions.reduce(
     (sum, t) => sum + t.amount,
     0
@@ -1415,9 +1553,10 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({ navigation }) => {
           title={t("budget.income")}
           icon="trending-up"
           iconColor={colors.success}
-          transactions={bankFilteredTransactions.filter(
-            (t) => t.type === "income"
-          )}
+          transactions={[
+            ...bankFilteredTransactions.filter((t) => t.type === "income"),
+            ...virtualRecurringIncomeTransactions,
+          ]}
           projectedTransactions={projectedTransactions.filter(
             (t) => t.type === "income"
           )}
